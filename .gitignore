@@ -1,0 +1,8 @@
+/stamps/python/draw_stamp.py
+/stamps/stickers/**
+*.pyc
+pylint_against_wild_imports.py
+oxxxy_settings.json
+stamps/python/texture.jpg
+stamps/python/mask.png
+test_delivery.py

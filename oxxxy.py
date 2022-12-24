@@ -4692,9 +4692,7 @@ def _main():
     if os.name == 'nt':
         appid = 'sergei_krumas.oxxxy_screenshoter.client.1'
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(appid)
-    path_icon = os.path.abspath(os.path.join(".", "..", "icons/elsa_small.ico"))
-    if not os.path.exists(path_icon):
-        path_icon = os.path.abspath(os.path.join(os.path.dirname(__file__), "icon.png"))
+    path_icon = os.path.abspath(os.path.join(os.path.dirname(__file__), "icon.png"))
     icon = QIcon(path_icon)
     app.setWindowIcon(icon)
     # tooltip effects

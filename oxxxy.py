@@ -108,8 +108,9 @@ class CheckBoxCustom(QCheckBox):
 
     def state_changed(self, int_value):
         self.update()
-        self.parent().update()
-        self.parent().on_parameters_changed()
+        if self.parent():
+            self.parent().update()
+            self.parent().on_parameters_changed()
 
 class CustomPushButton(QPushButton):
     right_clicked = pyqtSignal()
@@ -191,7 +192,7 @@ class CustomPushButton(QPushButton):
             painter.setBrush(brush)
             painter.drawPath(path)
 
-        if tool_id in ["oval", "rect"]:
+        if tool_id in ["oval", "rect", "line"]:
             # эти кнопки рисуем наживую из-за того,
             # что нажатая клавиша Ctrl модифицирует их отрисовку
             self._draw_checked = self.isChecked()
@@ -494,7 +495,16 @@ class CustomPushButton(QPushButton):
             r = self.rect()
             painter.setPen(QPen(QColor(main_color), 3))
             r.adjust(10, 10, -10, -10)
-            painter.drawLine(r.bottomLeft(), r.topRight())
+            if modifiers & Qt.ControlModifier:
+                p1 = r.bottomLeft()
+                p2 = p1 + QPoint(10, -20)
+                p3 = p2 + QPoint(10, 10)
+                p4 = r.topRight()
+                painter.drawLine(p1, p2)
+                painter.drawLine(p2, p3)
+                painter.drawLine(p3, p4)
+            else:
+                painter.drawLine(r.bottomLeft(), r.topRight())
 
         elif tool_id == "arrow":
 
@@ -1174,6 +1184,8 @@ class ToolsWindow(QWidget):
             self.chb_toolbool.setText("Линии")
         elif _type == "text":
             self.chb_toolbool.setText("Подложка")
+        elif _type == "blurring":
+            self.chb_toolbool.setText("Пикселизация")
         else:
             self.chb_toolbool.setText("?")
 
@@ -1184,6 +1196,8 @@ class ToolsWindow(QWidget):
         self.size_slider.setEnabled(True)
         if _type in ["blurring", "darkening", "stamp"]:
             self.color_slider.setEnabled(False)
+            if _type in ['blurring']:
+                self.chb_toolbool.setEnabled(True)
         if _type in ["text", "zoom_in_region"]:
             self.chb_toolbool.setEnabled(True)
         if _type in ["copypaste", "none"]:
@@ -1198,7 +1212,12 @@ class ToolsWindow(QWidget):
             data =  {
                 "color_slider_value": self.color_slider.value,
                 "size_slider_value": self.size_slider.value,
-                "toolbool": self.chb_toolbool.isChecked()
+                "toolbool": self.chb_toolbool.isChecked(),
+            }
+        elif self.current_tool == "blurring":
+            data = {
+                "size_slider_value": self.size_slider.value,
+                "toolbool": self.chb_toolbool.isChecked(),
             }
         elif self.current_tool == "stamp":
             data =  {
@@ -1219,14 +1238,17 @@ class ToolsWindow(QWidget):
             DEFAULT_SIZE_SLIDER_VALUE = 0.07
         else:
             DEFAULT_SIZE_SLIDER_VALUE = 0.4
-        DEFAULT_TEXTBACK_VALUE = True
-        DEFAULT_STAMP_ID = self.parent().current_stamp_id
-        DEFAULT_STAMP_ANGLE = self.parent().current_stamp_angle
+        if self.current_tool in ['blurring']:
+            DEFAULT_TOOLBOOL_VALUE = False
+        else:
+            DEFAULT_TOOLBOOL_VALUE = True
         self.color_slider.value = data.get("color_slider_value", DEFAULT_COLOR_SLIDER_VALUE)
         self.size_slider.value = data.get("size_slider_value", DEFAULT_SIZE_SLIDER_VALUE)
-        self.chb_toolbool.setChecked(data.get("toolbool", DEFAULT_TEXTBACK_VALUE))
+        self.chb_toolbool.setChecked(data.get("toolbool", DEFAULT_TOOLBOOL_VALUE))
         if self.current_tool == "stamp":
             main_window = self.parent()
+            DEFAULT_STAMP_ID = main_window.current_stamp_id
+            DEFAULT_STAMP_ANGLE = main_window.current_stamp_angle
             if main_window.current_stamp_pixmap is None:
                 stamp_id = data.get("stamp_id", DEFAULT_STAMP_ID)
                 stamp_info = StampInfo.load_from_id(stamp_id)
@@ -1324,7 +1346,8 @@ class ToolsWindow(QWidget):
             ["pen", "Карандаш", "<b>+Shift</b> ➜ Рисует прямую"],
             ["marker", "Маркер", "<b>+Shift</b> ➜ Рисует прямую"],
 
-            ["line", "Линия", "<b>+Shift</b> ➜ Рисует линию под углом 45°"],
+            ["line", "Линия", "<b>+Shift</b> ➜ Рисует линию под углом 45°<br>"
+                                "<b>+Ctrl</b> ➜ Рисует ломанную линию"],
             ["arrow", "Стрелка", "<b>+Shift</b> ➜ Рисует под углом в 45°"],
 
             ["text", "Текст", "Если после выбора инструмента нажать левую кнопку мыши<br>"
@@ -1426,6 +1449,8 @@ class ToolsWindow(QWidget):
         self.size_slider.installEventFilter(self)
         sliders.addWidget(self.size_slider)
 
+        tools_settings = self.parent().tools_settings
+
         self.chb_masked = CheckBoxCustom("Обтравка")
         self.chb_masked.setToolTip((
             "<b>Применить маску к скриншоту</b><br>"
@@ -1433,6 +1458,8 @@ class ToolsWindow(QWidget):
         ))
         self.chb_masked.setStyleSheet(checkbox_style)
         self.chb_masked.installEventFilter(self)
+        self.chb_masked.setChecked(tools_settings.get("masked", False))
+        self.parent().hex_mask = tools_settings.get("hex_mask", False)
         checkboxes.addWidget(self.chb_masked)
 
         self.chb_draw_thirds = CheckBoxCustom("Показывать трети")
@@ -1440,6 +1467,7 @@ class ToolsWindow(QWidget):
                                                                         " редактирования</b>")
         self.chb_draw_thirds.setStyleSheet(checkbox_style)
         self.chb_draw_thirds.installEventFilter(self)
+        self.chb_draw_thirds.setChecked(tools_settings.get("draw_thirds", False))
         checkboxes.addWidget(self.chb_draw_thirds)
 
         self.chb_add_meta = CheckBoxCustom("Добавить метаинфу")
@@ -1447,6 +1475,7 @@ class ToolsWindow(QWidget):
                                                                             " скриншота</b>")
         self.chb_add_meta.setStyleSheet(checkbox_style)
         self.chb_add_meta.installEventFilter(self)
+        self.chb_add_meta.setChecked(tools_settings.get("add_meta", False))
         if os.name == 'nt':
             checkboxes.addWidget(self.chb_add_meta)
 
@@ -1478,7 +1507,6 @@ class ToolsWindow(QWidget):
         self.update_timer.start()
 
         tool_id = tool_id_default = "pen"
-        tools_settings = self.parent().tools_settings
         if tools_settings:
             tool_id = tools_settings.get("active_tool", tool_id_default)
         self.initialization = True
@@ -1506,7 +1534,7 @@ class ToolsWindow(QWidget):
         self.parent().current_tool = tool_name
         for btn in self.tools_buttons:
             if btn.property("tool_id") == self.current_tool:
-                btn.click()
+                btn.click() # call set_tool_data
                 self.initialization = False
                 break
 
@@ -1568,6 +1596,12 @@ class ToolsWindow(QWidget):
         values = ts.get("values", {})
         values.update({self.current_tool: self.tool_data_dict_from_ui()})
         ts.update({"values": values})
+        ts.update({
+            "masked": self.chb_masked.isChecked(),
+            "draw_thirds": self.chb_draw_thirds.isChecked(),
+            "add_meta": self.chb_add_meta.isChecked(),
+            "hex_mask": getattr(self.parent(), 'hex_mask', False),
+        })
         screenshot_editor.update()
 
     def keyPressEvent(self, event):
@@ -2286,7 +2320,7 @@ class ScreenShotWindow(QWidget):
         element.color = tw.color_slider.get_color()
         element.color_slider_value = tw.color_slider.value
         element.size = tw.size_slider.value
-        element.backplate = tw.chb_toolbool.isChecked()
+        element.toolbool = tw.chb_toolbool.isChecked()
         element.margin_value = 5
         if element.type == "text":
             self.elementsChangeTextbox(element)
@@ -2346,6 +2380,13 @@ class ScreenShotWindow(QWidget):
             element = None
         return element
 
+    def elementsGetLastElement1(self):
+        try:
+            element = self.elementsHistoryFilter()[-2]
+        except Exception:
+            element = None
+        return element
+
     def elementsCopyElementData(self, element, source_element):
         attributes = source_element.__dict__.items()
         copy_textbox = None
@@ -2378,7 +2419,7 @@ class ScreenShotWindow(QWidget):
         element = self.selected_element
         self.tools_window.color_slider.value = element.color_slider_value
         self.tools_window.size_slider.value = element.size
-        self.tools_window.chb_toolbool.setChecked(element.backplate)
+        self.tools_window.chb_toolbool.setChecked(element.toolbool)
         if element.type == "text":
             self.elementsActivateTextElement(element)
         self.tools_window.set_ui_on_toolchange(element_type=element.type)
@@ -2492,7 +2533,14 @@ class ScreenShotWindow(QWidget):
         return elements_under_mouse
 
     def elementsMousePressEventDefault(self, element, event):
-        element.start_point = event.pos()
+        if element.type == "line" and event.modifiers() & Qt.ControlModifier:
+            last_element = self.elementsGetLastElement1()
+            if last_element and last_element.type == "line":
+                element.start_point = QPointF(last_element.end_point).toPoint()
+            else:
+                element.start_point = event.pos()
+        else:
+            element.start_point = event.pos()
         element.end_point = event.pos()
 
     def elementsIsSpecialCase(self, element):
@@ -2867,20 +2915,28 @@ class ScreenShotWindow(QWidget):
         self.elementsDrawDarkening(pr, offset=offset_)
         pr.end()
         del pr
-        blurred_version = QPixmap(input_rect.size())
-        blurred_version.fill(Qt.transparent)
-        blurred_version = CustomPushButton.apply_blur_effect(None,
-                element.pixmap, blurred_version, blur_radius=blur_radius)
-        blurred_version = CustomPushButton.apply_blur_effect(None,
-                blurred_version, blurred_version, blur_radius=2)
-        blurred_version = CustomPushButton.apply_blur_effect(None,
-                blurred_version, blurred_version, blur_radius=blur_radius)
-        blurred_version = CustomPushButton.apply_blur_effect(None,
-                blurred_version, blurred_version, blur_radius=5)
-        element.pixmap = blurred_version
+        blured = QPixmap(input_rect.size())
+        blured.fill(Qt.transparent)
+        if element.toolbool:
+            pixel_size = int(element.size*60)+1
+            orig_width = element.pixmap.width()
+            orig_height = element.pixmap.height()
+            element.pixmap = element.pixmap.scaled(
+                orig_width//pixel_size,
+                orig_height//pixel_size).scaled(orig_width, orig_height)
+        else:
+            blured = CustomPushButton.apply_blur_effect(None,
+                    element.pixmap, blured, blur_radius=blur_radius)
+            blured = CustomPushButton.apply_blur_effect(None,
+                    blured, blured, blur_radius=2)
+            blured = CustomPushButton.apply_blur_effect(None,
+                    blured, blured, blur_radius=blur_radius)
+            blured = CustomPushButton.apply_blur_effect(None,
+                    blured, blured, blur_radius=5)
+            element.pixmap = blured
 
     def elementsChangeTextbox(self, elem):
-        if elem.backplate:
+        if elem.toolbool:
             background_color = "rgb(200, 200, 200)"
         else:
             background_color = "transparent"
@@ -3180,7 +3236,7 @@ class ScreenShotWindow(QWidget):
                                 (el_type == "copypaste" and not final):
                     painter.drawRect(input_rect)
                 if element.zoom_second_input or element.finished:
-                    if element.backplate and el_type == "zoom_in_region":
+                    if element.toolbool and el_type == "zoom_in_region":
                         points = []
                         attrs_names = ["topLeft", "topRight", "bottomLeft", "bottomRight"]
                         for corner_attr_name in attrs_names:
@@ -3666,6 +3722,10 @@ class ScreenShotWindow(QWidget):
             if self.tools_window:
                 self.tools_window.hide()
             self.source_pixels = make_screenshot_pyqt()
+            # updating source-dependent elements
+            for element in self.elements:
+                if element.type in ['blurring']:
+                    self.elementsSetBlurredPixmap(element)
             self.show()
             if self.tools_window:
                 self.tools_window.show()
@@ -3926,6 +3986,7 @@ class ScreenShotWindow(QWidget):
         if check_scancode_for(event, "H"):
             if self.tools_window and self.tools_window.chb_masked.isChecked():
                 self.hex_mask = not self.hex_mask
+                self.tools_window.on_parameters_changed()
                 self.update()
         if key in (Qt.Key_F5, Qt.Key_F6):
             clockwise_rot = key == Qt.Key_F5

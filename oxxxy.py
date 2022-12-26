@@ -71,7 +71,7 @@ FLAT_EDITOR_UI = False
 
 SCREENSHOT_FOLDER_PATH = ""
 
-VERSION_STR = "v0.9"
+VERSION_STR = "v0.91"
 AUTHOR_STR = "by Sergei Krumas"
 
 def get_screenshot_filepath(params):

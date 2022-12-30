@@ -25,5 +25,5 @@ Oxxxy Entry Point
 import oxxxy
 
 if __name__ == '__main__':
-    oxxxy.DEBUG = False
+    oxxxy.Globals.DEBUG = False
     oxxxy.main()

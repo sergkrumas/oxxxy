@@ -52,30 +52,29 @@ from _utils import (convex_hull, check_scancode_for, SettingsJson,
      make_screenshot_pyqt, CustomSlider, webRGBA, generate_gradient, draw_shadow, draw_cyberpunk,
      elements45DegreeConstraint, TransformWidget)
 
+class Globals():
+    DEBUG = True
+    DEBUG_ELEMENTS = False
+    CRUSH_SIMULATOR = False
 
+    DEBUG_VIZ = False
+    DEBUG_ANALYSE_CORNERS_SPACES = False
 
+    AFTERCRUSH = False
+    RUN_ONCE = False
+    FULL_STOP = False
 
+    FLAT_EDITOR_UI = False
 
-DEBUG = True
-DEBUG_ELEMENTS = False
-CRUSH_SIMULATOR = False
+    SCREENSHOT_FOLDER_PATH = ""
 
-DEBUG_VIZ = False
-DEBUG_ANALYSE_CORNERS_SPACES = False
+    VERSION_INFO = "v0.91"
+    AUTHOR_INFO = "by Sergei Krumas"
 
-AFTERCRUSH = False
-RUN_ONCE = False
-FULL_STOP = False
-
-FLAT_EDITOR_UI = False
-
-SCREENSHOT_FOLDER_PATH = ""
-
-VERSION_STR = "v0.91"
-AUTHOR_STR = "by Sergei Krumas"
+    background_threads = []
 
 def get_screenshot_filepath(params):
-    return os.path.join(SCREENSHOT_FOLDER_PATH, "%s.png") % params
+    return os.path.join(Globals.SCREENSHOT_FOLDER_PATH, "%s.png") % params
 
 RegionInfo = namedtuple('RegionInfo', 'setter coords getter')
 
@@ -237,7 +236,7 @@ class CustomPushButton(QPushButton):
                 gradient.setColorAt(0, b)
 
             painter.setPen(Qt.NoPen)
-            if FLAT_EDITOR_UI:
+            if Globals.FLAT_EDITOR_UI:
                 if self._draw_checked:
                     brush = QBrush(a)
                 else:
@@ -250,7 +249,7 @@ class CustomPushButton(QPushButton):
             gradient.setColorAt(0, QColor(82, 82, 82))
             gradient.setColorAt(1, c)
             painter.setPen(Qt.NoPen)
-            if FLAT_EDITOR_UI:
+            if Globals.FLAT_EDITOR_UI:
                 brush = QBrush(c)
             else:
                 brush = QBrush(gradient)
@@ -968,8 +967,7 @@ class PreviewsThread(QThread):
     update_signal = pyqtSignal(object)
     def __init__(self, stamps, select_window):
         QThread.__init__(self)
-        global background_threads
-        background_threads.append(self)
+        Globals.background_threads.append(self)
         self.stamps = stamps
         self.update_signal.connect(lambda data: select_window.content.update())
 
@@ -1144,7 +1142,7 @@ class ToolsWindow(QWidget):
         path = QPainterPath()
         path.addRoundedRect(QRectF(main_rect), RADIUS, RADIUS)
         painter.fillPath(path, QColor("#303940"))
-        if not FLAT_EDITOR_UI:
+        if not Globals.FLAT_EDITOR_UI:
             # bevel
             main_rect = self.button_layout.contentsRect()
             main_rect.adjust(-4, -4, 4, 4)
@@ -1167,7 +1165,7 @@ class ToolsWindow(QWidget):
         main_rect.adjust(0, 0, -75, 0) # only for Done button
         path = QPainterPath()
         path.addRoundedRect(QRectF(main_rect), RADIUS, RADIUS)
-        if FLAT_EDITOR_UI:
+        if Globals.FLAT_EDITOR_UI:
             painter.fillPath(path, QBrush(QColor(235, 235, 235)))
         else:
             gradient = QLinearGradient(main_rect.topLeft(), main_rect.bottomLeft())
@@ -1433,7 +1431,7 @@ class ToolsWindow(QWidget):
         forwards_btn.setToolTip("<b>Накатить шаг обратно</b><br>Ctrl+Shift+Z")
         backwards_btn.setToolTip("<b>Откатиться на шаг назад</b><br>Ctrl+Z")
 
-        self.color_slider = CustomSlider("COLOR", 400, 0.01, FLAT_EDITOR_UI)
+        self.color_slider = CustomSlider("COLOR", 400, 0.01, Globals.FLAT_EDITOR_UI)
         self.color_slider.value_changed.connect(self.on_parameters_changed)
         self.color_slider.installEventFilter(self)
         sliders.addWidget(self.color_slider)
@@ -1444,7 +1442,7 @@ class ToolsWindow(QWidget):
         self.chb_toolbool.installEventFilter(self)
         sliders.addWidget(self.chb_toolbool)
 
-        self.size_slider = CustomSlider("SCALAR", 180, 0.2, FLAT_EDITOR_UI)
+        self.size_slider = CustomSlider("SCALAR", 180, 0.2, Globals.FLAT_EDITOR_UI)
         self.size_slider.value_changed.connect(self.on_parameters_changed)
         self.size_slider.installEventFilter(self)
         sliders.addWidget(self.size_slider)
@@ -1602,7 +1600,7 @@ class ToolsWindow(QWidget):
             "add_meta": self.chb_add_meta.isChecked(),
             "hex_mask": getattr(self.parent(), 'hex_mask', False),
         })
-        screenshot_editor.update()
+        self.parent().update()
 
     def keyPressEvent(self, event):
         # это делается для того, чтобы после использования окна редактора
@@ -1807,7 +1805,7 @@ class ScreenShotWindow(QWidget):
 
         self.draw_uncapture_zones_mode_info(painter)
 
-        if DEBUG:
+        if Globals.DEBUG:
             self.draw_analyse_corners(painter)
             self.elementsDrawFinalVersionDebug(painter)
 
@@ -2135,7 +2133,7 @@ class ScreenShotWindow(QWidget):
             painter.drawLine(right, 0, right, self.height())
             # horizontal bottom
             painter.drawLine(0, bottom, self.width(), bottom)
-            if self.undermouse_region_rect and DEBUG_VIZ:
+            if self.undermouse_region_rect and Globals.DEBUG_VIZ:
                 painter.setBrush(QBrush(Qt.green, Qt.DiagCrossPattern))
                 painter.drawRect(self.undermouse_region_rect)
         else:
@@ -2147,7 +2145,7 @@ class ScreenShotWindow(QWidget):
             painter.drawLine(0, pos_y, self.width(), pos_y)
 
     def draw_analyse_corners(self, painter):
-        if DEBUG_ANALYSE_CORNERS_SPACES:
+        if Globals.DEBUG_ANALYSE_CORNERS_SPACES:
             if self.default_corner_space is not None:
                 painter.setBrush(QBrush(Qt.red, Qt.DiagCrossPattern))
                 painter.drawRect(self.default_corner_space.adjusted(10, 10, -10, -10))
@@ -2222,9 +2220,9 @@ class ScreenShotWindow(QWidget):
         # для рисования элементов на скриншоте
         self.elementsInit()
 
-        self.setWindowTitle("Oxxxy Screenshoter %s %s" % (VERSION_STR, AUTHOR_STR))
+        self.setWindowTitle(f"Oxxxy Screenshoter {Globals.VERSION_INFO} {Globals.AUTHOR_INFO}")
 
-        self.tools_settings = SettingsJson().set_mode(DEBUG).get_data("TOOLS_SETTINGS")
+        self.tools_settings = SettingsJson().set_mode(Globals.DEBUG).get_data("TOOLS_SETTINGS")
         self.current_stamp_pixmap = None
         self.current_stamp_id = None
         self.current_stamp_angle = 0
@@ -3220,7 +3218,7 @@ class ScreenShotWindow(QWidget):
                 painter.resetTransform()
             elif el_type == "removing":
                 pass
-                if CRUSH_SIMULATOR:
+                if Globals.CRUSH_SIMULATOR:
                     1 / 0
             elif el_type in ["zoom_in_region", "copypaste"]:
                 input_rect = build_valid_rect(element.start_point, element.end_point)
@@ -3253,7 +3251,7 @@ class ScreenShotWindow(QWidget):
                         painter.drawRect(final_version_rect)
         if not final:
             self.draw_transform_widget(painter)
-        if DEBUG and self.capture_region_rect:
+        if Globals.DEBUG and self.capture_region_rect:
             painter.setPen(QPen(QColor(Qt.white)))
             text = "{} :: {}".format(self.elements_history_index, self.current_tool)
             painter.drawText(self.capture_region_rect, Qt.AlignCenter, text)
@@ -3376,7 +3374,7 @@ class ScreenShotWindow(QWidget):
         if case1 or case2:
             element = self.elementsCreateModificatedCopyOnNeed(element)
             self.elementsSetElementParameters(element)
-        if DEBUG:
+        if Globals.DEBUG:
             self.elementsUpdateFinalPicture()
         self.update()
         self.activateWindow() # чтобы фокус не соскакивал на панель иструментов
@@ -3622,7 +3620,7 @@ class ScreenShotWindow(QWidget):
                                     self._all_monitors_rect.intersected(self.capture_region_rect)
                 self.is_rect_redefined = False
             self.get_region_info() # здесь только для установки курсора
-        if DEBUG:
+        if Globals.DEBUG:
             self.elementsUpdateFinalPicture()
         self.update()
         self.update_tools_window()
@@ -3828,7 +3826,7 @@ class ScreenShotWindow(QWidget):
     def close_this(self, save_settings=True):
         # сохранение настроек тулз
         if save_settings:
-            SettingsJson().set_mode(DEBUG).set_data("TOOLS_SETTINGS", self.tools_settings)
+            SettingsJson().set_mode(Globals.DEBUG).set_data("TOOLS_SETTINGS", self.tools_settings)
         if self.tools_window:
             self.tools_window.hide()
         self.close()
@@ -3943,7 +3941,7 @@ class ScreenShotWindow(QWidget):
                 select_window = self.tools_window.select_window
             if select_window and select_window.isVisible():
                 select_window.hide()
-            elif DEBUG:
+            elif Globals.DEBUG:
                 self.close_this()
             else:
                 self.dialog = QuitDialog(self)
@@ -4030,24 +4028,23 @@ class ScreenShotWindow(QWidget):
                     self.activateWindow()
 
 def set_screenshot_folder_path_dialog():
-    global SCREENSHOT_FOLDER_PATH
     msg = "Выберите папку, в которую будут складываться скриншоты"
-    path = QFileDialog.getExistingDirectory(None, msg, SCREENSHOT_FOLDER_PATH)
+    path = QFileDialog.getExistingDirectory(None, msg, Globals.SCREENSHOT_FOLDER_PATH)
     path = str(path)
     if path:
-        SCREENSHOT_FOLDER_PATH = path
-        SettingsJson().set_mode(DEBUG).set_data("SCREENSHOT_FOLDER_PATH", SCREENSHOT_FOLDER_PATH)
+        Globals.SCREENSHOT_FOLDER_PATH = path
+        SettingsJson().set_mode(Globals.DEBUG).set_data("SCREENSHOT_FOLDER_PATH",
+                                                            Globals.SCREENSHOT_FOLDER_PATH)
 
 def set_screenshot_folder_path(only_get=False):
-    global SCREENSHOT_FOLDER_PATH
-    if not SCREENSHOT_FOLDER_PATH:
+    if not Globals.SCREENSHOT_FOLDER_PATH:
         npath = os.path.normpath
-        settings_json_path = SettingsJson().set_mode(DEBUG).get_data("SCREENSHOT_FOLDER_PATH")
-        if settings_json_path:
-            SCREENSHOT_FOLDER_PATH = npath(settings_json_path)
+        sj_path = SettingsJson().set_mode(Globals.DEBUG).get_data("SCREENSHOT_FOLDER_PATH")
+        if sj_path:
+            Globals.SCREENSHOT_FOLDER_PATH = npath(sj_path)
     if only_get:
         return
-    while not SCREENSHOT_FOLDER_PATH:
+    while not Globals.SCREENSHOT_FOLDER_PATH:
         set_screenshot_folder_path_dialog()
 
 class NotificationOrMenu(QWidget):
@@ -4111,7 +4108,7 @@ class NotificationOrMenu(QWidget):
 
         NotificationOrMenu.instance = self
 
-        self.setWindowTitle("Oxxxy Screenshoter %s %s" % (VERSION_STR, AUTHOR_STR))
+        self.setWindowTitle(f"Oxxxy Screenshoter {Globals.VERSION_INFO} {Globals.AUTHOR_INFO}")
 
         self.show_at_center = False
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
@@ -4169,9 +4166,8 @@ class NotificationOrMenu(QWidget):
         if menu and not notification:
             self.widget_type = "menu"
 
-            label = "Oxxxy %s" % VERSION_STR
             self.label = QLabel()
-            self.label.setText(label)
+            self.label.setText(f"Oxxxy {Globals.VERSION_INFO}")
             self.label.setStyleSheet(self.title_label_style)
             self.label.setFixedWidth(WIDTH - self.CLOSE_BUTTON_RADIUS)
 
@@ -4292,9 +4288,10 @@ class NotificationOrMenu(QWidget):
 
         recent_filepath = None
         timestamp = 0.0
-        if SCREENSHOT_FOLDER_PATH and os.path.exists(SCREENSHOT_FOLDER_PATH):
-            for file_name in os.listdir(SCREENSHOT_FOLDER_PATH):
-                filepath = os.path.join(SCREENSHOT_FOLDER_PATH, file_name)
+        _path = Globals.SCREENSHOT_FOLDER_PATH
+        if _path and os.path.exists(_path):
+            for file_name in os.listdir(_path):
+                filepath = os.path.join(_path, file_name)
                 creation_date = get_creation_date(filepath)
                 if creation_date > timestamp:
                     timestamp = creation_date
@@ -4327,7 +4324,7 @@ class NotificationOrMenu(QWidget):
 
     def mouseReleaseEvent(self, event):
         if self.inside_close_button():
-            if DEBUG:
+            if Globals.DEBUG:
                 sys.exit()
             else:
                 self.hide()
@@ -4443,10 +4440,10 @@ class NotificationOrMenu(QWidget):
 
     def open_folder(self):
         set_screenshot_folder_path(only_get=True)
-        args = ["explorer.exe", '{}'.format(SCREENSHOT_FOLDER_PATH)]
+        args = ["explorer.exe", '{}'.format(Globals.SCREENSHOT_FOLDER_PATH)]
         # QMessageBox.critical(None, "Debug info", "{}".format(args))
         subprocess.Popen(args)
-        # os.system("start {}".format(SCREENSHOT_FOLDER_PATH))
+        # os.system("start {}".format(Globals.SCREENSHOT_FOLDER_PATH))
         self.close_notification_window()
 
     def countdown_handler(self):
@@ -4463,8 +4460,7 @@ class NotificationOrMenu(QWidget):
         app.exit()
 
     def app_quit(self):
-        global FULL_STOP
-        FULL_STOP = True
+        Globals.FULL_STOP = True
         app = QApplication.instance()
         app.quit()
 
@@ -4493,12 +4489,11 @@ class QuitDialog(QWidget):
         self.button.setStyleSheet(self.button_style)
         self.button.clicked.connect(self.yes_handler)
 
-        self.setWindowTitle("Oxxxy Screenshoter %s" % VERSION_STR)
+        self.setWindowTitle(f"Oxxxy Screenshoter {VERSION_INFO}")
 
         WIDTH = 500
-        label = "Вы действительно хотите выйти без сохранения скриншота?"
         self.label = QLabel()
-        self.label.setText(label)
+        self.label.setText("Вы действительно хотите выйти без сохранения скриншота?")
         self.label.setStyleSheet(self.label_style)
         self.label.setFixedWidth(WIDTH - self.CLOSE_BUTTON_RADIUS)
         self.label.setWordWrap(True)
@@ -4584,7 +4579,7 @@ def restart_app_in_notification_mode(filepath):
 def show_system_tray(app, icon):
     sti = QSystemTrayIcon(app)
     sti.setIcon(icon)
-    sti.setToolTip("Oxxxy %s %s" % (VERSION_STR, AUTHOR_STR))
+    sti.setToolTip(f"Oxxxy {Globals.VERSION_INFO} {Globals.AUTHOR_INFO}")
     app.setProperty("stray_icon", sti)
     @pyqtSlot()
     def trayicon_clicked(signal):
@@ -4630,7 +4625,7 @@ def invoke_screenshot_editor(request_type=None):
         screenshot_editor = ScreenShotWindow(screenshot_image, metadata)
         screenshot_editor.show()
         # print("^^^^^^", time.time() - started_time)
-        if DEBUG and DEBUG_ELEMENTS:
+        if Globals.DEBUG and Globals.DEBUG_ELEMENTS:
             screenshot_editor.request_elements_debug_mode()
         # чтобы activateWindow точно сработал и взял фокус ввода
         QApplication.instance().processEvents()
@@ -4673,7 +4668,7 @@ def show_crush_log():
                 "Файла не нашлось, видимо программа ещё не крашилась.")
 
 def get_crushlog_filepath():
-    if DEBUG:
+    if Globals.DEBUG:
         root = os.path.dirname(__file__)
     else:
         root = os.path.expanduser("~")
@@ -4701,17 +4696,15 @@ def excepthook(exc_type, exc_value, exc_tb):
         stray_icon = app.property("stray_icon")
         if stray_icon:
             stray_icon.hide()
-    if not DEBUG and not RUN_ONCE:
+    if not Globals.DEBUG and not Globals.RUN_ONCE:
         # time.sleep(1.0)
         _restart_app(aftercrush=True)
         # pass
     sys.exit()
 
-background_threads = []
-
 def exit_threads():
     # принудительно глушим все потоки, что ещё работают
-    for thread in background_threads:
+    for thread in Globals.background_threads:
         thread.terminate()
         # нужно вызывать terminate вместо exit
 
@@ -4723,9 +4716,8 @@ def _restart_app(aftercrush=False):
         subprocess.Popen([sys.executable, sys.argv[0]])
 
 def _main():
-    global DEBUG, AFTERCRUSH
 
-    if CRUSH_SIMULATOR:
+    if Globals.CRUSH_SIMULATOR:
         1 / 0
 
     os.chdir(os.path.dirname(__file__))
@@ -4744,7 +4736,7 @@ def _main():
     if args.user_mode:
         DEBUG = False
     if args.aftercrush:
-        AFTERCRUSH = True
+        Globals.AFTERCRUSH = True
 
     app = QApplication(sys.argv)
     app.aboutToQuit.connect(exit_threads)
@@ -4760,7 +4752,7 @@ def _main():
     app.setEffectEnabled(Qt.UI_AnimateTooltip, False)
     app.setEffectEnabled(Qt.UI_FadeTooltip, False)
 
-    if AFTERCRUSH:
+    if Globals.AFTERCRUSH:
         ret = QMessageBox.question(None,'',
             "Скриншотер Oxxxy упал. Перезапустить его?",
             QMessageBox.Yes | QMessageBox.No)
@@ -4775,7 +4767,7 @@ def _main():
         notification.place_window()
     else:
         # editor mode
-        if DEBUG or RUN_ONCE:
+        if Globals.DEBUG or Globals.RUN_ONCE:
             invoke_screenshot_editor(request_type=RequestType.Fragment)
             # invoke_screenshot_editor(request_type=RequestType.Fullscreen)
             # NotificationOrMenu(menu=True).place_window()
@@ -4791,8 +4783,8 @@ def _main():
         stray_icon.hide()
     if thread_instance:
         thread_instance.exit()
-    if not FULL_STOP:
-        if not args.notification and not DEBUG and not RUN_ONCE:
+    if not Globals.FULL_STOP:
+        if not args.notification and not Globals.DEBUG and not Globals.RUN_ONCE:
             _restart_app()
     sys.exit(0)
 

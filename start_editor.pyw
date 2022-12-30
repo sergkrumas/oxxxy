@@ -25,6 +25,6 @@ Start editor once and exit
 import oxxxy
 
 if __name__ == '__main__':
-    oxxxy.RUN_ONCE = True
-    oxxxy.DEBUG = False
+    oxxxy.Globals.RUN_ONCE = True
+    oxxxy.Globals.DEBUG = False
     oxxxy.main()

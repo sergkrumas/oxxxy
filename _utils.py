@@ -358,7 +358,9 @@ def open_in_google_chrome(filepath):
         QMessageBox.critical(None, "Error", msg)
 
 def save_meta_info(metadata, filepath_string):
-    metastring = "Screenshot metadata: %s {%s}" % (metadata[0], metadata[1])
+    m0 = metadata[0]
+    m1 = metadata[1]
+    metastring = f"Screenshot metadata: {m0} {m1}"
     info = PngImagePlugin.PngInfo()
     info.add_text("text", metastring)
     im = Image.open(filepath_string)
@@ -653,12 +655,11 @@ class CustomSlider(QWidget):
         super().mouseReleaseEvent(event)
 
 def webRGBA(qcolor_value):
-    return "#{:02x}{:02x}{:02x}{:02x}".format(
-        qcolor_value.alpha(),
-        qcolor_value.red(),
-        qcolor_value.green(),
-        qcolor_value.blue(),
-    )
+    _a = qcolor_value.alpha()
+    _r = qcolor_value.red()
+    _g = qcolor_value.green()
+    _b = qcolor_value.blue()
+    return f"#{_a:02x}{_r:02x}{_g:02x}{_b:02x}"
 
 @lru_cache(maxsize=8)
 def generate_gradient(_type, shadow_size, color1_hex, color2_hex):

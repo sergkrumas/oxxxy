@@ -3937,13 +3937,18 @@ class ScreenShotWindow(QWidget):
                     self.emit_mouse_event("move")
         if key == Qt.Key_Escape:
             select_window = None
+            show_quit_dialog = False
             if self.tools_window:
                 select_window = self.tools_window.select_window
             if select_window and select_window.isVisible():
                 select_window.hide()
+            elif event.modifiers() & Qt.ShiftModifier:
+                show_quit_dialog = True
             elif Globals.DEBUG:
                 self.close_this()
             else:
+                show_quit_dialog = True
+            if show_quit_dialog:
                 self.dialog = QuitDialog(self)
                 self.dialog.show_at_center()
         if key == Qt.Key_Backtab: # Tab+Shift
@@ -4047,8 +4052,10 @@ def set_screenshot_folder_path(only_get=False):
     while not Globals.SCREENSHOT_FOLDER_PATH:
         set_screenshot_folder_path_dialog()
 
-class NotificationOrMenu(QWidget):
-    instance = None
+
+
+class StylizedUIBase():
+
     button_style = """QPushButton{
         font-size: 20px;
         color: #303940;
@@ -4099,11 +4106,110 @@ class NotificationOrMenu(QWidget):
         margin: 2px;
         text-align: center;
     """
-    def __init__(self, notification=False, filepath=None, menu=False):
+
+    CLOSE_BUTTON_RADIUS = 50
+
+    def mouseMoveEvent(self, event):
+        if self.inside_close_button():
+            self.setCursor(Qt.PointingHandCursor)
+        else:
+            self.setCursor(Qt.ArrowCursor)
+        self.update()
+
+    def mouseReleaseEvent(self, event):
+        if self.inside_close_button():
+            if Globals.DEBUG:
+                sys.exit()
+            else:
+                self.hide()
+
+    def get_close_btn_rect(self):
+        top_right_corner = self.rect().topRight()
+        close_btn_rect = QRect(
+            top_right_corner.x() - self.CLOSE_BUTTON_RADIUS,
+            top_right_corner.y() - self.CLOSE_BUTTON_RADIUS,
+            self.CLOSE_BUTTON_RADIUS * 2,
+            self.CLOSE_BUTTON_RADIUS * 2,
+        )
+        return close_btn_rect
+
+    def paintEvent(self, event):
+        painter = QPainter()
+        painter.begin(self)
+        painter.setRenderHint(QPainter.HighQualityAntialiasing, True)
+        painter.setRenderHint(QPainter.Antialiasing, True)
+        painter.setRenderHint(QPainter.SmoothPixmapTransform, True)
+        path = QPainterPath()
+        painter.setClipping(True)
+        path.addRoundedRect(QRectF(self.rect()), 10, 10)
+        painter.setClipPath(path)
+        painter.setPen(Qt.NoPen)
+        color = QColor("#303940")
+        color = QColor(48, 57, 64)
+        painter.setBrush(QBrush(color))
+        painter.drawPath(path)
+        self.draw_close_button(painter)
+        color = QColor(150, 30, 30)
+        color = QColor(48, 57, 64)
+        color = QColor(58, 67, 74)
+        painter.setPen(QPen(color, 4))
+        painter.setBrush(Qt.NoBrush)
+        painter.drawPath(path)
+        painter.end()
+
+    def mapped_cursor_pos(self):
+        return self.mapFromGlobal(QCursor().pos())
+
+    def inside_close_button(self):
+        close_btn_rect = self.get_close_btn_rect()
+        top_right_corner = self.rect().topRight()
+        diff = top_right_corner - self.mapped_cursor_pos()
+        distance = math.sqrt(pow(diff.x(), 2) + pow(diff.y(), 2))
+        size = close_btn_rect.width()/2
+        client_area = QRect(QPoint(close_btn_rect.x(), 0), QSize(int(size), int(size)))
+        return distance < self.CLOSE_BUTTON_RADIUS and \
+            client_area.contains(self.mapped_cursor_pos())
+
+    def draw_close_button(self, painter):
+        if self.inside_close_button():
+            painter.setOpacity(.6)
+        else:
+            painter.setOpacity(.3)
+        painter.setBrush(QBrush(Qt.red, Qt.SolidPattern))
+        painter.setPen(Qt.NoPen)
+        close_btn_rect = self.get_close_btn_rect()
+        top_right_corner = self.rect().topRight()
+        painter.drawEllipse(close_btn_rect)
+        w_ = int(self.CLOSE_BUTTON_RADIUS/2-5)
+        cross_pos = top_right_corner + QPoint(-w_, w_)
+        painter.setPen(QPen(Qt.white, 4, Qt.SolidLine))
+        painter.setBrush(QBrush(Qt.white, Qt.SolidPattern))
+        painter.setOpacity(1.0)
+        painter.drawLine(
+            cross_pos.x()-int(self.CLOSE_BUTTON_RADIUS/8),
+            cross_pos.y()-int(self.CLOSE_BUTTON_RADIUS/8),
+            cross_pos.x()+int(self.CLOSE_BUTTON_RADIUS/8),
+            cross_pos.y()+int(self.CLOSE_BUTTON_RADIUS/8)
+        )
+        painter.drawLine(
+            cross_pos.x()+int(self.CLOSE_BUTTON_RADIUS/8),
+            cross_pos.y()-int(self.CLOSE_BUTTON_RADIUS/8),
+            cross_pos.x()-int(self.CLOSE_BUTTON_RADIUS/8),
+            cross_pos.y()+int(self.CLOSE_BUTTON_RADIUS/8)
+        )
+
+class NotificationOrMenu(QWidget, StylizedUIBase):
+    CLOSE_BUTTON_RADIUS = 50
+    WIDTH = 300
+
+    instance = None
+    def __init__(self, menu=False, notification=False, filepath=None):
         super().__init__()
-        if (not notification) and (not menu):
-            raise
-        if notification and menu:
+        # if (not notification) and (not menu):
+        #     raise
+        # if notification and menu:
+        #     raise
+        if not (notification != menu):
             raise
 
         NotificationOrMenu.instance = self
@@ -4116,9 +4222,7 @@ class NotificationOrMenu(QWidget):
         self.layout = QVBoxLayout()
         margin = 5
         self.layout.setContentsMargins(margin, margin, margin, margin)
-        self.CLOSE_BUTTON_RADIUS = 50
 
-        WIDTH = 300
         if notification and not menu:
             self.widget_type = "notification"
             self.filepath = filepath
@@ -4132,23 +4236,23 @@ class NotificationOrMenu(QWidget):
             self.label = QLabel()
             self.label.setText(label)
             self.label.setStyleSheet(self.title_label_style)
-            self.label.setFixedWidth(WIDTH - self.CLOSE_BUTTON_RADIUS)
+            self.label.setFixedWidth(self.WIDTH - self.CLOSE_BUTTON_RADIUS)
 
             open_image_btn_gchr = QPushButton("Открыть\nв браузере")
             open_image_btn_gchr.setStyleSheet(self.button_style)
-            open_image_btn_gchr.setFixedWidth(WIDTH)
+            open_image_btn_gchr.setFixedWidth(self.WIDTH)
             open_image_btn_gchr.clicked.connect(self.open_image)
             open_image_btn_gchr.setCursor(Qt.PointingHandCursor)
 
             open_image_btn = QPushButton("Открыть")
             open_image_btn.setStyleSheet(self.button_style)
-            open_image_btn.setFixedWidth(WIDTH)
+            open_image_btn.setFixedWidth(self.WIDTH)
             open_image_btn.clicked.connect(self.open_image_shell)
             open_image_btn.setCursor(Qt.PointingHandCursor)
 
             open_folder_btn = QPushButton("Открыть\nпапку")
             open_folder_btn.setStyleSheet(self.button_style)
-            open_folder_btn.setFixedWidth(WIDTH)
+            open_folder_btn.setFixedWidth(self.WIDTH)
             open_folder_btn.clicked.connect(self.open_folder)
             open_folder_btn.setCursor(Qt.PointingHandCursor)
 
@@ -4169,7 +4273,7 @@ class NotificationOrMenu(QWidget):
             self.label = QLabel()
             self.label.setText(f"Oxxxy {Globals.VERSION_INFO}")
             self.label.setStyleSheet(self.title_label_style)
-            self.label.setFixedWidth(WIDTH - self.CLOSE_BUTTON_RADIUS)
+            self.label.setFixedWidth(self.WIDTH - self.CLOSE_BUTTON_RADIUS)
 
             # первый раздел
             screenshot_fragment_btn = QPushButton("Фрагмент")
@@ -4268,7 +4372,7 @@ class NotificationOrMenu(QWidget):
                     open_recent_screenshot_btn
                 ]:
                 btn.setFixedHeight(80)
-        self.setFixedWidth(WIDTH+margin*2)
+        self.setFixedWidth(self.WIDTH+margin*2)
         self.setLayout(self.layout)
         self.setMouseTracking(True)
 
@@ -4314,95 +4418,6 @@ class NotificationOrMenu(QWidget):
 
     def show_source_code(self):
         open_link_in_browser("https://github.com/sergkrumas/oxxxy")
-
-    def mouseMoveEvent(self, event):
-        if self.inside_close_button():
-            self.setCursor(Qt.PointingHandCursor)
-        else:
-            self.setCursor(Qt.ArrowCursor)
-        self.update()
-
-    def mouseReleaseEvent(self, event):
-        if self.inside_close_button():
-            if Globals.DEBUG:
-                sys.exit()
-            else:
-                self.hide()
-
-    def get_close_btn_rect(self):
-        top_right_corner = self.rect().topRight()
-        close_btn_rect = QRect(
-            top_right_corner.x() - self.CLOSE_BUTTON_RADIUS,
-            top_right_corner.y() - self.CLOSE_BUTTON_RADIUS,
-            self.CLOSE_BUTTON_RADIUS * 2,
-            self.CLOSE_BUTTON_RADIUS * 2,
-        )
-        return close_btn_rect
-
-    def paintEvent(self, event):
-        painter = QPainter()
-        painter.begin(self)
-        painter.setRenderHint(QPainter.HighQualityAntialiasing, True)
-        painter.setRenderHint(QPainter.Antialiasing, True)
-        painter.setRenderHint(QPainter.SmoothPixmapTransform, True)
-        path = QPainterPath()
-        painter.setClipping(True)
-        path.addRoundedRect(QRectF(self.rect()), 10, 10)
-        painter.setClipPath(path)
-        painter.setPen(Qt.NoPen)
-        color = QColor("#303940")
-        color = QColor(48, 57, 64)
-        painter.setBrush(QBrush(color))
-        painter.drawPath(path)
-        self.draw_close_button(painter)
-        color = QColor(150, 30, 30)
-        color = QColor(48, 57, 64)
-        color = QColor(58, 67, 74)
-        painter.setPen(QPen(color, 4))
-        painter.setBrush(Qt.NoBrush)
-        painter.drawPath(path)
-        painter.end()
-
-    def mapped_cursor_pos(self):
-        return self.mapFromGlobal(QCursor().pos())
-
-    def inside_close_button(self):
-        close_btn_rect = self.get_close_btn_rect()
-        top_right_corner = self.rect().topRight()
-        diff = top_right_corner - self.mapped_cursor_pos()
-        distance = math.sqrt(pow(diff.x(), 2) + pow(diff.y(), 2))
-        size = close_btn_rect.width()/2
-        client_area = QRect(QPoint(close_btn_rect.x(), 0), QSize(int(size), int(size)))
-        return distance < self.CLOSE_BUTTON_RADIUS and \
-            client_area.contains(self.mapped_cursor_pos())
-
-    def draw_close_button(self, painter):
-        if self.inside_close_button():
-            painter.setOpacity(.6)
-        else:
-            painter.setOpacity(.3)
-        painter.setBrush(QBrush(Qt.red, Qt.SolidPattern))
-        painter.setPen(Qt.NoPen)
-        close_btn_rect = self.get_close_btn_rect()
-        top_right_corner = self.rect().topRight()
-        painter.drawEllipse(close_btn_rect)
-        w_ = int(self.CLOSE_BUTTON_RADIUS/2-5)
-        cross_pos = top_right_corner + QPoint(-w_, w_)
-        painter.setPen(QPen(Qt.white, 4, Qt.SolidLine))
-        painter.setBrush(QBrush(Qt.white, Qt.SolidPattern))
-        painter.setOpacity(1.0)
-        painter.drawLine(
-            cross_pos.x()-int(self.CLOSE_BUTTON_RADIUS/8),
-            cross_pos.y()-int(self.CLOSE_BUTTON_RADIUS/8),
-            cross_pos.x()+int(self.CLOSE_BUTTON_RADIUS/8),
-            cross_pos.y()+int(self.CLOSE_BUTTON_RADIUS/8)
-        )
-        painter.drawLine(
-            cross_pos.x()+int(self.CLOSE_BUTTON_RADIUS/8),
-            cross_pos.y()-int(self.CLOSE_BUTTON_RADIUS/8),
-            cross_pos.x()-int(self.CLOSE_BUTTON_RADIUS/8),
-            cross_pos.y()+int(self.CLOSE_BUTTON_RADIUS/8)
-        )
 
     def place_window(self):
         self.show()
@@ -4464,19 +4479,8 @@ class NotificationOrMenu(QWidget):
         app = QApplication.instance()
         app.quit()
 
-class QuitDialog(QWidget):
-
-    CLOSE_BUTTON_RADIUS = 50
-    mouseMoveEvent = NotificationOrMenu.mouseMoveEvent
-    mouseReleaseEvent = NotificationOrMenu.mouseReleaseEvent
-    get_close_btn_rect = NotificationOrMenu.get_close_btn_rect
-    paintEvent = NotificationOrMenu.paintEvent
-    draw_close_button = NotificationOrMenu.draw_close_button
-    inside_close_button = NotificationOrMenu.inside_close_button
-    mapped_cursor_pos = NotificationOrMenu.mapped_cursor_pos
-
-    button_style = NotificationOrMenu.button_style
-    label_style = NotificationOrMenu.title_label_style
+class QuitDialog(QWidget, StylizedUIBase):
+    WIDTH = 500
 
     def __init__(self, *args, **kwargs):
         super().__init__( *args, **kwargs)
@@ -4489,13 +4493,12 @@ class QuitDialog(QWidget):
         self.button.setStyleSheet(self.button_style)
         self.button.clicked.connect(self.yes_handler)
 
-        self.setWindowTitle(f"Oxxxy Screenshoter {VERSION_INFO}")
+        self.setWindowTitle(f"Oxxxy Screenshoter {Globals.VERSION_INFO}")
 
-        WIDTH = 500
         self.label = QLabel()
         self.label.setText("Вы действительно хотите выйти без сохранения скриншота?")
-        self.label.setStyleSheet(self.label_style)
-        self.label.setFixedWidth(WIDTH - self.CLOSE_BUTTON_RADIUS)
+        self.label.setStyleSheet(self.title_label_style)
+        self.label.setFixedWidth(self.WIDTH - self.CLOSE_BUTTON_RADIUS)
         self.label.setWordWrap(True)
 
         self.timer = QTimer()
@@ -4505,7 +4508,7 @@ class QuitDialog(QWidget):
         main_layout.addWidget(self.label)
         main_layout.addWidget(self.button)
         self.setLayout(main_layout)
-        self.resize(WIDTH, 200)
+        self.resize(self.WIDTH, 200)
         self.setMouseTracking(True)
 
     def yes_handler(self):

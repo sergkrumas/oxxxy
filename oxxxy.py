@@ -74,7 +74,7 @@ class Globals():
     background_threads = []
 
 def get_screenshot_filepath(params):
-    return os.path.join(Globals.SCREENSHOT_FOLDER_PATH, "%s.png") % params
+    return os.path.join(Globals.SCREENSHOT_FOLDER_PATH, f"{params}.png")
 
 RegionInfo = namedtuple('RegionInfo', 'setter coords getter')
 
@@ -826,7 +826,8 @@ class StampInfo():
             self.arg = arg
             self.filepath = script_path
             self.draw_func = draw_func
-            self.id = "{},{}".format(self.remove_prefix(self.filepath), self.arg)
+            _filepath = self.remove_prefix(self.filepath)
+            self.id = f"{_filepath},{self.arg}"
         elif self.type == self.TYPE_FROM_FILE:
             self.id = "from_file"
             self.filepath = ""
@@ -1394,7 +1395,7 @@ class ToolsWindow(QWidget):
         for ID, name, tip in editor_buttons_data:
             button = CustomPushButton(name, self, tool_id=ID, checkable=True, checked=False)
             self.tools_buttons.append(button)
-            tooltip = "<b>{}</b><br>{}".format(name, tip)
+            tooltip = f"<b>{name}</b><br>{tip}"
             button.setToolTip(tooltip)
             button.setCursor(QCursor(Qt.PointingHandCursor))
             button.setParent(self)
@@ -3253,7 +3254,7 @@ class ScreenShotWindow(QWidget):
             self.draw_transform_widget(painter)
         if Globals.DEBUG and self.capture_region_rect:
             painter.setPen(QPen(QColor(Qt.white)))
-            text = "{} :: {}".format(self.elements_history_index, self.current_tool)
+            text = f"{self.elements_history_index} :: {self.current_tool}"
             painter.drawText(self.capture_region_rect, Qt.AlignCenter, text)
         painter.setBrush(old_brush)
         painter.setPen(old_pen)
@@ -3292,10 +3293,10 @@ class ScreenShotWindow(QWidget):
                     if self.selected_element and self.selected_element == element:
                         painter.setPen(QPen(Qt.green))
                     if hasattr(element, "source_index"):
-                        info_text += "[{}] {} from [{}]".format(element.unique_index,
-                                                                element.type, element.source_index)
+                        el = element
+                        info_text += f"[{el.unique_index}] {el.type} from [{el.source_index}]"
                     else:
-                        info_text += "[{}] {}".format(element.unique_index, element.type)
+                        info_text += f"[{element.unique_index}] {element.type}"
                     font.setWeight(1900)
                     font.setPixelSize(20)
                     painter.setFont(font)
@@ -3857,7 +3858,7 @@ class ScreenShotWindow(QWidget):
             pix = self.elements_final_output.copy(self.capture_region_rect)
             if self.tools_window.chb_masked.isChecked():
                 # fragment or fullscreen: masked version
-                filepath = get_screenshot_filepath(("%s %s" % (formated_datetime, "masked")))
+                filepath = get_screenshot_filepath(f"{formated_datetime} masked")
                 self.circle_mask_image(pix).save(filepath)
                 if self.tools_window.chb_add_meta.isChecked():
                     save_meta_info(self.metadata, filepath)
@@ -3966,9 +3967,12 @@ class ScreenShotWindow(QWidget):
             self.update()
         if check_scancode_for(event, "C") and event.modifiers() & Qt.ControlModifier:
             color = self.color_at_pixel
-            hex = color.name()
-            rgb = "rgb({}, {}, {})".format(color.red(), color.green(), color.blue())
-            color_repr = "{} {}".format(hex, rgb)
+            _hex = color.name()
+            _r = color.red()
+            _g = color.green()
+            _b = color.blue()
+            _rgb = f"rgb({_r}, {_g}, {_b})"
+            color_repr = f"{_hex} {_rgb}"
             self.colors_reprs.append(color_repr)
             self.set_clipboard("\n".join(self.colors_reprs))
         if check_scancode_for(event, "Z"):

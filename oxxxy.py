@@ -3924,7 +3924,9 @@ class ScreenShotWindow(QWidget):
                 self.emit_mouse_event("move")
             if self.is_rect_defined:
                 self.elementsMoveElement(event)
-        if key == Qt.Key_Return:
+        # Qt.Key_Return - основная клавиатура
+        # Qt.Key_Enter - цифровая клавиатура
+        if key in [Qt.Key_Return, Qt.Key_Enter]: 
             if self.capture_region_rect:
                 self.editing_is_done_handler()
             else:

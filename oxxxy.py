@@ -4756,6 +4756,7 @@ def _main():
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(appid)
     path_icon = os.path.abspath(os.path.join(os.path.dirname(__file__), "icon.png"))
     icon = QIcon(path_icon)
+    app.setProperty("keep_ref_to_icon", icon)
     app.setWindowIcon(icon)
     # tooltip effects
     app.setEffectEnabled(Qt.UI_AnimateTooltip, False)

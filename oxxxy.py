@@ -2904,7 +2904,14 @@ class ScreenshotWindow(QWidget):
                     self.selected_element.modify_end_point = True
         if tool != "transform":
             self.elementsSetSelected(None)
+        self.elementsAutoDeleteInvisibleElement(element)
         self.update()
+
+    def elementsAutoDeleteInvisibleElement(self, element):
+        tool = self.current_tool
+        if tool in ['line', 'pen', 'marker']:
+            if element.end_point == element.start_point:
+                self.elements.remove(element)
 
     def elementsSetBlurredPixmap(self, element):
         if not element.finished:

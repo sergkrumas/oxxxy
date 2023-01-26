@@ -49,12 +49,14 @@ from PyQt5.QtGui import (QPainterPath, QColor, QKeyEvent, QMouseEvent, QBrush, Q
 from _utils import (convex_hull, check_scancode_for, SettingsJson,
      get_meta_info, build_valid_rect, dot, get_nearest_point_on_rect, get_creation_date,
      find_browser_exe_file, open_link_in_browser, open_in_google_chrome, save_meta_info,
-     make_screenshot_pyqt, CustomSlider, webRGBA, generate_gradient, draw_shadow, draw_cyberpunk,
+     make_screenshot_pyqt, webRGBA, generate_gradient, draw_shadow, draw_cyberpunk,
      elements45DegreeConstraint, TransformWidget)
+
+from _sliders import (CustomSlider,)
 
 class Globals():
     DEBUG = True
-    DEBUG_ELEMENTS = False
+    DEBUG_ELEMENTS = True
     CRUSH_SIMULATOR = False
 
     DEBUG_VIZ = False
@@ -1685,7 +1687,7 @@ class ToolsWindow(QWidget):
             y_value = screenshot_rect.bottom() - self.height()
         self.move(x_value, y_value)
 
-class ScreenShotWindow(QWidget):
+class ScreenshotWindow(QWidget):
 
     editing_ready = pyqtSignal(object)
 
@@ -4631,7 +4633,7 @@ def invoke_screenshot_editor(request_type=None):
 
     screenshot_image = make_screenshot_pyqt()
     if request_type == RequestType.Fragment:
-        screenshot_editor = ScreenShotWindow(screenshot_image, metadata)
+        screenshot_editor = ScreenshotWindow(screenshot_image, metadata)
         screenshot_editor.show()
         # print("^^^^^^", time.time() - started_time)
         if Globals.DEBUG and Globals.DEBUG_ELEMENTS:
@@ -4641,7 +4643,7 @@ def invoke_screenshot_editor(request_type=None):
         screenshot_editor.activateWindow()
 
     if request_type == RequestType.Fullscreen:
-        screenshot_editor = ScreenShotWindow(screenshot_image, metadata)
+        screenshot_editor = ScreenshotWindow(screenshot_image, metadata)
         screenshot_editor.request_fullscreen_capture_region()
         screenshot_editor.show()
         # чтобы activateWindow точно сработал и взял фокус ввода
@@ -4649,7 +4651,7 @@ def invoke_screenshot_editor(request_type=None):
         screenshot_editor.activateWindow()
 
     if request_type == RequestType.QuickFullscreen:
-        ScreenShotWindow.save_screenshot(None, grabbed_image=screenshot_image, metadata=metadata)
+        ScreenshotWindow.save_screenshot(None, grabbed_image=screenshot_image, metadata=metadata)
         app = QApplication.instance()
         app.exit()
 

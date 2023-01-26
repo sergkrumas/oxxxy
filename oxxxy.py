@@ -1212,6 +1212,7 @@ class ToolsWindow(QWidget):
         if self.current_tool in ["text", "zoom_in_region"]:
             data =  {
                 "color_slider_value": self.color_slider.value,
+                "color_slider_palette_index": self.color_slider.palette_index,
                 "size_slider_value": self.size_slider.value,
                 "toolbool": self.chb_toolbool.isChecked(),
             }
@@ -1229,12 +1230,14 @@ class ToolsWindow(QWidget):
         else:
             data =  {
                 "color_slider_value": self.color_slider.value,
+                "color_slider_palette_index": self.color_slider.palette_index,
                 "size_slider_value": self.size_slider.value,
             }
         return data
 
     def tool_data_dict_to_ui(self, data):
         DEFAULT_COLOR_SLIDER_VALUE = 0.01
+        DEFAULT_COLOR_SLIDER_PALETTE_INDEX = 0
         if self.current_tool in ['oval', 'rect', 'numbering']:
             DEFAULT_SIZE_SLIDER_VALUE = 0.07
         else:
@@ -1244,6 +1247,7 @@ class ToolsWindow(QWidget):
         else:
             DEFAULT_TOOLBOOL_VALUE = True
         self.color_slider.value = data.get("color_slider_value", DEFAULT_COLOR_SLIDER_VALUE)
+        self.color_slider.palette_index = data.get("color_slider_palette_index", DEFAULT_COLOR_SLIDER_PALETTE_INDEX)
         self.size_slider.value = data.get("size_slider_value", DEFAULT_SIZE_SLIDER_VALUE)
         self.chb_toolbool.setChecked(data.get("toolbool", DEFAULT_TOOLBOOL_VALUE))
         if self.current_tool == "stamp":
@@ -1434,7 +1438,7 @@ class ToolsWindow(QWidget):
         forwards_btn.setToolTip("<b>Накатить шаг обратно</b><br>Ctrl+Shift+Z")
         backwards_btn.setToolTip("<b>Откатиться на шаг назад</b><br>Ctrl+Z")
 
-        self.color_slider = CustomSlider("COLOR", 400, 0.01, Globals.FLAT_EDITOR_UI)
+        self.color_slider = CustomSlider("PALETTE", 400, 0.01, Globals.FLAT_EDITOR_UI)
         self.color_slider.value_changed.connect(self.on_parameters_changed)
         self.color_slider.installEventFilter(self)
         sliders.addWidget(self.color_slider)
@@ -2320,6 +2324,7 @@ class ScreenshotWindow(QWidget):
         tw = self.tools_window
         element.color = tw.color_slider.get_color()
         element.color_slider_value = tw.color_slider.value
+        element.color_slider_palette_index = tw.color_slider.palette_index
         element.size = tw.size_slider.value
         element.toolbool = tw.chb_toolbool.isChecked()
         element.margin_value = 5
@@ -2419,6 +2424,7 @@ class ScreenshotWindow(QWidget):
         self.elementsDeactivateTextElements()
         element = self.selected_element
         self.tools_window.color_slider.value = element.color_slider_value
+        self.tools_window.color_slider.palette_index = element.color_slider_palette_index
         self.tools_window.size_slider.value = element.size
         self.tools_window.chb_toolbool.setChecked(element.toolbool)
         if element.type == "text":
@@ -3655,10 +3661,11 @@ class ScreenshotWindow(QWidget):
                 value = min(max(value, 0.0), 1.0)
                 self.tools_window.size_slider.value = value
             elif modifiers & Qt.ShiftModifier and not modifiers & Qt.ControlModifier:
-                value = self.tools_window.color_slider.value
-                value += delta_value * 2.6
-                value = min(max(value, 0.0), 1.0)
-                self.tools_window.color_slider.value = value
+                if self.tools_window.color_slider.type == "COLOR":
+                    value = self.tools_window.color_slider.value
+                    value += delta_value * 2.6
+                    value = min(max(value, 0.0), 1.0)
+                    self.tools_window.color_slider.value = value
             elif modifiers & Qt.ControlModifier:
                 value = self.current_stamp_angle
                 if delta_value < 0.0:

@@ -1,12 +1,13 @@
 
-import _utils
 
-from PyQt5.QtWidgets import (QWidget, QMessageBox, QDesktopWidget, QApplication)
+from PyQt5.QtWidgets import (QHBoxLayout, QVBoxLayout, QWidget, QMessageBox, QDesktopWidget, QApplication, QRadioButton)
 from PyQt5.QtCore import (QRectF, QPoint, pyqtSignal, QSizeF, Qt, QPointF, QSize, QRect)
-from PyQt5.QtGui import (QPixmap, QBrush, QRegion, QImage, QRadialGradient, QColor,
+from PyQt5.QtGui import (QWindow, QPixmap, QBrush, QRegion, QImage, QRadialGradient, QColor,
                     QGuiApplication, QPen, QPainterPath, QPolygon, QLinearGradient, QPainter)
 
-
+from _utils import (dot, )
+import sys
+import math
 __all__ = (
     'CustomSlider'
 )
@@ -26,19 +27,36 @@ class CustomSlider(QWidget):
     value_changed = pyqtSignal()
     def __init__(self, _type, width, default_value, flat_look):
         super().__init__()
-        self.default_value = default_value
-        self.value = self.default_value
+        if _type == "PALETTE":
+            self.default_value = 0.01
+            self.value = 0.01
+            self.palette_index = default_value
+        else:
+            self.default_value = default_value
+            self.value = self.default_value
         self.offset = 15
         self.changing = False
         self.control_width = 18
         self.type = _type
         self.setFixedWidth(width)
-
+        self.palette_colors = (
+            QColor(0, 0, 0),
+            QColor(255, 255, 255),
+            QColor(255, 0, 0),
+            QColor(0, 255, 0),
+        )
+        self.palette_radius = 15
+        if _type == "PALETTE":
+            if self.palette_index > len(self.palette_colors) - 1:
+                self.palette_index = 0
+            self.setFixedWidth(len(self.palette_colors)*self.palette_radius*3)
         #pylint
         self._inner_rect = QRect()
         self.image = None
         self.raw_value = 1.0
         self.flat_look = flat_look
+        if self.type == "PALETTE":
+            self.flat_look = True 
         self.refresh_image()
 
     def resizeEvent(self, event):
@@ -93,6 +111,15 @@ class CustomSlider(QWidget):
             r = QRect(p, self.rect().bottomRight())
         painter.setClipRegion(QRegion(r))
 
+    def get_color_list_points(self):
+        A, B = self.get_AB_points()
+        color_list = []
+        for n, color in enumerate(self.palette_colors):
+            i = n/(len(self.palette_colors)-1)    
+            point = A*(1-i) + B*i
+            color_list.append((n, color, point))
+        return color_list
+
     def paintEvent(self, event):
         painter = QPainter()
         painter.begin(self)
@@ -138,7 +165,17 @@ class CustomSlider(QWidget):
                 painter.setClipRect(black_rect)
                 painter.fillPath(gradient_path, Qt.black)
                 painter.setClipping(False)
-            if not self.flat_look or self.type != "SCALAR":
+            elif self.type == "PALETTE":
+                for n, color, point in self.get_color_list_points():
+                    pen = QPen(color, self.palette_radius)
+                    if n == self.palette_index:
+                        pass
+                    else:
+                        pen.setCapStyle(Qt.RoundCap)
+                    painter.setPen(pen)
+                    painter.drawPoint(point)
+
+            if not self.flat_look or self.type == "COLOR":
                 # draw button
                 path = QPainterPath()
                 r = QRectF(self.build_hot_rect(float=True))
@@ -176,7 +213,15 @@ class CustomSlider(QWidget):
         painter.end()
         super().paintEvent(event)
 
+    def get_color_index(self):
+        return self.palette_index
+
     def get_color(self, value=None):
+        if self.type == "PALETTE":
+            try:
+                return self.palette_colors[self.palette_index]
+            except:
+                return QColor(255, 0, 0)
         parameter = value if value else self.value
         pos_x = int((self.image.width()-1)*parameter)
         if parameter == 0.0:
@@ -206,17 +251,25 @@ class CustomSlider(QWidget):
         b = B.toPoint() + QPoint(int(self.control_width/2), int(self.control_width/2))
         return QRect(a, b)
 
-    def do_changing(self, event):
+    def set_value(self, event):
         A, B = self.get_AB_points()
         P = event.pos()
         AB = B - A
         AP = P - A
+        # SCALAR, COLOR
         self.raw_value = dot(AP, AB)/dot(AB, AB)
         self.value = min(max(self.raw_value, 0.0), 1.0)
+        # PALETTE
+        if self.type == 'PALETTE':
+            for n, color, point in self.get_color_list_points():
+                Pp = P - point
+                l = math.sqrt(dot(Pp, Pp))
+                if l < self.palette_radius*2:
+                    self.palette_index = n
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
-            self.do_changing(event)
+            self.set_value(event)
             if self.build_hot_rect().contains(event.pos()):
                 self.changing = True
         self.update()
@@ -225,7 +278,7 @@ class CustomSlider(QWidget):
     def mouseMoveEvent(self, event):
         if event.buttons() == Qt.LeftButton:
             if self.changing:
-                self.do_changing(event)
+                self.set_value(event)
         self.update()
         self.value_changed.emit()
         super().mouseMoveEvent(event)
@@ -235,7 +288,35 @@ class CustomSlider(QWidget):
             self.changing = False
             # for simple click
             if self.build_click_rect().contains(event.pos()):
-                self.do_changing(event)
+                self.set_value(event)
         self.update()
         self.value_changed.emit()
         super().mouseReleaseEvent(event)
+
+def main():
+    app = QApplication(sys.argv)
+    w = QWidget()
+    w.resize(500, 300)
+    style = "background: gray;"
+    w.setStyleSheet(style)
+
+    l = QVBoxLayout()
+    l.addWidget(
+        CustomSlider('COLOR', 400, 1.0, False))
+    l.addWidget(
+        CustomSlider('SCALAR', 400, 1.0, False))
+    l.addWidget(
+        CustomSlider('COLOR', 400, 1.0, True))
+    l.addWidget(
+        CustomSlider('SCALAR', 400, 1.0, True))
+    l.addWidget(
+        CustomSlider('PALETTE', 400, 2, True))
+
+    w.setLayout(l)
+
+
+    w.show()
+    app.exec()
+
+if __name__ == '__main__':
+    main()

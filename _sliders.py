@@ -40,9 +40,9 @@ class CustomSlider(QWidget):
         self.type = _type
         self.setFixedWidth(width)
         self.palette_colors = (
-            QColor(0, 0, 0),
-            QColor(255, 255, 255),
             QColor(255, 0, 0),
+            QColor(255, 255, 255),
+            QColor(0, 0, 0),
             QColor(0, 255, 0),
         )
         self.palette_radius = 15

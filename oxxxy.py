@@ -1535,12 +1535,17 @@ class ToolsWindow(QWidget):
         return False
 
     def set_current_tool(self, tool_name):
+        if tool_name == "special":
+            # deactivate current tool
+            for btn in self.tools_buttons:
+                if btn.property("tool_id") == self.current_tool:
+                    btn.click() 
         self.current_tool = tool_name
         self.tool_init = True
         self.parent().current_tool = tool_name
         for btn in self.tools_buttons:
             if btn.property("tool_id") == self.current_tool:
-                btn.click() # call set_tool_data
+                btn.click() # calls set_tool_data
                 self.initialization = False
                 break
 
@@ -2612,7 +2617,7 @@ class ScreenshotWindow(QWidget):
                 self.elementsMousePressEventDefault(element, event)
         elif tool == "line":
             self.elementsMousePressEventDefault(element, event)
-        elif tool in ["oval", "rect", "numbering"]:
+        elif tool in ["oval", "rect", "numbering", "special"]:
             element.equilateral = event.modifiers() & Qt.ShiftModifier
             element.filled = event.modifiers() & Qt.ControlModifier
             self.elementsMousePressEventDefault(element, event)
@@ -2780,7 +2785,7 @@ class ScreenshotWindow(QWidget):
             if event.modifiers() & Qt.ShiftModifier:
                 element.end_point = elements45DegreeConstraint(element.start_point,
                                                                             element.end_point)
-        elif tool in ["oval", "rect", "numbering"]:
+        elif tool in ["oval", "rect", "numbering", "special"]:
             element.filled = event.modifiers() & Qt.ControlModifier
             element.equilateral = event.modifiers() & Qt.ShiftModifier
             if element.equilateral:
@@ -2872,7 +2877,7 @@ class ScreenshotWindow(QWidget):
                 element.end_point = elements45DegreeConstraint(element.start_point,
                                                                             element.end_point)
         # где-то здесь надо удалять элементы, если начальная и конечная точки совпадают
-        elif tool in ["oval", "rect", "numbering"]:
+        elif tool in ["oval", "rect", "numbering", "special"]:
             if element.equilateral:
                 delta = element.start_point - event.pos()
                 delta = self.equilateral_delta(delta)
@@ -3139,6 +3144,18 @@ class ScreenshotWindow(QWidget):
                         painter.drawPath(element.path)
             elif el_type == "line":
                 painter.drawLine(element.start_point, element.end_point)
+            elif el_type == 'special' and not final:
+                _pen = painter.pen()
+                _brush = painter.brush()
+                painter.setPen(QPen(QColor(255, 0, 0), 1))
+                painter.setBrush(Qt.NoBrush)
+                cm = painter.compositionMode()
+                painter.setCompositionMode(QPainter.RasterOp_NotDestination) #RasterOp_SourceXorDestination
+                rect = build_valid_rect(element.start_point, element.end_point)
+                painter.drawRect(rect)
+                painter.setCompositionMode(cm)
+                painter.setPen(_pen)
+                painter.setBrush(_brush)
             elif el_type in ["oval", "rect", "numbering"]:
                 cur_brush = painter.brush()
                 if not element.filled:
@@ -3320,14 +3337,42 @@ class ScreenshotWindow(QWidget):
 
     def elementsUpdateFinalPicture(self):
         if self.capture_region_rect:
-            el_rect = QRect(QPoint(0, 0), self.capture_region_rect.bottomRight())
-            self.elements_final_output = QPixmap(el_rect.size())
-            painter = QPainter()
-            painter.begin(self.elements_final_output)
-            painter.drawImage(self.capture_region_rect, self.source_pixels,
-                                                                    self.capture_region_rect)
-            self.elementsDrawMain(painter, final=True)
-            painter.end()
+            any_special_element = any(el.type == 'special' for el in self.elements)
+            if any_special_element:
+                self.specials_case = True
+                specials = list((el for el in self.elementsHistoryFilter() if el.type == 'special'))
+                max_width = -1
+                total_height = 0
+                specials_rects = []
+                for el in specials:
+                    el.bounding_rect = build_valid_rect(el.start_point, el.end_point)
+                for el in specials:
+                    max_width = max(max_width, el.bounding_rect.width())
+                for el in specials:
+                    br = el.bounding_rect
+                    el.height = int(max_width/br.width()*br.height())
+                    total_height += el.height
+                _rect = QRect(QPoint(0, 0), QSize(max_width, total_height))
+                self.elements_final_output = QPixmap(_rect.size())
+                painter = QPainter()
+                painter.begin(self.elements_final_output)
+                cur_pos = QPoint(0, 0)
+                for el in specials:
+                    br = el.bounding_rect
+                    dst_rect = QRect(cur_pos, QSize(max_width, el.height))
+                    painter.drawImage(dst_rect, self.source_pixels, br)
+                    cur_pos += QPoint(0, el.height)
+                painter.end()
+            else:
+                self.specials_case = False
+                _rect = QRect(QPoint(0, 0), self.capture_region_rect.bottomRight())
+                self.elements_final_output = QPixmap(_rect.size())
+                painter = QPainter()
+                painter.begin(self.elements_final_output)
+                painter.drawImage(self.capture_region_rect, self.source_pixels,
+                                                                        self.capture_region_rect)
+                self.elementsDrawMain(painter, final=True)
+                painter.end()
 
     def elementsCreateModificatedCopyOnNeed(self, element, keep_old_widget=False):
         if element == self.elementsGetLastElement():# or element.type == "text":
@@ -3721,6 +3766,7 @@ class ScreenshotWindow(QWidget):
         }""")
         minimize = contextMenu.addAction("Свернуть на панель задач")
         cancel = contextMenu.addAction("Отменить создание скриншота")
+        special_tool = contextMenu.addAction("Activate Special Tool")
         reshot = contextMenu.addAction("Переснять скриншот")
         halt = contextMenu.addAction("Выйти и полностью остановить приложение")
         halt.setIconVisibleInMenu(False)
@@ -3731,6 +3777,9 @@ class ScreenshotWindow(QWidget):
             sys.exit()
         elif action == minimize:
             self.showMinimized()
+        elif action == special_tool:
+            if self.tools_window:
+                self.tools_window.set_current_tool("special")
         elif action == cancel:
             self.close_this()
         elif action == reshot:
@@ -3872,7 +3921,10 @@ class ScreenshotWindow(QWidget):
             save_meta_info(metadata, filepath)
         else:
             self.elementsUpdateFinalPicture()
-            pix = self.elements_final_output.copy(self.capture_region_rect)
+            if self.specials_case:
+                pix = self.elements_final_output
+            else:
+                pix = self.elements_final_output.copy(self.capture_region_rect)
             if self.tools_window.chb_masked.isChecked():
                 # fragment or fullscreen: masked version
                 filepath = get_screenshot_filepath(f"{formated_datetime} masked")

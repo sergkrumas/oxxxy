@@ -54,10 +54,11 @@ from _utils import (convex_hull, check_scancode_for, SettingsJson,
 
 from _sliders import (CustomSlider,)
 from _transform_widget import (TransformWidget,)
+from on_windows_startup import is_app_in_startup, add_to_startup, remove_from_startup
 
 class Globals():
-    DEBUG = True
-    DEBUG_ELEMENTS = True
+    DEBUG = False
+    DEBUG_ELEMENTS = False
     CRUSH_SIMULATOR = False
 
     DEBUG_VIZ = False
@@ -67,7 +68,7 @@ class Globals():
     RUN_ONCE = False
     FULL_STOP = False
 
-    FLAT_EDITOR_UI = False
+    ENABLE_FLAT_EDITOR_UI = False
 
     SCREENSHOT_FOLDER_PATH = ""
 
@@ -239,7 +240,7 @@ class CustomPushButton(QPushButton):
                 gradient.setColorAt(0, b)
 
             painter.setPen(Qt.NoPen)
-            if Globals.FLAT_EDITOR_UI:
+            if Globals.ENABLE_FLAT_EDITOR_UI:
                 if self._draw_checked:
                     brush = QBrush(a)
                 else:
@@ -252,7 +253,7 @@ class CustomPushButton(QPushButton):
             gradient.setColorAt(0, QColor(82, 82, 82))
             gradient.setColorAt(1, c)
             painter.setPen(Qt.NoPen)
-            if Globals.FLAT_EDITOR_UI:
+            if Globals.ENABLE_FLAT_EDITOR_UI:
                 brush = QBrush(c)
             else:
                 brush = QBrush(gradient)
@@ -1146,7 +1147,7 @@ class ToolsWindow(QWidget):
         path = QPainterPath()
         path.addRoundedRect(QRectF(main_rect), RADIUS, RADIUS)
         painter.fillPath(path, QColor("#303940"))
-        if not Globals.FLAT_EDITOR_UI:
+        if not Globals.ENABLE_FLAT_EDITOR_UI:
             # bevel
             main_rect = self.button_layout.contentsRect()
             main_rect.adjust(-4, -4, 4, 4)
@@ -1169,7 +1170,7 @@ class ToolsWindow(QWidget):
         main_rect.adjust(0, 0, -75, 0) # only for Done button
         path = QPainterPath()
         path.addRoundedRect(QRectF(main_rect), RADIUS, RADIUS)
-        if Globals.FLAT_EDITOR_UI:
+        if Globals.ENABLE_FLAT_EDITOR_UI:
             painter.fillPath(path, QBrush(QColor(235, 235, 235)))
         else:
             gradient = QLinearGradient(main_rect.topLeft(), main_rect.bottomLeft())
@@ -1439,7 +1440,11 @@ class ToolsWindow(QWidget):
         forwards_btn.setToolTip("<b>Накатить шаг обратно</b><br>Ctrl+Shift+Z")
         backwards_btn.setToolTip("<b>Откатиться на шаг назад</b><br>Ctrl+Z")
 
-        self.color_slider = CustomSlider("PALETTE", 400, 0.01, Globals.FLAT_EDITOR_UI)
+        if Globals.USE_COLOR_PALETTE:
+            _type = "PALETTE"
+        else:
+            _type = "COLOR"
+        self.color_slider = CustomSlider(_type, 400, 0.01, Globals.ENABLE_FLAT_EDITOR_UI)
         self.color_slider.value_changed.connect(self.on_parameters_changed)
         self.color_slider.installEventFilter(self)
         sliders.addWidget(self.color_slider)
@@ -1450,7 +1455,7 @@ class ToolsWindow(QWidget):
         self.chb_toolbool.installEventFilter(self)
         sliders.addWidget(self.chb_toolbool)
 
-        self.size_slider = CustomSlider("SCALAR", 180, 0.2, Globals.FLAT_EDITOR_UI)
+        self.size_slider = CustomSlider("SCALAR", 180, 0.2, Globals.ENABLE_FLAT_EDITOR_UI)
         self.size_slider.value_changed.connect(self.on_parameters_changed)
         self.size_slider.installEventFilter(self)
         sliders.addWidget(self.size_slider)
@@ -2235,7 +2240,7 @@ class ScreenshotWindow(QWidget):
 
         self.setWindowTitle(f"Oxxxy Screenshoter {Globals.VERSION_INFO} {Globals.AUTHOR_INFO}")
 
-        self.tools_settings = SettingsJson().set_mode(Globals.DEBUG).get_data("TOOLS_SETTINGS")
+        self.tools_settings = SettingsJson().get_data("TOOLS_SETTINGS")
         self.current_stamp_pixmap = None
         self.current_stamp_id = None
         self.current_stamp_angle = 0
@@ -3893,7 +3898,7 @@ class ScreenshotWindow(QWidget):
     def close_this(self, save_settings=True):
         # сохранение настроек тулз
         if save_settings:
-            SettingsJson().set_mode(Globals.DEBUG).set_data("TOOLS_SETTINGS", self.tools_settings)
+            SettingsJson().set_data("TOOLS_SETTINGS", self.tools_settings)
         if self.tools_window:
             self.tools_window.hide()
         self.close()
@@ -3910,7 +3915,7 @@ class ScreenshotWindow(QWidget):
                 app.clipboard().setMimeData(data)
 
         # задание папки для скриншота
-        set_screenshot_folder_path()
+        SettingsWindow.set_screenshot_folder_path()
         # сохранение файла
         formated_datetime = datetime.datetime.now().strftime("%d-%m-%Y %H-%M-%S")
         if grabbed_image:
@@ -4107,28 +4112,6 @@ class ScreenshotWindow(QWidget):
                     tools_window.on_parameters_changed()
                     self.activateWindow()
 
-def set_screenshot_folder_path_dialog():
-    msg = "Выберите папку, в которую будут складываться скриншоты"
-    path = QFileDialog.getExistingDirectory(None, msg, Globals.SCREENSHOT_FOLDER_PATH)
-    path = str(path)
-    if path:
-        Globals.SCREENSHOT_FOLDER_PATH = path
-        SettingsJson().set_mode(Globals.DEBUG).set_data("SCREENSHOT_FOLDER_PATH",
-                                                            Globals.SCREENSHOT_FOLDER_PATH)
-
-def set_screenshot_folder_path(only_get=False):
-    if not Globals.SCREENSHOT_FOLDER_PATH:
-        npath = os.path.normpath
-        sj_path = SettingsJson().set_mode(Globals.DEBUG).get_data("SCREENSHOT_FOLDER_PATH")
-        if sj_path:
-            Globals.SCREENSHOT_FOLDER_PATH = npath(sj_path)
-    if only_get:
-        return
-    while not Globals.SCREENSHOT_FOLDER_PATH:
-        set_screenshot_folder_path_dialog()
-
-
-
 class StylizedUIBase():
 
     button_style = """QPushButton{
@@ -4177,6 +4160,18 @@ class StylizedUIBase():
     """
     info_label_style = """
         font-size: 15px;
+        color: yellow;
+        margin: 2px;
+        text-align: center;
+    """
+    info_label_style_white = """
+        font-size: 15px;
+        color: white;
+        margin: 2px;
+        text-align: center;
+    """
+    info_label_style_settings = """
+        font-size: 17px;
         color: yellow;
         margin: 2px;
         text-align: center;
@@ -4273,6 +4268,195 @@ class StylizedUIBase():
             cross_pos.y()+int(self.CLOSE_BUTTON_RADIUS/8)
         )
 
+    def place_window(self):
+        self.show()
+        Y_OFFSET = 60
+        desktop = QDesktopWidget()
+        screen = desktop.screenNumber(QCursor().pos())
+        screen_rect = desktop.screenGeometry(screen=screen)
+        width = self.rect().width()
+        height = self.rect().height()
+        x = screen_rect.right()-screen_rect.left()-width
+        y = screen_rect.bottom()-height-Y_OFFSET
+        self.label.setFixedWidth(self.label.sizeHint().width())
+        self.move(QPoint(x, y))
+        if self.show_at_center:
+            cp = QDesktopWidget().availableGeometry().center()
+            qr = self.frameGeometry()
+            qr.moveCenter(cp)
+            self.move(qr.topLeft())
+
+class SettingsWindow(QWidget, StylizedUIBase):
+    WIDTH = 600
+    PARTITION_SPACING = 10
+
+    instance = None
+
+    STARTUP_CONFIG = (
+        'oxxxy_launcher',
+        os.path.join(os.path.dirname(__file__), "launcher.pyw")
+    )
+
+    @classmethod
+    def set_screenshot_folder_path_dialog(cls):
+        msg = "Выберите папку, в которую будут складываться скриншоты"
+        path = QFileDialog.getExistingDirectory(None, msg, Globals.SCREENSHOT_FOLDER_PATH)
+        path = str(path)
+        if path:
+            Globals.SCREENSHOT_FOLDER_PATH = path
+            SettingsJson().set_data("SCREENSHOT_FOLDER_PATH",
+                                                                Globals.SCREENSHOT_FOLDER_PATH)
+        if hasattr(cls, 'instance'):
+            cls.instance.label_1_path.setText(cls.get_path_for_label())
+
+    @classmethod
+    def set_screenshot_folder_path(cls, get_only=False):
+        if not Globals.SCREENSHOT_FOLDER_PATH:
+            npath = os.path.normpath
+            sj_path = SettingsJson().get_data("SCREENSHOT_FOLDER_PATH")
+            if sj_path:
+                Globals.SCREENSHOT_FOLDER_PATH = npath(sj_path)
+        if get_only:
+            return
+        while not Globals.SCREENSHOT_FOLDER_PATH:
+            cls.set_screenshot_folder_path_dialog()
+
+    @classmethod
+    def get_path_for_label(cls):
+        cls.set_screenshot_folder_path(get_only=True)
+        if os.path.exists(Globals.SCREENSHOT_FOLDER_PATH):
+            return f" Текущий путь: {Globals.SCREENSHOT_FOLDER_PATH}"
+        else:
+            return "  Путь не задан!"
+
+    def __init__(self, menu=False, notification=False, filepath=None):
+        super().__init__()
+
+        if hasattr(SettingsWindow, "instance"):
+            if SettingsWindow.instance:
+                SettingsWindow.instance.hide()
+        SettingsWindow.instance = self
+
+        STYLE = "color: white; font-size: 18px;"
+
+        self.show_at_center = False
+        title = f"Oxxxy Settings {Globals.VERSION_INFO}"
+        self.setWindowTitle(title)
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
+        self.setAttribute(Qt.WA_TranslucentBackground, True)
+        self.layout = QVBoxLayout()
+        margin = 5
+        self.layout.setContentsMargins(margin, margin, margin, margin)
+
+        self.label = QLabel()
+        self.label.setText(title)
+        self.label.setStyleSheet(self.title_label_style)
+
+        label_1 = QLabel("<b>Место для сохранения сриншотов</b>")
+        label_1.setStyleSheet(self.info_label_style_settings)
+        label_1_path = QLabel(SettingsWindow.get_path_for_label())
+        label_1_path.setStyleSheet(STYLE)
+        self.label_1_path = label_1_path
+        path_change_btn = QPushButton("Изменить путь к хранилищу")
+        path_change_btn.setObjectName("bottom")
+        path_change_btn.setStyleSheet(self.button_style)
+        path_change_btn.setCursor(Qt.PointingHandCursor)
+        path_change_btn.clicked.connect(SettingsWindow.set_screenshot_folder_path_dialog)
+        layout_1 = QVBoxLayout()
+        layout_1.addWidget(label_1_path)
+        layout_1.addWidget(path_change_btn)
+
+        label_2 = QLabel("<b>Комбинации клавиш (можно поменять только из кода)</b>")
+        label_2.setStyleSheet(self.info_label_style_settings)
+        info_label_1 = "<b>CTRL+PRINT SCREEN</b><br>скриншот с захватом фрагмента экрана"
+        info_label_2 = "<b>CTRL+SHIFT+PRINT SCREEN</b><br>скриншот с захватом всего экрана"
+        info_label_3 = "<b>SHIFT+PRINT SCREEN</b><br>быстрый скриншот всего экрана"
+        layout_2 = QVBoxLayout()
+        for label_text in [info_label_1, info_label_2, info_label_3]:
+            _label = QLabel("<center>%s</center>" % label_text)
+            _label.setStyleSheet(self.info_label_style_white)
+            _label.setWordWrap(True)
+            layout_2.addWidget(_label)
+
+        label_3 = QLabel("<b>Автоматический запуск</b>")
+        label_3.setStyleSheet(self.info_label_style_settings)
+        chbx_3 = QCheckBox("Запускать Oxxxy при старте Windows")
+        chbx_3.setStyleSheet(STYLE)
+        chbx_3.setChecked(is_app_in_startup(self.STARTUP_CONFIG[0]))
+        chbx_3.stateChanged.connect(lambda: self.handle_windows_startup_chbx(chbx_3))
+        layout_3 = QVBoxLayout()
+        layout_3.setAlignment(Qt.AlignCenter)
+        layout_3.addWidget(chbx_3)
+
+        label_4 = QLabel("<b>Шкала/слайдер цвета</b>")
+        label_4.setStyleSheet(self.info_label_style_settings)
+        chbx_4 = QCheckBox("Заменить шкалу цвета на палитру цветов")
+        chbx_4.setStyleSheet(STYLE)
+        use_color_palette = SettingsJson().get_data("USE_COLOR_PALETTE")
+        chbx_4.setChecked(bool(use_color_palette))
+        chbx_4.stateChanged.connect(lambda: self.handle_palette_chbx(chbx_4))
+        layout_4 = QVBoxLayout()
+        layout_4.setAlignment(Qt.AlignCenter)        
+        layout_4.addWidget(chbx_4)
+
+        label_5 = QLabel("<b>Общий вид панели инструментов</b>")
+        label_5.setStyleSheet(self.info_label_style_settings)
+        chbx_5 = QCheckBox("Включить стиль FLAT")
+        chbx_5.setStyleSheet(STYLE)
+        use_flat_ui = SettingsJson().get_data("ENABLE_FLAT_EDITOR_UI")
+        chbx_5.setChecked(bool(use_flat_ui))
+        chbx_5.stateChanged.connect(lambda: self.handle_ui_style_chbx(chbx_5))
+        layout_5 = QVBoxLayout()
+        layout_5.setAlignment(Qt.AlignCenter) 
+        layout_5.addWidget(chbx_5)
+
+        # заголовок
+        self.layout.addSpacing(self.PARTITION_SPACING)
+        self.layout.addWidget(self.label, Qt.AlignLeft)
+        self.layout.addSpacing(self.PARTITION_SPACING)
+
+        # место для сохранения скриншотов
+        self.layout.addWidget(label_1)
+        self.layout.addLayout(layout_1)
+        self.layout.addSpacing(self.PARTITION_SPACING)
+
+        # автоматический запуск
+        self.layout.addWidget(label_3)
+        self.layout.addLayout(layout_3)
+        self.layout.addSpacing(self.PARTITION_SPACING)
+
+        # комбинации клавиш
+        self.layout.addWidget(label_2)
+        self.layout.addLayout(layout_2)
+        self.layout.addSpacing(self.PARTITION_SPACING)
+
+        # палитра вместо шкалы цвета
+        self.layout.addWidget(label_4)
+        self.layout.addLayout(layout_4)
+        self.layout.addSpacing(self.PARTITION_SPACING)
+
+        # палитра вместо шкалы цвета
+        self.layout.addWidget(label_5)
+        self.layout.addLayout(layout_5)
+        self.layout.addSpacing(self.PARTITION_SPACING)
+
+        self.setLayout(self.layout)
+        self.setMouseTracking(True)
+
+    def handle_palette_chbx(self, sender):
+        SettingsJson().set_data("USE_COLOR_PALETTE", sender.isChecked())
+        Globals.USE_COLOR_PALETTE = sender.isChecked()
+
+    def handle_ui_style_chbx(self, sender):
+        SettingsJson().set_data("ENABLE_FLAT_EDITOR_UI", sender.isChecked())
+        Globals.ENABLE_FLAT_EDITOR_UI = sender.isChecked()
+
+    def handle_windows_startup_chbx(self, sender):
+        if sender.isChecked():
+            add_to_startup(*self.STARTUP_CONFIG)
+        else:
+            remove_from_startup(self.STARTUP_CONFIG[0])
+
 class NotificationOrMenu(QWidget, StylizedUIBase):
     CLOSE_BUTTON_RADIUS = 50
     WIDTH = 300
@@ -4290,7 +4474,6 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
         NotificationOrMenu.instance = self
 
         self.setWindowTitle(f"Oxxxy Screenshoter {Globals.VERSION_INFO} {Globals.AUTHOR_INFO}")
-
         self.show_at_center = False
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
         self.setAttribute(Qt.WA_TranslucentBackground, True)
@@ -4359,19 +4542,17 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
             open_recent_screenshot_btn = QPushButton("Показать\nпоследний")
             open_recent_screenshot_btn.clicked.connect(self.open_recent_screenshot)
 
-            path_change_btn = QPushButton("Изменить путь к хранилищу")
-            # path_change_btn.setObjectName("bottom")
+            open_settings_btn = QPushButton("Настройки")
 
             show_crushlog_btn = QPushButton("Открыть crush.log")
-            # show_crushlog_btn.setObjectName("bottom")
             self.show_crushlog_btn = show_crushlog_btn
 
             # в подвале окна
             quit_btn = QPushButton("Выход")
-            show_source_code_btn = QPushButton("Документация\nна GitHub")
+            show_source_code_btn = QPushButton("Доки\nна GitHub")
             show_source_code_btn.clicked.connect(self.show_source_code)
             object_name_list = [
-                path_change_btn,
+                # open_settings_btn,
                 show_crushlog_btn,
                 quit_btn,
                 show_source_code_btn
@@ -4389,19 +4570,8 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
             self.second_row.addWidget(open_history_btn)
             self.second_row.addWidget(open_recent_screenshot_btn)
 
-            self.help_layout = QVBoxLayout()
-            info_label_0 = "<b>КОМБИНАЦИИ КЛАВИШ</b>"
-            info_label_1 = "<b>CTRL+PRINT SCREEN</b><br>скриншот с захватом фрагмента экрана"
-            info_label_2 = "<b>CTRL+SHIFT+PRINT SCREEN</b><br>скриншот с захватом всего экрана"
-            info_label_3 = "<b>SHIFT+PRINT SCREEN</b><br>быстрый скриншот всего экрана"
-            for label_text in [info_label_0, info_label_1, info_label_2, info_label_3]:
-                _label = QLabel("<center>%s</center>" % label_text)
-                _label.setStyleSheet(self.info_label_style)
-                _label.setWordWrap(True)
-                self.help_layout.addWidget(_label)
-
             self.path_layout = QVBoxLayout()
-            self.path_layout.addWidget(path_change_btn)
+            self.path_layout.addWidget(open_settings_btn)
             self.path_layout.addWidget(show_crushlog_btn)
 
             self.bottom_layout = QHBoxLayout()
@@ -4414,7 +4584,6 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
             # self.layout.addWidget(screenshot_remake_btn)
             self.layout.addLayout(self.second_row)
             self.layout.addSpacing(20)
-            self.layout.addLayout(self.help_layout)
             self.layout.addLayout(self.path_layout)
             self.layout.addLayout(self.bottom_layout)
             self.layout.addSpacing(10)
@@ -4422,7 +4591,7 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
             open_history_btn.clicked.connect(self.open_folder)
             screenshot_fragment_btn.clicked.connect(self.start_screenshot_editor_fragment)
             screenshot_fullscreens_btn.clicked.connect(self.start_screenshot_editor_fullscreen)
-            path_change_btn.clicked.connect(set_screenshot_folder_path_dialog)
+            open_settings_btn.clicked.connect(self.open_settings_window)
             show_crushlog_btn.clicked.connect(show_crush_log)
             quit_btn.clicked.connect(self.app_quit)
             btn_list = [
@@ -4431,7 +4600,7 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
                 screenshot_remake_btn,
                 open_history_btn,
                 open_recent_screenshot_btn,
-                path_change_btn,
+                open_settings_btn,
                 show_crushlog_btn,
                 quit_btn,
                 show_source_code_btn
@@ -4451,6 +4620,10 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
         self.setLayout(self.layout)
         self.setMouseTracking(True)
 
+    def open_settings_window(self):
+        SettingsWindow().place_window()
+        self.hide()
+
     def show_menu(self):
         if self.isVisible():
             self.hide()
@@ -4463,7 +4636,7 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
 
     def open_recent_screenshot(self):
 
-        set_screenshot_folder_path(only_get=True)
+        SettingsWindow.set_screenshot_folder_path(get_only=True)
 
         recent_filepath = None
         timestamp = 0.0
@@ -4494,24 +4667,6 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
     def show_source_code(self):
         open_link_in_browser("https://github.com/sergkrumas/oxxxy")
 
-    def place_window(self):
-        self.show()
-        Y_OFFSET = 60
-        desktop = QDesktopWidget()
-        screen = desktop.screenNumber(QCursor().pos())
-        screen_rect = desktop.screenGeometry(screen=screen)
-        width = self.rect().width()
-        height = self.rect().height()
-        x = screen_rect.right()-screen_rect.left()-width
-        y = screen_rect.bottom()-height-Y_OFFSET
-        self.label.adjustSize()
-        self.move(QPoint(x, y))
-        if self.show_at_center:
-            cp = QDesktopWidget().availableGeometry().center()
-            qr = self.frameGeometry()
-            qr.moveCenter(cp)
-            self.move(qr.topLeft())
-
     def open_image_shell(self):
         os.startfile(self.filepath)
         self.close_notification_window()
@@ -4529,7 +4684,7 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
         invoke_screenshot_editor(request_type=RequestType.Fullscreen)
 
     def open_folder(self):
-        set_screenshot_folder_path(only_get=True)
+        SettingsWindow.set_screenshot_folder_path(get_only=True)
         args = ["explorer.exe", '{}'.format(Globals.SCREENSHOT_FOLDER_PATH)]
         # QMessageBox.critical(None, "Debug info", "{}".format(args))
         subprocess.Popen(args)
@@ -4695,6 +4850,9 @@ def invoke_screenshot_editor(request_type=None):
     # если было открыто окно-меню около трея - прячем его
     if NotificationOrMenu.instance:
         NotificationOrMenu.instance.hide()
+    if SettingsWindow.instance:
+        SettingsWindow.instance.hide()
+
     metadata = get_meta_info()
     # started_time = time.time()
 
@@ -4812,9 +4970,11 @@ def _main():
     if args.path:
         path = args.path
     if args.user_mode:
-        DEBUG = False
+        Globals.DEBUG = False
     if args.aftercrush:
         Globals.AFTERCRUSH = True
+
+    SettingsJson().init(Globals)
 
     app = QApplication(sys.argv)
     app.aboutToQuit.connect(exit_threads)

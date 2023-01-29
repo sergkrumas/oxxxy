@@ -210,26 +210,25 @@ def check_scancode_for(event, data):
         return any(SCANCODES_FROM_LATIN_CHAR[ch] == code for ch in data)
 
 class SettingsJson():
+
+    def init(self, Globals):
+        self.debug_mode = Globals.DEBUG
+        Globals.ENABLE_FLAT_EDITOR_UI = self.get_data("ENABLE_FLAT_EDITOR_UI")
+        Globals.USE_COLOR_PALETTE = self.get_data("USE_COLOR_PALETTE")
+
     def __new__(cls):
         if not hasattr(cls, 'instance'):
             cls.instance = super(SettingsJson, cls).__new__(cls)
+            cls.instance.debug_mode = False
+            cls.instance.data = {}
         return cls.instance
 
-    def set_mode(self, debug_mode):
-        self.debug_mode = debug_mode
-        return self
-
     def get_filepath(self):
-        if self.dubug_mode:
+        if self.debug_mode:
             root = os.path.dirname(__file__)
         else:
             root = os.path.expanduser("~")
         return os.path.join(root, "oxxxy_settings.json")
-
-    def __init__(self):
-        super().__init__()
-        self.dubug_mode = False
-        self.data = {}
 
     def set_data(self, key, value):
         self.read_data()

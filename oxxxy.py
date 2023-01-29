@@ -98,6 +98,7 @@ class RequestType(Enum):
     Fragment = 0
     Fullscreen = 1
     QuickFullscreen = 2
+    Editor = 3
 
 class CheckBoxCustom(QCheckBox):
 
@@ -2269,8 +2270,43 @@ class ScreenshotWindow(QWidget):
         self.user_input_started = True
         self.is_rect_defined = True
         self.is_rect_redefined = False
-        self.drag_inside_capture_zone = True
+        self.drag_inside_capture_zone = False
         self.get_region_info()
+        self.update_tools_window()
+        self.update()
+
+    def request_editor_mode(self, filepaths):
+        pixmaps = []
+        pos = QPoint(0, 0)
+        self.input_POINT2 = QPoint(0, 0)
+        self.input_POINT1 = self.frameGeometry().bottomRight()
+        self.user_input_started = True
+        self.is_rect_defined = True
+        self.is_rect_redefined = False
+        self.drag_inside_capture_zone = False
+        self.get_region_info()
+        self.update_tools_window()
+        tw = self.tools_window
+        tw.initialization = True
+        tw.set_current_tool('stamp')
+        for filepath in filepaths:
+            pixmap = QPixmap(filepath)
+            if pixmap.width() != 0:
+                element = self.elementsCreateNew('stamp')
+                element.pixmap = pixmap
+                element.angle = 0
+                self.elementsSetStampElementPoints(element, pos, pos_as_center=False)
+                pos += QPoint(pixmap.width(), 0)
+                pixmaps.append(pixmap)
+        if pixmaps:
+            self.input_POINT2 = QPoint(0, 0)
+            self.input_POINT1 = element.end_point
+        else:
+            self.input_POINT2 = QPoint(0, 0)
+            self.input_POINT1 = self.frameGeometry().bottomRight()
+        self.capture_region_rect = self._build_valid_rect(self.input_POINT1, self.input_POINT2)
+        tw.set_current_tool('transform')
+        tw.forwards_backwards_update()
         self.update_tools_window()
         self.update()
 
@@ -2333,28 +2369,42 @@ class ScreenshotWindow(QWidget):
 
     def elementsSetElementParameters(self, element):
         tw = self.tools_window
-        element.color = tw.color_slider.get_color()
-        element.color_slider_value = tw.color_slider.value
-        element.color_slider_palette_index = tw.color_slider.palette_index
-        element.size = tw.size_slider.value
-        element.toolbool = tw.chb_toolbool.isChecked()
-        element.margin_value = 5
+        if tw:
+            element.color = tw.color_slider.get_color()
+            element.color_slider_value = tw.color_slider.value
+            element.color_slider_palette_index = tw.color_slider.palette_index
+            element.size = tw.size_slider.value
+            element.toolbool = tw.chb_toolbool.isChecked()
+            element.margin_value = 5
+        elif element.type == 'stamp':
+            element.size = 1.0
+            element.color = QColor(Qt.red)
+            element.color_slider_value = 0.01
+            element.color_slider_palette_index = 0
+            element.toolbool = False
+            element.margin_value = 5
         if element.type == "text":
             self.elementsChangeTextbox(element)
         if element.type == "blurring":
             self.elementsSetBlurredPixmap(element)
         # только для инструмента transform, ибо иначе на практике не очень удобно
-        if element.type == "stamp" and tw.current_tool == "transform":
+        if tw and element.type == "stamp" and tw.current_tool == "transform":
             if hasattr(element, "pixmap"):
                 r_first = build_valid_rect(element.start_point, element.end_point)
                 self.elementsSetStampElementPoints(element, r_first.center())
                 # этим обновляем виджет
                 self.elementsSetSelected(element)
 
-    def elementsSetStampElementPoints(self, element, pos):
-        r = self.elementsStampRect(pos, element.size, element.pixmap)
-        element.start_point = r.topLeft()
-        element.end_point = r.bottomRight()
+    def elementsSetStampElementPoints(self, element, pos, pos_as_center=True):
+        if pos_as_center:
+            r = self.elementsStampRect(pos, element.size, element.pixmap)
+            element.start_point = r.topLeft()
+            element.end_point = r.bottomRight()
+        else:
+            element.start_point = QPoint(pos)
+            w = element.pixmap.width()
+            h = element.pixmap.height()
+            element.end_point = pos + QPoint(w, h)
 
     def elementsActivateTransformTool(self):
         if not self.elements:
@@ -3435,14 +3485,16 @@ class ScreenshotWindow(QWidget):
             self.transform_widget = None
 
     def elementsParametersChanged(self):
-        element = self.selected_element or self.elementsGetLastElement()
-        case1 = element and element.type == self.tools_window.current_tool and element.fresh
-        case2 = element and self.tools_window.current_tool == 'transform'
-        if case1 or case2:
-            element = self.elementsCreateModificatedCopyOnNeed(element)
-            self.elementsSetElementParameters(element)
-        if Globals.DEBUG:
-            self.elementsUpdateFinalPicture()
+        tw = self.tools_window
+        if tw:
+            element = self.selected_element or self.elementsGetLastElement()
+            case1 = element and element.type == self.tools_window.current_tool and element.fresh
+            case2 = element and tw.current_tool == 'transform'
+            if case1 or case2:
+                element = self.elementsCreateModificatedCopyOnNeed(element)
+                self.elementsSetElementParameters(element)
+            if Globals.DEBUG:
+                self.elementsUpdateFinalPicture()
         self.update()
         self.activateWindow() # чтобы фокус не соскакивал на панель иструментов
 
@@ -4536,11 +4588,13 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
             # первый раздел
             screenshot_fragment_btn = QPushButton("Фрагмент")
             screenshot_fullscreens_btn = QPushButton("Экран")
-            screenshot_remake_btn = QPushButton("Переделать прошлый\n(экспериментальная)")
+            # screenshot_remake_btn = QPushButton("Переделать прошлый\n(экспериментальная)")
             # второй раздел
             open_history_btn = QPushButton("История")
             open_recent_screenshot_btn = QPushButton("Показать\nпоследний")
             open_recent_screenshot_btn.clicked.connect(self.open_recent_screenshot)
+
+            editor_compile_btn = QPushButton('Коллаж')
 
             open_settings_btn = QPushButton("Настройки")
 
@@ -4570,25 +4624,28 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
             self.second_row.addWidget(open_history_btn)
             self.second_row.addWidget(open_recent_screenshot_btn)
 
-            self.path_layout = QVBoxLayout()
-            self.path_layout.addWidget(open_settings_btn)
-            self.path_layout.addWidget(show_crushlog_btn)
+            self.thrid_row = QVBoxLayout()
+            self.thrid_row.addWidget(open_settings_btn)
+            self.thrid_row.addWidget(show_crushlog_btn)
 
-            self.bottom_layout = QHBoxLayout()
-            self.bottom_layout.addWidget(quit_btn)
-            self.bottom_layout.addWidget(show_source_code_btn)
+            self.bottom_row = QHBoxLayout()
+            self.bottom_row.addWidget(quit_btn)
+            self.bottom_row.addWidget(show_source_code_btn)
 
             self.layout.addSpacing(10)
             self.layout.addWidget(self.label)
             self.layout.addLayout(self.first_row)
             # self.layout.addWidget(screenshot_remake_btn)
             self.layout.addLayout(self.second_row)
+            self.layout.addSpacing(10)
+            self.layout.addWidget(editor_compile_btn)
             self.layout.addSpacing(20)
-            self.layout.addLayout(self.path_layout)
-            self.layout.addLayout(self.bottom_layout)
+            self.layout.addLayout(self.thrid_row)
+            self.layout.addLayout(self.bottom_row)
             self.layout.addSpacing(10)
 
             open_history_btn.clicked.connect(self.open_folder)
+            editor_compile_btn.clicked.connect(self.start_editor_in_compile_mode)
             screenshot_fragment_btn.clicked.connect(self.start_screenshot_editor_fragment)
             screenshot_fullscreens_btn.clicked.connect(self.start_screenshot_editor_fullscreen)
             open_settings_btn.clicked.connect(self.open_settings_window)
@@ -4597,7 +4654,8 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
             btn_list = [
                 screenshot_fragment_btn,
                 screenshot_fullscreens_btn,
-                screenshot_remake_btn,
+                # screenshot_remake_btn,
+                editor_compile_btn,
                 open_history_btn,
                 open_recent_screenshot_btn,
                 open_settings_btn,
@@ -4611,7 +4669,7 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
             for btn in [
                     screenshot_fragment_btn,
                     screenshot_fullscreens_btn,
-                    screenshot_remake_btn,
+                    # screenshot_remake_btn,
                     open_history_btn,
                     open_recent_screenshot_btn
                 ]:
@@ -4635,7 +4693,6 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
             self.place_window()
 
     def open_recent_screenshot(self):
-
         SettingsWindow.set_screenshot_folder_path(get_only=True)
 
         recent_filepath = None
@@ -4682,6 +4739,10 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
     def start_screenshot_editor_fullscreen(self):
         self.hide()
         invoke_screenshot_editor(request_type=RequestType.Fullscreen)
+
+    def start_editor_in_compile_mode(self):
+        self.hide()
+        invoke_screenshot_editor(request_type=RequestType.Editor)
 
     def open_folder(self):
         SettingsWindow.set_screenshot_folder_path(get_only=True)
@@ -4875,6 +4936,16 @@ def invoke_screenshot_editor(request_type=None):
         QApplication.instance().processEvents()
         screenshot_editor.activateWindow()
 
+    if request_type == RequestType.Editor:
+        filepaths = get_filepaths_dialog()
+        if filepaths:
+            screenshot_editor = ScreenshotWindow(screenshot_image, metadata)
+            screenshot_editor.request_editor_mode(filepaths)
+            screenshot_editor.show()
+            # чтобы activateWindow точно сработал и взял фокус ввода
+            QApplication.instance().processEvents()
+            screenshot_editor.activateWindow()        
+
     if request_type == RequestType.QuickFullscreen:
         ScreenshotWindow.save_screenshot(None, grabbed_image=screenshot_image, metadata=metadata)
         app = QApplication.instance()
@@ -4937,6 +5008,15 @@ def excepthook(exc_type, exc_value, exc_tb):
         _restart_app(aftercrush=True)
         # pass
     sys.exit()
+
+def get_filepaths_dialog():
+    file_name = QFileDialog()
+    file_name.setFileMode(QFileDialog.ExistingFiles)
+    title = ""
+    path = ""
+    filter_data = "All files (*.*)"
+    data = file_name.getOpenFileNames(None, title, path, filter_data)
+    return data[0]
 
 def exit_threads():
     # принудительно глушим все потоки, что ещё работают

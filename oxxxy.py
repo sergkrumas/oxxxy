@@ -4876,18 +4876,15 @@ def show_system_tray(app, icon):
     sti.setToolTip(f"Oxxxy {Globals.VERSION_INFO} {Globals.AUTHOR_INFO}")
     app.setProperty("stray_icon", sti)
     @pyqtSlot()
-    def trayicon_clicked(signal):
-        LEFT_CLICK = 3
-        DOUBLE_CLICK = 2
-        RIGHT_CLICK = 1
-        if LEFT_CLICK == signal: # если кликнул левой - то делаем скриншот фрагмента
+    def on_trayicon_activated(reason):
+        if reason == QSystemTrayIcon.Trigger: # если кликнул левой - то делаем скриншот фрагмента
             invoke_screenshot_editor(request_type=RequestType.Fragment)
-        if RIGHT_CLICK == signal: # если правой - вызываем окно-меню
+        if reason == QSystemTrayIcon.Context: # если правой - вызываем окно-меню
             if NotificationOrMenu.instance:
                 NotificationOrMenu.instance.show_menu()
             else:
                 NotificationOrMenu(menu=True).show_menu()
-    sti.activated.connect(trayicon_clicked)
+    sti.activated.connect(on_trayicon_activated)
     sti.show()
     return sti
 
@@ -5031,6 +5028,11 @@ def _restart_app(aftercrush=False):
     else:
         subprocess.Popen([sys.executable, sys.argv[0]])
 
+def read_settings_file():
+    SettingsJson().init(Globals)
+    Globals.ENABLE_FLAT_EDITOR_UI = SettingsJson().get_data("ENABLE_FLAT_EDITOR_UI")
+    Globals.USE_COLOR_PALETTE = SettingsJson().get_data("USE_COLOR_PALETTE")    
+
 def _main():
 
     if Globals.CRUSH_SIMULATOR:
@@ -5054,7 +5056,7 @@ def _main():
     if args.aftercrush:
         Globals.AFTERCRUSH = True
 
-    SettingsJson().init(Globals)
+    read_settings_file()
 
     app = QApplication(sys.argv)
     app.aboutToQuit.connect(exit_threads)

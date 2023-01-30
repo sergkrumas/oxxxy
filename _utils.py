@@ -213,8 +213,6 @@ class SettingsJson():
 
     def init(self, Globals):
         self.debug_mode = Globals.DEBUG
-        Globals.ENABLE_FLAT_EDITOR_UI = self.get_data("ENABLE_FLAT_EDITOR_UI")
-        Globals.USE_COLOR_PALETTE = self.get_data("USE_COLOR_PALETTE")
 
     def __new__(cls):
         if not hasattr(cls, 'instance'):

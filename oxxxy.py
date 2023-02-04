@@ -1721,7 +1721,6 @@ class ScreenshotWindow(QWidget):
 
     def circle_mask_image(self, pxm, size=64, scale=False):
         image = pxm.toImage().convertToFormat(QImage.Format_ARGB32)
-        # image.convertToFormat(QImage.Format_ARGB32)
 
         imgsize = min(image.width(), image.height())
         rect = QRect(
@@ -4516,10 +4515,6 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
     instance = None
     def __init__(self, menu=False, notification=False, filepath=None):
         super().__init__()
-        # if (not notification) and (not menu):
-        #     raise
-        # if notification and menu:
-        #     raise
         if not (notification != menu):
             raise
 
@@ -4726,11 +4721,11 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
 
     def open_image_shell(self):
         os.startfile(self.filepath)
-        self.close_notification_window()
+        self.close_notification_window_and_quit()
 
     def open_image(self):
         open_in_google_chrome(self.filepath)
-        self.close_notification_window()
+        self.close_notification_window_and_quit()
 
     def start_screenshot_editor_fragment(self):
         self.hide()
@@ -4750,20 +4745,25 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
         # QMessageBox.critical(None, "Debug info", "{}".format(args))
         subprocess.Popen(args)
         # os.system("start {}".format(Globals.SCREENSHOT_FOLDER_PATH))
-        self.close_notification_window()
+        self.close_notification_window_and_quit()
 
     def countdown_handler(self):
         if self.underMouse():
             self.timer.stop()
             return
         if time.time() - self.start_time > 4.5:
-            self.close_notification_window()
+            self.close_notification_window_and_quit()
 
-    def close_notification_window(self):
+    def close_notification_window_and_quit(self):
         if self.widget_type == "notification":
             self.timer.stop()
-        app = QApplication.instance()
-        app.exit()
+            app = QApplication.instance()
+            app.exit()
+
+    def hide(self):
+        super().hide()
+        if self.widget_type == "notification":
+            self.close_notification_window_and_quit()
 
     def app_quit(self):
         Globals.FULL_STOP = True

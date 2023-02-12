@@ -47,7 +47,7 @@ from PyQt5.QtGui import (QPainterPath, QColor, QKeyEvent, QMouseEvent, QBrush, Q
 
 
 from _utils import (convex_hull, check_scancode_for, SettingsJson,
-     get_meta_info, build_valid_rect, dot, get_nearest_point_on_rect, get_creation_date,
+     generate_metainfo, build_valid_rect, dot, get_nearest_point_on_rect, get_creation_date,
      find_browser_exe_file, open_link_in_browser, open_in_google_chrome, save_meta_info,
      make_screenshot_pyqt, webRGBA, generate_gradient, draw_shadow, draw_cyberpunk,
      elements45DegreeConstraint)
@@ -4355,8 +4355,7 @@ class SettingsWindow(QWidget, StylizedUIBase):
         path = str(path)
         if path:
             Globals.SCREENSHOT_FOLDER_PATH = path
-            SettingsJson().set_data("SCREENSHOT_FOLDER_PATH",
-                                                                Globals.SCREENSHOT_FOLDER_PATH)
+            SettingsJson().set_data("SCREENSHOT_FOLDER_PATH", Globals.SCREENSHOT_FOLDER_PATH)
         if hasattr(cls, 'instance'):
             cls.instance.label_1_path.setText(cls.get_path_for_label())
 
@@ -4911,7 +4910,7 @@ def invoke_screenshot_editor(request_type=None):
     if SettingsWindow.instance:
         SettingsWindow.instance.hide()
 
-    metadata = get_meta_info()
+    metadata = generate_metainfo()
     # started_time = time.time()
 
     screenshot_image = make_screenshot_pyqt()

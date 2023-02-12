@@ -55,7 +55,7 @@ __all__ = (
 
     'SettingsJson',
 
-    'get_meta_info',
+    'generate_metainfo',
     'build_valid_rect',
     'dot',
     'get_nearest_point_on_rect',
@@ -252,7 +252,7 @@ class SettingsJson():
         self.read_data()
         return self.data.get(key, {})
 
-def get_meta_info():
+def generate_metainfo():
     if win32process:
         try:
             user32 = ctypes.windll.user32
@@ -351,14 +351,14 @@ def open_in_google_chrome(filepath):
         msg = "Невозможно открыть в браузере.\nСначала откройте браузер Google Chrome!"
         QMessageBox.critical(None, "Error", msg)
 
-def save_meta_info(metadata, filepath_string):
+def save_meta_info(metadata, filepath):
     m0 = metadata[0]
     m1 = metadata[1]
     metastring = f"Screenshot metadata: {m0} {m1}"
     info = PngImagePlugin.PngInfo()
     info.add_text("text", metastring)
-    im = Image.open(filepath_string)
-    im.save(filepath_string, "PNG", pnginfo=info)
+    im = Image.open(filepath)
+    im.save(filepath, "PNG", pnginfo=info)
 
 def PIL_to_QImage(im):
     if isinstance(im, QImage):

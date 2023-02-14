@@ -5034,11 +5034,16 @@ def read_settings_file():
 
 def _main():
 
+    os.chdir(os.path.dirname(__file__))
+    sys.excepthook = excepthook
+
     if Globals.CRUSH_SIMULATOR:
         1 / 0
 
-    os.chdir(os.path.dirname(__file__))
-    sys.excepthook = excepthook
+    RERUN_ARG = '-rerun'
+    if RERUN_ARG not in sys.argv and "-aftercrush" not in sys.argv:
+        subprocess.Popen([sys.executable, *sys.argv, RERUN_ARG])
+        sys.exit()
 
     # разбор аргументов
     parser = argparse.ArgumentParser()
@@ -5047,6 +5052,7 @@ def _main():
     parser.add_argument('-user_mode', help="", action="store_true")
     parser.add_argument('-notification', help="", action="store_true")
     parser.add_argument('-aftercrush', help="", action="store_true")
+    parser.add_argument('-rerun', help="", action="store_true")
     args = parser.parse_args(sys.argv[1:])
     if args.path:
         path = args.path

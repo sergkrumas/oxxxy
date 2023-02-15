@@ -4228,6 +4228,28 @@ class StylizedUIBase():
         text-align: center;
     """
 
+    settings_checkbox = """
+        QCheckBox {
+            font-size: 18px;
+            font-family: 'Consolas';
+            color: white;
+            font-weight: normal;
+        }
+        QCheckBox::indicator:unchecked {
+            background: gray;
+        }
+        QCheckBox::indicator:checked {
+            background: green;
+        }
+        QCheckBox:checked {
+            background-color: rgba(150, 150, 150, 50);
+            color: rgb(100, 255, 100);
+        }
+        QCheckBox:unchecked {
+            color: gray;
+        }
+    """    
+
     CLOSE_BUTTON_RADIUS = 50
 
     def mouseMoveEvent(self, event):
@@ -4431,7 +4453,7 @@ class SettingsWindow(QWidget, StylizedUIBase):
         label_3 = QLabel("<b>Автоматический запуск</b>")
         label_3.setStyleSheet(self.info_label_style_settings)
         chbx_3 = QCheckBox("Запускать Oxxxy при старте Windows")
-        chbx_3.setStyleSheet(STYLE)
+        chbx_3.setStyleSheet(self.settings_checkbox)
         chbx_3.setChecked(is_app_in_startup(self.STARTUP_CONFIG[0]))
         chbx_3.stateChanged.connect(lambda: self.handle_windows_startup_chbx(chbx_3))
         layout_3 = QVBoxLayout()
@@ -4441,7 +4463,7 @@ class SettingsWindow(QWidget, StylizedUIBase):
         label_4 = QLabel("<b>Шкала/слайдер цвета</b>")
         label_4.setStyleSheet(self.info_label_style_settings)
         chbx_4 = QCheckBox("Заменить шкалу цвета на палитру цветов")
-        chbx_4.setStyleSheet(STYLE)
+        chbx_4.setStyleSheet(self.settings_checkbox)
         use_color_palette = SettingsJson().get_data("USE_COLOR_PALETTE")
         chbx_4.setChecked(bool(use_color_palette))
         chbx_4.stateChanged.connect(lambda: self.handle_palette_chbx(chbx_4))
@@ -4452,7 +4474,7 @@ class SettingsWindow(QWidget, StylizedUIBase):
         label_5 = QLabel("<b>Общий вид панели инструментов</b>")
         label_5.setStyleSheet(self.info_label_style_settings)
         chbx_5 = QCheckBox("Включить стиль FLAT")
-        chbx_5.setStyleSheet(STYLE)
+        chbx_5.setStyleSheet(self.settings_checkbox)
         use_flat_ui = SettingsJson().get_data("ENABLE_FLAT_EDITOR_UI")
         chbx_5.setChecked(bool(use_flat_ui))
         chbx_5.stateChanged.connect(lambda: self.handle_ui_style_chbx(chbx_5))

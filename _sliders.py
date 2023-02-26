@@ -52,6 +52,7 @@ class CustomSlider(QWidget):
         else:
             self.default_value = default_value
             self.value = self.default_value
+            self.palette_index = 0
         self.offset = 15
         self.changing = False
         self.control_width = 18

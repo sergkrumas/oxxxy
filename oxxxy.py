@@ -4731,18 +4731,21 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
             open_image_btn_gchr.setStyleSheet(self.button_style)
             open_image_btn_gchr.setFixedWidth(self.WIDTH)
             open_image_btn_gchr.clicked.connect(self.open_image)
+            open_image_btn_gchr.setFocusPolicy(Qt.NoFocus)
             open_image_btn_gchr.setCursor(Qt.PointingHandCursor)
 
             open_image_btn = QPushButton("Открыть")
             open_image_btn.setStyleSheet(self.button_style)
             open_image_btn.setFixedWidth(self.WIDTH)
             open_image_btn.clicked.connect(self.open_image_shell)
+            open_image_btn.setFocusPolicy(Qt.NoFocus)
             open_image_btn.setCursor(Qt.PointingHandCursor)
 
             open_folder_btn = QPushButton("Открыть\nпапку")
             open_folder_btn.setStyleSheet(self.button_style)
             open_folder_btn.setFixedWidth(self.WIDTH)
             open_folder_btn.clicked.connect(self.open_folder)
+            open_folder_btn.setFocusPolicy(Qt.NoFocus)
             open_folder_btn.setCursor(Qt.PointingHandCursor)
 
             self.layout.addSpacing(10)

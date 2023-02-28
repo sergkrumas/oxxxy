@@ -1545,7 +1545,7 @@ class ToolsWindow(QWidget):
             # deactivate current tool
             for btn in self.tools_buttons:
                 if btn.property("tool_id") == self.current_tool:
-                    btn.click() 
+                    btn.click()
         self.current_tool = tool_name
         self.tool_init = True
         self.parent().current_tool = tool_name
@@ -2415,7 +2415,7 @@ class ScreenshotWindow(QWidget):
 
         self.NUMBERING_WIDTH = 25
 
-        self.elementsIsFinalDrawing = False        
+        self.elementsIsFinalDrawing = False
 
     def elementsSetElementParameters(self, element):
         tw = self.tools_window
@@ -2880,7 +2880,7 @@ class ScreenshotWindow(QWidget):
                 if attr_name.startswith("_temp_"):
                     continue
                 type_class = type(attr_value)
-                # if type_class.__name__ in ['QPoint', 'QRect', 'QPainterPath']: 
+                # if type_class.__name__ in ['QPoint', 'QRect', 'QPainterPath']:
                 if type_class.__name__ in ['QPoint', 'QPainterPath']:
                     final_value = type_class(attr_value)
                     attr_name = f'_temp_{attr_name}'
@@ -3095,7 +3095,7 @@ class ScreenshotWindow(QWidget):
         self.elementsAutoDeleteInvisibleElement(element)
         tw = self.tools_window
         if tw:
-            tw.forwards_backwards_update()        
+            tw.forwards_backwards_update()
         self.update()
 
     def elementsAutoDeleteInvisibleElement(self, element):
@@ -3936,7 +3936,7 @@ class ScreenshotWindow(QWidget):
                 self.is_rect_defined = True
                 self.capture_region_rect = \
                                     self._build_valid_rect(self.input_POINT1, self.input_POINT2)
-                if not self.extended_editor_mode:                                    
+                if not self.extended_editor_mode:
                     # специальное ограничение, чтобы область захвата не съехала с экранной области
                     # и тем самым в скриншот не попала чернота
                     self.capture_region_rect = \
@@ -4214,7 +4214,7 @@ class ScreenshotWindow(QWidget):
                 self.elementsMoveElement(event)
         # Qt.Key_Return - основная клавиатура
         # Qt.Key_Enter - цифровая клавиатура
-        if key in [Qt.Key_Return, Qt.Key_Enter]: 
+        if key in [Qt.Key_Return, Qt.Key_Enter]:
             if self.capture_region_rect:
                 self.editing_is_done_handler()
             else:
@@ -4411,7 +4411,7 @@ class StylizedUIBase():
         QCheckBox:unchecked {
             color: gray;
         }
-    """    
+    """
 
     CLOSE_BUTTON_RADIUS = 50
 
@@ -4631,7 +4631,7 @@ class SettingsWindow(QWidget, StylizedUIBase):
         chbx_4.setChecked(bool(use_color_palette))
         chbx_4.stateChanged.connect(lambda: self.handle_palette_chbx(chbx_4))
         layout_4 = QVBoxLayout()
-        layout_4.setAlignment(Qt.AlignCenter)        
+        layout_4.setAlignment(Qt.AlignCenter)
         layout_4.addWidget(chbx_4)
 
         label_5 = QLabel("<b>Общий вид панели инструментов</b>")
@@ -4642,7 +4642,7 @@ class SettingsWindow(QWidget, StylizedUIBase):
         chbx_5.setChecked(bool(use_flat_ui))
         chbx_5.stateChanged.connect(lambda: self.handle_ui_style_chbx(chbx_5))
         layout_5 = QVBoxLayout()
-        layout_5.setAlignment(Qt.AlignCenter) 
+        layout_5.setAlignment(Qt.AlignCenter)
         layout_5.addWidget(chbx_5)
 
         # заголовок
@@ -5128,7 +5128,7 @@ def invoke_screenshot_editor(request_type=None):
             screenshot_editor.show()
             # чтобы activateWindow точно сработал и взял фокус ввода
             QApplication.instance().processEvents()
-            screenshot_editor.activateWindow()        
+            screenshot_editor.activateWindow()
 
     if request_type == RequestType.QuickFullscreen:
         ScreenshotWindow.save_screenshot(None, grabbed_image=screenshot_image, metadata=metadata)
@@ -5218,7 +5218,7 @@ def _restart_app(aftercrush=False):
 def read_settings_file():
     SettingsJson().init(Globals)
     Globals.ENABLE_FLAT_EDITOR_UI = SettingsJson().get_data("ENABLE_FLAT_EDITOR_UI")
-    Globals.USE_COLOR_PALETTE = SettingsJson().get_data("USE_COLOR_PALETTE")    
+    Globals.USE_COLOR_PALETTE = SettingsJson().get_data("USE_COLOR_PALETTE")
 
 def _main():
 

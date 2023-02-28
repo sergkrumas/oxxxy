@@ -75,7 +75,7 @@ class CustomSlider(QWidget):
         self.raw_value = 1.0
         self.flat_look = flat_look
         if self.type == "PALETTE":
-            self.flat_look = True 
+            self.flat_look = True
         self.refresh_image()
 
     def resizeEvent(self, event):
@@ -134,7 +134,7 @@ class CustomSlider(QWidget):
         A, B = self.get_AB_points()
         color_list = []
         for n, color in enumerate(self.palette_colors):
-            i = n/(len(self.palette_colors)-1)    
+            i = n/(len(self.palette_colors)-1)
             point = A*(1-i) + B*i
             color_list.append((n, color, point))
         return color_list

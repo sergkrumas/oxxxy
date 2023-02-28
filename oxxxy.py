@@ -57,7 +57,7 @@ from _transform_widget import (TransformWidget,)
 from on_windows_startup import is_app_in_startup, add_to_startup, remove_from_startup
 
 class Globals():
-    DEBUG = False
+    DEBUG = True
     DEBUG_ELEMENTS = False
     CRUSH_SIMULATOR = False
 
@@ -1796,13 +1796,19 @@ class ScreenshotWindow(QWidget):
         cursor_pos = self.mapFromGlobal(QCursor().pos())
         input_rect = self.build_input_rect(cursor_pos)
 
+        if self.extended_editor_mode:
+            old_brush = painter.brush()
+            painter.setBrush(self.checkerboard_brush)
+            painter.drawRect(self.rect())
+            painter.setBrush(old_brush)
+
         self.draw_uncaptured_zones(painter, self.uncapture_draw_type, input_rect, step=1)
 
-        # images
+        # background image
         self.draw_capture_zone(painter, input_rect, shot=1)
         # elements
         self.elementsDrawMain(painter)
-        # mask
+        # mask overlay
         self.draw_capture_zone(painter, input_rect, shot=2)
 
         self.draw_uncaptured_zones(painter, self.uncapture_draw_type, input_rect, step=2)
@@ -1900,28 +1906,30 @@ class ScreenshotWindow(QWidget):
         #   painter.drawImage(self.rect(), self.source_pixels)
         #   painter.setOpacity(1.0)
         ###### NEW VERSION FOR STEP == 1 AND STEP == 2:
+        self_rect = QRect(self.rect())
+        self_rect.moveCenter(self_rect.center() + self.elements_global_offset)
         if step == 1:
             if type == LayerOpacity.FullTransparent: # full transparent
-                painter.fillRect(self.rect(), QColor(0, 0, 0, 5))
+                painter.fillRect(self_rect, QColor(0, 0, 0, 5))
             elif type == LayerOpacity.HalfTransparent: # ghost
                 pass
             elif type == LayerOpacity.Opaque: # stay still
-                painter.drawImage(self.rect(), self.source_pixels)
+                painter.drawImage(self_rect, self.source_pixels)
         elif step == 2:
             painter.setClipping(True)
             path = QPainterPath()
-            path.addRect(QRectF(self.rect()))
+            path.addRect(QRectF(self_rect))
             path.addRect(QRectF(input_rect))
             painter.setClipPath(path)
             if type == LayerOpacity.FullTransparent: # full transparent
                 pass
             elif type == LayerOpacity.HalfTransparent: # ghost
-                painter.fillRect(self.rect(), QColor(0, 0, 0, 100))
+                painter.fillRect(self_rect, QColor(0, 0, 0, 100))
                 painter.setOpacity(0.6)
-                painter.drawImage(self.rect(), self.source_pixels)
+                painter.drawImage(self_rect, self.source_pixels)
                 painter.setOpacity(1.0)
             elif type == LayerOpacity.Opaque: # stay still
-                painter.fillRect(self.rect(), QColor(0, 0, 0, 100))
+                painter.fillRect(self_rect, QColor(0, 0, 0, 100))
             painter.setClipping(False)
         # if self.undermouse_region_rect:
         #   pen = painter.pen()
@@ -2094,7 +2102,10 @@ class ScreenshotWindow(QWidget):
     def draw_capture_zone(self, painter, input_rect, shot=1):
         tw = self.tools_window
         if shot==1 and self.input_POINT1 and self.input_POINT2:
-            painter.drawImage(input_rect, self.source_pixels, input_rect)
+            input_rect_dest = input_rect
+            input_rect_source = QRect(input_rect)
+            input_rect_source.moveCenter(input_rect_source.center()-self.elements_global_offset)
+            painter.drawImage(input_rect_dest, self.source_pixels, input_rect_source)
 
         if shot==2 and self.input_POINT1 and self.input_POINT2:
             if tw and tw.chb_masked.isChecked():
@@ -2262,6 +2273,22 @@ class ScreenshotWindow(QWidget):
 
         self.uncapture_mode_label_tstamp = time.time()
 
+        pixmap = QPixmap(40, 40)
+        pixmap.fill(Qt.transparent)
+        painter_ = QPainter()
+        painter_.begin(pixmap)
+        painter_.setOpacity(0.3)
+        painter_.fillRect(QRect(0, 0, 40, 40), QBrush(Qt.white))
+        painter_.setPen(Qt.NoPen)
+        painter_.setBrush(QBrush(Qt.black))
+        painter_.drawRect(QRect(0, 0, 20, 20))
+        painter_.drawRect(QRect(20, 20, 20, 20))
+        painter_.end()
+        self.checkerboard_brush = QBrush()
+        self.checkerboard_brush.setTexture(pixmap)
+
+        self.extended_editor_mode = True
+
     def request_fullscreen_capture_region(self):
         self.input_POINT2 = QPoint(0, 0)
         self.input_POINT1 = self.frameGeometry().bottomRight()
@@ -2321,7 +2348,7 @@ class ScreenshotWindow(QWidget):
         self.update_tools_window()
         self.update()
 
-    def define_class_Element(self):
+    def define_class_Element(root_self):
         def __init__(self, _type, elements_list):
             self.textbox = None
             self.type = _type
@@ -2350,12 +2377,30 @@ class ScreenshotWindow(QWidget):
 
             self.choose_default_subelement = True # for copypaste and zoom_in_region
 
-        return type("Element", (), {"__init__": __init__})
+        def __getattribute__(self, name):
+            if name.startswith("f_"):
+                ret_value = getattr(self, name[len("f_"):])
+                ret_value = QPoint(ret_value) #copy
+                if root_self.elementsIsFinalDrawing:
+                    # тут обрабатывается случай для QPoint,
+                    # а для QPainterPath такой же по смыслу код
+                    # находится в функции draw_transformed_path
+                    ret_value -= root_self.elements_global_offset
+                    ret_value -= root_self.get_capture_offset()
+                return ret_value
+            else:
+                return object.__getattribute__(self, name)
+
+        return type("Element", (), {
+                "__init__": __init__,
+                "__getattribute__": __getattribute__}
+        )
 
     def elementsInit(self):
         self.current_tool = "none"
         self.drag_capture_zone = False
-        self.ocp = QCursor().pos()
+        self.ocp = self.mapFromGlobal(QCursor().pos())
+        self.current_capture_zone_center = QPoint(0, 0)
 
         self.elements = []
         self.elements_history_index = 0
@@ -2364,7 +2409,13 @@ class ScreenshotWindow(QWidget):
         self.elements_final_output = None
         self.Element = self.define_class_Element()
 
+        self.elements_global_offset = QPoint(0, 0)
+        self.drag_global = False
+        self.current_elements_global_offset = QPoint(0, 0)
+
         self.NUMBERING_WIDTH = 25
+
+        self.elementsIsFinalDrawing = False        
 
     def elementsSetElementParameters(self, element):
         tw = self.tools_window
@@ -2551,7 +2602,7 @@ class ScreenshotWindow(QWidget):
         return non_deleted_elements
 
     def elementsBuildSubelementRect(self, element, copy_pos):
-        _rect = build_valid_rect(element.start_point, element.end_point)
+        _rect = build_valid_rect(element.f_start_point, element.f_end_point)
         if element.type == "zoom_in_region":
             factor = 1.0 + element.size*4.0
             _rect.setWidth(int(_rect.width()*factor))
@@ -2626,11 +2677,29 @@ class ScreenshotWindow(QWidget):
 
     def elementsMousePressEvent(self, event):
         tool = self.current_tool
-        if self.current_tool == "none":
+
+        isLeftButton = event.buttons() == Qt.LeftButton
+        isAltOnly = event.modifiers() == Qt.AltModifier
+        isCaptureZone = self.capture_region_rect is not None
+        if self.current_tool == "none" and isLeftButton and isCaptureZone and not isAltOnly:
+            self.current_capture_zone_center = self.capture_region_rect.center()
             self.ocp = event.pos()
             self.drag_capture_zone = True
+            return
         else:
             self.drag_capture_zone = False
+
+        if isAltOnly and isLeftButton:
+            if self.extended_editor_mode:
+                self.elementsInitMoveGlobalOffset()
+                self.ocp = event.pos()
+                self.drag_global = True
+                return
+            else:
+                QMessageBox.critical(None, "Ошибка", "Расширенный режим редактора отключён")
+        else:
+            self.drag_global = False
+
         if self.current_tool == "none":
             return
         if self.current_tool == "stamp" and not self.current_stamp_pixmap:
@@ -2802,12 +2871,69 @@ class ScreenshotWindow(QWidget):
         else:
             return self.get_custom_cross_cursor()
 
+    def elementsInitMoveGlobalOffset(self):
+        self.current_elements_global_offset = QPoint(self.elements_global_offset)
+        self.current_capture_zone_center = self.capture_region_rect.center()
+        for element in self.elements[:]:
+            attributes = dict(element.__dict__).items()
+            for attr_name, attr_value in attributes:
+                if attr_name.startswith("_temp_"):
+                    continue
+                type_class = type(attr_value)
+                # if type_class.__name__ in ['QPoint', 'QRect', 'QPainterPath']: 
+                if type_class.__name__ in ['QPoint', 'QPainterPath']:
+                    final_value = type_class(attr_value)
+                    attr_name = f'_temp_{attr_name}'
+                    setattr(element, attr_name, final_value)
+        self.update()
+
+    def elementsMoveGlobalOffset(self, delta):
+        self.elements_global_offset = self.current_elements_global_offset + delta
+        for element in self.elements[:]:
+            attributes = dict(element.__dict__).items()
+            for attr_name, attr_value in attributes:
+                if attr_name.startswith('_temp_'):
+                    set_attr_name = attr_name[len('_temp_'):]
+                    type_class = type(attr_value)
+                    classname = type_class.__name__
+                    if classname == 'QPoint':
+                        final_value = attr_value + delta
+                    # elif classname == 'QRect':
+                    #     _temp = QRect(attr_value)
+                    #     _temp.moveCenter(_temp.center() + delta)
+                    #     final_value = _temp
+                    elif classname == "QPainterPath":
+                        _temp = QPainterPath(attr_value)
+                        _temp.translate(delta)
+                        final_value = _temp
+                    else:
+                        raise Exception("elementsMoveGlobalOffset Exception")
+                    setattr(element, set_attr_name, final_value)
+        self.move_capture_rect(delta)
+        if self.input_POINT1 is not None:
+            self.input_POINT1 = QPoint(self.capture_region_rect.topLeft())
+        if self.input_POINT2 is not None:
+            self.input_POINT2 = QPoint(self.capture_region_rect.bottomRight())
+        if self.transform_widget:
+            # refresh
+            self.elementsSetSelected(self.selected_element)
+        self.update()
+
+    def move_capture_rect(self, delta):
+        self.capture_region_rect.moveCenter(self.current_capture_zone_center + delta)
+        self.input_POINT1 = QPoint(self.capture_region_rect.topLeft())
+        self.input_POINT2 = QPoint(self.capture_region_rect.bottomRight())
+
     def elementsMouseMoveEvent(self, event):
         tool = self.current_tool
-        if self.drag_capture_zone and event.buttons() == Qt.LeftButton:
+        isLeftButton = event.buttons() == Qt.LeftButton
+        if self.drag_capture_zone and isLeftButton:
             delta = QPoint(event.pos() - self.ocp)
             self.move_capture_rect(delta)
-            self.ocp = event.globalPos()
+        if self.drag_global and isLeftButton:
+            delta = QPoint(event.pos() - self.ocp)
+            self.elementsMoveGlobalOffset(delta)
+            return
         if tool == "none":
             return
         # основная часть
@@ -2872,9 +2998,9 @@ class ScreenshotWindow(QWidget):
                     sel_elem.pBpos = self.transform_widget.pB.point
                     current_topLeft = sel_elem.path.boundingRect().topLeft()
                     sel_elem.path.translate(-QPointF(current_topLeft))
-                    sel_elem.path.translate(QPointF(
-                                        build_valid_rect(sel_elem.pApos, sel_elem.pBpos).topLeft()
-                    ))
+                    sel_elem.path.translate(
+                        QPointF(build_valid_rect(sel_elem.pApos, sel_elem.pBpos).topLeft())
+                    )
                 elif sel_elem.type == "blurring":
                     sel_elem.finished = False
                     sel_elem.start_point = self.transform_widget.pA.point
@@ -2898,7 +3024,10 @@ class ScreenshotWindow(QWidget):
 
     def elementsMouseReleaseEvent(self, event):
         tool = self.current_tool
-        # tools_window.forwards_backwards_update()
+        if self.drag_global or self.drag_capture_zone:
+            self.drag_capture_zone = False
+            self.drag_global = False
+            return
         element = self.elementsGetLastElement()
         if element is None:
             return
@@ -2964,6 +3093,9 @@ class ScreenshotWindow(QWidget):
         if tool != "transform":
             self.elementsSetSelected(None)
         self.elementsAutoDeleteInvisibleElement(element)
+        tw = self.tools_window
+        if tw:
+            tw.forwards_backwards_update()        
         self.update()
 
     def elementsAutoDeleteInvisibleElement(self, element):
@@ -3118,43 +3250,55 @@ class ScreenshotWindow(QWidget):
                 painter.setOpacity(1.0)
                 painter.setClipping(False)
 
-    def draw_transformed_path(self, element, path, painter):
-        pApoint = element.pApos
-        pBPoint = element.pBpos
-        orig_bounding_rect = path.boundingRect()
-        current_bounding_rect = build_valid_rect(pApoint, pBPoint)
-        # вычисление скейла
-        delta1 = orig_bounding_rect.topLeft() - orig_bounding_rect.bottomRight()
-        delta2 = pApoint - pBPoint
-        try:
-            new_scale_x = delta1.x()/delta2.x()
-            new_scale_x = 1/new_scale_x
-        except ZeroDivisionError:
-            new_scale_x = 0.0
-        try:
-            new_scale_y = delta1.y()/delta2.y()
-            new_scale_y = 1/new_scale_y
-        except ZeroDivisionError:
-            new_scale_y = 0.0
-        # корректировка разных скейлов сдвигами по осям
-        new_pos = current_bounding_rect.topLeft()
-        if new_scale_x < .0:
-            new_pos.setX(new_pos.x()+current_bounding_rect.width())
-        if new_scale_y < .0:
-            new_pos.setY(new_pos.y()+current_bounding_rect.height())
-        # отрисовка пути
-        # помещаем верхнюю левую точку пути в ноль
-        to_zero = -orig_bounding_rect.topLeft()
-        path = path.translated(to_zero.x(), to_zero.y())
-        # задаём трансформацию полотна
-        transform = QTransform()
-        transform.translate(new_pos.x(), new_pos.y())
-        transform.scale(new_scale_x, new_scale_y)
-        painter.setTransform(transform)
-        # рисуем путь в заданной трансформации
-        painter.drawPath(path)
-        # скидываем трансформацию
-        painter.resetTransform()
+    def draw_transformed_path(self, element, path, painter, final):
+        if hasattr(element, "pApos"):
+            pApoint = element.pApos
+            pBPoint = element.pBpos
+            orig_bounding_rect = path.boundingRect()
+            current_bounding_rect = build_valid_rect(pApoint, pBPoint)
+            # вычисление скейла
+            delta1 = orig_bounding_rect.topLeft() - orig_bounding_rect.bottomRight()
+            delta2 = pApoint - pBPoint
+            try:
+                new_scale_x = delta1.x()/delta2.x()
+                new_scale_x = 1/new_scale_x
+            except ZeroDivisionError:
+                new_scale_x = 0.0
+            try:
+                new_scale_y = delta1.y()/delta2.y()
+                new_scale_y = 1/new_scale_y
+            except ZeroDivisionError:
+                new_scale_y = 0.0
+            # корректировка разных скейлов сдвигами по осям
+            new_pos = current_bounding_rect.topLeft()
+            if new_scale_x < .0:
+                new_pos.setX(new_pos.x()+current_bounding_rect.width())
+            if new_scale_y < .0:
+                new_pos.setY(new_pos.y()+current_bounding_rect.height())
+            # отрисовка пути
+            # помещаем верхнюю левую точку пути в ноль
+            to_zero = -orig_bounding_rect.topLeft()
+            if final:
+                path = QPainterPath(path)
+                path.translate(-self.elements_global_offset)
+                path.translate(-self.get_capture_offset())
+            path = path.translated(to_zero.x(), to_zero.y())
+            # задаём трансформацию полотна
+            transform = QTransform()
+            transform.translate(new_pos.x(), new_pos.y())
+            transform.scale(new_scale_x, new_scale_y)
+            painter.setTransform(transform)
+            # рисуем путь в заданной трансформации
+            painter.drawPath(path)
+            # скидываем трансформацию
+            painter.resetTransform()
+        else:
+            path = element.path
+            if final:
+                path = QPainterPath(path)
+                path.translate(-self.elements_global_offset)
+                path.translate(-self.get_capture_offset())
+            painter.drawPath(path)
 
     def elementsGetPenFromElement(self, element):
         color = element.color
@@ -3178,6 +3322,7 @@ class ScreenshotWindow(QWidget):
         old_brush = painter.brush()
         old_pen = painter.pen()
         # draw elements
+        self.elementsIsFinalDrawing = final
         self.elementsDrawDarkening(painter)
         for element in self.elementsHistoryFilter():
             el_type = element.type
@@ -3186,18 +3331,16 @@ class ScreenshotWindow(QWidget):
             painter.setBrush(QBrush(color))
             if el_type == "arrow":
                 painter.setPen(Qt.NoPen)
-                self.elementsDrawArrow(painter, element.start_point, element.end_point, size, True)
+                self.elementsDrawArrow(painter, element.f_start_point,
+                                                                element.f_end_point, size, True)
             elif el_type in ["pen", "marker"]:
                 painter.setBrush(Qt.NoBrush)
                 if element.straight:
-                    painter.drawLine(element.start_point, element.end_point)
+                    painter.drawLine(element.f_start_point, element.f_end_point)
                 else:
-                    if hasattr(element, "pApos"):
-                        self.draw_transformed_path(element, element.path, painter)
-                    else:
-                        painter.drawPath(element.path)
+                    self.draw_transformed_path(element, element.path, painter, final)
             elif el_type == "line":
-                painter.drawLine(element.start_point, element.end_point)
+                painter.drawLine(element.f_start_point, element.f_end_point)
             elif el_type == 'special' and not final:
                 _pen = painter.pen()
                 _brush = painter.brush()
@@ -3205,7 +3348,7 @@ class ScreenshotWindow(QWidget):
                 painter.setBrush(Qt.NoBrush)
                 cm = painter.compositionMode()
                 painter.setCompositionMode(QPainter.RasterOp_NotDestination) #RasterOp_SourceXorDestination
-                rect = build_valid_rect(element.start_point, element.end_point)
+                rect = build_valid_rect(element.f_start_point, element.f_end_point)
                 painter.drawRect(rect)
                 painter.setCompositionMode(cm)
                 painter.setPen(_pen)
@@ -3214,14 +3357,14 @@ class ScreenshotWindow(QWidget):
                 cur_brush = painter.brush()
                 if not element.filled:
                     painter.setBrush(Qt.NoBrush)
-                rect = build_valid_rect(element.start_point, element.end_point)
+                rect = build_valid_rect(element.f_start_point, element.f_end_point)
                 if el_type == "oval":
                     painter.drawEllipse(rect)
                 else:
                     painter.drawRect(rect)
                 if el_type == "numbering":
                     w = self.NUMBERING_WIDTH
-                    end_point_rect = QRect(element.end_point - QPoint(int(w/2), int(w/2)),
+                    end_point_rect = QRect(element.f_end_point - QPoint(int(w/2), int(w/2)),
                                                                                     QSize(w, w))
                     painter.setBrush(cur_brush)
                     painter.setPen(Qt.NoPen)
@@ -3244,7 +3387,7 @@ class ScreenshotWindow(QWidget):
                     p.begin(pixmap)
                     p.setClipping(True)
                     path = QPainterPath()
-                    pos = element.end_point - QPoint(0, element.pixmap.height())
+                    pos = element.f_end_point - QPoint(0, element.pixmap.height())
                     text_rect = QRect(pos, element.pixmap.size())
                     text_rect = QRect(QPoint(0, 0), element.pixmap.size())
                     path.addRoundedRect(QRectF(text_rect), element.margin_value,
@@ -3255,15 +3398,15 @@ class ScreenshotWindow(QWidget):
                     p.end()
 
                 painter.setPen(Qt.NoPen)
-                if element.start_point != element.end_point:
+                if element.f_start_point != element.f_end_point:
                     if element.modify_end_point:
                         modified_end_point = get_nearest_point_on_rect(
                             QRect(pos, QSize(element.pixmap.width(), element.pixmap.height())),
-                            element.start_point
+                            element.f_start_point
                         )
                     else:
-                        modified_end_point = element.end_point
-                    self.elementsDrawArrow(painter, modified_end_point, element.start_point,
+                        modified_end_point = element.f_end_point
+                    self.elementsDrawArrow(painter, modified_end_point, element.f_start_point,
                                                                                     size, False)
                 if element.pixmap:
                     image_rect = QRect(pos, pixmap.size())
@@ -3281,14 +3424,14 @@ class ScreenshotWindow(QWidget):
                     painter.resetTransform()
 
             elif el_type in ["blurring", "darkening"]:
-                rect = build_valid_rect(element.start_point, element.end_point)
+                rect = build_valid_rect(element.f_start_point, element.f_end_point)
                 painter.setBrush(Qt.NoBrush)
                 painter.setPen(Qt.NoPen)
                 if el_type == "blurring":
                     if not element.finished:
                         painter.setBrush(QBrush(QColor(150, 0, 0), Qt.DiagCrossPattern))
                     else:
-                        rect = build_valid_rect(element.start_point, element.end_point)
+                        rect = build_valid_rect(element.f_start_point, element.f_end_point)
                         painter.drawPixmap(rect.topLeft(), element.pixmap)
                 elif el_type == "darkening":
                     # painter.setBrush(QBrush(QColor(150, 150, 0), Qt.BDiagPattern))
@@ -3296,7 +3439,7 @@ class ScreenshotWindow(QWidget):
                 painter.drawRect(rect)
             elif el_type == "stamp":
                 pixmap = element.pixmap
-                r = build_valid_rect(element.start_point, element.end_point)
+                r = build_valid_rect(element.f_start_point, element.f_end_point)
                 s = QRect(QPoint(0,0), pixmap.size())
                 painter.translate(r.center())
                 rotation = element.angle
@@ -3309,9 +3452,9 @@ class ScreenshotWindow(QWidget):
                 if Globals.CRUSH_SIMULATOR:
                     1 / 0
             elif el_type in ["zoom_in_region", "copypaste"]:
-                input_rect = build_valid_rect(element.start_point, element.end_point)
+                f_input_rect = build_valid_rect(element.f_start_point, element.f_end_point)
                 curpos = QCursor().pos()
-                final_pos = element.copy_pos if element.finished else self.mapFromGlobal(curpos)
+                final_pos = element.f_copy_pos if element.finished else self.mapFromGlobal(curpos)
                 final_version_rect = self.elementsBuildSubelementRect(element, final_pos)
                 painter.setBrush(Qt.NoBrush)
                 if el_type == "zoom_in_region":
@@ -3320,13 +3463,13 @@ class ScreenshotWindow(QWidget):
                     painter.setPen(QPen(Qt.red, 1, Qt.DashLine))
                 if el_type == "zoom_in_region" or \
                                 (el_type == "copypaste" and not final):
-                    painter.drawRect(input_rect)
+                    painter.drawRect(f_input_rect)
                 if element.zoom_second_input or element.finished:
                     if element.toolbool and el_type == "zoom_in_region":
                         points = []
                         attrs_names = ["topLeft", "topRight", "bottomLeft", "bottomRight"]
                         for corner_attr_name in attrs_names:
-                            p1 = getattr(input_rect, corner_attr_name)()
+                            p1 = getattr(f_input_rect, corner_attr_name)()
                             p2 = getattr(final_version_rect, corner_attr_name)()
                             points.append(p1)
                             points.append(p2)
@@ -3334,7 +3477,9 @@ class ScreenshotWindow(QWidget):
                         for n, coord in enumerate(coords[:-1]):
                             painter.drawLine(coord, coords[n+1])
                     source_pixels = self.source_pixels
-                    painter.drawImage(final_version_rect, source_pixels, input_rect)
+                    if not final:
+                        f_input_rect.moveCenter(f_input_rect.center() - self.elements_global_offset)
+                    painter.drawImage(final_version_rect, source_pixels, f_input_rect)
                     if el_type == "zoom_in_region":
                         painter.drawRect(final_version_rect)
         if not final:
@@ -3345,6 +3490,7 @@ class ScreenshotWindow(QWidget):
             painter.drawText(self.capture_region_rect, Qt.AlignCenter, text)
         painter.setBrush(old_brush)
         painter.setPen(old_pen)
+        self.elementsIsFinalDrawing = False
 
     def elementsStampRect(self, center_point, size, pixmap):
         s = size
@@ -3355,12 +3501,15 @@ class ScreenshotWindow(QWidget):
 
     def elementsDrawFinalVersionDebug(self, painter):
         if self.capture_region_rect and self.elements_final_output:
-            p = QRect(self.capture_region_rect)
-            p.moveTopLeft(self.capture_region_rect.topRight())
+
+            # draw final picture
+            p = self.capture_region_rect.topRight()
             painter.setOpacity(0.6)
-            painter.drawPixmap(p, self.elements_final_output, self.capture_region_rect)
+            painter.drawPixmap(p, self.elements_final_output)
             painter.setOpacity(1.0)
             painter.resetTransform()
+
+            # draw debug elements' list
             if self.elements:
                 all_elements = self.elements
                 visible_elements = self.elementsHistoryFilter()
@@ -3419,14 +3568,73 @@ class ScreenshotWindow(QWidget):
                 painter.end()
             else:
                 self.specials_case = False
-                _rect = QRect(QPoint(0, 0), self.capture_region_rect.bottomRight())
-                self.elements_final_output = QPixmap(_rect.size())
-                painter = QPainter()
-                painter.begin(self.elements_final_output)
-                painter.drawImage(self.capture_region_rect, self.source_pixels,
+                if self.extended_editor_mode:
+                    self.elements_final_output = QPixmap(self.capture_region_rect.size())
+                    self.elements_final_output.fill(Qt.transparent)
+                    painter = QPainter()
+                    painter.begin(self.elements_final_output)
+                    painter.drawImage(-self.get_capture_offset(), self.source_pixels)
+                    self.elementsDrawMain(painter, final=True)
+                    painter.end()
+                else:
+                    _rect = QRect(QPoint(0, 0), self.capture_region_rect.bottomRight())
+                    self.elements_final_output = QPixmap(_rect.size())
+                    painter = QPainter()
+                    painter.begin(self.elements_final_output)
+                    painter.drawImage(self.capture_region_rect, self.source_pixels,
                                                                         self.capture_region_rect)
-                self.elementsDrawMain(painter, final=True)
-                painter.end()
+                    self.elementsDrawMain(painter, final=True)
+                    painter.end()
+
+    def get_capture_offset(self):
+        capture_offset = self.capture_region_rect.topLeft()
+        capture_offset -= self.elements_global_offset
+        return capture_offset
+
+    def save_screenshot(self, grabbed_image=None, metadata=None):
+        def copy_image_data_to_clipboard(fp):
+            # засовывает содержимое картинки в буфер,
+            # чтобы можно было вставить в браузере или телеге
+            if os.path.exists(fp):
+                app = QApplication.instance()
+                data = QMimeData()
+                url = QUrl.fromLocalFile(fp)
+                data.setUrls([url])
+                app.clipboard().setMimeData(data)
+
+        # задание папки для скриншота
+        SettingsWindow.set_screenshot_folder_path()
+        # сохранение файла
+        formated_datetime = datetime.datetime.now().strftime("%d-%m-%Y %H-%M-%S")
+        if grabbed_image:
+            # quick fullscreen
+            filepath = get_screenshot_filepath(formated_datetime)
+            grabbed_image.save(filepath)
+            # copy_image_data_to_clipboard(filepath)
+            save_meta_info(metadata, filepath)
+        else:
+            self.elementsUpdateFinalPicture()
+            if self.specials_case:
+                pix = self.elements_final_output
+            else:
+                if self.extended_editor_mode:
+                    pix = self.elements_final_output
+                else:
+                    pix = self.elements_final_output.copy(self.capture_region_rect)
+            if self.tools_window.chb_masked.isChecked():
+                # fragment or fullscreen: masked version
+                filepath = get_screenshot_filepath(f"{formated_datetime} masked")
+                self.circle_mask_image(pix).save(filepath)
+                if self.tools_window.chb_add_meta.isChecked():
+                    save_meta_info(self.metadata, filepath)
+            else:
+                # fragment or fullscreen: default version
+                filepath = get_screenshot_filepath(formated_datetime)
+                pix.save(filepath)
+                if self.tools_window.chb_add_meta.isChecked():
+                    save_meta_info(self.metadata, filepath)
+            copy_image_data_to_clipboard(filepath)
+        restart_app_in_notification_mode(filepath)
 
     def elementsCreateModificatedCopyOnNeed(self, element, keep_old_widget=False):
         if element == self.elementsGetLastElement():# or element.type == "text":
@@ -3619,12 +3827,6 @@ class ScreenshotWindow(QWidget):
         if self.tools_window:
             self.tools_window.do_autopositioning(self.capture_region_rect)
 
-    def move_capture_rect(self, delta):
-        pos = self.capture_region_rect.center()
-        self.capture_region_rect.moveCenter(pos + delta)
-        self.input_POINT1 = self.capture_region_rect.topLeft()
-        self.input_POINT2 = self.capture_region_rect.bottomRight()
-
     def mouseMoveEvent(self, event):
         if self.tools_window:
             select_window = self.tools_window.select_window
@@ -3679,9 +3881,11 @@ class ScreenshotWindow(QWidget):
                     self.capture_region_rect.topLeft(),
                     self.capture_region_rect.bottomRight(),
                 )
-                # специальное ограничение, чтобы область захвата не съехала с экранной области
-                # и тем самым в скриншот не попала чернота
-                self.capture_region_rect = \
+                if not self.extended_editor_mode:
+                    # специальное ограничение, чтобы область захвата
+                    # не съехала с экранной области
+                    # и тем самым в скриншот не попала чернота
+                    self.capture_region_rect = \
                                     self._all_monitors_rect.intersected(self.capture_region_rect)
                 # topLeft() выдаёт PyQt'шный QPoint, а нам нужен свой QPoint,
                 # который описан в начале файла. Если здесь не сделать этого приведения,
@@ -3732,9 +3936,10 @@ class ScreenshotWindow(QWidget):
                 self.is_rect_defined = True
                 self.capture_region_rect = \
                                     self._build_valid_rect(self.input_POINT1, self.input_POINT2)
-                # специальное ограничение, чтобы область захвата не съехала с экранной области
-                # и тем самым в скриншот не попала чернота
-                self.capture_region_rect = \
+                if not self.extended_editor_mode:                                    
+                    # специальное ограничение, чтобы область захвата не съехала с экранной области
+                    # и тем самым в скриншот не попала чернота
+                    self.capture_region_rect = \
                                     self._all_monitors_rect.intersected(self.capture_region_rect)
                 self.is_rect_redefined = False
             self.get_region_info() # здесь только для установки курсора
@@ -3953,48 +4158,6 @@ class ScreenshotWindow(QWidget):
         if self.tools_window:
             self.tools_window.hide()
         self.close()
-
-    def save_screenshot(self, grabbed_image=None, metadata=None):
-        def copy_image_data_to_clipboard(fp):
-            # засовывает содержимое картинки в буфер,
-            # чтобы можно было вставить в браузере или телеге
-            if os.path.exists(fp):
-                app = QApplication.instance()
-                data = QMimeData()
-                url = QUrl.fromLocalFile(fp)
-                data.setUrls([url])
-                app.clipboard().setMimeData(data)
-
-        # задание папки для скриншота
-        SettingsWindow.set_screenshot_folder_path()
-        # сохранение файла
-        formated_datetime = datetime.datetime.now().strftime("%d-%m-%Y %H-%M-%S")
-        if grabbed_image:
-            # quick fullscreen
-            filepath = get_screenshot_filepath(formated_datetime)
-            grabbed_image.save(filepath)
-            # copy_image_data_to_clipboard(filepath)
-            save_meta_info(metadata, filepath)
-        else:
-            self.elementsUpdateFinalPicture()
-            if self.specials_case:
-                pix = self.elements_final_output
-            else:
-                pix = self.elements_final_output.copy(self.capture_region_rect)
-            if self.tools_window.chb_masked.isChecked():
-                # fragment or fullscreen: masked version
-                filepath = get_screenshot_filepath(f"{formated_datetime} masked")
-                self.circle_mask_image(pix).save(filepath)
-                if self.tools_window.chb_add_meta.isChecked():
-                    save_meta_info(self.metadata, filepath)
-            else:
-                # fragment or fullscreen: default version
-                filepath = get_screenshot_filepath(formated_datetime)
-                pix.save(filepath)
-                if self.tools_window.chb_add_meta.isChecked():
-                    save_meta_info(self.metadata, filepath)
-            copy_image_data_to_clipboard(filepath)
-        restart_app_in_notification_mode(filepath)
 
     def do_move_cursor(self, coords):
         c = QCursor()

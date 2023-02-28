@@ -4727,7 +4727,7 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
             self.label.setStyleSheet(self.title_label_style)
             self.label.setFixedWidth(self.WIDTH - self.CLOSE_BUTTON_RADIUS)
 
-            open_image_btn_gchr = QPushButton("Открыть\nв браузере")
+            open_image_btn_gchr = QPushButton("Открыть в браузере")
             open_image_btn_gchr.setStyleSheet(self.button_style)
             open_image_btn_gchr.setFixedWidth(self.WIDTH)
             open_image_btn_gchr.clicked.connect(self.open_image)
@@ -4741,7 +4741,7 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
             open_image_btn.setFocusPolicy(Qt.NoFocus)
             open_image_btn.setCursor(Qt.PointingHandCursor)
 
-            open_folder_btn = QPushButton("Открыть\nпапку")
+            open_folder_btn = QPushButton("Открыть папку")
             open_folder_btn.setStyleSheet(self.button_style)
             open_folder_btn.setFixedWidth(self.WIDTH)
             open_folder_btn.clicked.connect(self.open_folder)

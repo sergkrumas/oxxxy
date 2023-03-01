@@ -3477,8 +3477,14 @@ class ScreenshotWindow(QWidget):
                         for n, coord in enumerate(coords[:-1]):
                             painter.drawLine(coord, coords[n+1])
                     source_pixels = self.source_pixels
+                    # с прямоугольником производятся корректировки, чтобы последствия перемещения
+                    # рамки захвата и перемещения окна не сказывались на копируемой области 
                     if not final:
                         f_input_rect.moveCenter(f_input_rect.center() - self.elements_global_offset)
+                    else:
+                        # get_capture_offset вычитался во время вызова build_valid_rect,
+                        # а здесь прибавляется для того, чтобы всё работало как надо
+                        f_input_rect.moveCenter(f_input_rect.center() + self.get_capture_offset())
                     painter.drawImage(final_version_rect, source_pixels, f_input_rect)
                     if el_type == "zoom_in_region":
                         painter.drawRect(final_version_rect)

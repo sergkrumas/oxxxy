@@ -5187,16 +5187,15 @@ def excepthook(exc_type, exc_value, exc_tb):
         crush_log.write(dt_framed)
         crush_log.write("\n")
         crush_log.write(traceback_lines)
+    print("*** excepthook info ***")
     print(traceback_lines)
     app = QApplication.instance()
     if app:
         stray_icon = app.property("stray_icon")
         if stray_icon:
             stray_icon.hide()
-    if not Globals.DEBUG and not Globals.RUN_ONCE:
-        # time.sleep(1.0)
+    if (not Globals.DEBUG) and (not Globals.RUN_ONCE):
         _restart_app(aftercrush=True)
-        # pass
     sys.exit()
 
 def get_filepaths_dialog():
@@ -5235,7 +5234,7 @@ def _main():
         1 / 0
 
     RERUN_ARG = '-rerun'
-    if RERUN_ARG not in sys.argv and "-aftercrush" not in sys.argv:
+    if (RERUN_ARG not in sys.argv) and ("-aftercrush" not in sys.argv):
         subprocess.Popen([sys.executable, *sys.argv, RERUN_ARG])
         sys.exit()
 
@@ -5273,12 +5272,15 @@ def _main():
     app.setEffectEnabled(Qt.UI_FadeTooltip, False)
 
     if Globals.AFTERCRUSH:
-        ret = QMessageBox.question(None,'',
-            "Скриншотер Oxxxy упал. Перезапустить его?",
+        filepath = get_crushlog_filepath()
+        msg0 = f"Информация сохранена в файл\n\t{filepath}"
+        msg = f"Скриншотер Oxxxy упал.\n{msg0}\n\nПерезапустить Oxxxy?"
+        ret = QMessageBox.question(None,'Сбой',
+            msg,
             QMessageBox.Yes | QMessageBox.No)
         if ret == QMessageBox.Yes:
             _restart_app()
-        sys.exit()
+        sys.exit(0)
 
     thread_instance = None
     if args.notification:

@@ -5146,7 +5146,7 @@ class ListenHotkeyThread(QThread):
     def __init__(self):
         super().__init__()
         self.hotkey_pressed.connect(self.callback_function, Qt.QueuedConnection)
-        self.allowed = True #срабатывает только на один раз
+        self.allowed = True #для срабатывания только один раз
 
     def callback_function(self, i):
         if self.allowed:

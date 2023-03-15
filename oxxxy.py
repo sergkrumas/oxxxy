@@ -3231,7 +3231,7 @@ class ScreenshotWindow(QWidget):
                 if element.type == "darkening":
                     at_least_one_exists = True
                     darkening_value = element.size
-                    r = build_valid_rect(element.start_point, element.end_point)
+                    r = build_valid_rect(element.f_start_point, element.f_end_point)
                     piece = QPainterPath()
                     piece.addRect(QRectF(r))
                     darkening_zone = darkening_zone.united(piece)
@@ -3239,12 +3239,14 @@ class ScreenshotWindow(QWidget):
                 painter.setClipping(True)
                 if offset:
                     painter.translate(offset)
-                painter.setClipRect(QRectF(self.capture_region_rect))
+                capture_rect = QRect(self.capture_region_rect)
+                capture_rect.setTopLeft(QPoint(0,0))
+                painter.setClipRect(QRectF(capture_rect))
                 painter.setOpacity(0.1+0.9*darkening_value)
                 painter.setPen(Qt.NoPen)
                 painter.setBrush(QBrush(Qt.black))
                 capture_dark = QPainterPath()
-                capture_dark.addRect(QRectF(self.capture_region_rect))
+                capture_dark.addRect(QRectF(capture_rect))
                 capture_dark.addPath(darkening_zone)
                 painter.drawPath(capture_dark)
                 painter.setOpacity(1.0)

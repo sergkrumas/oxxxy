@@ -58,7 +58,7 @@ from on_windows_startup import is_app_in_startup, add_to_startup, remove_from_st
 
 class Globals():
     DEBUG = True
-    DEBUG_ELEMENTS = True
+    DEBUG_ELEMENTS = False
     CRUSH_SIMULATOR = False
 
     DEBUG_VIZ = False
@@ -2448,6 +2448,29 @@ class ScreenshotWindow(QWidget):
 
         self.elementsIsFinalDrawing = False
 
+    def elementsResetCapture(self):
+        self.elementsSetSelected(None)
+
+        self.input_POINT1 = None
+        self.input_POINT2 = None
+        self.capture_region_rect = None
+
+        self.user_input_started = False
+        self.is_rect_defined = False
+        self.is_rect_redefined = False
+        self.current_capture_zone_center = QPoint(0, 0)
+
+        tw = self.tools_window
+        if tw:
+            tw.close()
+            self.tools_window = None
+
+    def elementsCancelExtendedMode(self):
+        self.current_elements_global_offset = QPoint(0, 0)
+        self.elementsMoveGlobalOffset(-self.elements_global_offset)
+        self.elements_global_offset = QPoint(0, 0)
+        self.elementsResetCapture()
+
     def elementsSetElementParameters(self, element):
         tw = self.tools_window
         if tw:
@@ -3119,11 +3142,12 @@ class ScreenshotWindow(QWidget):
         if tool in [ToolID.line, ToolID.pen, ToolID.marker]:
             if element.end_point == element.start_point:
                 self.elements.remove(element)
-        tw = self.tools_window
-        if tw:
-            self.elements_history_index = self.prev_elements_history_index
-            tw.forwards_backwards_update()
-            print('correcting after autodelete')
+                tw = self.tools_window
+                if tw:
+                    self.elements_history_index = self.prev_elements_history_index
+                    tw.forwards_backwards_update()
+                    print('correcting after autodelete')
+
 
     def elementsSetBlurredPixmap(self, element):
         if not element.finished:
@@ -3537,34 +3561,36 @@ class ScreenshotWindow(QWidget):
             painter.setOpacity(1.0)
             painter.resetTransform()
 
-            # draw debug elements' list
-            if self.elements:
-                all_elements = self.elements
-                visible_elements = self.elementsHistoryFilter()
-                info_rect = QRect(QPoint(0, 0),
-                        self.capture_region_rect.bottomLeft()-QPoint(10, 10))
-                painter.fillRect(QRect(QPoint(0, 0), self.capture_region_rect.bottomLeft()),
-                                                                            QColor(0, 0, 0, 180))
-                for index, element in reversed(list(enumerate(all_elements))):
-                    painter.setPen(QPen(Qt.white))
-                    info_text = ""
-                    font = painter.font()
-                    if element not in visible_elements:
-                        painter.setPen(QPen(QColor(255, 100, 100)))
-                        font.setStrikeOut(True)
-                    else:
-                        font.setStrikeOut(False)
-                    if self.selected_element and self.selected_element == element:
-                        painter.setPen(QPen(Qt.green))
-                    if hasattr(element, "source_index"):
-                        el = element
-                        info_text += f"[{el.unique_index}] {el.type} from [{el.source_index}]"
-                    else:
-                        info_text += f"[{element.unique_index}] {element.type}"
-                    font.setWeight(1900)
-                    font.setPixelSize(20)
-                    painter.setFont(font)
-                    painter.drawText(info_rect.bottomRight() + QPoint(-200, -index*25), info_text)
+        # draw debug elements' list
+        if self.elements:
+            if self.capture_region_rect:
+                pos = self.capture_region_rect.bottomLeft()
+            else:
+                pos = self.mapFromGlobal(QCursor().pos())
+            all_elements = self.elements
+            visible_elements = self.elementsHistoryFilter()
+            info_rect = QRect(QPoint(0, 0), pos-QPoint(10, 10))
+            painter.fillRect(QRect(QPoint(0, 0), pos), QColor(0, 0, 0, 180))
+            for index, element in reversed(list(enumerate(all_elements))):
+                painter.setPen(QPen(Qt.white))
+                info_text = ""
+                font = painter.font()
+                if element not in visible_elements:
+                    painter.setPen(QPen(QColor(255, 100, 100)))
+                    font.setStrikeOut(True)
+                else:
+                    font.setStrikeOut(False)
+                if self.selected_element and self.selected_element == element:
+                    painter.setPen(QPen(Qt.green))
+                if hasattr(element, "source_index"):
+                    el = element
+                    info_text += f"[{el.unique_index}] {el.type} from [{el.source_index}]"
+                else:
+                    info_text += f"[{element.unique_index}] {element.type}"
+                font.setWeight(1900)
+                font.setPixelSize(20)
+                painter.setFont(font)
+                painter.drawText(info_rect.bottomRight() + QPoint(-200, -index*25), info_text)
 
     def elementsUpdateFinalPicture(self):
         if self.capture_region_rect:
@@ -3924,7 +3950,7 @@ class ScreenshotWindow(QWidget):
                 # а не дефолтный PyQt'шный False
                 self.input_POINT1 = QPoint(self.capture_region_rect.topLeft())
                 self.input_POINT2 = QPoint(self.capture_region_rect.bottomRight())
-            elif self.drag_inside_capture_zone or self.isAltPanning:
+            elif (self.drag_inside_capture_zone or self.isAltPanning) and self.capture_region_rect:
                 # для добавления элементов поверх скриншота
                 self.elementsMouseMoveEvent(event)
 
@@ -3943,8 +3969,12 @@ class ScreenshotWindow(QWidget):
             self.old_cursor_position = event.pos()
             self.get_region_info()
             if self.undermouse_region_info is None:
-                self.drag_inside_capture_zone = True and not self.isAltPanning
-                self.elementsMousePressEvent(event)
+                if self.isAltPanning:
+                    self.drag_inside_capture_zone = False
+                else:
+                    self.drag_inside_capture_zone = True
+                if self.capture_region_rect:
+                    self.elementsMousePressEvent(event)
             else:
                 self.drag_inside_capture_zone = False
             if self.isAltPanning:
@@ -3953,8 +3983,6 @@ class ScreenshotWindow(QWidget):
                     self.ocp = event.pos()
                     self.drag_global = True
                     return
-                else:
-                    QMessageBox.critical(None, "Ошибка", "Расширенный режим редактора отключён")
             else:
                 self.drag_global = False
         if event.button() == Qt.MidButton and self.tools_window:
@@ -3968,7 +3996,8 @@ class ScreenshotWindow(QWidget):
         if event.button() == Qt.LeftButton:
             if self.drag_inside_capture_zone:
                 self.drag_inside_capture_zone = False
-                self.elementsMouseReleaseEvent(event)
+                if self.is_rect_defined:
+                    self.elementsMouseReleaseEvent(event)
             if self.user_input_started:
                 if not (self.input_POINT1 and self.input_POINT2):
                     # это должно помочь от крашей
@@ -4145,8 +4174,11 @@ class ScreenshotWindow(QWidget):
         icon_refresh = QIcon(bitmap_refresh) 
 
 
-
-
+        reset_capture = contextMenu.addAction("Сбросить область захвата")
+        contextMenu.addSeparator()
+        toggle_extended_mode = contextMenu.addAction("Расширенный режим")
+        toggle_extended_mode.setCheckable(True)
+        toggle_extended_mode.setChecked(self.extended_editor_mode)
         contextMenu.addSeparator()
         special_tool = contextMenu.addAction(icon_multiframing, "Активировать инструмент мультикадрирования")
         reshot = contextMenu.addAction(icon_refresh, "Переснять скриншот")
@@ -4158,6 +4190,13 @@ class ScreenshotWindow(QWidget):
         action = contextMenu.exec_(self.mapToGlobal(event.pos()))
         if action == halt:
             sys.exit()
+        elif action == reset_capture:
+            self.elementsResetCapture()
+        elif action == toggle_extended_mode:
+            self.extended_editor_mode = not self.extended_editor_mode
+            if not self.extended_editor_mode:
+                self.elementsCancelExtendedMode()
+                self.update()
         elif action == minimize:
             self.showMinimized()
         elif action == special_tool:

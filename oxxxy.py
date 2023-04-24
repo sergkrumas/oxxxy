@@ -2265,6 +2265,7 @@ class ScreenshotWindow(QWidget):
         # Этого хочется избежать - именно для исправления
         # такого ненужного поведения и нужна эта переменная
         self.drag_inside_capture_zone = False
+        self.isAltPanning = False
         # задаём курсор
         self.setCursor(self.get_custom_cross_cursor())
         # лупа
@@ -2716,17 +2717,6 @@ class ScreenshotWindow(QWidget):
             return
         else:
             self.drag_capture_zone = False
-
-        if isAltOnly and isLeftButton:
-            if self.extended_editor_mode:
-                self.elementsInitMoveGlobalOffset()
-                self.ocp = event.pos()
-                self.drag_global = True
-                return
-            else:
-                QMessageBox.critical(None, "Ошибка", "Расширенный режим редактора отключён")
-        else:
-            self.drag_global = False
 
         if self.current_tool == ToolID.none:
             return
@@ -3896,7 +3886,8 @@ class ScreenshotWindow(QWidget):
                             delta = self.equilateral_delta(delta)
                         self.input_POINT2 = self.input_POINT1 - delta
 
-            elif self.undermouse_region_info and not self.drag_inside_capture_zone:
+            elif self.undermouse_region_info and not self.drag_inside_capture_zone \
+                                                                        and not self.isAltPanning:
                 # для изменения области захвата после первичного задания
                 self.is_rect_redefined = True
                 cursor_pos = event.pos()
@@ -3930,7 +3921,7 @@ class ScreenshotWindow(QWidget):
                 # а не дефолтный PyQt'шный False
                 self.input_POINT1 = QPoint(self.capture_region_rect.topLeft())
                 self.input_POINT2 = QPoint(self.capture_region_rect.bottomRight())
-            elif self.drag_inside_capture_zone:
+            elif self.drag_inside_capture_zone or self.isAltPanning:
                 # для добавления элементов поверх скриншота
                 self.elementsMouseMoveEvent(event)
 
@@ -3942,14 +3933,27 @@ class ScreenshotWindow(QWidget):
         # super().mouseMoveEvent(event)
 
     def mousePressEvent(self, event):
-        if event.button() == Qt.LeftButton:
+        isAltOnly = event.modifiers() == Qt.AltModifier
+        isLeftButton = event.button() == Qt.LeftButton
+        self.isAltPanning = isAltOnly and isLeftButton
+        if isLeftButton:
             self.old_cursor_position = event.pos()
             self.get_region_info()
             if self.undermouse_region_info is None:
-                self.drag_inside_capture_zone = True
+                self.drag_inside_capture_zone = True and not self.isAltPanning
                 self.elementsMousePressEvent(event)
             else:
                 self.drag_inside_capture_zone = False
+            if self.isAltPanning:
+                if self.extended_editor_mode:
+                    self.elementsInitMoveGlobalOffset()
+                    self.ocp = event.pos()
+                    self.drag_global = True
+                    return
+                else:
+                    QMessageBox.critical(None, "Ошибка", "Расширенный режим редактора отключён")
+            else:
+                self.drag_global = False
         if event.button() == Qt.MidButton and self.tools_window:
             self.tools_window.size_slider.value = 0.5
             self.tools_window.on_parameters_changed()
@@ -3981,6 +3985,7 @@ class ScreenshotWindow(QWidget):
             self.get_region_info() # здесь только для установки курсора
         if Globals.DEBUG:
             self.elementsUpdateFinalPicture()
+        self.isAltPanning = False
         self.update()
         self.update_tools_window()
         super().mouseReleaseEvent(event)

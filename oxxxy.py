@@ -4055,28 +4055,106 @@ class ScreenshotWindow(QWidget):
         contextMenu.setStyleSheet("""
         QMenu{
             padding: 0px;
-            font-size: 20px;
+            font-size: 18px;
             font-weight: bold;
             font-family: 'Consolas';
         }
         QMenu::item {
-            padding: 15px 55px;
+            padding: 15px 15px;
             background: #303940;
             color: rgb(230, 230, 230);
+        }
+        QMenu::icon {
+            padding-left: 15px;
         }
         QMenu::item:selected {
             background-color: rgb(253, 203, 54);
             color: rgb(50, 50, 50);
             border-left: 2px dashed #303940;
-        }""")
+        }
+        QMenu::separator {
+            height: 1px;
+            background: gray;
+        }
+        """)
+
+        bitmap_cancel = QPixmap(50, 50)
+        bitmap_cancel.fill(Qt.transparent)
+        painter = QPainter()
+        painter.begin(bitmap_cancel)
+        inner_rect = bitmap_cancel.rect().adjusted(13, 13, -13, -13)
+        pen = QPen(QColor(200, 100, 0), 10)
+        pen.setCapStyle(Qt.RoundCap)
+        painter.setPen(pen)
+        painter.drawLine(inner_rect.topLeft(), inner_rect.bottomRight())
+        painter.drawLine(inner_rect.bottomLeft(), inner_rect.topRight())
+        painter.end()
+
+        bitmap_halt = QPixmap(50, 50)
+        bitmap_halt.fill(Qt.transparent)
+        painter = QPainter()
+        painter.begin(bitmap_halt)
+        inner_rect = bitmap_halt.rect().adjusted(13, 13, -13, -13)
+        pen = QPen(QColor(200, 0, 0), 10)
+        pen.setCapStyle(Qt.RoundCap)
+        painter.setPen(pen)
+        painter.drawLine(inner_rect.topLeft(), inner_rect.bottomRight())
+        painter.drawLine(inner_rect.bottomLeft(), inner_rect.topRight())
+        painter.end()
+
+        bitmap_refresh = QPixmap(50, 50)
+        bitmap_refresh.fill(Qt.transparent)
+        painter = QPainter()
+        painter.begin(bitmap_refresh)
+        pen = painter.pen()
+        pen.setWidth(5)
+        pen.setColor(Qt.white)
+        pen.setCapStyle(Qt.RoundCap)
+        painter.setPen(pen)
+        rectangle = QRectF(bitmap_refresh.rect().adjusted(13, 13, -13, -13))
+        painter.setBrush(QBrush(Qt.white))
+        startAngle = 60 * 16
+        spanAngle = (180-60) * 16
+        painter.drawArc(rectangle, startAngle, spanAngle)
+        startAngle = (180+60) * 16
+        spanAngle = (360-180-60) * 16
+        painter.drawArc(rectangle, startAngle, spanAngle)
+        w = bitmap_refresh.rect().width()
+        points = [
+            QPointF(50, 50) - QPointF(44, w/2),
+            QPointF(50, 50) - QPointF(31, w/2),
+            QPointF(50, 50) - QPointF(37.5, w/2-8),
+        ]
+        poly = QPolygonF(points)
+        painter.setPen(Qt.NoPen)
+        painter.drawPolygon(poly, fillRule=Qt.WindingFill)
+        points = [
+            QPointF(44, w/2),
+            QPointF(31, w/2),
+            QPointF(37.5, w/2-8),
+        ]
+        poly = QPolygonF(points)
+        painter.setPen(Qt.NoPen)
+        painter.drawPolygon(poly, fillRule=Qt.WindingFill)
+        painter.end()
+
+        icon_cancel = QIcon(bitmap_cancel)
+        icon_halt = QIcon(bitmap_halt)
+        path = os.path.join(os.path.dirname(__file__), "icon.png")
+        icon_multiframing = QIcon(path)
+        icon_refresh = QIcon(bitmap_refresh) 
+
+
+
+
+        contextMenu.addSeparator()
+        special_tool = contextMenu.addAction(icon_multiframing, "Активировать инструмент мультикадрирования")
+        reshot = contextMenu.addAction(icon_refresh, "Переснять скриншот")
         minimize = contextMenu.addAction("Свернуть на панель задач")
-        cancel = contextMenu.addAction("Отменить создание скриншота")
-        special_tool = contextMenu.addAction("Activate Special Tool")
-        reshot = contextMenu.addAction("Переснять скриншот")
-        halt = contextMenu.addAction("Выйти и полностью остановить приложение")
-        halt.setIconVisibleInMenu(False)
-        cancel.setIconVisibleInMenu(False)
-        minimize.setIconVisibleInMenu(False)
+        contextMenu.addSeparator()
+        cancel = contextMenu.addAction(icon_cancel, "Отменить создание скриншота")
+        halt = contextMenu.addAction(icon_halt, "Отменить создание скриншота и вырубить приложение")
+
         action = contextMenu.exec_(self.mapToGlobal(event.pos()))
         if action == halt:
             sys.exit()
@@ -5296,7 +5374,7 @@ def _main():
 
     app = QApplication(sys.argv)
     app.aboutToQuit.connect(exit_threads)
-    app.setAttribute(Qt.AA_DontShowIconsInMenus, True)
+    # app.setAttribute(Qt.AA_DontShowIconsInMenus, True)
     # задание иконки для таскбара
     if os.name == 'nt':
         appid = 'sergei_krumas.oxxxy_screenshoter.client.1'

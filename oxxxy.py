@@ -58,7 +58,7 @@ from on_windows_startup import is_app_in_startup, add_to_startup, remove_from_st
 
 class Globals():
     DEBUG = True
-    DEBUG_ELEMENTS = False
+    DEBUG_ELEMENTS = True
     CRUSH_SIMULATOR = False
 
     DEBUG_VIZ = False
@@ -1619,7 +1619,7 @@ class ToolsWindow(QWidget):
         self.drag_flag = False
 
     def forwards_backwards_update(self):
-        f, b = self.parent().elementsUpdateHisotryButtonsStatus()
+        f, b = self.parent().elementsUpdateHistoryButtonsStatus()
         self.forwards_btn.setEnabled(f)
         self.backwards_btn.setEnabled(b)
         self.update()
@@ -2705,6 +2705,7 @@ class ScreenshotWindow(QWidget):
     def elementsMousePressEvent(self, event):
         tool = self.current_tool
 
+        self.prev_elements_history_index = self.elements_history_index
         isLeftButton = event.buttons() == Qt.LeftButton
         isAltOnly = event.modifiers() == Qt.AltModifier
         isCaptureZone = self.capture_region_rect is not None
@@ -2808,8 +2809,6 @@ class ScreenshotWindow(QWidget):
                 ########################
                 # end of selection code
                 ########################
-        if self.tools_window:
-            self.tools_window.forwards_backwards_update()
         self.update()
 
     def equilateral_delta(self, delta):
@@ -3120,9 +3119,6 @@ class ScreenshotWindow(QWidget):
         if tool != ToolID.transform:
             self.elementsSetSelected(None)
         self.elementsAutoDeleteInvisibleElement(element)
-        tw = self.tools_window
-        if tw:
-            tw.forwards_backwards_update()
         self.update()
 
     def elementsAutoDeleteInvisibleElement(self, element):
@@ -3130,6 +3126,11 @@ class ScreenshotWindow(QWidget):
         if tool in [ToolID.line, ToolID.pen, ToolID.marker]:
             if element.end_point == element.start_point:
                 self.elements.remove(element)
+        tw = self.tools_window
+        if tw:
+            self.elements_history_index = self.prev_elements_history_index
+            tw.forwards_backwards_update()
+            print('correcting after autodelete')
 
     def elementsSetBlurredPixmap(self, element):
         if not element.finished:
@@ -3611,6 +3612,7 @@ class ScreenshotWindow(QWidget):
                     self.elementsDrawMain(painter, final=True)
                     painter.end()
                 else:
+                    # legacy draw code
                     _rect = QRect(QPoint(0, 0), self.capture_region_rect.bottomRight())
                     self.elements_final_output = QPixmap(_rect.size())
                     painter = QPainter()
@@ -3845,7 +3847,7 @@ class ScreenshotWindow(QWidget):
             self.elements_history_index -= 1
         self.elementsSetSelected(None)
 
-    def elementsUpdateHisotryButtonsStatus(self):
+    def elementsUpdateHistoryButtonsStatus(self):
         # print(self.elements_history_index, len(self.elements))
         f = self.elements_history_index < len(self.elements)
         b = self.elements_history_index > 0

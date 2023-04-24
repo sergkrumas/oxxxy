@@ -1813,7 +1813,6 @@ class ScreenshotWindow(QWidget):
         painter = QPainter()
         painter.begin(self)
 
-        line_pen = QPen(QColor(127, 127, 127, 127), 1)
         text_white_pen = text_pen = QPen(QColor(255, 255, 255, 255), 1)
         # text_pen = QPen(QColor(255, 127, 127, 255), 1)
         font = painter.font()
@@ -1845,10 +1844,7 @@ class ScreenshotWindow(QWidget):
         self.draw_wrapper_shadow(painter)
         self.draw_capture_zone_resolution_label(painter, text_pen, input_rect)
 
-        # old_comp_mode = painter.compositionMode()
-        # painter.setCompositionMode(QPainter.RasterOp_SourceXorDestination)
-        self.draw_vertical_horizontal_lines(painter, line_pen, cursor_pos)
-        # painter.setCompositionMode(old_comp_mode)
+        self.draw_vertical_horizontal_lines(painter, cursor_pos)
 
         self.draw_stamp_tool(painter, cursor_pos)
         self.draw_tool_size_and_color(painter, cursor_pos)
@@ -2174,7 +2170,12 @@ class ScreenshotWindow(QWidget):
         if tw and tw.chb_draw_thirds.isChecked() and self.capture_region_rect:
             draw_cyberpunk(painter, self.capture_region_rect)
 
-    def draw_vertical_horizontal_lines(self, painter, line_pen, cursor_pos):
+    def draw_vertical_horizontal_lines(self, painter, cursor_pos):
+        # line_pen = QPen(QColor(127, 127, 127, 127), 1)
+        line_pen = QPen(QColor(127, 127, 127, 172), 1, Qt.DashLine)
+        if self.extended_editor_mode:
+            old_comp_mode = painter.compositionMode()
+            painter.setCompositionMode(QPainter.RasterOp_SourceXorDestination)
         if self.input_POINT1 and self.input_POINT2:
             painter.setPen(line_pen)
             left = self.input_POINT1.x()
@@ -2199,6 +2200,8 @@ class ScreenshotWindow(QWidget):
             pos_y = curpos.y()
             painter.drawLine(pos_x, 0, pos_x, self.height())
             painter.drawLine(0, pos_y, self.width(), pos_y)
+        if self.extended_editor_mode:
+            painter.setCompositionMode(old_comp_mode)            
 
     def draw_analyse_corners(self, painter):
         if Globals.DEBUG_ANALYSE_CORNERS_SPACES:

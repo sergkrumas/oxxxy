@@ -4178,6 +4178,8 @@ class ScreenshotWindow(QWidget):
         icon_refresh = QIcon(bitmap_refresh) 
 
 
+        get_toolwindow_in_view = contextMenu.addAction("Подтянуть панель инструментов")
+
         reset_capture = contextMenu.addAction("Сбросить область захвата")
         contextMenu.addSeparator()
         toggle_extended_mode = contextMenu.addAction("Расширенный режим")
@@ -4194,6 +4196,11 @@ class ScreenshotWindow(QWidget):
         action = contextMenu.exec_(self.mapToGlobal(event.pos()))
         if action == halt:
             sys.exit()
+        elif action == get_toolwindow_in_view:
+            tw = self.tools_window
+            if tw:
+                tw.auto_positioning = False
+                tw.move(self.mapFromGlobal(QCursor().pos()))
         elif action == reset_capture:
             self.elementsResetCapture()
         elif action == toggle_extended_mode:

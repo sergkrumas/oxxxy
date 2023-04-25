@@ -2318,6 +2318,7 @@ class ScreenshotWindow(QWidget):
         self.dialog = None
 
         self.include_screenshot_background = True
+        self.dark_stamps = True
 
         self.uncapture_mode_label_tstamp = time.time()
 
@@ -3412,7 +3413,8 @@ class ScreenshotWindow(QWidget):
         old_pen = painter.pen()
         # draw elements
         self.elementsIsFinalDrawing = final
-        self.elementsDrawDarkening(painter)
+        if not self.dark_stamps:
+            self.elementsDrawDarkening(painter)
         for element in self.elementsHistoryFilter():
             el_type = element.type
             pen, color, size = self.elementsGetPenFromElement(element)
@@ -3578,10 +3580,12 @@ class ScreenshotWindow(QWidget):
                         painter.drawRect(final_version_rect)
         if not final:
             self.draw_transform_widget(painter)
-        if Globals.DEBUG and self.capture_region_rect:
+        if Globals.DEBUG and self.capture_region_rect and not final:
             painter.setPen(QPen(QColor(Qt.white)))
             text = f"{self.elements_history_index} :: {self.current_tool}"
             painter.drawText(self.capture_region_rect, Qt.AlignCenter, text)
+        if self.dark_stamps:
+            self.elementsDrawDarkening(painter)
         painter.setBrush(old_brush)
         painter.setPen(old_pen)
         self.elementsIsFinalDrawing = False
@@ -4244,12 +4248,19 @@ class ScreenshotWindow(QWidget):
         get_toolwindow_in_view = contextMenu.addAction("Подтянуть панель инструментов")
         reset_capture = contextMenu.addAction("Сбросить область захвата")
         contextMenu.addSeparator()
+
         include_background = contextMenu.addAction("Фон")
         include_background.setCheckable(True)
         include_background.setChecked(self.include_screenshot_background)
+
+        toggle_dark_stamps = contextMenu.addAction("Затемнять после отрисовки пометок")
+        toggle_dark_stamps.setCheckable(True)
+        toggle_dark_stamps.setChecked(self.dark_stamps)
+
         toggle_extended_mode = contextMenu.addAction("Расширенный режим")
         toggle_extended_mode.setCheckable(True)
         toggle_extended_mode.setChecked(self.extended_editor_mode)
+
         contextMenu.addSeparator()
         special_tool = contextMenu.addAction(icon_multiframing, "Активировать инструмент мультикадрирования")
         reshot = contextMenu.addAction(icon_refresh, "Переснять скриншот")
@@ -4261,6 +4272,10 @@ class ScreenshotWindow(QWidget):
         action = contextMenu.exec_(self.mapToGlobal(event.pos()))
         if action == halt:
             sys.exit()
+        elif action == toggle_dark_stamps:
+            self.dark_stamps = not self.dark_stamps
+            self.elementsUpdateFinalPicture()
+            self.update()
         elif action == include_background:
             self.include_screenshot_background = not self.include_screenshot_background
             self.update()

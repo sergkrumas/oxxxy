@@ -2923,6 +2923,8 @@ class ScreenshotWindow(QWidget):
             return self.get_custom_cross_cursor()
 
     def elementsInitMoveGlobalOffset(self):
+        if not self.is_rect_defined:
+            return
         self.current_elements_global_offset = QPoint(self.elements_global_offset)
         self.current_capture_zone_center = self.capture_region_rect.center()
         for element in self.elements[:]:
@@ -2939,6 +2941,8 @@ class ScreenshotWindow(QWidget):
         self.update()
 
     def elementsMoveGlobalOffset(self, delta):
+        if not self.is_rect_defined:
+            return
         self.elements_global_offset = self.current_elements_global_offset + delta
         for element in self.elements[:]:
             attributes = dict(element.__dict__).items()

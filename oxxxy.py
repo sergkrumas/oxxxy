@@ -2466,8 +2466,9 @@ class ScreenshotWindow(QWidget):
             self.tools_window = None
 
     def elementsCancelExtendedMode(self):
-        self.current_elements_global_offset = QPoint(0, 0)
+        self.elementsInitMoveGlobalOffset()
         self.elementsMoveGlobalOffset(-self.elements_global_offset)
+        self.current_elements_global_offset = QPoint(0, 0)
         self.elements_global_offset = QPoint(0, 0)
         self.elementsResetCapture()
 
@@ -3973,8 +3974,8 @@ class ScreenshotWindow(QWidget):
                     self.drag_inside_capture_zone = False
                 else:
                     self.drag_inside_capture_zone = True
-                if self.capture_region_rect:
-                    self.elementsMousePressEvent(event)
+                    if self.capture_region_rect:
+                        self.elementsMousePressEvent(event)
             else:
                 self.drag_inside_capture_zone = False
             if self.isAltPanning:

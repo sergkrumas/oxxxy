@@ -5377,7 +5377,10 @@ def invoke_screenshot_editor(request_type=None):
         screenshot_editor.activateWindow()
 
     if request_type == RequestType.Editor:
-        filepaths = get_filepaths_dialog()
+        path = SettingsJson().get_data("SCREENSHOT_FOLDER_PATH")
+        if not path:
+            path = ""
+        filepaths = get_filepaths_dialog(path=path)
         if filepaths:
             screenshot_editor = ScreenshotWindow(screenshot_image, metadata)
             screenshot_editor.request_editor_mode(filepaths)
@@ -5448,11 +5451,10 @@ def excepthook(exc_type, exc_value, exc_tb):
         _restart_app(aftercrush=True)
     sys.exit()
 
-def get_filepaths_dialog():
+def get_filepaths_dialog(path=""):
     file_name = QFileDialog()
     file_name.setFileMode(QFileDialog.ExistingFiles)
     title = ""
-    path = ""
     filter_data = "All files (*.*)"
     data = file_name.getOpenFileNames(None, title, path, filter_data)
     return data[0]

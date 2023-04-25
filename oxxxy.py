@@ -2464,13 +2464,16 @@ class ScreenshotWindow(QWidget):
         if tw:
             tw.close()
             self.tools_window = None
+        self.update()
 
     def elementsCancelExtendedMode(self):
-        self.elementsInitMoveGlobalOffset()
-        self.elementsMoveGlobalOffset(-self.elements_global_offset)
+        if self.capture_region_rect:
+            self.elementsInitMoveGlobalOffset()
+            self.elementsMoveGlobalOffset(-self.elements_global_offset)
         self.current_elements_global_offset = QPoint(0, 0)
         self.elements_global_offset = QPoint(0, 0)
         self.elementsResetCapture()
+        self.update()
 
     def elementsSetElementParameters(self, element):
         tw = self.tools_window

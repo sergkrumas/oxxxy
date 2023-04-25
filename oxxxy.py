@@ -2216,7 +2216,7 @@ class ScreenshotWindow(QWidget):
             painter.drawLine(pos_x, 0, pos_x, self.height())
             painter.drawLine(0, pos_y, self.width(), pos_y)
         if self.extended_editor_mode:
-            painter.setCompositionMode(old_comp_mode)            
+            painter.setCompositionMode(old_comp_mode)
 
     def draw_analyse_corners(self, painter):
         if Globals.DEBUG_ANALYSE_CORNERS_SPACES:
@@ -3566,7 +3566,7 @@ class ScreenshotWindow(QWidget):
                             painter.drawLine(coord, coords[n+1])
                     source_pixels = self.source_pixels
                     # с прямоугольником производятся корректировки, чтобы последствия перемещения
-                    # рамки захвата и перемещения окна не сказывались на копируемой области 
+                    # рамки захвата и перемещения окна не сказывались на копируемой области
                     if not final:
                         f_input_rect.moveCenter(f_input_rect.center() - self.elements_global_offset)
                     else:
@@ -4238,7 +4238,7 @@ class ScreenshotWindow(QWidget):
         icon_halt = QIcon(bitmap_halt)
         path = os.path.join(os.path.dirname(__file__), "icon.png")
         icon_multiframing = QIcon(path)
-        icon_refresh = QIcon(bitmap_refresh) 
+        icon_refresh = QIcon(bitmap_refresh)
 
 
         get_toolwindow_in_view = contextMenu.addAction("Подтянуть панель инструментов")

@@ -2327,7 +2327,7 @@ class ScreenshotWindow(QWidget):
         painter_ = QPainter()
         painter_.begin(pixmap)
         painter_.setOpacity(0.3)
-        painter_.fillRect(QRect(0, 0, 40, 40), QBrush(Qt.white))
+        painter_.fillRect(QRect(0, 0, 40, 40), QBrush(Qt.black))
         painter_.setPen(Qt.NoPen)
         painter_.setBrush(QBrush(Qt.black))
         painter_.drawRect(QRect(0, 0, 20, 20))

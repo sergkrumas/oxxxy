@@ -1937,7 +1937,8 @@ class ScreenshotWindow(QWidget):
             elif type == LayerOpacity.HalfTransparent: # ghost
                 pass
             elif type == LayerOpacity.Opaque: # stay still
-                painter.drawImage(self_rect, self.source_pixels)
+                if self.include_screenshot_background:
+                    painter.drawImage(self_rect, self.source_pixels)
         elif step == 2:
             painter.setClipping(True)
             path = QPainterPath()
@@ -1949,7 +1950,8 @@ class ScreenshotWindow(QWidget):
             elif type == LayerOpacity.HalfTransparent: # ghost
                 painter.fillRect(self_rect, QColor(0, 0, 0, 100))
                 painter.setOpacity(0.6)
-                painter.drawImage(self_rect, self.source_pixels)
+                if self.include_screenshot_background:
+                    painter.drawImage(self_rect, self.source_pixels)
                 painter.setOpacity(1.0)
             elif type == LayerOpacity.Opaque: # stay still
                 painter.fillRect(self_rect, QColor(0, 0, 0, 100))
@@ -2125,10 +2127,11 @@ class ScreenshotWindow(QWidget):
     def draw_capture_zone(self, painter, input_rect, shot=1):
         tw = self.tools_window
         if shot == 1 and self.input_POINT1 and self.input_POINT2:
-            input_rect_dest = input_rect
-            input_rect_source = QRect(input_rect)
-            input_rect_source.moveCenter(input_rect_source.center()-self.elements_global_offset)
-            painter.drawImage(input_rect_dest, self.source_pixels, input_rect_source)
+            if self.include_screenshot_background:
+                input_rect_dest = input_rect
+                input_rect_source = QRect(input_rect)
+                input_rect_source.moveCenter(input_rect_source.center()-self.elements_global_offset)
+                painter.drawImage(input_rect_dest, self.source_pixels, input_rect_source)
 
         if shot == 2 and self.input_POINT1 and self.input_POINT2:
             if tw and tw.chb_masked.isChecked():
@@ -2301,6 +2304,8 @@ class ScreenshotWindow(QWidget):
         self.selected_element = None
         self.transform_widget = None
         self.dialog = None
+
+        self.include_screenshot_background = True
 
         self.uncapture_mode_label_tstamp = time.time()
 
@@ -3631,7 +3636,8 @@ class ScreenshotWindow(QWidget):
                     self.elements_final_output.fill(Qt.transparent)
                     painter = QPainter()
                     painter.begin(self.elements_final_output)
-                    painter.drawImage(-self.get_capture_offset(), self.source_pixels)
+                    if self.include_screenshot_background:
+                        painter.drawImage(-self.get_capture_offset(), self.source_pixels)
                     self.elementsDrawMain(painter, final=True)
                     painter.end()
                 else:
@@ -3640,7 +3646,8 @@ class ScreenshotWindow(QWidget):
                     self.elements_final_output = QPixmap(_rect.size())
                     painter = QPainter()
                     painter.begin(self.elements_final_output)
-                    painter.drawImage(self.capture_region_rect, self.source_pixels,
+                    if self.include_screenshot_background:
+                        painter.drawImage(self.capture_region_rect, self.source_pixels,
                                                                         self.capture_region_rect)
                     self.elementsDrawMain(painter, final=True)
                     painter.end()
@@ -4109,6 +4116,8 @@ class ScreenshotWindow(QWidget):
             height: 1px;
             background: gray;
         }
+        QMenu::item:checked {
+        }
         """)
 
         bitmap_cancel = QPixmap(50, 50)
@@ -4179,9 +4188,11 @@ class ScreenshotWindow(QWidget):
 
 
         get_toolwindow_in_view = contextMenu.addAction("Подтянуть панель инструментов")
-
         reset_capture = contextMenu.addAction("Сбросить область захвата")
         contextMenu.addSeparator()
+        include_background = contextMenu.addAction("Фон")
+        include_background.setCheckable(True)
+        include_background.setChecked(self.include_screenshot_background)
         toggle_extended_mode = contextMenu.addAction("Расширенный режим")
         toggle_extended_mode.setCheckable(True)
         toggle_extended_mode.setChecked(self.extended_editor_mode)
@@ -4196,6 +4207,9 @@ class ScreenshotWindow(QWidget):
         action = contextMenu.exec_(self.mapToGlobal(event.pos()))
         if action == halt:
             sys.exit()
+        elif action == include_background:
+            self.include_screenshot_background = not self.include_screenshot_background
+            self.update()
         elif action == get_toolwindow_in_view:
             tw = self.tools_window
             if tw:

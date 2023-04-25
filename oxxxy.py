@@ -1490,6 +1490,15 @@ class ToolsWindow(QWidget):
 
         tools_settings = self.parent().tools_settings
 
+        self.chb_savecaptureframe = CheckBoxCustom("Запомнить захват")
+        self.chb_savecaptureframe.setToolTip((
+            "<b>Запоминает положение и размеры области захвата</b>"
+        ))
+        self.chb_savecaptureframe.setStyleSheet(checkbox_style)
+        self.chb_savecaptureframe.installEventFilter(self)
+        self.chb_savecaptureframe.setChecked(tools_settings.get('savecaptureframe', False))
+        checkboxes.addWidget(self.chb_savecaptureframe)
+
         self.chb_masked = CheckBoxCustom("Обтравка")
         self.chb_masked.setToolTip((
             "<b>Применить маску к скриншоту</b><br>"
@@ -1501,7 +1510,7 @@ class ToolsWindow(QWidget):
         self.parent().hex_mask = tools_settings.get("hex_mask", False)
         checkboxes.addWidget(self.chb_masked)
 
-        self.chb_draw_thirds = CheckBoxCustom("Показывать трети")
+        self.chb_draw_thirds = CheckBoxCustom("Трети")
         self.chb_draw_thirds.setToolTip("<b>Отображать трети в области захвата для режима"
                                                                         " редактирования</b>")
         self.chb_draw_thirds.setStyleSheet(checkbox_style)
@@ -1509,7 +1518,7 @@ class ToolsWindow(QWidget):
         self.chb_draw_thirds.setChecked(tools_settings.get("draw_thirds", False))
         checkboxes.addWidget(self.chb_draw_thirds)
 
-        self.chb_add_meta = CheckBoxCustom("Добавить метаинфу")
+        self.chb_add_meta = CheckBoxCustom("Метаинфа")
         self.chb_add_meta.setToolTip("<b>Добавить название заголовка активного окна в метатеги"
                                                                             " скриншота</b>")
         self.chb_add_meta.setStyleSheet(checkbox_style)
@@ -1637,14 +1646,17 @@ class ToolsWindow(QWidget):
         self.parent().elementsParametersChanged()
         # обновление параметров инструментов
         ts = self.parent().tools_settings
+        # инструменты и их параметры
         values = ts.get("values", {})
         values.update({self.current_tool: self.tool_data_dict_from_ui()})
         ts.update({"values": values})
+        # прочее
         ts.update({
             "masked": self.chb_masked.isChecked(),
             "draw_thirds": self.chb_draw_thirds.isChecked(),
             "add_meta": self.chb_add_meta.isChecked(),
             "hex_mask": getattr(self.parent(), 'hex_mask', False),
+            "savecaptureframe": self.chb_savecaptureframe.isChecked(),
         })
         self.parent().update()
 
@@ -2325,6 +2337,23 @@ class ScreenshotWindow(QWidget):
 
         self.extended_editor_mode = True
 
+    def set_saved_capture_frame(self):
+        if self.tools_settings.get("savecaptureframe", False):
+            rect_params = self.tools_settings.get("capture_frame", None)
+            if rect_params:
+                rect = QRect(*rect_params)
+                self.input_POINT2 = rect.topLeft()
+                self.input_POINT1 = rect.bottomRight()
+                self.capture_region_rect = self._build_valid_rect(self.input_POINT1,
+                                                                                self.input_POINT2)
+                self.user_input_started = True
+                self.is_rect_defined = True
+                self.is_rect_redefined = False
+                self.drag_inside_capture_zone = False
+                self.get_region_info()
+                self.update_tools_window()
+                self.update()
+
     def request_fullscreen_capture_region(self):
         self.input_POINT2 = QPoint(0, 0)
         self.input_POINT1 = self.frameGeometry().bottomRight()
@@ -2379,7 +2408,7 @@ class ScreenshotWindow(QWidget):
         self.user_input_started = True
         self.is_rect_defined = True
         self.is_rect_redefined = False
-        self.drag_inside_capture_zone = True
+        self.drag_inside_capture_zone = False
         self.get_region_info()
         self.update_tools_window()
         self.update()
@@ -3897,6 +3926,23 @@ class ScreenshotWindow(QWidget):
         if self.tools_window:
             self.tools_window.do_autopositioning(self.capture_region_rect)
 
+    def update_saved_capture(self):
+        ts = self.tools_settings
+        if ts.get("savecaptureframe", False):
+            if self.capture_region_rect:
+                x = self.capture_region_rect.left()
+                y = self.capture_region_rect.top()
+                w = self.capture_region_rect.width()
+                h = self.capture_region_rect.height()
+
+            else:
+                rect = self._build_valid_rect(self.input_POINT1, self.input_POINT2)
+                x = rect.left()
+                y = rect.top()
+                w = rect.width()
+                h = rect.height()
+            ts.update({'capture_frame': (x, y, w, h)})
+
     def mouseMoveEvent(self, event):
         if self.tools_window:
             select_window = self.tools_window.select_window
@@ -3929,6 +3975,7 @@ class ScreenshotWindow(QWidget):
                         if modifiers & Qt.ShiftModifier:
                             delta = self.equilateral_delta(delta)
                         self.input_POINT2 = self.input_POINT1 - delta
+                    self.update_saved_capture()
 
             elif self.undermouse_region_info and not self.drag_inside_capture_zone \
                                                                         and not self.isAltPanning:
@@ -3965,6 +4012,9 @@ class ScreenshotWindow(QWidget):
                 # а не дефолтный PyQt'шный False
                 self.input_POINT1 = QPoint(self.capture_region_rect.topLeft())
                 self.input_POINT2 = QPoint(self.capture_region_rect.bottomRight())
+
+                self.update_saved_capture()
+
             elif (self.drag_inside_capture_zone or self.isAltPanning) and self.capture_region_rect:
                 # для добавления элементов поверх скриншота
                 self.elementsMouseMoveEvent(event)
@@ -5294,6 +5344,7 @@ def invoke_screenshot_editor(request_type=None):
     screenshot_image = make_screenshot_pyqt()
     if request_type == RequestType.Fragment:
         screenshot_editor = ScreenshotWindow(screenshot_image, metadata)
+        screenshot_editor.set_saved_capture_frame()
         screenshot_editor.show()
         # print("^^^^^^", time.time() - started_time)
         if Globals.DEBUG and Globals.DEBUG_ELEMENTS:

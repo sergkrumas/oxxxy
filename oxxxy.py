@@ -45,6 +45,7 @@ from PyQt5.QtGui import (QPainterPath, QColor, QKeyEvent, QMouseEvent, QBrush, Q
     QPaintEvent, QPainter, QWindow, QPolygon, QImage, QTransform, QPen, QLinearGradient,
     QIcon, QFont, QCursor, QPolygonF)
 
+from image_viewer_lite import ViewerWindow
 
 from _utils import (convex_hull, check_scancode_for, SettingsJson,
      generate_metainfo, build_valid_rect, dot, get_nearest_point_on_rect, get_creation_date,
@@ -2337,6 +2338,7 @@ class ScreenshotWindow(QWidget):
         self.checkerboard_brush.setTexture(pixmap)
 
         self.extended_editor_mode = True
+        self.view_window = None
 
     def set_saved_capture_frame(self):
         if self.tools_settings.get("savecaptureframe", False):
@@ -4547,6 +4549,18 @@ class ScreenshotWindow(QWidget):
         if key in (Qt.Key_Space,):
             if self.is_rect_defined:
                 self.elementsActivateTransformTool()
+        if check_scancode_for(event, "P"):
+            if self.view_window:
+                self.view_window.show()
+                self.view_window.activateWindow()
+            else:
+                self.view_window = ViewerWindow(self, main_window=self)
+                self.view_window.show()
+                self.view_window.move(0, 0)
+                self.view_window.resize(self.width()//2, self.height())
+                self.elementsUpdateFinalPicture()
+                self.view_window.show_image(self.elements_final_output)
+                self.view_window.activateWindow()
         if check_scancode_for(event, "V"):
             mods = event.modifiers()
             ctrl = mods & Qt.ControlModifier
@@ -5329,19 +5343,6 @@ def show_system_tray(app, icon):
     sti.activated.connect(on_trayicon_activated)
     sti.show()
     return sti
-
-# def get_fucking_focus_win32():
-#     from ctypes import windll, Structure, c_long, byref, wintypes
-#     class POINT(Structure):
-#         _fields_ = [("x", c_long), ("y", c_long)]
-
-#     pos = POINT()
-#     pos.x = c_long(100)
-#     pos.y = c_long(100)
-#     hwnd = windll.user32.WindowFromPoint(pos)
-
-#     import win32gui
-#     win32gui.SetForegroundWindow(hwnd)
 
 def invoke_screenshot_editor(request_type=None):
     global screenshot_editor

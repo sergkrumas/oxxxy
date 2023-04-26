@@ -35,7 +35,8 @@ from PIL import Image, ImageGrab, PngImagePlugin
 from PyQt5.QtWidgets import (QWidget, QMessageBox, QDesktopWidget, QApplication)
 from PyQt5.QtCore import (QRectF, QPoint, pyqtSignal, QSizeF, Qt, QPointF, QSize, QRect)
 from PyQt5.QtGui import (QPixmap, QBrush, QRegion, QImage, QRadialGradient, QColor,
-                    QGuiApplication, QPen, QPainterPath, QPolygon, QLinearGradient, QPainter)
+                    QGuiApplication, QPen, QPainterPath, QPolygon, QLinearGradient, QPainter,
+                    QCursor)
 
 
 win32process = None
@@ -68,12 +69,18 @@ __all__ = (
     # 'make_screenshot_ImageGrab',
     'make_screenshot_pyqt',
 
-    'CustomSlider',
     'webRGBA',
     'generate_gradient',
     'draw_shadow',
     'draw_cyberpunk',
     'elements45DegreeConstraint',
+
+    # for image_viewer_lite.py
+    'fit_rect_into_rect',
+    'draw_thirds',
+    'interpolate_values',
+    'fit',
+    'fit01',
 )
 
 # Python3 program to find convex hull of a set of points. Refer
@@ -586,3 +593,82 @@ def elements45DegreeConstraint(pivot, point):
     point = pivot + current_dir*value
     return point
 
+def fit_rect_into_rect(source_rect, input_rect):
+    # main_rect = input_rect or self.rect()
+    main_rect = QRect(input_rect)
+    size_rect = QRect(source_rect)
+    w = size_rect.width()
+    h = size_rect.height()
+    nw = size_rect.width()
+    nh = size_rect.height()
+    if size_rect.width() == 0 or size_rect.height() == 0:
+        return source_rect
+    if size_rect.width() > main_rect.width() or size_rect.height() > main_rect.height():
+        # если контент не влазит на экран
+        image_scale1 = main_rect.width()/size_rect.width()
+        image_scale2 = main_rect.height()/size_rect.height()
+        new_width1 = w*image_scale1
+        new_height1 = h*image_scale1
+        new_width2 = w*image_scale2
+        new_height2 = h*image_scale2
+        nw = min(new_width1, new_width2)
+        nh = min(new_height1, new_height2)
+    elif size_rect.width() < main_rect.width() or size_rect.height() < main_rect.height():
+        # если контент меньше экрана
+        image_scale1 = main_rect.width()/size_rect.width()
+        image_scale2 = main_rect.height()/size_rect.height()
+        new_width1 = w*image_scale1
+        new_height1 = h*image_scale1
+        new_width2 = w*image_scale2
+        new_height2 = h*image_scale2
+        nw = min(new_width1, new_width2)
+        nh = min(new_height1, new_height2)
+    center = main_rect.center()
+    new_width = int(nw)
+    new_height = int(nh)
+    return QRectF(QPointF(center) - QPointF(new_width/2-1, new_height/2-1), QSizeF(new_width, new_height)).toRect()
+
+def fit(t, input_a, input_b, output_a, output_b):
+    t = max(input_a, min(input_b, t))
+    factor = (t-input_a)/(input_b-input_a)
+    return output_a + factor*(output_b-output_a)
+
+def fit01(t, output_a, output_b):
+    return fit(t, 0.0, 1.0, output_a, output_b)
+
+def interpolate_values(start_value, end_value, factor):
+    if isinstance(start_value, float):
+        value = fit(factor, 0.0, 1.0, start_value, end_value)
+    elif isinstance(start_value, QPoint):
+        value_x = fit(factor, 0.0, 1.0, start_value.x(), end_value.x())
+        value_y = fit(factor, 0.0, 1.0, start_value.y(), end_value.y())
+        value = QPoint(int(value_x), int(value_y))
+    elif isinstance(start_value, QPointF):
+        value_x = fit(factor, 0.0, 1.0, start_value.x(), end_value.x())
+        value_y = fit(factor, 0.0, 1.0, start_value.y(), end_value.y())
+        value = QPointF(float(value_x), float(value_y))
+    elif isinstance(start_value, QRect):
+        value_x = fit(factor, 0.0, 1.0, start_value.left(), end_value.left())
+        value_y = fit(factor, 0.0, 1.0, start_value.top(), end_value.top())
+        value_w = fit(factor, 0.0, 1.0, start_value.width(), end_value.width())
+        value_h = fit(factor, 0.0, 1.0, start_value.height(), end_value.height())
+        value = QRect(int(value_x), int(value_y), int(value_w), int(value_h))
+    elif isinstance(start_value, QColor):
+        value_r = fit(factor, 0.0, 1.0, start_value.red(), end_value.red())
+        value_g = fit(factor, 0.0, 1.0, start_value.green(), end_value.green())
+        value_b = fit(factor, 0.0, 1.0, start_value.blue(), end_value.blue())
+        value = QColor(int(value_r), int(value_g), int(value_b))
+    return value
+
+def draw_thirds(self, painter, image_rect):
+    # draw lines
+    painter.setPen(QPen(QColor(255, 255 ,255 ,25), 2))
+    offset = image_rect.topLeft()
+    w = image_rect.width()
+    h = image_rect.height()
+    # vertical
+    painter.drawLine(QPoint(w//3, 0)+offset, QPoint(w//3, h)+offset)
+    painter.drawLine(QPoint(w//3*2, 0)+offset, QPoint(w//3*2, h)+offset)
+    # horizontal
+    painter.drawLine(QPoint(0, h//3)+offset, QPoint(w, h//3)+offset)
+    painter.drawLine(QPoint(0, h//3*2)+offset, QPoint(w, h//3*2)+offset)

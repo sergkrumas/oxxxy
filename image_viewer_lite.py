@@ -41,6 +41,7 @@ class ViewerWindow(QWidget):
 
     def set_window_style(self):
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool)
+        self.setWindowModality(Qt.WindowModal)
         self.setAttribute(Qt.WA_TranslucentBackground)
 
     def mapped_cursor_pos(self):
@@ -506,6 +507,8 @@ class ViewerWindow(QWidget):
         elif check_scancode_for(event, "R"):
             self.rotate_clockwise()
         elif check_scancode_for(event, "P"):
+            self.close()
+        elif key == Qt.Key_Escape:
             self.close()
         self.update()
 

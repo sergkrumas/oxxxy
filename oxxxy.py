@@ -2534,7 +2534,7 @@ class ScreenshotWindow(QWidget):
             self.elementsSetBlurredPixmap(element)
         # только для инструмента transform, ибо иначе на практике не очень удобно
         if tw and element.type == ToolID.stamp and tw.current_tool == ToolID.transform:
-            if hasattr(element, ToolID.pixmap):
+            if hasattr(element, "pixmap"):
                 r_first = build_valid_rect(element.start_point, element.end_point)
                 self.elementsSetStampElementPoints(element, r_first.center())
                 # этим обновляем виджет

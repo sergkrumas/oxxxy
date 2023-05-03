@@ -448,6 +448,14 @@ class ViewerWindow(QWidget):
                     text = f"{value:,}%".replace(',', ' ')
                 self.draw_center_label(painter, text)
 
+        elif __name__ == '__main__':
+            painter.setPen(QPen(Qt.white))
+            font = painter.font()
+            font.setPixelSize(20)
+            painter.setFont(font)
+            painter.drawText(self.rect(), Qt.AlignHCenter | Qt.AlignVCenter, "Image Viewer Lite")
+
+
     def draw_center_point(self, painter, pos):
         painter.setPen(QPen(Qt.green, 5, Qt.SolidLine))
         painter.drawPoint(pos)

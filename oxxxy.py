@@ -4618,7 +4618,7 @@ class ScreenshotWindow(QWidget):
         if check_scancode_for(event, "V"):
             mods = event.modifiers()
             ctrl = mods & Qt.ControlModifier
-            if ctrl and self.tools_window and self.tools_window.current_tool == ToolID.stamp:
+            if ctrl and self.tools_window:
                 app = QApplication.instance()
                 cb = app.clipboard()
                 mdata = cb.mimeData()
@@ -4638,16 +4638,25 @@ class ScreenshotWindow(QWidget):
                         pixmap = QPixmap(path[len(PREFIX):])
                 elif mdata and mdata.hasImage():
                     pixmap = QPixmap().fromImage(mdata.imageData())
-                if pixmap and pixmap.width() > 0:
-                    capture_height = max(self.capture_region_rect.height(), 100)
-                    if pixmap.height() > capture_height:
-                        pixmap = pixmap.scaledToHeight(capture_height, Qt.SmoothTransformation)
-                    self.current_stamp_id = StampInfo.TYPE_FROM_FILE
-                    self.current_stamp_pixmap = pixmap
-                    self.current_stamp_angle = 0
-                    tools_window = self.tools_window
-                    tools_window.on_parameters_changed()
-                    self.activateWindow()
+                if self.tools_window.current_tool == ToolID.stamp:
+                    if pixmap and pixmap.width() > 0:
+                        capture_height = max(self.capture_region_rect.height(), 100)
+                        if pixmap.height() > capture_height:
+                            pixmap = pixmap.scaledToHeight(capture_height, Qt.SmoothTransformation)
+                        self.current_stamp_id = StampInfo.TYPE_FROM_FILE
+                        self.current_stamp_pixmap = pixmap
+                        self.current_stamp_angle = 0
+                        tools_window = self.tools_window
+                        tools_window.on_parameters_changed()
+                        self.activateWindow()
+                else:
+                    element = self.elementsCreateNew(ToolID.stamp)
+                    element.pixmap = pixmap
+                    element.angle = 0
+                    pos = self.capture_region_rect.topLeft()
+                    self.elementsSetStampElementPoints(element, pos, pos_as_center=False)
+                    self.elementsSetSelected(element)
+
 
 class StylizedUIBase():
 

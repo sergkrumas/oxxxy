@@ -52,7 +52,7 @@ class ViewerWindow(QWidget):
     def cursor_in_rect(self, r):
         return r.contains(self.mapped_cursor_pos())
 
-    def __init__(self, *args, main_window=None, **kwargs):
+    def __init__(self, *args, main_window=None, _type="", data=None, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.main_window = main_window
@@ -79,6 +79,12 @@ class ViewerWindow(QWidget):
         self.show_thirds = False
 
         self.contextMenuActivated = False
+
+        self.INPUT_POINT1 = self.INPUT_POINT2 = None
+        self.input_rect = None
+        self.type = _type
+
+        self.frame_data = data
 
     def close(self):
         if self.main_window:
@@ -145,9 +151,108 @@ class ViewerWindow(QWidget):
     def is_cursor_over_image(self):
         return self.cursor_in_rect(self.get_image_viewport_rect())
 
+
+
+    def get_image_frame_info(self):
+        rect = self.input_rect
+        image_rect = self.get_image_viewport_rect()
+        screen_delta1 = image_rect.topLeft() - rect.topLeft()
+        screen_delta2 = image_rect.topLeft() - rect.bottomRight()
+
+        left = screen_delta1.x()/image_rect.width()
+        top = screen_delta1.y()/image_rect.height()
+
+        right = screen_delta2.x()/image_rect.width()
+        bottom = screen_delta2.y()/image_rect.height()
+
+        return left, top, right, bottom
+
+    def build_input_rect(self):
+        if self.INPUT_POINT1 and self.INPUT_POINT2:
+            self.input_rect = build_valid_rect(self.INPUT_POINT1, self.INPUT_POINT2)
+
+    def image_frame_mousePressEvent(self, event):
+        self.INPUT_POINT1 = event.pos()
+        self.INPUT_POINT2 = None
+        self.input_rect = None
+        self.frame_data = None
+
+    def image_frame_mouseMoveEvent(self, event):
+        self.INPUT_POINT2 = event.pos()
+        self.build_input_rect()
+        self.frame_data = self.get_image_frame_info()
+
+    def image_frame_mouseReleaseEvent(self, event):
+        self.INPUT_POINT2 = event.pos()
+        self.build_input_rect()
+        if self.input_rect.width() > 50 and self.input_rect.height() > 50:
+            self.input_rect = self.input_rect.intersected(self.get_image_viewport_rect())
+            self.frame_data = self.get_image_frame_info()
+        else:
+            self.input_rect = None
+            self.frame_data = None
+            self.show_center_label("Задаваемая область слишком мала")
+
+    def draw_image_frame(self, painter):
+        if self.frame_data:
+
+            image_rect = self.get_image_viewport_rect()
+
+            base_point = image_rect.topLeft()
+            left, top, right, bottom = self.frame_data
+
+            screen_left = base_point.x() + -image_rect.width()*left
+            screen_top = base_point.y() + -image_rect.height()*top
+
+            screen_right = base_point.x() + -image_rect.width()*right
+            screen_bottom = base_point.y() + -image_rect.height()*bottom
+
+            frame_rect = QRectF(
+                QPointF(screen_left, screen_top), QPointF(screen_right, screen_bottom)).toRect()
+
+            old_pen = painter.pen()
+            old_brush = painter.brush()
+            painter.setPen(QPen(Qt.red, 1))
+            painter.setBrush(QBrush(Qt.red, Qt.DiagCrossPattern))
+
+            darkening_zone = QPainterPath()
+            darkening_zone.addRect(QRectF(image_rect))
+            framed_piece = QPainterPath()
+            framed_piece.addRect(QRectF(frame_rect))
+            darkening_zone = darkening_zone.subtracted(framed_piece)
+            painter.setOpacity(0.4)
+            old_comp_mode = painter.compositionMode()
+            painter.setCompositionMode(QPainter.RasterOp_SourceXorDestination)
+            painter.drawPath(darkening_zone)
+            painter.setCompositionMode(old_comp_mode)
+            painter.setOpacity(1.0)
+
+            painter.setPen(old_pen)
+            painter.setBrush(old_brush)
+
+    def frame_image(self):
+        if self.frame_data:
+            image_rect = self.pixmap.rect()
+            base_point = image_rect.topLeft()
+            left, top, right, bottom = self.get_image_frame_info()
+
+            screen_left = base_point.x() + -image_rect.width()*left
+            screen_top = base_point.y() + -image_rect.height()*top
+
+            screen_right = base_point.x() + -image_rect.width()*right
+            screen_bottom = base_point.y() + -image_rect.height()*bottom
+
+            frame_rect = QRectF(
+                QPointF(screen_left, screen_top), QPointF(screen_right, screen_bottom)).toRect()
+            self.main_window.elementsFrameStampPixmap(frame_rect=frame_rect,
+                                                        frame_data=self.get_image_frame_info())
+
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
-            if self.tranformations_allowed:
+            if event.modifiers() & Qt.ControlModifier:
+                if self.isInEditorMode():
+                    self.image_frame_mousePressEvent(event)
+            elif self.tranformations_allowed:
                 if self.is_cursor_over_image():
                     self.image_translating = True
                     self.oldCursorPos = self.mapped_cursor_pos()
@@ -158,7 +263,10 @@ class ViewerWindow(QWidget):
 
     def mouseMoveEvent(self, event):
         if event.buttons() == Qt.LeftButton:
-            if self.tranformations_allowed and self.image_translating:
+            if event.modifiers() & Qt.ControlModifier:
+                if self.isInEditorMode():
+                    self.image_frame_mouseMoveEvent(event)
+            elif self.tranformations_allowed and self.image_translating:
                 new =  self.oldElementPos - (self.oldCursorPos - self.mapped_cursor_pos())
                 old = self.image_center_position
                 self.image_center_position = new
@@ -167,7 +275,10 @@ class ViewerWindow(QWidget):
 
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.LeftButton:
-            if self.tranformations_allowed:
+            if event.modifiers() & Qt.ControlModifier:
+                if self.isInEditorMode():
+                    self.image_frame_mouseReleaseEvent(event)
+            elif self.tranformations_allowed:
                 self.image_translating = False
                 self.update()
         self.update()
@@ -446,7 +557,12 @@ class ViewerWindow(QWidget):
                 if self.center_label_info_type == "scale":
                     value = math.ceil(self.image_scale*100)
                     text = f"{value:,}%".replace(',', ' ')
+                else:
+                    text = self.center_label_info_type
                 self.draw_center_label(painter, text)
+
+            # draw_image_frame
+            self.draw_image_frame(painter)
 
         elif __name__ == '__main__':
             painter.setPen(QPen(Qt.white))
@@ -485,6 +601,9 @@ class ViewerWindow(QWidget):
 
         self.update()
 
+    def isInEditorMode(self):
+        return self.type == "edit"
+
     def keyPressEvent(self, event):
         key = event.key()
         if check_scancode_for(event, ("W", "S", "A", "D")):
@@ -517,6 +636,9 @@ class ViewerWindow(QWidget):
         elif check_scancode_for(event, "P"):
             self.close()
         elif key == Qt.Key_Escape:
+            self.close()
+        elif self.isInEditorMode() and key in [Qt.Key_Return, Qt.Key_Enter]:
+            self.frame_image()
             self.close()
         self.update()
 

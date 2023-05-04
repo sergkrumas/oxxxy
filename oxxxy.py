@@ -59,7 +59,8 @@ from on_windows_startup import is_app_in_startup, add_to_startup, remove_from_st
 
 class Globals():
     DEBUG = True
-    DEBUG_ELEMENTS = False
+    DEBUG_ELEMENTS = True
+    DEBUG_ELEMENTS_STAMP_FRAMING = True
     CRUSH_SIMULATOR = False
 
     DEBUG_VIZ = False
@@ -2414,6 +2415,16 @@ class ScreenshotWindow(QWidget):
         self.drag_inside_capture_zone = False
         self.get_region_info()
         self.update_tools_window()
+        if Globals.DEBUG_ELEMENTS_STAMP_FRAMING:
+            folder_path = os.path.dirname(__file__)
+            filepath = os.path.join(folder_path, "docs", "3.png")
+            pixmap = QPixmap(filepath)
+            element = self.elementsCreateNew(ToolID.stamp)
+            element.pixmap = pixmap
+            element.angle = 0
+            pos = self.input_POINT2
+            self.elementsSetStampElementPoints(element, pos, pos_as_center=False)
+            self.elementsSetSelected(element)
         self.update()
 
     def define_class_Element(root_self):
@@ -2443,7 +2454,11 @@ class ScreenshotWindow(QWidget):
 
             self.fresh = True
 
+            self.backup_pixmap = None
+
             self.choose_default_subelement = True # for copypaste and zoom_in_region
+
+            self.frame_data = None
 
         def __getattribute__(self, name):
             if name.startswith("f_"):
@@ -2550,6 +2565,37 @@ class ScreenshotWindow(QWidget):
             w = element.pixmap.width()
             h = element.pixmap.height()
             element.end_point = pos + QPoint(w, h)
+
+    def elementsFrameStampPixmap(self, frame_rect=None, frame_data=None):
+        sel_elem = self.selected_element
+        if frame_rect:
+            if sel_elem.backup_pixmap is None:
+                sel_elem.backup_pixmap = sel_elem.pixmap
+            sel_elem.pixmap = sel_elem.backup_pixmap.copy(frame_rect)
+        else:
+            # reset
+            sel_elem.pixmap = sel_elem.backup_pixmap
+            sel_elem.backup_pixmap = None
+        sel_elem.frame_data = frame_data
+        pos = (sel_elem.start_point + sel_elem.end_point)/2
+        self.elementsSetStampElementPoints(sel_elem, pos)
+        self.elementsSetSelected(sel_elem)
+
+    def get_final_picture(self):
+        self.elementsUpdateFinalPicture()
+        return self.elements_final_output
+
+    def show_view_window(self, callback_func, _type="final", data=None):
+        if self.view_window:
+            self.view_window.show()
+            self.view_window.activateWindow()
+        else:
+            self.view_window = ViewerWindow(self, main_window=self, _type=_type, data=data)
+            self.view_window.show()
+            self.view_window.move(0, 0)
+            self.view_window.resize(self.width()//2, self.height())
+            self.view_window.show_image(callback_func())
+            self.view_window.activateWindow()
 
     def elementsActivateTransformTool(self):
         if not self.elements:
@@ -3192,7 +3238,6 @@ class ScreenshotWindow(QWidget):
                     self.elements_history_index = self.prev_elements_history_index
                     tw.forwards_backwards_update()
                     print('correcting after autodelete')
-
 
     def elementsSetBlurredPixmap(self, element):
         if not element.finished:
@@ -4246,6 +4291,14 @@ class ScreenshotWindow(QWidget):
         icon_multiframing = QIcon(path)
         icon_refresh = QIcon(bitmap_refresh)
 
+        reset_image_frame = None
+        set_image_frame = None
+        sel_elem = self.selected_element
+        if sel_elem and sel_elem.type == ToolID.stamp:
+            if sel_elem.backup_pixmap is not None:
+                reset_image_frame = contextMenu.addAction("Отменить обрезку изображения")
+            set_image_frame = contextMenu.addAction("Обрезать изображение")
+            contextMenu.addSeparator()
 
         get_toolwindow_in_view = contextMenu.addAction("Подтянуть панель инструментов")
         reset_capture = contextMenu.addAction("Сбросить область захвата")
@@ -4272,8 +4325,19 @@ class ScreenshotWindow(QWidget):
         halt = contextMenu.addAction(icon_halt, "Отменить создание скриншота и вырубить приложение")
 
         action = contextMenu.exec_(self.mapToGlobal(event.pos()))
-        if action == halt:
+        if action == None:
+            pass
+        elif action == halt:
             sys.exit()
+        elif action == reset_image_frame:
+            self.elementsFrameStampPixmap()
+            self.update()
+        elif action == set_image_frame:
+            if sel_elem.backup_pixmap is None:
+                pixmap = sel_elem.pixmap
+            else:
+                pixmap = sel_elem.backup_pixmap
+            self.show_view_window(lambda: pixmap, _type="edit", data=sel_elem.frame_data)
         elif action == toggle_dark_stamps:
             self.dark_stamps = not self.dark_stamps
             self.elementsUpdateFinalPicture()
@@ -4550,17 +4614,7 @@ class ScreenshotWindow(QWidget):
             if self.is_rect_defined:
                 self.elementsActivateTransformTool()
         if check_scancode_for(event, "P"):
-            if self.view_window:
-                self.view_window.show()
-                self.view_window.activateWindow()
-            else:
-                self.view_window = ViewerWindow(self, main_window=self)
-                self.view_window.show()
-                self.view_window.move(0, 0)
-                self.view_window.resize(self.width()//2, self.height())
-                self.elementsUpdateFinalPicture()
-                self.view_window.show_image(self.elements_final_output)
-                self.view_window.activateWindow()
+            self.show_view_window(self.get_final_picture)
         if check_scancode_for(event, "V"):
             mods = event.modifiers()
             ctrl = mods & Qt.ControlModifier

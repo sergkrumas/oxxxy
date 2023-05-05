@@ -156,8 +156,8 @@ class ViewerWindow(QWidget):
     def get_image_frame_info(self):
         rect = self.input_rect
         image_rect = self.get_image_viewport_rect()
-        screen_delta1 = image_rect.topLeft() - rect.topLeft()
-        screen_delta2 = image_rect.topLeft() - rect.bottomRight()
+        screen_delta1 = rect.topLeft() - image_rect.topLeft()
+        screen_delta2 = rect.bottomRight() - image_rect.topLeft()
 
         left = screen_delta1.x()/image_rect.width()
         top = screen_delta1.y()/image_rect.height()
@@ -201,17 +201,22 @@ class ViewerWindow(QWidget):
             base_point = image_rect.topLeft()
             left, top, right, bottom = self.frame_data
 
-            screen_left = base_point.x() + -image_rect.width()*left
-            screen_top = base_point.y() + -image_rect.height()*top
+            screen_left = base_point.x() + image_rect.width()*left
+            screen_top = base_point.y() + image_rect.height()*top
 
-            screen_right = base_point.x() + -image_rect.width()*right
-            screen_bottom = base_point.y() + -image_rect.height()*bottom
+            screen_right = base_point.x() + image_rect.width()*right
+            screen_bottom = base_point.y() + image_rect.height()*bottom
 
             frame_rect = QRectF(
                 QPointF(screen_left, screen_top), QPointF(screen_right, screen_bottom)).toRect()
 
             old_pen = painter.pen()
             old_brush = painter.brush()
+
+            painter.setPen(QPen(Qt.white, 1))
+            painter.setBrush(Qt.NoBrush)
+            painter.drawRect(frame_rect)
+    
             painter.setPen(QPen(Qt.red, 1))
             painter.setBrush(QBrush(Qt.red, Qt.DiagCrossPattern))
 
@@ -236,11 +241,11 @@ class ViewerWindow(QWidget):
             base_point = image_rect.topLeft()
             left, top, right, bottom = self.get_image_frame_info()
 
-            screen_left = base_point.x() + -image_rect.width()*left
-            screen_top = base_point.y() + -image_rect.height()*top
+            screen_left = base_point.x() + image_rect.width()*left
+            screen_top = base_point.y() + image_rect.height()*top
 
-            screen_right = base_point.x() + -image_rect.width()*right
-            screen_bottom = base_point.y() + -image_rect.height()*bottom
+            screen_right = base_point.x() + image_rect.width()*right
+            screen_bottom = base_point.y() + image_rect.height()*bottom
 
             frame_rect = QRectF(
                 QPointF(screen_left, screen_top), QPointF(screen_right, screen_bottom)).toRect()

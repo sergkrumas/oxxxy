@@ -3510,6 +3510,170 @@ class ScreenshotWindow(QWidget):
         pen.setJoinStyle(Qt.RoundJoin)
         return pen, color, size
 
+    def elementsDrawMainElement(self, painter, element, final):
+        el_type = element.type
+        pen, color, size = self.elementsGetPenFromElement(element)
+        painter.setPen(pen)
+        painter.setBrush(QBrush(color))
+        if el_type == ToolID.arrow:
+            painter.setPen(Qt.NoPen)
+            self.elementsDrawArrow(painter, element.f_start_point,
+                                                            element.f_end_point, size, True)
+        elif el_type in [ToolID.pen, ToolID.marker]:
+            painter.setBrush(Qt.NoBrush)
+            if element.straight:
+                painter.drawLine(element.f_start_point, element.f_end_point)
+            else:
+                self.draw_transformed_path(element, element.path, painter, final)
+        elif el_type == ToolID.line:
+            painter.drawLine(element.f_start_point, element.f_end_point)
+        elif el_type == ToolID.special and not final:
+            _pen = painter.pen()
+            _brush = painter.brush()
+            painter.setPen(QPen(QColor(255, 0, 0), 1))
+            painter.setBrush(Qt.NoBrush)
+            cm = painter.compositionMode()
+            painter.setCompositionMode(QPainter.RasterOp_NotDestination) #RasterOp_SourceXorDestination
+            rect = build_valid_rect(element.f_start_point, element.f_end_point)
+            painter.drawRect(rect)
+            painter.setCompositionMode(cm)
+            painter.setPen(_pen)
+            painter.setBrush(_brush)
+        elif el_type in [ToolID.oval, ToolID.rect, ToolID.numbering]:
+            cur_brush = painter.brush()
+            if not element.filled:
+                painter.setBrush(Qt.NoBrush)
+            rect = build_valid_rect(element.f_start_point, element.f_end_point)
+            if el_type == ToolID.oval:
+                painter.drawEllipse(rect)
+            else:
+                painter.drawRect(rect)
+            if el_type == ToolID.numbering:
+                w = self.NUMBERING_WIDTH
+                end_point_rect = QRect(element.f_end_point - QPoint(int(w/2), int(w/2)),
+                                                                                QSize(w, w))
+                painter.setBrush(cur_brush)
+                painter.setPen(Qt.NoPen)
+                painter.drawEllipse(end_point_rect)
+                if color == Qt.white:
+                    painter.setPen(QPen(Qt.black))
+                else:
+                    painter.setPen(QPen(Qt.white))
+                font = painter.font()
+                font.setFamily("Consolas")
+                font.setWeight(1600)
+                painter.setFont(font)
+                painter.drawText(end_point_rect.adjusted(-20, -20, 20, 20), Qt.AlignCenter,
+                                                                        str(element.number))
+        elif el_type == ToolID.text:
+            if element.pixmap:
+                pixmap = QPixmap(element.pixmap.size())
+                pixmap.fill(Qt.transparent)
+                p = QPainter()
+                p.begin(pixmap)
+                p.setClipping(True)
+                path = QPainterPath()
+                pos = element.f_end_point - QPoint(0, element.pixmap.height())
+                text_rect = QRect(pos, element.pixmap.size())
+                text_rect = QRect(QPoint(0, 0), element.pixmap.size())
+                path.addRoundedRect(QRectF(text_rect), element.margin_value,
+                        element.margin_value)
+                p.setClipPath(path)
+                p.drawPixmap(QPoint(0, 0), element.pixmap)
+                p.setClipping(False)
+                p.end()
+
+            painter.setPen(Qt.NoPen)
+            if element.f_start_point != element.f_end_point:
+                if element.modify_end_point:
+                    modified_end_point = get_nearest_point_on_rect(
+                        QRect(pos, QSize(element.pixmap.width(), element.pixmap.height())),
+                        element.f_start_point
+                    )
+                else:
+                    modified_end_point = element.f_end_point
+                self.elementsDrawArrow(painter, modified_end_point, element.f_start_point,
+                                                                                size, False)
+            if element.pixmap:
+                image_rect = QRect(pos, pixmap.size())
+                painter.translate(image_rect.center())
+                image_rect = QRectF(-image_rect.width()/2, -image_rect.height()/2,
+                        image_rect.width(), image_rect.height()).toRect()
+                painter.rotate(element.rotation)
+                editing = not final and (element is self.selected_element or \
+                                                element is element.textbox.isVisible())
+                if editing:
+                    painter.setOpacity(0.5)
+                painter.drawPixmap(image_rect, pixmap)
+                if editing:
+                    painter.setOpacity(1.0)
+                painter.resetTransform()
+
+        elif el_type in [ToolID.blurring, ToolID.darkening]:
+            rect = build_valid_rect(element.f_start_point, element.f_end_point)
+            painter.setBrush(Qt.NoBrush)
+            painter.setPen(Qt.NoPen)
+            if el_type == ToolID.blurring:
+                if not element.finished:
+                    painter.setBrush(QBrush(QColor(150, 0, 0), Qt.DiagCrossPattern))
+                else:
+                    rect = build_valid_rect(element.f_start_point, element.f_end_point)
+                    painter.drawPixmap(rect.topLeft(), element.pixmap)
+            elif el_type == ToolID.darkening:
+                # painter.setBrush(QBrush(QColor(150, 150, 0), Qt.BDiagPattern))
+                pass
+            painter.drawRect(rect)
+        elif el_type == ToolID.stamp:
+            pixmap = element.pixmap
+            r = build_valid_rect(element.f_start_point, element.f_end_point)
+            s = QRect(QPoint(0,0), pixmap.size())
+            painter.translate(r.center())
+            rotation = element.angle
+            painter.rotate(rotation)
+            r = QRect(int(-r.width()/2), int(-r.height()/2), r.width(), r.height())
+            painter.drawPixmap(r, pixmap, s)
+            painter.resetTransform()
+        elif el_type == ToolID.removing:
+            if Globals.CRUSH_SIMULATOR:
+                1 / 0
+        elif el_type in [ToolID.zoom_in_region, ToolID.copypaste]:
+            f_input_rect = build_valid_rect(element.f_start_point, element.f_end_point)
+            curpos = QCursor().pos()
+            final_pos = element.f_copy_pos if element.finished else self.mapFromGlobal(curpos)
+            final_version_rect = self.elementsBuildSubelementRect(element, final_pos)
+            painter.setBrush(Qt.NoBrush)
+            if el_type == ToolID.zoom_in_region:
+                painter.setPen(QPen(element.color, 1))
+            if el_type == ToolID.copypaste:
+                painter.setPen(QPen(Qt.red, 1, Qt.DashLine))
+            if el_type == ToolID.zoom_in_region or \
+                            (el_type == ToolID.copypaste and not final):
+                painter.drawRect(f_input_rect)
+            if element.zoom_second_input or element.finished:
+                if element.toolbool and el_type == ToolID.zoom_in_region:
+                    points = []
+                    attrs_names = ["topLeft", "topRight", "bottomLeft", "bottomRight"]
+                    for corner_attr_name in attrs_names:
+                        p1 = getattr(f_input_rect, corner_attr_name)()
+                        p2 = getattr(final_version_rect, corner_attr_name)()
+                        points.append(p1)
+                        points.append(p2)
+                    coords = convex_hull(points)
+                    for n, coord in enumerate(coords[:-1]):
+                        painter.drawLine(coord, coords[n+1])
+                source_pixels = self.source_pixels
+                # с прямоугольником производятся корректировки, чтобы последствия перемещения
+                # рамки захвата и перемещения окна не сказывались на копируемой области
+                if not final:
+                    f_input_rect.moveCenter(f_input_rect.center() - self.elements_global_offset)
+                else:
+                    # get_capture_offset вычитался во время вызова build_valid_rect,
+                    # а здесь прибавляется для того, чтобы всё работало как надо
+                    f_input_rect.moveCenter(f_input_rect.center() + self.get_capture_offset())
+                painter.drawImage(final_version_rect, source_pixels, f_input_rect)
+                if el_type == ToolID.zoom_in_region:
+                    painter.drawRect(final_version_rect)
+
     def elementsDrawMain(self, painter, final=False):
         painter.setRenderHint(QPainter.HighQualityAntialiasing, True)
         painter.setRenderHint(QPainter.Antialiasing, True)
@@ -3520,169 +3684,21 @@ class ScreenshotWindow(QWidget):
         self.elementsIsFinalDrawing = final
         if not self.dark_stamps:
             self.elementsDrawDarkening(painter)
-        for element in self.elementsHistoryFilter():
-            el_type = element.type
-            pen, color, size = self.elementsGetPenFromElement(element)
-            painter.setPen(pen)
-            painter.setBrush(QBrush(color))
-            if el_type == ToolID.arrow:
-                painter.setPen(Qt.NoPen)
-                self.elementsDrawArrow(painter, element.f_start_point,
-                                                                element.f_end_point, size, True)
-            elif el_type in [ToolID.pen, ToolID.marker]:
-                painter.setBrush(Qt.NoBrush)
-                if element.straight:
-                    painter.drawLine(element.f_start_point, element.f_end_point)
-                else:
-                    self.draw_transformed_path(element, element.path, painter, final)
-            elif el_type == ToolID.line:
-                painter.drawLine(element.f_start_point, element.f_end_point)
-            elif el_type == ToolID.special and not final:
-                _pen = painter.pen()
-                _brush = painter.brush()
-                painter.setPen(QPen(QColor(255, 0, 0), 1))
-                painter.setBrush(Qt.NoBrush)
-                cm = painter.compositionMode()
-                painter.setCompositionMode(QPainter.RasterOp_NotDestination) #RasterOp_SourceXorDestination
-                rect = build_valid_rect(element.f_start_point, element.f_end_point)
-                painter.drawRect(rect)
-                painter.setCompositionMode(cm)
-                painter.setPen(_pen)
-                painter.setBrush(_brush)
-            elif el_type in [ToolID.oval, ToolID.rect, ToolID.numbering]:
-                cur_brush = painter.brush()
-                if not element.filled:
-                    painter.setBrush(Qt.NoBrush)
-                rect = build_valid_rect(element.f_start_point, element.f_end_point)
-                if el_type == ToolID.oval:
-                    painter.drawEllipse(rect)
-                else:
-                    painter.drawRect(rect)
-                if el_type == ToolID.numbering:
-                    w = self.NUMBERING_WIDTH
-                    end_point_rect = QRect(element.f_end_point - QPoint(int(w/2), int(w/2)),
-                                                                                    QSize(w, w))
-                    painter.setBrush(cur_brush)
-                    painter.setPen(Qt.NoPen)
-                    painter.drawEllipse(end_point_rect)
-                    if color == Qt.white:
-                        painter.setPen(QPen(Qt.black))
-                    else:
-                        painter.setPen(QPen(Qt.white))
-                    font = painter.font()
-                    font.setFamily("Consolas")
-                    font.setWeight(1600)
-                    painter.setFont(font)
-                    painter.drawText(end_point_rect.adjusted(-20, -20, 20, 20), Qt.AlignCenter,
-                                                                            str(element.number))
-            elif el_type == ToolID.text:
-                if element.pixmap:
-                    pixmap = QPixmap(element.pixmap.size())
-                    pixmap.fill(Qt.transparent)
-                    p = QPainter()
-                    p.begin(pixmap)
-                    p.setClipping(True)
-                    path = QPainterPath()
-                    pos = element.f_end_point - QPoint(0, element.pixmap.height())
-                    text_rect = QRect(pos, element.pixmap.size())
-                    text_rect = QRect(QPoint(0, 0), element.pixmap.size())
-                    path.addRoundedRect(QRectF(text_rect), element.margin_value,
-                            element.margin_value)
-                    p.setClipPath(path)
-                    p.drawPixmap(QPoint(0, 0), element.pixmap)
-                    p.setClipping(False)
-                    p.end()
 
-                painter.setPen(Qt.NoPen)
-                if element.f_start_point != element.f_end_point:
-                    if element.modify_end_point:
-                        modified_end_point = get_nearest_point_on_rect(
-                            QRect(pos, QSize(element.pixmap.width(), element.pixmap.height())),
-                            element.f_start_point
-                        )
-                    else:
-                        modified_end_point = element.f_end_point
-                    self.elementsDrawArrow(painter, modified_end_point, element.f_start_point,
-                                                                                    size, False)
-                if element.pixmap:
-                    image_rect = QRect(pos, pixmap.size())
-                    painter.translate(image_rect.center())
-                    image_rect = QRectF(-image_rect.width()/2, -image_rect.height()/2,
-                            image_rect.width(), image_rect.height()).toRect()
-                    painter.rotate(element.rotation)
-                    editing = not final and (element is self.selected_element or \
-                                                    element is element.textbox.isVisible())
-                    if editing:
-                        painter.setOpacity(0.5)
-                    painter.drawPixmap(image_rect, pixmap)
-                    if editing:
-                        painter.setOpacity(1.0)
-                    painter.resetTransform()
+        # штампы (изображения) рисуем первыми, чтобы пометки всегда были поверх них 
+        all_visible_elements = self.elementsHistoryFilter()
+        stamps_first = []
+        all_the_rest = []
+        for element in all_visible_elements:
+            if element.type == ToolID.stamp:
+                stamps_first.append(element)
+            else:
+                all_the_rest.append(element)
+        for element in stamps_first:
+            self.elementsDrawMainElement(painter, element, final)
+        for element in all_the_rest:
+            self.elementsDrawMainElement(painter, element, final)
 
-            elif el_type in [ToolID.blurring, ToolID.darkening]:
-                rect = build_valid_rect(element.f_start_point, element.f_end_point)
-                painter.setBrush(Qt.NoBrush)
-                painter.setPen(Qt.NoPen)
-                if el_type == ToolID.blurring:
-                    if not element.finished:
-                        painter.setBrush(QBrush(QColor(150, 0, 0), Qt.DiagCrossPattern))
-                    else:
-                        rect = build_valid_rect(element.f_start_point, element.f_end_point)
-                        painter.drawPixmap(rect.topLeft(), element.pixmap)
-                elif el_type == ToolID.darkening:
-                    # painter.setBrush(QBrush(QColor(150, 150, 0), Qt.BDiagPattern))
-                    pass
-                painter.drawRect(rect)
-            elif el_type == ToolID.stamp:
-                pixmap = element.pixmap
-                r = build_valid_rect(element.f_start_point, element.f_end_point)
-                s = QRect(QPoint(0,0), pixmap.size())
-                painter.translate(r.center())
-                rotation = element.angle
-                painter.rotate(rotation)
-                r = QRect(int(-r.width()/2), int(-r.height()/2), r.width(), r.height())
-                painter.drawPixmap(r, pixmap, s)
-                painter.resetTransform()
-            elif el_type == ToolID.removing:
-                if Globals.CRUSH_SIMULATOR:
-                    1 / 0
-            elif el_type in [ToolID.zoom_in_region, ToolID.copypaste]:
-                f_input_rect = build_valid_rect(element.f_start_point, element.f_end_point)
-                curpos = QCursor().pos()
-                final_pos = element.f_copy_pos if element.finished else self.mapFromGlobal(curpos)
-                final_version_rect = self.elementsBuildSubelementRect(element, final_pos)
-                painter.setBrush(Qt.NoBrush)
-                if el_type == ToolID.zoom_in_region:
-                    painter.setPen(QPen(element.color, 1))
-                if el_type == ToolID.copypaste:
-                    painter.setPen(QPen(Qt.red, 1, Qt.DashLine))
-                if el_type == ToolID.zoom_in_region or \
-                                (el_type == ToolID.copypaste and not final):
-                    painter.drawRect(f_input_rect)
-                if element.zoom_second_input or element.finished:
-                    if element.toolbool and el_type == ToolID.zoom_in_region:
-                        points = []
-                        attrs_names = ["topLeft", "topRight", "bottomLeft", "bottomRight"]
-                        for corner_attr_name in attrs_names:
-                            p1 = getattr(f_input_rect, corner_attr_name)()
-                            p2 = getattr(final_version_rect, corner_attr_name)()
-                            points.append(p1)
-                            points.append(p2)
-                        coords = convex_hull(points)
-                        for n, coord in enumerate(coords[:-1]):
-                            painter.drawLine(coord, coords[n+1])
-                    source_pixels = self.source_pixels
-                    # с прямоугольником производятся корректировки, чтобы последствия перемещения
-                    # рамки захвата и перемещения окна не сказывались на копируемой области
-                    if not final:
-                        f_input_rect.moveCenter(f_input_rect.center() - self.elements_global_offset)
-                    else:
-                        # get_capture_offset вычитался во время вызова build_valid_rect,
-                        # а здесь прибавляется для того, чтобы всё работало как надо
-                        f_input_rect.moveCenter(f_input_rect.center() + self.get_capture_offset())
-                    painter.drawImage(final_version_rect, source_pixels, f_input_rect)
-                    if el_type == ToolID.zoom_in_region:
-                        painter.drawRect(final_version_rect)
         if not final:
             self.draw_transform_widget(painter)
         if Globals.DEBUG and self.capture_region_rect and not final:
@@ -4022,10 +4038,12 @@ class ScreenshotWindow(QWidget):
                         break
                     prev = e
             if els and el.history_group_id is not None:
+                # for group of elements
                 group_id = el.history_group_id
                 count = len([el for el in self.elements if el.history_group_id == group_id])
                 self.elements_history_index += count
             else:
+                # default
                 self.elements_history_index += 1
         self.elementsSetSelected(None)
 
@@ -4035,10 +4053,12 @@ class ScreenshotWindow(QWidget):
             els = self.elementsHistoryFilter()
             el = els[-1]
             if el.history_group_id is not None:
+                # for group of elements
                 group_id = el.history_group_id
                 count = len([el for el in self.elements if el.history_group_id == group_id])
                 self.elements_history_index -= count
             else:
+                # default
                 self.elements_history_index -= 1
         self.elementsSetSelected(None)
 

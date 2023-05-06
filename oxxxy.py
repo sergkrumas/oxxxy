@@ -61,6 +61,7 @@ class Globals():
     DEBUG = True
     DEBUG_ELEMENTS = True
     DEBUG_ELEMENTS_STAMP_FRAMING = True
+    DEBUG_ELEMENTS_COLLAGE = True
     CRUSH_SIMULATOR = False
 
     DEBUG_VIZ = False
@@ -101,6 +102,10 @@ class RequestType(Enum):
     Fullscreen = 1
     QuickFullscreen = 2
     Editor = 3
+
+class ElementSizeMode(Enum):
+    User = 0
+    Special = 0
 
 class ToolID():
     none = "none"
@@ -1899,8 +1904,11 @@ class ScreenshotWindow(QWidget):
         pixmap = self.current_stamp_pixmap
         rotation = self.current_stamp_angle
         painter.setOpacity(0.5)
-        r = self.elementsStampRect(cursor_pos, self.tools_window.size_slider.value,
-            self.current_stamp_pixmap)
+        r = self.elementsStampRect(
+            cursor_pos,
+            self.tools_window.size_slider.value,
+            self.current_stamp_pixmap,
+        )
         s = QRect(QPoint(0,0), pixmap.size())
         painter.translate(r.center())
         painter.rotate(rotation)
@@ -2246,6 +2254,34 @@ class ScreenshotWindow(QWidget):
         self.source_pixels = screenshot_image
         self.metadata = metadata
 
+        self.context_menu_stylesheet = """
+        QMenu{
+            padding: 0px;
+            font-size: 18px;
+            font-weight: bold;
+            font-family: 'Consolas';
+        }
+        QMenu::item {
+            padding: 15px 15px;
+            background: #303940;
+            color: rgb(230, 230, 230);
+        }
+        QMenu::icon {
+            padding-left: 15px;
+        }
+        QMenu::item:selected {
+            background-color: rgb(253, 203, 54);
+            color: rgb(50, 50, 50);
+            border-left: 2px dashed #303940;
+        }
+        QMenu::separator {
+            height: 1px;
+            background: gray;
+        }
+        QMenu::item:checked {
+        }
+        """
+
         self.input_POINT1 = None
         self.input_POINT2 = None
         self.capture_region_rect = None
@@ -2341,6 +2377,8 @@ class ScreenshotWindow(QWidget):
         self.extended_editor_mode = True
         self.view_window = None
 
+        self.history_group_counter = 0
+
     def set_saved_capture_frame(self):
         if self.tools_settings.get("savecaptureframe", False):
             rect_params = self.tools_settings.get("capture_frame", None)
@@ -2391,8 +2429,8 @@ class ScreenshotWindow(QWidget):
                 element = self.elementsCreateNew(ToolID.stamp)
                 element.pixmap = pixmap
                 element.angle = 0
-                self.elementsSetStampElementPoints(element, pos, pos_as_center=False)
-                pos += QPoint(pixmap.width(), 0)
+                r = self.elementsSetStampElementPoints(element, pos, pos_as_center=False)
+                pos += QPoint(r.width(), 0)
                 pixmaps.append(pixmap)
                 points.append(element.start_point)
                 points.append(element.end_point)
@@ -2466,6 +2504,12 @@ class ScreenshotWindow(QWidget):
             self.choose_default_subelement = True # for copypaste and zoom_in_region
 
             self.frame_data = None
+
+            self.size_mode = ElementSizeMode.User
+
+            self.history_group_id = None
+
+            self.size = 1.0
 
         def __getattribute__(self, name):
             if name.startswith("f_"):
@@ -2564,14 +2608,21 @@ class ScreenshotWindow(QWidget):
 
     def elementsSetStampElementPoints(self, element, pos, pos_as_center=True):
         if pos_as_center:
-            r = self.elementsStampRect(pos, element.size, element.pixmap)
+            r = self.elementsStampRect(
+                pos,
+                element.size,
+                element.pixmap,
+                user_scale=(element.size_mode == ElementSizeMode.User),
+            )
             element.start_point = r.topLeft()
             element.end_point = r.bottomRight()
         else:
             element.start_point = QPoint(pos)
-            w = element.pixmap.width()
-            h = element.pixmap.height()
+            w = int(element.pixmap.width()*element.size)
+            h = int(element.pixmap.height()*element.size)
             element.end_point = pos + QPoint(w, h)
+
+        return build_valid_rect(element.start_point, element.end_point)
 
     def elementsFrameStampPixmap(self, frame_rect=None, frame_data=None):
         sel_elem = self.selected_element
@@ -3644,9 +3695,10 @@ class ScreenshotWindow(QWidget):
         painter.setPen(old_pen)
         self.elementsIsFinalDrawing = False
 
-    def elementsStampRect(self, center_point, size, pixmap):
+    def elementsStampRect(self, center_point, size, pixmap, user_scale=True):
         s = size
-        s += 0.5
+        if user_scale:
+            s += 0.5
         r = QRect(0, 0, int(pixmap.width()*s), int(pixmap.height()*s))
         r.moveCenter(center_point)
         return r
@@ -3682,15 +3734,16 @@ class ScreenshotWindow(QWidget):
                     font.setStrikeOut(False)
                 if self.selected_element and self.selected_element == element:
                     painter.setPen(QPen(Qt.green))
+                gi = element.history_group_id
                 if hasattr(element, "source_index"):
                     el = element
-                    info_text += f"[{el.unique_index}] {el.type} from [{el.source_index}]"
+                    info_text += f"[{el.unique_index}] {el.type} from [{el.source_index}] {{{gi}}}"
                 else:
-                    info_text += f"[{element.unique_index}] {element.type}"
+                    info_text += f"[{element.unique_index}] {element.type} {{{gi}}}"
                 font.setWeight(1900)
                 font.setPixelSize(20)
                 painter.setFont(font)
-                painter.drawText(info_rect.bottomRight() + QPoint(-200, -index*25), info_text)
+                painter.drawText(info_rect.bottomRight() + QPoint(-250, -index*25), info_text)
 
     def elementsUpdateFinalPicture(self):
         if self.capture_region_rect:
@@ -3793,8 +3846,8 @@ class ScreenshotWindow(QWidget):
             copy_image_data_to_clipboard(filepath)
         restart_app_in_notification_mode(filepath)
 
-    def elementsCreateModificatedCopyOnNeed(self, element, keep_old_widget=False):
-        if element == self.elementsGetLastElement():# or element.type == "text":
+    def elementsCreateModificatedCopyOnNeed(self, element, force_new=False, keep_old_widget=False):
+        if element == self.elementsGetLastElement() and not force_new:
             # если элемент последний в списке элементов,
             # то его предыдущее состояние не сохраняется
             return element
@@ -3959,13 +4012,34 @@ class ScreenshotWindow(QWidget):
     def elementsHistoryForwards(self):
         self.elementsDeactivateTextElements()
         if self.elements_history_index < len(self.elements):
-            self.elements_history_index += 1
+            els = self.elementsHistoryFilter()
+            if els:
+                el = els[-1]
+                prev = None
+                for e in self.elements:
+                    if prev == el:
+                        el = e
+                        break
+                    prev = e
+            if els and el.history_group_id is not None:
+                group_id = el.history_group_id
+                count = len([el for el in self.elements if el.history_group_id == group_id])
+                self.elements_history_index += count
+            else:
+                self.elements_history_index += 1
         self.elementsSetSelected(None)
 
     def elementsHistoryBackwards(self):
         self.elementsDeactivateTextElements()
         if self.elements_history_index > 0:
-            self.elements_history_index -= 1
+            els = self.elementsHistoryFilter()
+            el = els[-1]
+            if el.history_group_id is not None:
+                group_id = el.history_group_id
+                count = len([el for el in self.elements if el.history_group_id == group_id])
+                self.elements_history_index -= count
+            else:
+                self.elements_history_index -= 1
         self.elementsSetSelected(None)
 
     def elementsUpdateHistoryButtonsStatus(self):
@@ -4202,35 +4276,76 @@ class ScreenshotWindow(QWidget):
         self.define_regions_rects_and_set_cursor()
         self.update()
 
+    def elements_get_history_group_id(self):
+        self.history_group_counter += 1
+        return self.history_group_counter
+
+    def elementsAutoCollageStamps(self):
+        subMenu = QMenu()
+        subMenu.setStyleSheet(self.context_menu_stylesheet)
+        horizontal = subMenu.addAction("По горизонтали")
+        vertical = subMenu.addAction("По вертикали")
+        # pos = self.mapToGlobal(event.pos())
+        pos = QCursor().pos()
+        action = subMenu.exec_(pos)
+
+        elements = []
+        for element in self.elementsHistoryFilter():
+            if element.type == ToolID.stamp:
+                elements.append(element)
+
+        cmp_func = lambda x: QRect(x.start_point, x.end_point).center().x()
+        elements = list(sorted(elements, key=cmp_func))
+        points = []
+
+        if action == None:
+            pass
+        else:
+
+            if action == horizontal:
+                max_height = max(el.pixmap.height() for el in elements)
+            elif action == vertical:
+                max_width = max(el.pixmap.width() for el in elements)
+
+            pos = QPoint(0, 0)
+
+            group_id = self.elements_get_history_group_id()
+            for source_element in elements:
+                element = self.elementsCreateModificatedCopyOnNeed(source_element, force_new=True)
+
+                if action == horizontal:
+                    element.size = max_height / element.pixmap.height() 
+                elif action == vertical:
+                    element.size = max_width / element.pixmap.width()
+                element.size_mode = ElementSizeMode.Special
+
+                r = self.elementsSetStampElementPoints(element, pos, pos_as_center=False)
+
+                if action == horizontal:
+                    pos += QPoint(r.width(), 0)
+                elif action == vertical:
+                    pos += QPoint(0, r.height())
+
+                element.history_group_id = group_id
+
+                points.append(element.start_point)
+                points.append(element.end_point)
+
+
+            # обновление области захвата
+            self.input_POINT2, self.input_POINT1 = get_bounding_points(points)
+            # приводим к специальному QPoint,
+            # чтобы код работающий с этими переменными
+            # работал нормально
+            self.input_POINT2 = QPoint(self.input_POINT2)
+            self.input_POINT1 = QPoint(self.input_POINT1)
+            self.capture_region_rect = self._build_valid_rect(self.input_POINT1, self.input_POINT2)
+
+        self.update()
+
     def contextMenuEvent(self, event):
         contextMenu = QMenu()
-        contextMenu.setStyleSheet("""
-        QMenu{
-            padding: 0px;
-            font-size: 18px;
-            font-weight: bold;
-            font-family: 'Consolas';
-        }
-        QMenu::item {
-            padding: 15px 15px;
-            background: #303940;
-            color: rgb(230, 230, 230);
-        }
-        QMenu::icon {
-            padding-left: 15px;
-        }
-        QMenu::item:selected {
-            background-color: rgb(253, 203, 54);
-            color: rgb(50, 50, 50);
-            border-left: 2px dashed #303940;
-        }
-        QMenu::separator {
-            height: 1px;
-            background: gray;
-        }
-        QMenu::item:checked {
-        }
-        """)
+        contextMenu.setStyleSheet(self.context_menu_stylesheet)
 
         bitmap_cancel = QPixmap(50, 50)
         bitmap_cancel.fill(Qt.transparent)
@@ -4307,6 +4422,8 @@ class ScreenshotWindow(QWidget):
             set_image_frame = contextMenu.addAction("Обрезать изображение")
             contextMenu.addSeparator()
 
+        autocollage = contextMenu.addAction("Автоколлаж")
+
         get_toolwindow_in_view = contextMenu.addAction("Подтянуть панель инструментов")
         reset_capture = contextMenu.addAction("Сбросить область захвата")
         contextMenu.addSeparator()
@@ -4334,6 +4451,9 @@ class ScreenshotWindow(QWidget):
         action = contextMenu.exec_(self.mapToGlobal(event.pos()))
         if action == None:
             pass
+        elif action == autocollage:
+            self.elementsAutoCollageStamps()
+            self.update()
         elif action == halt:
             sys.exit()
         elif action == reset_image_frame:
@@ -5429,12 +5549,24 @@ def invoke_screenshot_editor(request_type=None):
 
     screenshot_image = make_screenshot_pyqt()
     if request_type == RequestType.Fragment:
-        screenshot_editor = ScreenshotWindow(screenshot_image, metadata)
-        screenshot_editor.set_saved_capture_frame()
-        screenshot_editor.show()
         # print("^^^^^^", time.time() - started_time)
-        if Globals.DEBUG and Globals.DEBUG_ELEMENTS:
+        if Globals.DEBUG and Globals.DEBUG_ELEMENTS and not Globals.DEBUG_ELEMENTS_COLLAGE:
+            screenshot_editor = ScreenshotWindow(screenshot_image, metadata)
+            screenshot_editor.set_saved_capture_frame()
+            screenshot_editor.show()
             screenshot_editor.request_elements_debug_mode()
+        elif Globals.DEBUG and Globals.DEBUG_ELEMENTS_COLLAGE:
+            path = SettingsJson().get_data("SCREENSHOT_FOLDER_PATH")
+            if not path:
+                path = ""
+            filepaths = get_filepaths_dialog(path=path)
+            screenshot_editor = ScreenshotWindow(screenshot_image, metadata)
+            screenshot_editor.request_editor_mode(filepaths)
+            screenshot_editor.show()
+        else:
+            screenshot_editor = ScreenshotWindow(screenshot_image, metadata)
+            screenshot_editor.set_saved_capture_frame()
+            screenshot_editor.show()
         # чтобы activateWindow точно сработал и взял фокус ввода
         QApplication.instance().processEvents()
         screenshot_editor.activateWindow()

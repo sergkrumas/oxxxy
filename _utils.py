@@ -57,6 +57,7 @@ __all__ = (
     'SettingsJson',
 
     'generate_metainfo',
+    'get_bounding_points',
     'build_valid_rect',
     'dot',
     'get_nearest_point_on_rect',
@@ -277,18 +278,23 @@ def generate_metainfo():
             pass
     return "Not defined", "Not defined"
 
-def build_valid_rect(p1, p2):
+def get_bounding_points(points):
     MAX = sys.maxsize
     left = MAX
     right = -MAX
     top = MAX
     bottom = -MAX
-    for p in [p1, p2]:
-        left = min(p.x(), left)
-        right = max(p.x(), right)
-        top = min(p.y(), top)
-        bottom = max(p.y(), bottom)
-    return QRect(QPoint(int(left), int(top)), QPoint(int(right), int(bottom)))
+    if not points:
+        raise Exception("Empty list!")
+    for p in points:
+        left = min(int(p.x()), left)
+        right = max(int(p.x()), right)
+        top = min(int(p.y()), top)
+        bottom = max(int(p.y()), bottom)
+    return QPoint(left, top), QPoint(right, bottom)
+
+def build_valid_rect(p1, p2):
+    return QRect(*get_bounding_points((p1, p2)))
 
 def dot(p1, p2):
     return p1.x()*p2.x() + p1.y()*p2.y()

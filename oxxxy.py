@@ -51,7 +51,7 @@ from _utils import (convex_hull, check_scancode_for, SettingsJson,
      generate_metainfo, build_valid_rect, dot, get_nearest_point_on_rect, get_creation_date,
      find_browser_exe_file, open_link_in_browser, open_in_google_chrome, save_meta_info,
      make_screenshot_pyqt, webRGBA, generate_gradient, draw_shadow, draw_cyberpunk,
-     elements45DegreeConstraint)
+     elements45DegreeConstraint, get_bounding_points)
 
 from _sliders import (CustomSlider,)
 from _transform_widget import (TransformWidget,)
@@ -2384,6 +2384,7 @@ class ScreenshotWindow(QWidget):
         tw = self.tools_window
         tw.initialization = True
         tw.set_current_tool(ToolID.stamp)
+        points = []
         for filepath in filepaths:
             pixmap = QPixmap(filepath)
             if pixmap.width() != 0:
@@ -2393,12 +2394,18 @@ class ScreenshotWindow(QWidget):
                 self.elementsSetStampElementPoints(element, pos, pos_as_center=False)
                 pos += QPoint(pixmap.width(), 0)
                 pixmaps.append(pixmap)
+                points.append(element.start_point)
+                points.append(element.end_point)
         if pixmaps:
-            self.input_POINT2 = QPoint(0, 0)
-            self.input_POINT1 = element.end_point
+            self.input_POINT2, self.input_POINT1 = get_bounding_points(points)
+            # приводим к специальному QPoint,
+            # чтобы код работающий с этими переменными
+            # работал нормально
+            self.input_POINT2 = QPoint(self.input_POINT2)
+            self.input_POINT1 = QPoint(self.input_POINT1)
         else:
             self.input_POINT2 = QPoint(0, 0)
-            self.input_POINT1 = self.frameGeometry().bottomRight()
+            self.input_POINT1 = QPoint(self.frameGeometry().bottomRight())
         self.capture_region_rect = self._build_valid_rect(self.input_POINT1, self.input_POINT2)
         tw.set_current_tool(ToolID.transform)
         tw.forwards_backwards_update()

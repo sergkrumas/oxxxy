@@ -3101,6 +3101,8 @@ class ScreenshotWindow(QWidget):
                     else:
                         raise Exception("elementsMoveGlobalOffset Exception")
                     setattr(element, set_attr_name, final_value)
+            if element.type == ToolID.text:
+                element.textbox.move(delta)
         self.move_capture_rect(delta)
         if self.input_POINT1 is not None:
             self.input_POINT1 = QPoint(self.capture_region_rect.topLeft())

@@ -61,7 +61,7 @@ class Globals():
     DEBUG = True
     DEBUG_ELEMENTS = True
     DEBUG_ELEMENTS_STAMP_FRAMING = True
-    DEBUG_ELEMENTS_COLLAGE = True
+    DEBUG_ELEMENTS_COLLAGE = False
     CRUSH_SIMULATOR = False
 
     DEBUG_VIZ = False
@@ -2467,6 +2467,7 @@ class ScreenshotWindow(QWidget):
             element = self.elementsCreateNew(ToolID.stamp)
             element.pixmap = pixmap
             element.angle = 0
+            element.size = 1.0
             pos = self.input_POINT2
             self.elementsSetStampElementPoints(element, pos, pos_as_center=False)
             self.elementsSetSelected(element)
@@ -3685,7 +3686,7 @@ class ScreenshotWindow(QWidget):
         if not self.dark_stamps:
             self.elementsDrawDarkening(painter)
 
-        # штампы (изображения) рисуем первыми, чтобы пометки всегда были поверх них 
+        # штампы (изображения) рисуем первыми, чтобы пометки всегда были поверх них
         all_visible_elements = self.elementsHistoryFilter()
         stamps_first = []
         all_the_rest = []
@@ -4300,6 +4301,84 @@ class ScreenshotWindow(QWidget):
         self.history_group_counter += 1
         return self.history_group_counter
 
+    def elementsSetCaptureFromContent(self):
+        points = []
+        for element in self.elementsHistoryFilter():
+            if element.type in [ToolID.removing, ToolID.special]:
+                continue
+            print("......")
+            pen, _, _ = self.elementsGetPenFromElement(element)
+            width = pen.width()
+            # width //= 2
+            sizeOffsetVec = QPoint(width, width)
+            generalOffset = QPoint(10, 10)
+            if element.type in [ToolID.pen, ToolID.marker]:
+                if element.straight:
+                    r = build_valid_rect(element.start_point, element.end_point)
+                    points.append(r.topLeft()-sizeOffsetVec)
+                    points.append(r.bottomRight()+sizeOffsetVec)
+                else:
+                    r = element.path.boundingRect().toRect()
+                    points.append(r.topLeft()-sizeOffsetVec)
+                    points.append(r.bottomRight()+sizeOffsetVec)
+            elif element.type == ToolID.line:
+                r = build_valid_rect(element.start_point, element.end_point)
+                points.append(r.topLeft()-sizeOffsetVec)
+                points.append(r.bottomRight()+sizeOffsetVec)
+            elif element.type == ToolID.arrow:
+                r = build_valid_rect(element.start_point, element.end_point)
+                points.append(r.topLeft()-generalOffset)
+                points.append(r.bottomRight()+generalOffset)
+            elif element.type in [ToolID.oval, ToolID.rect, ToolID.numbering]:
+                r = build_valid_rect(element.start_point, element.end_point)
+                points.append(r.topLeft()-sizeOffsetVec)
+                points.append(r.bottomRight()+sizeOffsetVec)
+            elif element.type in [ToolID.blurring, ToolID.darkening]:
+                r = build_valid_rect(element.start_point, element.end_point)
+                points.append(r.topLeft()-generalOffset)
+                points.append(r.bottomRight()+generalOffset)
+            elif element.type == ToolID.text:
+                if element.f_start_point != element.f_end_point:
+                    if element.modify_end_point:
+                        modified_end_point = get_nearest_point_on_rect(
+                            QRect(pos, QSize(element.pixmap.width(), element.pixmap.height())),
+                            element.f_start_point
+                        )
+                    else:
+                        modified_end_point = element.f_end_point
+                    points.append(modified_end_point)
+                    points.append(element.f_start_point)
+                if element.pixmap:
+                    pos = element.f_end_point - QPoint(0, element.pixmap.height())
+                    image_rect = QRect(pos, element.pixmap.size())
+                    points.append(image_rect.topLeft()-generalOffset)
+                    points.append(image_rect.bottomRight()+generalOffset)
+            elif element.type == ToolID.stamp:
+                r = build_valid_rect(element.start_point, element.end_point)
+                points.append(r.topLeft()-generalOffset)
+                points.append(r.bottomRight()+generalOffset)
+            elif element.type in [ToolID.zoom_in_region, ToolID.copypaste]:
+
+                f_input_rect = build_valid_rect(element.f_start_point, element.f_end_point)
+                final_pos = element.f_copy_pos
+                final_version_rect = self.elementsBuildSubelementRect(element, final_pos)
+                f_input_rect.moveCenter(f_input_rect.center() - self.elements_global_offset)
+
+                points.append(f_input_rect.topLeft()-generalOffset)
+                points.append(f_input_rect.bottomRight()+generalOffset)
+                points.append(final_version_rect.topLeft()-generalOffset)
+                points.append(final_version_rect.bottomRight()+generalOffset)
+
+        if points:
+            # обновление области захвата
+            self.input_POINT2, self.input_POINT1 = get_bounding_points(points)
+            # приводим к специальному QPoint,
+            # чтобы код работающий с этими переменными
+            # работал нормально
+            self.input_POINT2 = QPoint(self.input_POINT2)
+            self.input_POINT1 = QPoint(self.input_POINT1)
+            self.capture_region_rect = self._build_valid_rect(self.input_POINT1, self.input_POINT2)
+
     def elementsAutoCollageStamps(self):
         subMenu = QMenu()
         subMenu.setStyleSheet(self.context_menu_stylesheet)
@@ -4334,7 +4413,7 @@ class ScreenshotWindow(QWidget):
                 element = self.elementsCreateModificatedCopyOnNeed(source_element, force_new=True)
 
                 if action == horizontal:
-                    element.size = max_height / element.pixmap.height() 
+                    element.size = max_height / element.pixmap.height()
                 elif action == vertical:
                     element.size = max_width / element.pixmap.width()
                 element.size_mode = ElementSizeMode.Special
@@ -4442,6 +4521,7 @@ class ScreenshotWindow(QWidget):
             set_image_frame = contextMenu.addAction("Обрезать изображение")
             contextMenu.addSeparator()
 
+        autocapturezone = contextMenu.addAction("Задать область захвата")
         autocollage = contextMenu.addAction("Автоколлаж")
 
         get_toolwindow_in_view = contextMenu.addAction("Подтянуть панель инструментов")
@@ -4471,6 +4551,9 @@ class ScreenshotWindow(QWidget):
         action = contextMenu.exec_(self.mapToGlobal(event.pos()))
         if action == None:
             pass
+        elif action == autocapturezone:
+            self.elementsSetCaptureFromContent()
+            self.update()
         elif action == autocollage:
             self.elementsAutoCollageStamps()
             self.update()

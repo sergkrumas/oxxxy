@@ -2740,6 +2740,12 @@ class ScreenshotWindow(QWidget):
         transform_BKG_2 = self.transform_BKG_2 or self.mapFromGlobal(QCursor().pos())
 
         translate_value = transform_BKG_1 - self.elements_global_offset
+
+        old_brush = painter.brush()
+        painter.setBrush(self.checkerboard_brush)
+        painter.drawRect(QRect(0, 0, source.width(), source.height()))
+        painter.setBrush(old_brush)
+
         painter.translate(translate_value)
 
         delta = transform_BKG_1 - transform_BKG_2

@@ -2268,7 +2268,7 @@ class ScreenshotWindow(QWidget):
             font-family: 'Consolas';
         }
         QMenu::item {
-            padding: 15px 15px;
+            padding: 10px;
             background: #303940;
             color: rgb(230, 230, 230);
         }
@@ -2751,7 +2751,6 @@ class ScreenshotWindow(QWidget):
         sx = sy = 1.0
         if radius > self.WIDGET_BORDER_RADIUS:
             scale = radius/self.WIDGET_BORDER_RADIUS
-        
         elif radius > self.WIDGET_BORDER_RADIUS/2:
             scale = radius/self.WIDGET_BORDER_RADIUS
         else:

@@ -1871,6 +1871,8 @@ class ScreenshotWindow(QWidget):
 
         self.draw_uncapture_zones_mode_info(painter)
 
+        self.draw_transform_BKG_widget(painter)
+
         if Globals.DEBUG:
             self.draw_analyse_corners(painter)
             self.elementsDrawFinalVersionDebug(painter)
@@ -2152,8 +2154,11 @@ class ScreenshotWindow(QWidget):
             if self.include_screenshot_background:
                 input_rect_dest = input_rect
                 input_rect_source = QRect(input_rect)
-                input_rect_source.moveCenter(input_rect_source.center()-self.elements_global_offset)
-                painter.drawImage(input_rect_dest, self.source_pixels, input_rect_source)
+                input_rect_source.moveCenter(
+                                        input_rect_source.center()-self.elements_global_offset)
+                painter.drawImage(input_rect_dest,
+                            # self.source_pixels_backup or
+                            self.source_pixels, input_rect_source)
 
         if shot == 2 and self.input_POINT1 and self.input_POINT2:
             if tw and tw.chb_masked.isChecked():
@@ -2252,6 +2257,7 @@ class ScreenshotWindow(QWidget):
         self.setMouseTracking(True)
 
         self.source_pixels = screenshot_image
+        self.source_pixels_backup = None
         self.metadata = metadata
 
         self.context_menu_stylesheet = """
@@ -2376,8 +2382,15 @@ class ScreenshotWindow(QWidget):
 
         self.extended_editor_mode = True
         self.view_window = None
-
         self.history_group_counter = 0
+        self.transform_BKG_widget_mode = False
+        self.transform_BKG_1 = None
+        self.transform_BKG_2 = None
+        self.background_transformed = False
+        self.WIDGET_BORDER_RADIUS = 300
+
+        self.transform_BKG_scale_x = True
+        self.transform_BKG_scale_y = True
 
     def set_saved_capture_frame(self):
         if self.tools_settings.get("savecaptureframe", False):
@@ -2671,6 +2684,90 @@ class ScreenshotWindow(QWidget):
         tools_window = self.tools_window
         if tools_window:
             tools_window.set_current_tool(ToolID.transform)
+        self.update()
+
+    def draw_transform_BKG_widget(self, painter):
+        if self.transform_BKG_widget_mode:
+            transform_BKG_1 = self.transform_BKG_1 or self.mapFromGlobal(QCursor().pos())
+            transform_BKG_2 = self.transform_BKG_2 or self.mapFromGlobal(QCursor().pos())
+
+            old_comp_mode = painter.compositionMode()
+            painter.setCompositionMode(QPainter.RasterOp_SourceXorDestination)
+            painter.drawLine(transform_BKG_1, transform_BKG_2)
+            painter.setCompositionMode(old_comp_mode)
+
+            radius_v = QPoint(transform_BKG_1-transform_BKG_2)
+            radius = math.sqrt(radius_v.x()**2 + radius_v.y()**2)
+            radius_int = int(radius)
+            offset = QPoint(radius_int, radius_int)
+            rect = build_valid_rect(transform_BKG_1 + offset, transform_BKG_1 - offset)
+            painter.drawEllipse(rect)
+
+            scale_status_str = ""
+            if self.transform_BKG_scale_x:
+                scale_status_str += "X"
+            if self.transform_BKG_scale_y:
+                scale_status_str += "Y"
+            painter.drawText(transform_BKG_2+QPoint(10, 10), scale_status_str)
+
+            font = painter.font()
+            font.setWeight(900)
+            painter.setFont(font)
+            for r, text in [(self.WIDGET_BORDER_RADIUS, "1.0"),
+                                                    (int(self.WIDGET_BORDER_RADIUS/2), "0.5")]:
+                offset = QPoint(r, r)
+                rect = build_valid_rect(transform_BKG_1 + offset, transform_BKG_1 - offset)
+                painter.setPen(QPen(Qt.red))
+                painter.drawEllipse(rect)
+                painter.setPen(QPen(Qt.white))
+                painter.drawText(transform_BKG_1 + QPoint(r+4, 0), text)
+
+    def elementsTransformBackground(self):
+        if self.source_pixels_backup is None:
+            self.source_pixels_backup = QImage(self.source_pixels)
+
+        source = self.source_pixels_backup
+
+        output_image = QPixmap(source.size())
+        painter = QPainter()
+
+        painter.begin(output_image)
+        painter.setRenderHint(QPainter.HighQualityAntialiasing, True)
+        painter.setRenderHint(QPainter.Antialiasing, True)
+        painter.setRenderHint(QPainter.SmoothPixmapTransform, True)
+
+        transform_BKG_1 = self.transform_BKG_1
+        transform_BKG_2 = self.transform_BKG_2 or self.mapFromGlobal(QCursor().pos())
+
+        translate_value = transform_BKG_1 - self.elements_global_offset
+        painter.translate(translate_value)
+
+        delta = transform_BKG_1 - transform_BKG_2
+        radians_angle = math.atan2(delta.y(), delta.x())
+        painter.rotate(180+180/3.14*radians_angle)
+
+        radius_v = QPoint(transform_BKG_1-transform_BKG_2)
+        radius = math.sqrt(radius_v.x()**2 + radius_v.y()**2)
+        sx = sy = 1.0
+        if radius > self.WIDGET_BORDER_RADIUS:
+            scale = radius/self.WIDGET_BORDER_RADIUS
+        
+        elif radius > self.WIDGET_BORDER_RADIUS/2:
+            scale = radius/self.WIDGET_BORDER_RADIUS
+        else:
+            scale = max(self.WIDGET_BORDER_RADIUS/2, radius)/self.WIDGET_BORDER_RADIUS
+        if self.transform_BKG_scale_x:
+            sx = scale
+        if self.transform_BKG_scale_y:
+            sy = scale
+        painter.scale(sx, sy)
+
+        painter.drawImage(-translate_value, source)
+
+        painter.end()
+
+        self.source_pixels = output_image.toImage()
+        self.background_transformed = True
         self.update()
 
     def elementsRemoveElement(self):
@@ -3937,7 +4034,7 @@ class ScreenshotWindow(QWidget):
     def elementsDrawArrow(self, painter, start_point, tip_point, size, sharp):
         painter.translate(start_point)
         delta = start_point - tip_point
-        radians_angle = math.atan2(delta.y(),delta.x())
+        radians_angle = math.atan2(delta.y(), delta.x())
         painter.rotate(180+180/3.14*radians_angle)
         arrow_length = math.sqrt(math.pow(delta.x(), 2) + math.pow(delta.y(), 2))
         tip = QPointF(arrow_length, 0)
@@ -4177,6 +4274,11 @@ class ScreenshotWindow(QWidget):
         elif event.buttons() == Qt.RightButton:
             pass
 
+        if self.transform_BKG_widget_mode:
+            if self.transform_BKG_1:
+                self.elementsTransformBackground()
+                self.update()
+
         self.update()
         self.update_tools_window()
         # super().mouseMoveEvent(event)
@@ -4188,7 +4290,14 @@ class ScreenshotWindow(QWidget):
         if isLeftButton:
             self.old_cursor_position = event.pos()
             self.get_region_info()
-            if self.undermouse_region_info is None:
+            if self.transform_BKG_widget_mode:
+                if self.transform_BKG_1 is None:
+                    self.transform_BKG_1 = event.pos()
+                elif self.transform_BKG_2 is None:
+                    self.transform_BKG_2 = event.pos()
+                    self.elementsFinishTransformBKGMode()
+                self.update()
+            elif self.undermouse_region_info is None:
                 if self.isAltPanning:
                     self.drag_inside_capture_zone = False
                 else:
@@ -4444,6 +4553,18 @@ class ScreenshotWindow(QWidget):
 
         self.update()
 
+    def elementsStartTransformBKGMode(self):
+        self.transform_BKG_widget_mode = True
+        self.transform_BKG_scale_x = True
+        self.transform_BKG_scale_y = True
+        self.update()
+
+    def elementsFinishTransformBKGMode(self):
+        self.transform_BKG_widget_mode = False
+        self.transform_BKG_1 = None
+        self.transform_BKG_2 = None
+        self.update()
+
     def contextMenuEvent(self, event):
         contextMenu = QMenu()
         contextMenu.setStyleSheet(self.context_menu_stylesheet)
@@ -4523,6 +4644,12 @@ class ScreenshotWindow(QWidget):
             set_image_frame = contextMenu.addAction("Обрезать изображение")
             contextMenu.addSeparator()
 
+        transform_background = contextMenu.addAction("Трансформация фона")
+        reset_background_transform = None
+        if self.background_transformed:
+            reset_background_transform = contextMenu.addAction("Сброс трансформации фона")
+
+        contextMenu.addSeparator()
         autocapturezone = contextMenu.addAction("Задать область захвата")
         autocollage = contextMenu.addAction("Автоколлаж")
 
@@ -4553,6 +4680,12 @@ class ScreenshotWindow(QWidget):
         action = contextMenu.exec_(self.mapToGlobal(event.pos()))
         if action == None:
             pass
+        elif action == transform_background:
+            self.elementsStartTransformBKGMode()
+        elif action == reset_background_transform:
+            self.background_transformed = False
+            self.source_pixels = self.source_pixels_backup
+            self.update()
         elif action == autocapturezone:
             self.elementsSetCaptureFromContent()
             self.update()
@@ -4784,7 +4917,9 @@ class ScreenshotWindow(QWidget):
             show_quit_dialog = False
             if self.tools_window:
                 select_window = self.tools_window.select_window
-            if select_window and select_window.isVisible():
+            if self.transform_BKG_widget_mode:
+                self.elementsFinishTransformBKGMode()
+            elif select_window and select_window.isVisible():
                 select_window.hide()
             elif event.modifiers() & Qt.ShiftModifier:
                 show_quit_dialog = True
@@ -4845,6 +4980,12 @@ class ScreenshotWindow(QWidget):
         if key in (Qt.Key_Space,):
             if self.is_rect_defined:
                 self.elementsActivateTransformTool()
+        if check_scancode_for(event, "X"):
+            self.transform_BKG_scale_x = not self.transform_BKG_scale_x
+            self.update()
+        if check_scancode_for(event, "Y"):
+            self.transform_BKG_scale_y = not self.transform_BKG_scale_y
+            self.update()
         if check_scancode_for(event, "P"):
             self.show_view_window(self.get_final_picture)
         if check_scancode_for(event, "V"):

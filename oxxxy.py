@@ -34,13 +34,13 @@ import importlib.util
 import math
 
 import pyperclip
-from pynput import keyboard
+from pyqtkeybind import keybinder
 
 from PyQt5.QtWidgets import (QSystemTrayIcon, QWidget, QMessageBox, QMenu, QGraphicsPixmapItem,
     QGraphicsScene, QFileDialog, QHBoxLayout, QCheckBox, QVBoxLayout, QTextEdit, QGridLayout,
     QPushButton, QGraphicsBlurEffect, QLabel, QApplication, QScrollArea, QDesktopWidget)
 from PyQt5.QtCore import (QUrl, QMimeData, pyqtSignal, QPoint, QPointF, pyqtSlot, QRect, QEvent,
-    QTimer, Qt, QSize, QRectF, QThread)
+    QTimer, Qt, QSize, QRectF, QThread, QAbstractNativeEventFilter, QAbstractEventDispatcher)
 from PyQt5.QtGui import (QPainterPath, QColor, QKeyEvent, QMouseEvent, QBrush, QPixmap,
     QPaintEvent, QPainter, QWindow, QPolygon, QImage, QTransform, QPen, QLinearGradient,
     QIcon, QFont, QCursor, QPolygonF)
@@ -72,6 +72,8 @@ class Globals():
     FULL_STOP = False
 
     ENABLE_FLAT_EDITOR_UI = False
+
+    handle_global_hotkeys = True
 
     SCREENSHOT_FOLDER_PATH = ""
 
@@ -2383,12 +2385,12 @@ class ScreenshotWindow(QWidget):
         self.extended_editor_mode = True
         self.view_window = None
         self.history_group_counter = 0
+
         self.transform_BKG_widget_mode = False
         self.transform_BKG_1 = None
         self.transform_BKG_2 = None
         self.background_transformed = False
         self.WIDGET_BORDER_RADIUS = 300
-
         self.transform_BKG_scale_x = True
         self.transform_BKG_scale_y = True
 
@@ -5718,50 +5720,44 @@ class QuitDialog(QWidget, StylizedUIBase):
         if self.inside_close_button():
             self.close()
 
-def global_hotkey_listener(callback=None):
+class WinEventFilter(QAbstractNativeEventFilter):
+    def __init__(self, kb):
+        self.keybinder = kb
+        super().__init__()
 
-    # Эти переменные нужны для того, чтобы при срабатывании *make_fullscreen*
-    # не срабатывали сразу после ещё и *make_fragment*, и *make_it_quick*.
-    # Всё это своего рода костыль из-за особенностей pynput.
-    # Здесь мы пользуемся тем, что *make_fullscreen* обработается
-    # раньше, чем *make_fragment* и *make_it_quick*.
-    # Не знаю, всегда ли оно будет обрабатываться в таком порядке
-    # или будут исключения. Впрочем пока - хуй с ним,
-    # посмотрим как оно будет. Будут баги - придумаем что-нибудь другое.
-    _fragment = False
-    _quick = False
+    def nativeEventFilter(self, eventType, message):
+        ret = self.keybinder.handler(eventType, message)
+        return ret, 0
 
-    def make_fragment():
-        nonlocal _fragment
-        if _fragment:
-            _fragment = False
-            return
-        if callback:
-            callback.hotkey_pressed.emit(RequestType.Fragment)
+def global_hotkey_handler(request):
+    if Globals.handle_global_hotkeys:
+        Globals.handle_global_hotkeys = False
+        invoke_screenshot_editor(request_type=request)
 
-    def make_fullscreen():
-        nonlocal _fragment
-        nonlocal _quick
-        _fragment = True
-        _quick = True
-        if callback:
-            callback.hotkey_pressed.emit(RequestType.Fullscreen)
+def register_global_hotkeys():
+    global keybinder
+    keybinder.init()
+    keybinder.register_hotkey(0,
+                "Shift+Print Screen", lambda: global_hotkey_handler(RequestType.QuickFullscreen))
+    keybinder.register_hotkey(0,
+                "Ctrl+Print Screen", lambda: global_hotkey_handler(RequestType.Fragment))
+    keybinder.register_hotkey(0,
+                "Print Screen", lambda: global_hotkey_handler(RequestType.Fragment))
+    keybinder.register_hotkey(0,
+                "Ctrl+Shift+Print Screen", lambda: global_hotkey_handler(RequestType.Fullscreen))
+    win_event_filter = WinEventFilter(keybinder)
+    event_dispatcher = QAbstractEventDispatcher.instance()
+    event_dispatcher.installNativeEventFilter(win_event_filter)
+    # если не сохранить куда-нибудь ссылки на event_dispatcher и win_event_filter,
+    # то не будет работать вообще и придётся засовыать код всей функции в main
+    Globals.event_dispatcher = event_dispatcher
+    Globals.win_event_filter = win_event_filter
 
-    def make_it_quick():
-        nonlocal _quick
-        if _quick:
-            _quick = False
-            return
-        if callback:
-            callback.hotkey_pressed.emit(RequestType.QuickFullscreen)
-
-    settings = {
-        '<ctrl>+<shift>+<print_screen>': make_fullscreen,
-        '<ctrl>+<print_screen>': make_fragment,
-        '<shift>+<print_screen>': make_it_quick,
-    }
-    with keyboard.GlobalHotKeys(settings) as h:
-        h.join()
+def unregister_global_hotkeys():
+    global keybinder
+    keybinder.unregister_hotkey(0, "Shift+Print Screen")
+    keybinder.unregister_hotkey(0, "Ctrl+Print Screen")
+    keybinder.unregister_hotkey(0, "Ctrl+Shift+Print Screen")
 
 def restart_app_in_notification_mode(filepath):
     args = [sys.executable, __file__, filepath, "-notification"]
@@ -5847,21 +5843,6 @@ def invoke_screenshot_editor(request_type=None):
         ScreenshotWindow.save_screenshot(None, grabbed_image=screenshot_image, metadata=metadata)
         app = QApplication.instance()
         app.exit()
-
-class ListenHotkeyThread(QThread):
-    hotkey_pressed = pyqtSignal(object)
-    def __init__(self):
-        super().__init__()
-        self.hotkey_pressed.connect(self.callback_function, Qt.QueuedConnection)
-        self.allowed = True #для срабатывания только один раз
-
-    def callback_function(self, i):
-        if self.allowed:
-            invoke_screenshot_editor(request_type=i)
-            self.allowed = False
-
-    def run(self):
-        global_hotkey_listener(callback=self)
 
 def show_crush_log():
     path = get_crushlog_filepath()
@@ -5988,7 +5969,6 @@ def _main():
             _restart_app()
         sys.exit(0)
 
-    thread_instance = None
     if args.notification:
         # notification mode
         notification = NotificationOrMenu(notification=True, filepath=args.path)
@@ -6000,8 +5980,7 @@ def _main():
             # invoke_screenshot_editor(request_type=RequestType.Fullscreen)
             # NotificationOrMenu(menu=True).place_window()
         else:
-            thread_instance = ListenHotkeyThread()
-            thread_instance.start()
+            register_global_hotkeys()
             stray_icon = show_system_tray(app, icon)
     # вход в петлю сообщений
     app.exec_()
@@ -6009,8 +5988,8 @@ def _main():
     stray_icon = app.property("stray_icon")
     if stray_icon:
         stray_icon.hide()
-    if thread_instance:
-        thread_instance.exit()
+    if (not args.notification) and not (Globals.DEBUG or Globals.RUN_ONCE):
+        unregister_global_hotkeys()
     if not Globals.FULL_STOP:
         if not args.notification and not Globals.DEBUG and not Globals.RUN_ONCE:
             _restart_app()

@@ -226,8 +226,12 @@ class SettingsJson():
         if not hasattr(cls, 'instance'):
             cls.instance = super(SettingsJson, cls).__new__(cls)
             cls.instance.debug_mode = False
+            cls.instance.force_reading_from_file = True
             cls.instance.data = {}
         return cls.instance
+
+    def set_reading_file_on_getting_value(self, value):
+        self.force_reading_from_file = value
 
     def get_filepath(self):
         if self.debug_mode:
@@ -256,9 +260,10 @@ class SettingsJson():
                 except Exception:
                     self.data = {}
 
-    def get_data(self, key):
-        self.read_data()
-        return self.data.get(key, {})
+    def get_data(self, key, default_value={}):
+        if self.force_reading_from_file:
+            self.read_data()
+        return self.data.get(key, default_value)
 
 def generate_metainfo():
     if win32process:

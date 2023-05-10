@@ -32,6 +32,7 @@ import locale
 import argparse
 import importlib.util
 import math
+from functools import partial
 
 import pyperclip
 from pyqtkeybind import keybinder
@@ -46,6 +47,7 @@ from PyQt5.QtGui import (QPainterPath, QColor, QKeyEvent, QMouseEvent, QBrush, Q
     QIcon, QFont, QCursor, QPolygonF)
 
 from image_viewer_lite import ViewerWindow
+from key_seq_edit import KeySequenceEdit
 
 from _utils import (convex_hull, check_scancode_for, SettingsJson,
      generate_metainfo, build_valid_rect, dot, get_nearest_point_on_rect, get_creation_date,
@@ -59,6 +61,7 @@ from on_windows_startup import is_app_in_startup, add_to_startup, remove_from_st
 
 class Globals():
     DEBUG = True
+    DEBUG_SETTINGS_WINDOW = True
     DEBUG_ELEMENTS = True
     DEBUG_ELEMENTS_STAMP_FRAMING = True
     DEBUG_ELEMENTS_COLLAGE = False
@@ -71,11 +74,18 @@ class Globals():
     RUN_ONCE = False
     FULL_STOP = False
 
+    # saved settings
     ENABLE_FLAT_EDITOR_UI = False
+    BLOCK_KEYSEQ_HANDLING_AFTER_FIRST_CALL = True
+    SCREENSHOT_FOLDER_PATH = ""
+    USE_PRINT_KEY = True
+
+    DEFAULT_FRAGMENT_KEYSEQ = "Ctrl+Print"
+    DEFAULT_FULLSCREEN_KEYSEQ = "Ctrl+Shift+Print"
+    DEFAULT_QUICKFULLSCREEN_KEYSEQ = "Shift+Print"
 
     handle_global_hotkeys = True
-
-    SCREENSHOT_FOLDER_PATH = ""
+    registred_key_seqs = []
 
     VERSION_INFO = "v0.91"
     AUTHOR_INFO = "by Sergei Krumas"
@@ -5096,6 +5106,16 @@ class StylizedUIBase():
         margin: 2px;
         text-align: center;
     """
+    edit_style_white = """
+        font-size: 17px;
+        margin: 2px;
+        color: white;
+        font-weight: bold;
+        text-align: center;
+        background-color: transparent;
+        border: 1px solid gray;
+        border-radius: 5px;
+    """
     info_label_style_settings = """
         font-size: 17px;
         color: yellow;
@@ -5276,6 +5296,14 @@ class SettingsWindow(QWidget, StylizedUIBase):
         else:
             return "  Путь не задан!"
 
+    def show(self):
+        register_settings_window_global_hotkeys()
+        super().show()
+
+    def hide(self):
+        register_user_global_hotkeys()
+        super().hide()
+
     def __init__(self, menu=False, notification=False, filepath=None):
         super().__init__()
 
@@ -5299,7 +5327,7 @@ class SettingsWindow(QWidget, StylizedUIBase):
         self.label.setText(title)
         self.label.setStyleSheet(self.title_label_style)
 
-        label_1 = QLabel("<b>Место для сохранения сриншотов</b>")
+        label_1 = QLabel("<b>➜ МЕСТО ДЛЯ СОХРАНЕНИЯ СКРИНШОТОВ</b>")
         label_1.setStyleSheet(self.info_label_style_settings)
         label_1_path = QLabel(SettingsWindow.get_path_for_label())
         label_1_path.setStyleSheet(STYLE)
@@ -5313,21 +5341,50 @@ class SettingsWindow(QWidget, StylizedUIBase):
         layout_1.addWidget(label_1_path)
         layout_1.addWidget(path_change_btn)
 
-        label_2 = QLabel("<b>Комбинации клавиш (можно поменять только из кода)</b>")
+        label_2 = QLabel("<b>➜ КОМБИНАЦИИ КЛАВИШ</b>")
         label_2.setStyleSheet(self.info_label_style_settings)
-        info_label_1 = "<b>CTRL+PRINT SCREEN</b><br>скриншот с захватом фрагмента экрана"
-        info_label_2 = "<b>CTRL+SHIFT+PRINT SCREEN</b><br>скриншот с захватом всего экрана"
-        info_label_3 = "<b>SHIFT+PRINT SCREEN</b><br>быстрый скриншот всего экрана"
         layout_2 = QVBoxLayout()
-        for label_text in [info_label_1, info_label_2, info_label_3]:
-            _label = QLabel("<center>%s</center>" % label_text)
+        keyseq_data = [
+            ("скриншот с захватом фрагмента экрана", "FRAGMENT_KEYSEQ"),
+            ("скриншот с захватом всего экрана", "FULLSCREEN_KEYSEQ"),
+            ("быстрый скриншот всего экрана", "QUICKFULLSCREEN_KEYSEQ"),
+        ]
+        def on_changed_callback(attr_name, value):
+            setattr(Globals, attr_name, value)
+            SettingsJson().set_data(attr_name, value)
+        for text, attr_name in keyseq_data:
+            _label = QLabel("<center>%s</center>" % text)
             _label.setStyleSheet(self.info_label_style_white)
             _label.setWordWrap(True)
+            current_keyseq = getattr(Globals, attr_name)
+            default_keyseq = getattr(Globals, f'DEFAULT_{attr_name}')
+            _field = KeySequenceEdit(current_keyseq, default_keyseq,
+                    partial(on_changed_callback, attr_name[:])
+            )
+            _field.setStyleSheet(self.edit_style_white)
+            _field.setFixedWidth(200)
             layout_2.addWidget(_label)
+            layout_2.addWidget(_field, alignment=Qt.AlignCenter)
+        #######################################################################
+        chbx_21 = QCheckBox("Также через Print Screen\nвызывать скриншот фрагмента")
+        chbx_21.setStyleSheet(self.settings_checkbox)
+        chbx_21.setChecked(Globals.USE_PRINT_KEY)
+        chbx_21.stateChanged.connect(lambda: self.handle_print_screen_for_fragment(chbx_21))
+        layout_2.addWidget(chbx_21, alignment=Qt.AlignCenter)
+        #######################################################################
+        chbx_22 = QCheckBox(("Блокировать срабатывание\n"
+                                "комбинаций клавиш\n"
+                                "после первого срабатывания\n"
+                                "и до сохранения скриншота"))
+        chbx_22.setStyleSheet(self.settings_checkbox)
+        chbx_22.setChecked(Globals.BLOCK_KEYSEQ_HANDLING_AFTER_FIRST_CALL)
+        chbx_22.stateChanged.connect(lambda: self.handle_block_option(chbx_22))
+        layout_2.addWidget(chbx_22, alignment=Qt.AlignCenter)
+        #######################################################################
 
-        label_3 = QLabel("<b>Автоматический запуск</b>")
+        label_3 = QLabel("<b>➜ АВТОМАТИЧЕСКИЙ ЗАПУСК</b>")
         label_3.setStyleSheet(self.info_label_style_settings)
-        chbx_3 = QCheckBox("Запускать Oxxxy при старте Windows")
+        chbx_3 = QCheckBox("Запускать при старте Windows")
         chbx_3.setStyleSheet(self.settings_checkbox)
         chbx_3.setChecked(is_app_in_startup(self.STARTUP_CONFIG[0]))
         chbx_3.stateChanged.connect(lambda: self.handle_windows_startup_chbx(chbx_3))
@@ -5335,9 +5392,9 @@ class SettingsWindow(QWidget, StylizedUIBase):
         layout_3.setAlignment(Qt.AlignCenter)
         layout_3.addWidget(chbx_3)
 
-        label_4 = QLabel("<b>Шкала/слайдер цвета</b>")
+        label_4 = QLabel("<b>➜ СЛАЙДЕР ЦВЕТА</b>")
         label_4.setStyleSheet(self.info_label_style_settings)
-        chbx_4 = QCheckBox("Заменить шкалу цвета на палитру цветов")
+        chbx_4 = QCheckBox("Заменить на палитру цветов")
         chbx_4.setStyleSheet(self.settings_checkbox)
         use_color_palette = SettingsJson().get_data("USE_COLOR_PALETTE")
         chbx_4.setChecked(bool(use_color_palette))
@@ -5346,7 +5403,7 @@ class SettingsWindow(QWidget, StylizedUIBase):
         layout_4.setAlignment(Qt.AlignCenter)
         layout_4.addWidget(chbx_4)
 
-        label_5 = QLabel("<b>Общий вид панели инструментов</b>")
+        label_5 = QLabel("<b>➜ ОБЩИЙ ВИД ПАНЕЛИ ИНСТРУМЕНТОВ</b>")
         label_5.setStyleSheet(self.info_label_style_settings)
         chbx_5 = QCheckBox("Включить стиль FLAT")
         chbx_5.setStyleSheet(self.settings_checkbox)
@@ -5389,6 +5446,14 @@ class SettingsWindow(QWidget, StylizedUIBase):
 
         self.setLayout(self.layout)
         self.setMouseTracking(True)
+
+    def handle_block_option(self, sender):
+        SettingsJson().set_data("BLOCK_KEYSEQ_HANDLING_AFTER_FIRST_CALL", sender.isChecked())
+        Globals.BLOCK_KEYSEQ_HANDLING_AFTER_FIRST_CALL = sender.isChecked()
+
+    def handle_print_screen_for_fragment(self, sender):
+        SettingsJson().set_data("USE_PRINT_KEY", sender.isChecked())
+        Globals.USE_PRINT_KEY = sender.isChecked()
 
     def handle_palette_chbx(self, sender):
         SettingsJson().set_data("USE_COLOR_PALETTE", sender.isChecked())
@@ -5729,22 +5794,38 @@ class WinEventFilter(QAbstractNativeEventFilter):
         ret = self.keybinder.handler(eventType, message)
         return ret, 0
 
+def is_settings_window_visible():
+    value = False
+    if hasattr(SettingsWindow, "instance"):
+        if SettingsWindow.instance:
+            value = SettingsWindow.instance.isVisible()
+    return value
+
 def global_hotkey_handler(request):
-    if Globals.handle_global_hotkeys:
-        Globals.handle_global_hotkeys = False
+    if Globals.handle_global_hotkeys and not is_settings_window_visible():
+        if Globals.BLOCK_KEYSEQ_HANDLING_AFTER_FIRST_CALL:
+            Globals.handle_global_hotkeys = False
         invoke_screenshot_editor(request_type=request)
 
-def register_global_hotkeys():
-    global keybinder
+def special_hotkey_handler(request):
+    if is_settings_window_visible():
+        widget = QApplication.focusWidget()
+        if widget and isinstance(widget, KeySequenceEdit):
+            widget.keyPressEvent_handler(QKeyEvent(
+                QEvent.KeyPress,
+                Qt.Key_Print,
+                QApplication.queryKeyboardModifiers(),
+            ))
+            widget.keyReleaseEvent_handler(QKeyEvent(
+                QEvent.KeyRelease,
+                Qt.Key_Print,
+                QApplication.queryKeyboardModifiers(),
+            ))
+    else:
+        global_hotkey_handler(request)
+
+def init_global_hotkeys_base():
     keybinder.init()
-    keybinder.register_hotkey(0,
-                "Shift+Print Screen", lambda: global_hotkey_handler(RequestType.QuickFullscreen))
-    keybinder.register_hotkey(0,
-                "Ctrl+Print Screen", lambda: global_hotkey_handler(RequestType.Fragment))
-    keybinder.register_hotkey(0,
-                "Print Screen", lambda: global_hotkey_handler(RequestType.Fragment))
-    keybinder.register_hotkey(0,
-                "Ctrl+Shift+Print Screen", lambda: global_hotkey_handler(RequestType.Fullscreen))
     win_event_filter = WinEventFilter(keybinder)
     event_dispatcher = QAbstractEventDispatcher.instance()
     event_dispatcher.installNativeEventFilter(win_event_filter)
@@ -5753,11 +5834,58 @@ def register_global_hotkeys():
     Globals.event_dispatcher = event_dispatcher
     Globals.win_event_filter = win_event_filter
 
+def register_settings_window_global_hotkeys():
+    unregister_global_hotkeys()
+
+    modifiers = [
+                    "", # для случая, когда Print Screen нажата без клавиш-модификаторов.
+
+                    # Все последующие модификаторы нужны, чтобы отлавливать клавишу Print Screen
+                    # когда она нажата вместе с этими же модификаторами.
+                    # Отслеживать её здесь пришлось потому, что ОС не даёт событию этой клавиши
+                    # дойти до программы. И для этого пришлось бы использовать функцию API Windows.
+                    # Мне лень лезть в API каждый раз, поэтому я решил задачу вот таким перебором
+                    # разных модификаторов.
+                    "Ctrl+",
+                    "Ctrl+Shift+",
+                    "Ctrl+Alt+",
+                    "Alt+",
+                    "Alt+Shift+",
+                    "Shift+",
+                ]
+    for modifier in modifiers:
+        keyseq = f'{modifier}Print'
+        if keybinder.register_hotkey(0,
+                keyseq,
+                lambda: special_hotkey_handler(RequestType.Fragment)):
+            Globals.registred_key_seqs.append(keyseq)
+
+def register_user_global_hotkeys():
+    unregister_global_hotkeys()
+
+    if Globals.USE_PRINT_KEY:
+        if keybinder.register_hotkey(0,
+                "Print",
+                lambda: special_hotkey_handler(RequestType.Fragment)):
+            Globals.registred_key_seqs.append("Print")
+
+    if keybinder.register_hotkey(0,
+            Globals.FRAGMENT_KEYSEQ,
+            lambda: global_hotkey_handler(RequestType.Fragment)):
+        Globals.registred_key_seqs.append(Globals.FRAGMENT_KEYSEQ)
+    if keybinder.register_hotkey(0,
+            Globals.FULLSCREEN_KEYSEQ,
+            lambda: global_hotkey_handler(RequestType.Fullscreen)):
+        Globals.registred_key_seqs.append(Globals.FULLSCREEN_KEYSEQ)
+    if keybinder.register_hotkey(0,
+            Globals.QUICKFULLSCREEN_KEYSEQ,
+            lambda: global_hotkey_handler(RequestType.QuickFullscreen)):
+        Globals.registred_key_seqs.append(Globals.QUICKFULLSCREEN_KEYSEQ)
+
 def unregister_global_hotkeys():
-    global keybinder
-    keybinder.unregister_hotkey(0, "Shift+Print Screen")
-    keybinder.unregister_hotkey(0, "Ctrl+Print Screen")
-    keybinder.unregister_hotkey(0, "Ctrl+Shift+Print Screen")
+    for key_seq in Globals.registred_key_seqs:
+        keybinder.unregister_hotkey(0, key_seq)
+    Globals.registred_key_seqs.clear()
 
 def restart_app_in_notification_mode(filepath):
     args = [sys.executable, __file__, filepath, "-notification"]
@@ -5909,8 +6037,17 @@ def _restart_app(aftercrush=False):
 
 def read_settings_file():
     SettingsJson().init(Globals)
-    Globals.ENABLE_FLAT_EDITOR_UI = SettingsJson().get_data("ENABLE_FLAT_EDITOR_UI")
-    Globals.USE_COLOR_PALETTE = SettingsJson().get_data("USE_COLOR_PALETTE")
+    SJ = SettingsJson()
+    Globals.ENABLE_FLAT_EDITOR_UI = SJ.get_data("ENABLE_FLAT_EDITOR_UI")
+    SJ.set_reading_file_on_getting_value(False)
+    Globals.USE_COLOR_PALETTE = SJ.get_data("USE_COLOR_PALETTE")
+
+    Globals.USE_PRINT_KEY = SJ.get_data("USE_PRINT_KEY", Globals.USE_PRINT_KEY)
+    Globals.FRAGMENT_KEYSEQ = SJ.get_data("FRAGMENT_KEYSEQ", Globals.DEFAULT_FRAGMENT_KEYSEQ)
+    Globals.FULLSCREEN_KEYSEQ = SJ.get_data("FULLSCREEN_KEYSEQ", Globals.DEFAULT_FULLSCREEN_KEYSEQ)
+    Globals.QUICKFULLSCREEN_KEYSEQ = SJ.get_data("QUICKFULLSCREEN_KEYSEQ",
+                                                            Globals.DEFAULT_QUICKFULLSCREEN_KEYSEQ)
+    SJ.set_reading_file_on_getting_value(True)
 
 def _main():
 
@@ -5969,6 +6106,7 @@ def _main():
             _restart_app()
         sys.exit(0)
 
+    registred_hotkeys = False
     if args.notification:
         # notification mode
         notification = NotificationOrMenu(notification=True, filepath=args.path)
@@ -5976,11 +6114,19 @@ def _main():
     else:
         # editor mode
         if Globals.DEBUG or Globals.RUN_ONCE:
-            invoke_screenshot_editor(request_type=RequestType.Fragment)
+            if Globals.DEBUG_SETTINGS_WINDOW:
+                init_global_hotkeys_base()
+                sw = SettingsWindow()
+                sw.show()
+                sw.place_window()
+            else:
+                invoke_screenshot_editor(request_type=RequestType.Fragment)
             # invoke_screenshot_editor(request_type=RequestType.Fullscreen)
             # NotificationOrMenu(menu=True).place_window()
         else:
-            register_global_hotkeys()
+            registred_hotkeys = True
+            init_global_hotkeys_base()
+            register_user_global_hotkeys()
             stray_icon = show_system_tray(app, icon)
     # вход в петлю сообщений
     app.exec_()
@@ -5988,7 +6134,7 @@ def _main():
     stray_icon = app.property("stray_icon")
     if stray_icon:
         stray_icon.hide()
-    if (not args.notification) and not (Globals.DEBUG or Globals.RUN_ONCE):
+    if registred_hotkeys:
         unregister_global_hotkeys()
     if not Globals.FULL_STOP:
         if not args.notification and not Globals.DEBUG and not Globals.RUN_ONCE:

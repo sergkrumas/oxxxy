@@ -61,7 +61,7 @@ from on_windows_startup import is_app_in_startup, add_to_startup, remove_from_st
 
 class Globals():
     DEBUG = True
-    DEBUG_SETTINGS_WINDOW = True
+    DEBUG_SETTINGS_WINDOW = False
     DEBUG_ELEMENTS = True
     DEBUG_ELEMENTS_STAMP_FRAMING = True
     DEBUG_ELEMENTS_COLLAGE = False
@@ -4603,7 +4603,12 @@ class ScreenshotWindow(QWidget):
         painter = QPainter()
         painter.begin(bitmap_halt)
         inner_rect = bitmap_halt.rect().adjusted(13, 13, -13, -13)
-        pen = QPen(QColor(200, 0, 0), 10)
+        painter.setBrush(QBrush(QColor(200, 0, 0)))
+        path = QPainterPath()
+        path.addRoundedRect(QRectF(0, 0, 50, 50), 10, 10)
+        painter.drawPath(path)
+        painter.setPen(Qt.NoPen)
+        pen = QPen(Qt.white, 10)
         pen.setCapStyle(Qt.RoundCap)
         painter.setPen(pen)
         painter.drawLine(inner_rect.topLeft(), inner_rect.bottomRight())
@@ -4657,8 +4662,8 @@ class ScreenshotWindow(QWidget):
         sel_elem = self.selected_element
         if sel_elem and sel_elem.type == ToolID.stamp:
             if sel_elem.backup_pixmap is not None:
-                reset_image_frame = contextMenu.addAction("Отменить обрезку изображения")
-            set_image_frame = contextMenu.addAction("Обрезать изображение")
+                reset_image_frame = contextMenu.addAction("Отменить обрезку выделенного изображения")
+            set_image_frame = contextMenu.addAction("Обрезать выделенного изображение")
             contextMenu.addSeparator()
 
         transform_background = contextMenu.addAction("Трансформация фона")

@@ -84,6 +84,9 @@ class Globals():
     DEFAULT_FULLSCREEN_KEYSEQ = "Ctrl+Shift+Print"
     DEFAULT_QUICKFULLSCREEN_KEYSEQ = "Shift+Print"
 
+    save_to_memory_mode = False
+    images_in_memory = []
+
     handle_global_hotkeys = True
     registred_key_seqs = []
 
@@ -247,6 +250,10 @@ class CustomPushButton(QPushButton):
             # что нажатая клавиша Ctrl модифицирует их отрисовку
             self._draw_checked = self.isChecked()
             self.draw_button(painter)
+        elif tool_id in [ToolID.DONE]:
+            # это нужно здесь для поддержки измеенения цвета в режиме Globals.save_to_memory_mode
+            self._draw_checked = self.underMouse()
+            self.draw_button(painter)
         else:
             src_rect = QRect(0, 0, self.BUTTON_SIZE, self.BUTTON_SIZE)
             forwards_backwards_btns = tool_id in [ToolID.FORWARDS, ToolID.BACKWARDS]
@@ -254,9 +261,6 @@ class CustomPushButton(QPushButton):
                 rect_w = int(self.BUTTON_SIZE/self.small_d)
                 trgt_rect = QRect(0, 0, rect_w, rect_w)
                 flag = self.isEnabled()
-            elif tool_id == ToolID.DONE:
-                trgt_rect = QRect(0, 0, self.BUTTON_SIZE, self.BUTTON_SIZE)
-                flag = self.underMouse()
             else:
                 trgt_rect = QRect(0, 0, self.BUTTON_SIZE, self.BUTTON_SIZE)
                 flag = self.isChecked()
@@ -274,24 +278,30 @@ class CustomPushButton(QPushButton):
         tool_id = self.property("tool_id")
         bf_buttons = tool_id in [ToolID.FORWARDS, ToolID.BACKWARDS]
 
-        # draw back
+        # draw background
         gradient = QLinearGradient(self.rect().topLeft(), self.rect().bottomLeft())
         if tool_id == ToolID.DONE:
-            a = QColor(253, 203, 54)
-            b = QColor(94, 203, 247)
-            if self._draw_checked:
-                gradient.setColorAt(1, QColor(220, 142, 3))
-                gradient.setColorAt(0, a)
+            y_base = QColor(253, 203, 54)
+            y_secondary = QColor(220, 142, 3)
+            if Globals.save_to_memory_mode:
+                b_base = QColor(227, 72, 43)
+                b_secondary = QColor(175, 48, 25)
             else:
-                gradient.setColorAt(1, QColor(25, 133, 175))
-                gradient.setColorAt(0, b)
+                b_base = QColor(94, 203, 247)
+                b_secondary = QColor(25, 133, 175)
+            if self._draw_checked:
+                gradient.setColorAt(1, y_secondary)
+                gradient.setColorAt(0, y_base)
+            else:
+                gradient.setColorAt(1, b_secondary)
+                gradient.setColorAt(0, b_base)
 
             painter.setPen(Qt.NoPen)
             if Globals.ENABLE_FLAT_EDITOR_UI:
                 if self._draw_checked:
-                    brush = QBrush(a)
+                    brush = QBrush(y_base)
                 else:
-                    brush = QBrush(b)
+                    brush = QBrush(b_base)
             else:
                 brush = QBrush(gradient)
             painter.setBrush(brush)
@@ -354,6 +364,7 @@ class CustomPushButton(QPushButton):
                 font.setFamily(family)
             pr.setFont(font)
 
+        # draw face
         if tool_id == ToolID.DRAG:
 
             transform = QTransform()
@@ -2433,7 +2444,25 @@ class ScreenshotWindow(QWidget):
         self.update_tools_window()
         self.update()
 
-    def request_editor_mode(self, filepaths):
+    def elementsUpdateUI(self):
+        self.update()
+        if self.tools_window:
+            self.tools_window.update()
+            for children in self.tools_window.children():
+                children.update()
+
+    def elementsStartSaveToMemoryMode(self):
+        Globals.save_to_memory_mode = not Globals.save_to_memory_mode
+        self.elementsUpdateUI()
+
+    def elementsFinishSaveToMemoryMode(self):
+        Globals.save_to_memory_mode = False
+        self.include_screenshot_background = False
+        self.request_editor_mode(Globals.images_in_memory)
+        Globals.images_in_memory.clear()
+        self.elementsUpdateUI()
+
+    def request_editor_mode(self, paths_or_pixmaps):
         pixmaps = []
         pos = QPoint(0, 0)
         self.input_POINT2 = QPoint(0, 0)
@@ -2448,8 +2477,11 @@ class ScreenshotWindow(QWidget):
         tw.initialization = True
         tw.set_current_tool(ToolID.stamp)
         points = []
-        for filepath in filepaths:
-            pixmap = QPixmap(filepath)
+        for path_or_pix in paths_or_pixmaps:
+            if isinstance(path_or_pix, QPixmap):
+                pixmap = path_or_pix
+            else:
+                pixmap = QPixmap(path_or_pix)
             if pixmap.width() != 0:
                 element = self.elementsCreateNew(ToolID.stamp)
                 element.pixmap = pixmap
@@ -3950,7 +3982,7 @@ class ScreenshotWindow(QWidget):
         # сохранение файла
         formated_datetime = datetime.datetime.now().strftime("%d-%m-%Y %H-%M-%S")
         if grabbed_image:
-            # quick fullscreen
+            # QUICK FULLSCREEN
             filepath = get_screenshot_filepath(formated_datetime)
             grabbed_image.save(filepath)
             # copy_image_data_to_clipboard(filepath)
@@ -3965,19 +3997,23 @@ class ScreenshotWindow(QWidget):
                 else:
                     pix = self.elements_final_output.copy(self.capture_region_rect)
             if self.tools_window.chb_masked.isChecked():
-                # fragment or fullscreen: masked version
-                filepath = get_screenshot_filepath(f"{formated_datetime} masked")
-                self.circle_mask_image(pix).save(filepath)
-                if self.tools_window.chb_add_meta.isChecked():
-                    save_meta_info(self.metadata, filepath)
+                pix = self.circle_mask_image(pix)
+
+            if Globals.save_to_memory_mode:
+                Globals.images_in_memory.append(pix)
             else:
-                # fragment or fullscreen: default version
-                filepath = get_screenshot_filepath(formated_datetime)
+                if self.tools_window.chb_masked.isChecked():
+                    # FRAGMENT OR FULLSCREEN: masked version
+                    filepath = get_screenshot_filepath(f"{formated_datetime} masked")
+                else:
+                    # FRAGMENT OR FULLSCREEN: default version
+                    filepath = get_screenshot_filepath(formated_datetime)
                 pix.save(filepath)
                 if self.tools_window.chb_add_meta.isChecked():
                     save_meta_info(self.metadata, filepath)
-            copy_image_data_to_clipboard(filepath)
-        restart_app_in_notification_mode(filepath)
+                copy_image_data_to_clipboard(filepath)
+        if grabbed_image or not Globals.save_to_memory_mode:
+            restart_app_in_notification_mode(filepath)
 
     def elementsCreateModificatedCopyOnNeed(self, element, force_new=False, keep_old_widget=False):
         if element == self.elementsGetLastElement() and not force_new:
@@ -4662,7 +4698,8 @@ class ScreenshotWindow(QWidget):
         sel_elem = self.selected_element
         if sel_elem and sel_elem.type == ToolID.stamp:
             if sel_elem.backup_pixmap is not None:
-                reset_image_frame = contextMenu.addAction("Отменить обрезку выделенного изображения")
+                reset_image_frame = contextMenu.addAction(
+                                        "Отменить обрезку выделенного изображения")
             set_image_frame = contextMenu.addAction("Обрезать выделенного изображение")
             contextMenu.addSeparator()
 
@@ -4679,6 +4716,15 @@ class ScreenshotWindow(QWidget):
         reset_capture = contextMenu.addAction("Сбросить область захвата")
         contextMenu.addSeparator()
 
+        start_save_to_memory_mode = contextMenu.addAction("Сохранить скриншот в память")
+        start_save_to_memory_mode.setCheckable(True)
+        start_save_to_memory_mode.setChecked(Globals.save_to_memory_mode)
+
+        if Globals.images_in_memory:
+            finish_save_to_memory_mode = contextMenu.addAction("Достать все скриншоты из памяти")
+        else:
+            finish_save_to_memory_mode = None
+
         include_background = contextMenu.addAction("Фон")
         include_background.setCheckable(True)
         include_background.setChecked(self.include_screenshot_background)
@@ -4692,12 +4738,14 @@ class ScreenshotWindow(QWidget):
         toggle_extended_mode.setChecked(self.extended_editor_mode)
 
         contextMenu.addSeparator()
-        special_tool = contextMenu.addAction(icon_multiframing, "Активировать инструмент мультикадрирования")
+        special_tool = contextMenu.addAction(icon_multiframing,
+                                                    "Активировать инструмент мультикадрирования")
         reshot = contextMenu.addAction(icon_refresh, "Переснять скриншот")
         minimize = contextMenu.addAction("Свернуть на панель задач")
         contextMenu.addSeparator()
         cancel = contextMenu.addAction(icon_cancel, "Отменить создание скриншота")
-        halt = contextMenu.addAction(icon_halt, "Отменить создание скриншота и вырубить приложение")
+        halt = contextMenu.addAction(icon_halt,
+                                            "Отменить создание скриншота и вырубить приложение")
 
         action = contextMenu.exec_(self.mapToGlobal(event.pos()))
         if action == None:
@@ -4732,6 +4780,10 @@ class ScreenshotWindow(QWidget):
         elif action == include_background:
             self.include_screenshot_background = not self.include_screenshot_background
             self.update()
+        elif action == start_save_to_memory_mode:
+            self.elementsStartSaveToMemoryMode()
+        elif action == finish_save_to_memory_mode:
+            self.elementsFinishSaveToMemoryMode()
         elif action == get_toolwindow_in_view:
             tw = self.tools_window
             if tw:
@@ -4864,6 +4916,7 @@ class ScreenshotWindow(QWidget):
         if save_settings:
             SettingsJson().set_data("TOOLS_SETTINGS", self.tools_settings)
         if self.tools_window:
+            self.tools_window.update_timer.stop()
             self.tools_window.hide()
         self.close()
 
@@ -4905,8 +4958,12 @@ class ScreenshotWindow(QWidget):
             self.mousePressEvent(make_event_obj())
 
     def editing_is_done_handler(self):
-        self.close_this()
         app = QApplication.instance()
+        if Globals.save_to_memory_mode:
+            app.setQuitOnLastWindowClosed(False)
+        else:
+            app.setQuitOnLastWindowClosed(True)
+        self.close_this()
         app.processEvents()
         self.save_screenshot()
 
@@ -5807,9 +5864,11 @@ def is_settings_window_visible():
     return value
 
 def global_hotkey_handler(request):
-    if Globals.handle_global_hotkeys and not is_settings_window_visible():
+    if (Globals.handle_global_hotkeys or Globals.save_to_memory_mode) and \
+                                                                not is_settings_window_visible():
         if Globals.BLOCK_KEYSEQ_HANDLING_AFTER_FIRST_CALL:
-            Globals.handle_global_hotkeys = False
+            if not Globals.save_to_memory_mode:
+                Globals.handle_global_hotkeys = False
         invoke_screenshot_editor(request_type=request)
 
 def special_hotkey_handler(request):
@@ -5974,8 +6033,9 @@ def invoke_screenshot_editor(request_type=None):
 
     if request_type == RequestType.QuickFullscreen:
         ScreenshotWindow.save_screenshot(None, grabbed_image=screenshot_image, metadata=metadata)
-        app = QApplication.instance()
-        app.exit()
+        if not Globals.save_to_memory_mode:
+            app = QApplication.instance()
+            app.exit()
 
 def show_crush_log():
     path = get_crushlog_filepath()

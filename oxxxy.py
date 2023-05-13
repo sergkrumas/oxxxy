@@ -3977,6 +3977,8 @@ class ScreenshotWindow(QWidget):
                 data.setUrls([url])
                 app.clipboard().setMimeData(data)
 
+        close_all_windows()
+
         # задание папки для скриншота
         SettingsWindow.set_screenshot_folder_path()
         # сохранение файла
@@ -5973,15 +5975,24 @@ def show_system_tray(app, icon):
     sti.show()
     return sti
 
+def close_all_windows():
+    if NotificationOrMenu.instance:
+        NotificationOrMenu.instance.close()
+    if SettingsWindow.instance:
+        SettingsWindow.instance.close()
+
+def hide_all_windows():
+    if NotificationOrMenu.instance:
+        NotificationOrMenu.instance.hide()
+    if SettingsWindow.instance:
+        SettingsWindow.instance.hide()
+
 def invoke_screenshot_editor(request_type=None):
     global screenshot_editor
     if request_type is None:
         raise Exception("Unknown request type")
     # если было открыто окно-меню около трея - прячем его
-    if NotificationOrMenu.instance:
-        NotificationOrMenu.instance.hide()
-    if SettingsWindow.instance:
-        SettingsWindow.instance.hide()
+    hide_all_windows()
 
     metadata = generate_metainfo()
     # started_time = time.time()

@@ -2224,11 +2224,13 @@ class ScreenshotWindow(QWidget):
             draw_cyberpunk(painter, self.capture_region_rect)
 
     def draw_vertical_horizontal_lines(self, painter, cursor_pos):
-        # line_pen = QPen(QColor(127, 127, 127, 127), 1)
-        line_pen = QPen(QColor(127, 127, 127, 172), 1, Qt.DashLine)
         if self.extended_editor_mode:
+            line_pen = QPen(QColor(127, 127, 127, 172), 1, Qt.DashLine)
             old_comp_mode = painter.compositionMode()
             painter.setCompositionMode(QPainter.RasterOp_SourceXorDestination)
+        else:
+            line_pen = QPen(QColor(127, 127, 127, 127), 1)
+
         if self.input_POINT1 and self.input_POINT2:
             painter.setPen(line_pen)
             left = self.input_POINT1.x()
@@ -4695,59 +4697,57 @@ class ScreenshotWindow(QWidget):
         icon_multiframing = QIcon(path)
         icon_refresh = QIcon(bitmap_refresh)
 
+        def add_item(*args):
+            return contextMenu.addAction(*args)
+
         reset_image_frame = None
         set_image_frame = None
         sel_elem = self.selected_element
         if sel_elem and sel_elem.type == ToolID.stamp:
             if sel_elem.backup_pixmap is not None:
-                reset_image_frame = contextMenu.addAction(
-                                        "Отменить обрезку выделенного изображения")
-            set_image_frame = contextMenu.addAction("Обрезать выделенного изображение")
+                reset_image_frame = add_item("Отменить обрезку выделенного изображения")
+            set_image_frame = add_item("Обрезать выделенного изображение")
             contextMenu.addSeparator()
 
-        transform_background = contextMenu.addAction("Трансформация фона")
+        transform_background = add_item("Трансформация фона")
         reset_background_transform = None
         if self.background_transformed:
-            reset_background_transform = contextMenu.addAction("Сброс трансформации фона")
+            reset_background_transform = add_item("Сброс трансформации фона")
 
-        contextMenu.addSeparator()
-        autocapturezone = contextMenu.addAction("Задать область захвата")
-        autocollage = contextMenu.addAction("Автоколлаж")
+        special_tool = add_item(icon_multiframing, "Активировать инструмент мультикадрирования")
+        reshot = add_item(icon_refresh, "Переснять скриншот")
+        autocollage = add_item("Автоколлаж")
+        get_toolwindow_in_view = add_item("Подтянуть панель инструментов")
+        autocapturezone = add_item("Задать область захвата")
+        reset_capture = add_item("Сбросить область захвата")
+        contextMenu.addSeparator() ###############################################################
 
-        get_toolwindow_in_view = contextMenu.addAction("Подтянуть панель инструментов")
-        reset_capture = contextMenu.addAction("Сбросить область захвата")
-        contextMenu.addSeparator()
-
-        start_save_to_memory_mode = contextMenu.addAction("Сохранить скриншот в память")
+        start_save_to_memory_mode = add_item("Сохранить скриншот в память")
         start_save_to_memory_mode.setCheckable(True)
         start_save_to_memory_mode.setChecked(Globals.save_to_memory_mode)
 
         if Globals.images_in_memory:
-            finish_save_to_memory_mode = contextMenu.addAction("Достать все скриншоты из памяти")
+            finish_save_to_memory_mode = add_item("Достать все скриншоты из памяти")
         else:
             finish_save_to_memory_mode = None
 
-        include_background = contextMenu.addAction("Фон")
+        include_background = add_item("Фон")
         include_background.setCheckable(True)
         include_background.setChecked(self.include_screenshot_background)
 
-        toggle_dark_stamps = contextMenu.addAction("Затемнять после отрисовки пометок")
+        toggle_dark_stamps = add_item("Затемнять после отрисовки пометок")
         toggle_dark_stamps.setCheckable(True)
         toggle_dark_stamps.setChecked(self.dark_stamps)
 
-        toggle_extended_mode = contextMenu.addAction("Расширенный режим")
+        toggle_extended_mode = add_item("Расширенный режим")
         toggle_extended_mode.setCheckable(True)
         toggle_extended_mode.setChecked(self.extended_editor_mode)
 
-        contextMenu.addSeparator()
-        special_tool = contextMenu.addAction(icon_multiframing,
-                                                    "Активировать инструмент мультикадрирования")
-        reshot = contextMenu.addAction(icon_refresh, "Переснять скриншот")
-        minimize = contextMenu.addAction("Свернуть на панель задач")
-        contextMenu.addSeparator()
-        cancel = contextMenu.addAction(icon_cancel, "Отменить создание скриншота")
-        halt = contextMenu.addAction(icon_halt,
-                                            "Отменить создание скриншота и вырубить приложение")
+        contextMenu.addSeparator() ###############################################################
+
+        minimize = add_item("Свернуть на панель задач")
+        cancel = add_item(icon_cancel, "Отменить создание скриншота")
+        halt = add_item(icon_halt, "Отменить создание скриншота и вырубить приложение")
 
         action = contextMenu.exec_(self.mapToGlobal(event.pos()))
         if action == None:

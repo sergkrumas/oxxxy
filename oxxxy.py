@@ -62,7 +62,7 @@ from on_windows_startup import is_app_in_startup, add_to_startup, remove_from_st
 class Globals():
     DEBUG = True
     DEBUG_SETTINGS_WINDOW = False
-    DEBUG_ELEMENTS = True
+    DEBUG_ELEMENTS = False
     DEBUG_ELEMENTS_STAMP_FRAMING = True
     DEBUG_ELEMENTS_COLLAGE = False
     CRUSH_SIMULATOR = False
@@ -3826,9 +3826,10 @@ class ScreenshotWindow(QWidget):
                     painter.drawRect(final_version_rect)
 
     def elementsDrawMain(self, painter, final=False):
-        painter.setRenderHint(QPainter.HighQualityAntialiasing, True)
-        painter.setRenderHint(QPainter.Antialiasing, True)
-        painter.setRenderHint(QPainter.SmoothPixmapTransform, True)
+        if final:
+            painter.setRenderHint(QPainter.HighQualityAntialiasing, True)
+            painter.setRenderHint(QPainter.Antialiasing, True)
+            painter.setRenderHint(QPainter.SmoothPixmapTransform, True)
         old_brush = painter.brush()
         old_pen = painter.pen()
         # draw elements

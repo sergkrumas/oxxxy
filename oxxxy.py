@@ -4707,7 +4707,7 @@ class ScreenshotWindow(QWidget):
         if sel_elem and sel_elem.type == ToolID.stamp:
             if sel_elem.backup_pixmap is not None:
                 reset_image_frame = add_item("Отменить обрезку выделенного изображения")
-            set_image_frame = add_item("Обрезать выделенного изображение")
+            set_image_frame = add_item("Обрезать выделенное изображение")
             contextMenu.addSeparator()
 
         transform_background = add_item("Трансформация фона")

@@ -2225,7 +2225,7 @@ class ScreenshotWindow(QWidget):
 
     def draw_vertical_horizontal_lines(self, painter, cursor_pos):
         if self.extended_editor_mode:
-            line_pen = QPen(QColor(127, 127, 127, 172), 1, Qt.DashLine)
+            line_pen = QPen(QColor(127, 127, 127, 172), 2, Qt.DashLine)
             old_comp_mode = painter.compositionMode()
             painter.setCompositionMode(QPainter.RasterOp_SourceXorDestination)
         else:

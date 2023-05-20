@@ -2147,8 +2147,9 @@ class ScreenshotWindow(QWidget):
             painter.drawText(hint_rect, Qt.TextWordWrap | Qt.AlignBottom, hint_text)
 
     def draw_capture_zone_resolution_label(self, painter, text_pen, input_rect):
-        case2 = (self.is_point_set(self.input_POINT2) and not self.is_rect_defined)
-        if self.is_rect_redefined or case2:
+        case1 = self.is_point_set(self.input_POINT2) and not self.is_rect_defined
+        case2 = self.is_rect_being_redefined
+        if case2 or case1:
             painter.setPen(text_pen)
             text_pos = input_rect.bottomRight() + QPoint(10, -10)
             painter.drawText(text_pos, "%dx%d" % (input_rect.width(), input_rect.height()))
@@ -2198,7 +2199,6 @@ class ScreenshotWindow(QWidget):
                     imgsize,
                     imgsize,
                 )
-                painter.setRenderHint(QPainter.Antialiasing, True)
                 pen = QPen(QColor(255, 0, 0), 1)
                 painter.setPen(pen)
                 painter.setBrush(QBrush(QColor(150, 0, 0),
@@ -2325,7 +2325,7 @@ class ScreenshotWindow(QWidget):
 
         self.user_input_started = False
         self.is_rect_defined = False
-        self.is_rect_redefined = False
+        self.is_rect_being_redefined = False
 
         self.undermouse_region_rect = None
         self.undermouse_region_info = None
@@ -2434,7 +2434,6 @@ class ScreenshotWindow(QWidget):
                                                                                 self.input_POINT2)
                 self.user_input_started = True
                 self.is_rect_defined = True
-                self.is_rect_redefined = False
                 self.drag_inside_capture_zone = False
                 self.get_region_info()
                 self.update_tools_window()
@@ -2446,7 +2445,6 @@ class ScreenshotWindow(QWidget):
         self.capture_region_rect = self._build_valid_rect(self.input_POINT1, self.input_POINT2)
         self.user_input_started = True
         self.is_rect_defined = True
-        self.is_rect_redefined = False
         self.drag_inside_capture_zone = False
         self.get_region_info()
         self.update_tools_window()
@@ -2477,7 +2475,6 @@ class ScreenshotWindow(QWidget):
         self.input_POINT1 = self.frameGeometry().bottomRight()
         self.user_input_started = True
         self.is_rect_defined = True
-        self.is_rect_redefined = False
         self.drag_inside_capture_zone = False
         self.get_region_info()
         self.update_tools_window()
@@ -2516,7 +2513,6 @@ class ScreenshotWindow(QWidget):
         self.capture_region_rect = self._build_valid_rect(self.input_POINT1, self.input_POINT2)
         self.user_input_started = True
         self.is_rect_defined = True
-        self.is_rect_redefined = False
         self.drag_inside_capture_zone = False
         self.get_region_info()
         self.update_tools_window()
@@ -2621,7 +2617,6 @@ class ScreenshotWindow(QWidget):
 
         self.user_input_started = False
         self.is_rect_defined = False
-        self.is_rect_redefined = False
         self.current_capture_zone_center = QPoint(0, 0)
 
         tw = self.tools_window
@@ -3827,10 +3822,9 @@ class ScreenshotWindow(QWidget):
                     painter.drawRect(final_version_rect)
 
     def elementsDrawMain(self, painter, final=False):
-        if final:
-            painter.setRenderHint(QPainter.HighQualityAntialiasing, True)
-            painter.setRenderHint(QPainter.Antialiasing, True)
-            painter.setRenderHint(QPainter.SmoothPixmapTransform, True)
+        painter.setRenderHint(QPainter.HighQualityAntialiasing, True)
+        painter.setRenderHint(QPainter.Antialiasing, True)
+        painter.setRenderHint(QPainter.SmoothPixmapTransform, True)
         old_brush = painter.brush()
         old_pen = painter.pen()
         # draw elements
@@ -3863,6 +3857,9 @@ class ScreenshotWindow(QWidget):
         painter.setBrush(old_brush)
         painter.setPen(old_pen)
         self.elementsIsFinalDrawing = False
+        painter.setRenderHint(QPainter.HighQualityAntialiasing, False)
+        painter.setRenderHint(QPainter.Antialiasing, False)
+        painter.setRenderHint(QPainter.SmoothPixmapTransform, False)
 
     def elementsStampRect(self, center_point, size, pixmap, user_scale=True):
         s = size
@@ -4260,9 +4257,6 @@ class ScreenshotWindow(QWidget):
             if select_window and select_window.isVisible():
                 select_window.hide()
 
-        if event.buttons() == Qt.LeftButton:
-            self.setCursor(self.get_custom_cross_cursor())
-
         if event.buttons() == Qt.NoButton:
             # определяем только тут, иначе при быстрых перемещениях мышки
             # возможна потеря удержания - как будто бы если кнопка мыши была отпущена
@@ -4291,7 +4285,7 @@ class ScreenshotWindow(QWidget):
             elif self.undermouse_region_info and not self.drag_inside_capture_zone \
                                                                         and not self.isAltPanning:
                 # для изменения области захвата после первичного задания
-                self.is_rect_redefined = True
+                self.is_rect_being_redefined = True
                 cursor_pos = event.pos()
                 delta = QPoint(cursor_pos - self.old_cursor_position)
                 set_func_attr = self.undermouse_region_info.setter
@@ -4327,6 +4321,9 @@ class ScreenshotWindow(QWidget):
 
         elif event.buttons() == Qt.RightButton:
             pass
+
+        if event.buttons() == Qt.LeftButton and not self.is_rect_being_redefined:
+            self.setCursor(self.get_custom_cross_cursor())
 
         if self.transform_BKG_widget_mode:
             if self.transform_BKG_1:
@@ -4396,7 +4393,7 @@ class ScreenshotWindow(QWidget):
                     # и тем самым в скриншот не попала чернота
                     self.capture_region_rect = \
                                     self._all_monitors_rect.intersected(self.capture_region_rect)
-                self.is_rect_redefined = False
+                self.is_rect_being_redefined = False
             self.get_region_info() # здесь только для установки курсора
         if Globals.DEBUG:
             self.elementsUpdateFinalPicture()

@@ -4556,7 +4556,7 @@ class ScreenshotWindow(QWidget):
 
         if action == None:
             pass
-        else:
+        elif elements:
 
             if action == horizontal:
                 max_height = max(el.pixmap.height() for el in elements)
@@ -4587,10 +4587,12 @@ class ScreenshotWindow(QWidget):
                 points.append(element.start_point)
                 points.append(element.end_point)
 
-
             # обновление области захвата
             self.input_POINT2, self.input_POINT1 = get_bounding_points(points)
             self.capture_region_rect = self._build_valid_rect(self.input_POINT1, self.input_POINT2)
+
+            self.elementsSetSelected(None)
+            self.update_tools_window()
 
         self.update()
 

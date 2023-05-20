@@ -53,7 +53,7 @@ from _utils import (convex_hull, check_scancode_for, SettingsJson,
      generate_metainfo, build_valid_rect, dot, get_nearest_point_on_rect, get_creation_date,
      find_browser_exe_file, open_link_in_browser, open_in_google_chrome, save_meta_info,
      make_screenshot_pyqt, webRGBA, generate_gradient, draw_shadow, draw_cyberpunk,
-     elements45DegreeConstraint, get_bounding_points)
+     elements45DegreeConstraint, get_bounding_points, load_svg)
 
 from _sliders import (CustomSlider,)
 from _transform_widget import (TransformWidget,)
@@ -5088,13 +5088,32 @@ class ScreenshotWindow(QWidget):
                         ".tif", ".tiff",
                         ".webp",
                     )
+                    svg_exts = (
+                        ".svg",
+                        ".svgz"
+                    )
                     PREFIX = "file:///"
-                    if path.startswith(PREFIX) and path.lower().endswith(qt_supported_exts):
-                        pixmap = QPixmap(path[len(PREFIX):])
+                    if path.startswith(PREFIX):
+                        filepath = path[len(PREFIX):]
+                        if path.lower().endswith(qt_supported_exts):
+                            pixmap = QPixmap(filepath)
+                        if path.lower().endswith(svg_exts):
+                            contextMenu = QMenu()
+                            contextMenu.setStyleSheet(self.context_menu_stylesheet)
+                            factors = [1, 5, 10, 20, 30, 40, 50, 80, 100]
+                            actions = []
+                            for factor in factors:
+                                action = contextMenu.addAction(f"x{factor}")
+                                actions.append((action, factor))
+                            cur_action = contextMenu.exec_(QCursor().pos())
+                            if cur_action is not None:
+                                for (action, factor) in actions:
+                                    if cur_action == action:
+                                        pixmap = load_svg(filepath, scale_factor=factor)
                 elif mdata and mdata.hasImage():
                     pixmap = QPixmap().fromImage(mdata.imageData())
-                if self.tools_window.current_tool == ToolID.stamp:
-                    if pixmap and pixmap.width() > 0:
+                if pixmap and pixmap.width() > 0:
+                    if self.tools_window.current_tool == ToolID.stamp:
                         capture_height = max(self.capture_region_rect.height(), 100)
                         if pixmap.height() > capture_height:
                             pixmap = pixmap.scaledToHeight(capture_height, Qt.SmoothTransformation)
@@ -5104,14 +5123,13 @@ class ScreenshotWindow(QWidget):
                         tools_window = self.tools_window
                         tools_window.on_parameters_changed()
                         self.activateWindow()
-                else:
-                    element = self.elementsCreateNew(ToolID.stamp)
-                    element.pixmap = pixmap
-                    element.angle = 0
-                    pos = self.capture_region_rect.topLeft()
-                    self.elementsSetStampElementPoints(element, pos, pos_as_center=False)
-                    self.elementsSetSelected(element)
-
+                    else:
+                        element = self.elementsCreateNew(ToolID.stamp)
+                        element.pixmap = pixmap
+                        element.angle = 0
+                        pos = self.capture_region_rect.topLeft()
+                        self.elementsSetStampElementPoints(element, pos, pos_as_center=False)
+                        self.elementsSetSelected(element)
 
 class StylizedUIBase():
 

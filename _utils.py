@@ -37,7 +37,7 @@ from PyQt5.QtCore import (QRectF, QPoint, pyqtSignal, QSizeF, Qt, QPointF, QSize
 from PyQt5.QtGui import (QPixmap, QBrush, QRegion, QImage, QRadialGradient, QColor,
                     QGuiApplication, QPen, QPainterPath, QPolygon, QLinearGradient, QPainter,
                     QCursor)
-
+from PyQt5.QtSvg import  QSvgRenderer
 
 win32process = None
 if os.name == 'nt': # only for win32
@@ -69,6 +69,8 @@ __all__ = (
 
     # 'make_screenshot_ImageGrab',
     'make_screenshot_pyqt',
+
+    'load_svg',
 
     'webRGBA',
     'generate_gradient',
@@ -377,6 +379,20 @@ def save_meta_info(metadata, filepath):
     info.add_text("text", metastring)
     im = Image.open(filepath)
     im.save(filepath, "PNG", pnginfo=info)
+
+def load_svg(path, scale_factor=20):
+    renderer =  QSvgRenderer(path)
+    size = renderer.defaultSize()
+    rastered_image = QImage(
+        size.width()*scale_factor,
+        size.height()*scale_factor,
+        QImage.Format_ARGB32
+    )
+    rastered_image.fill(Qt.transparent)
+    painter = QPainter(rastered_image)
+    renderer.render(painter)
+    painter.end()
+    return QPixmap.fromImage(rastered_image)
 
 def PIL_to_QImage(im):
     if isinstance(im, QImage):

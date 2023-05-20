@@ -100,13 +100,6 @@ def get_screenshot_filepath(params):
 
 RegionInfo = namedtuple('RegionInfo', 'setter coords getter')
 
-class QPoint(QPoint): #overriding default QPoint
-    def __bool__(self):
-        # Код написан таким образом, что становится критически важно,
-        # чтобы при приведении QPoint(0, 0) под bool всегда возвращалось True.
-        # Вводимые здесь изменения используются в ветках if
-        return True
-
 class LayerOpacity(Enum):
     FullTransparent = 1
     HalfTransparent = 2
@@ -1846,9 +1839,21 @@ class ScreenshotWindow(QWidget):
     def _build_valid_rect(self, p1, p2):
         return build_valid_rect(p1, p2)
 
+    def is_point_set(self, p):
+        return p is not None
+
+    def get_first_set_point(self, points, default):
+        for point in points:
+            if self.is_point_set(point):
+                return point
+        return default
+
+    def is_input_points_set(self):
+        return self.is_point_set(self.input_POINT1) and self.is_point_set(self.input_POINT2)
+
     def build_input_rect(self, cursor_pos):
-        ip1 = self.input_POINT1 or cursor_pos
-        ip2 = self.input_POINT2 or self.input_POINT1 or cursor_pos
+        ip1 = self.get_first_set_point([self.input_POINT1], cursor_pos)
+        ip2 = self.get_first_set_point([self.input_POINT2, self.input_POINT1], cursor_pos)
         return self._build_valid_rect(ip1, ip2)
 
     def paintEvent(self, event):
@@ -2107,7 +2112,7 @@ class ScreenshotWindow(QWidget):
         painter.fillRect(color_rect, self.color_at_pixel)
 
     def draw_hint(self, painter, cursor_pos, text_white_pen):
-        if self.input_POINT1 is None:
+        if not self.is_point_set(self.input_POINT1):
             lines = (
     " В режиме задания области захвата:"
     "\n     ➜ Модификаторы для мыши:"
@@ -2142,7 +2147,8 @@ class ScreenshotWindow(QWidget):
             painter.drawText(hint_rect, Qt.TextWordWrap | Qt.AlignBottom, hint_text)
 
     def draw_capture_zone_resolution_label(self, painter, text_pen, input_rect):
-        if self.is_rect_redefined or (self.input_POINT2 and not self.is_rect_defined):
+        case2 = (self.is_point_set(self.input_POINT2) and not self.is_rect_defined)
+        if self.is_rect_redefined or case2:
             painter.setPen(text_pen)
             text_pos = input_rect.bottomRight() + QPoint(10, -10)
             painter.drawText(text_pos, "%dx%d" % (input_rect.width(), input_rect.height()))
@@ -2173,7 +2179,7 @@ class ScreenshotWindow(QWidget):
 
     def draw_capture_zone(self, painter, input_rect, shot=1):
         tw = self.tools_window
-        if shot == 1 and self.input_POINT1 and self.input_POINT2:
+        if shot == 1 and self.is_input_points_set():
             if self.include_screenshot_background:
                 input_rect_dest = input_rect
                 input_rect_source = QRect(input_rect)
@@ -2183,7 +2189,7 @@ class ScreenshotWindow(QWidget):
                             # self.source_pixels_backup or
                             self.source_pixels, input_rect_source)
 
-        if shot == 2 and self.input_POINT1 and self.input_POINT2:
+        if shot == 2 and self.is_input_points_set():
             if tw and tw.chb_masked.isChecked():
                 imgsize = min(input_rect.width(), input_rect.height())
                 rect = QRect(
@@ -2231,7 +2237,7 @@ class ScreenshotWindow(QWidget):
         else:
             line_pen = QPen(QColor(127, 127, 127, 127), 1)
 
-        if self.input_POINT1 and self.input_POINT2:
+        if self.is_input_points_set():
             painter.setPen(line_pen)
             left = self.input_POINT1.x()
             top = self.input_POINT1.y()
@@ -2495,14 +2501,9 @@ class ScreenshotWindow(QWidget):
                 points.append(element.end_point)
         if pixmaps:
             self.input_POINT2, self.input_POINT1 = get_bounding_points(points)
-            # приводим к специальному QPoint,
-            # чтобы код работающий с этими переменными
-            # работал нормально
-            self.input_POINT2 = QPoint(self.input_POINT2)
-            self.input_POINT1 = QPoint(self.input_POINT1)
         else:
             self.input_POINT2 = QPoint(0, 0)
-            self.input_POINT1 = QPoint(self.frameGeometry().bottomRight())
+            self.input_POINT1 = self.frameGeometry().bottomRight()
         self.capture_region_rect = self._build_valid_rect(self.input_POINT1, self.input_POINT2)
         tw.set_current_tool(ToolID.transform)
         tw.forwards_backwards_update()
@@ -3252,10 +3253,10 @@ class ScreenshotWindow(QWidget):
             if element.type == ToolID.text:
                 element.textbox.move(delta)
         self.move_capture_rect(delta)
-        if self.input_POINT1 is not None:
-            self.input_POINT1 = QPoint(self.capture_region_rect.topLeft())
-        if self.input_POINT2 is not None:
-            self.input_POINT2 = QPoint(self.capture_region_rect.bottomRight())
+        if self.is_point_set(self.input_POINT1):
+            self.input_POINT1 = self.capture_region_rect.topLeft()
+        if self.is_point_set(self.input_POINT2):
+            self.input_POINT2 = self.capture_region_rect.bottomRight()
         if self.transform_widget:
             # refresh
             self.elementsSetSelected(self.selected_element)
@@ -3263,8 +3264,8 @@ class ScreenshotWindow(QWidget):
 
     def move_capture_rect(self, delta):
         self.capture_region_rect.moveCenter(self.current_capture_zone_center + delta)
-        self.input_POINT1 = QPoint(self.capture_region_rect.topLeft())
-        self.input_POINT2 = QPoint(self.capture_region_rect.bottomRight())
+        self.input_POINT1 = self.capture_region_rect.topLeft()
+        self.input_POINT2 = self.capture_region_rect.bottomRight()
 
     def elementsMouseMoveEvent(self, event):
         tool = self.current_tool
@@ -4270,7 +4271,7 @@ class ScreenshotWindow(QWidget):
         elif event.buttons() == Qt.LeftButton:
             if not self.is_rect_defined:
                 # для первичного задания области захвата
-                if not self.input_POINT1:
+                if not self.is_point_set(self.input_POINT1):
                     self.user_input_started = True
                     self.input_POINT1 = event.pos()
                 else:
@@ -4315,13 +4316,8 @@ class ScreenshotWindow(QWidget):
                     # и тем самым в скриншот не попала чернота
                     self.capture_region_rect = \
                                     self._all_monitors_rect.intersected(self.capture_region_rect)
-                # topLeft() выдаёт PyQt'шный QPoint, а нам нужен свой QPoint,
-                # который описан в начале файла. Если здесь не сделать этого приведения,
-                # то будут проблемы, потому что код, работающий с input_POINT1 и inputPOINT2
-                # рассчитан на то, что bool(QPoint(0, 0)) должен выдавать True,
-                # а не дефолтный PyQt'шный False
-                self.input_POINT1 = QPoint(self.capture_region_rect.topLeft())
-                self.input_POINT2 = QPoint(self.capture_region_rect.bottomRight())
+                self.input_POINT1 = self.capture_region_rect.topLeft()
+                self.input_POINT2 = self.capture_region_rect.bottomRight()
 
                 self.update_saved_capture()
 
@@ -4386,7 +4382,7 @@ class ScreenshotWindow(QWidget):
                 if self.is_rect_defined:
                     self.elementsMouseReleaseEvent(event)
             if self.user_input_started:
-                if not (self.input_POINT1 and self.input_POINT2):
+                if not self.is_input_points_set():
                     # это должно помочь от крашей
                     self.user_input_started = True
                     self.input_POINT1 = None
@@ -4541,11 +4537,6 @@ class ScreenshotWindow(QWidget):
         if points:
             # обновление области захвата
             self.input_POINT2, self.input_POINT1 = get_bounding_points(points)
-            # приводим к специальному QPoint,
-            # чтобы код работающий с этими переменными
-            # работал нормально
-            self.input_POINT2 = QPoint(self.input_POINT2)
-            self.input_POINT1 = QPoint(self.input_POINT1)
             self.capture_region_rect = self._build_valid_rect(self.input_POINT1, self.input_POINT2)
 
     def elementsAutoCollageStamps(self):
@@ -4602,11 +4593,6 @@ class ScreenshotWindow(QWidget):
 
             # обновление области захвата
             self.input_POINT2, self.input_POINT1 = get_bounding_points(points)
-            # приводим к специальному QPoint,
-            # чтобы код работающий с этими переменными
-            # работал нормально
-            self.input_POINT2 = QPoint(self.input_POINT2)
-            self.input_POINT1 = QPoint(self.input_POINT1)
             self.capture_region_rect = self._build_valid_rect(self.input_POINT1, self.input_POINT2)
 
         self.update()

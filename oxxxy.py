@@ -87,6 +87,8 @@ class Globals():
     save_to_memory_mode = False
     images_in_memory = []
 
+    close_editor_on_done = True
+
     handle_global_hotkeys = True
     registred_key_seqs = []
 
@@ -4729,6 +4731,10 @@ class ScreenshotWindow(QWidget):
         toggle_extended_mode.setCheckable(True)
         toggle_extended_mode.setChecked(self.extended_editor_mode)
 
+        toggle_close_on_done = add_item("Закрывать редактор после нажатия кнопки Готово")
+        toggle_close_on_done.setCheckable(True)
+        toggle_close_on_done.setChecked(Globals.close_editor_on_done)
+
         contextMenu.addSeparator() ###############################################################
 
         minimize = add_item("Свернуть на панель задач")
@@ -4765,6 +4771,8 @@ class ScreenshotWindow(QWidget):
             self.dark_stamps = not self.dark_stamps
             self.elementsUpdateFinalPicture()
             self.update()
+        elif action == toggle_close_on_done:
+            Globals.close_editor_on_done = not Globals.close_editor_on_done
         elif action == include_background:
             self.include_screenshot_background = not self.include_screenshot_background
             self.update()
@@ -4790,7 +4798,7 @@ class ScreenshotWindow(QWidget):
             if self.tools_window:
                 self.tools_window.set_current_tool(ToolID.special)
         elif action == cancel:
-            self.close_this()
+            self.close_this(force_close=True)
         elif action == reshot:
             self.hide()
             if self.tools_window:
@@ -4899,14 +4907,18 @@ class ScreenshotWindow(QWidget):
                 data = touching_move_data[self.region_num]
                 self.undermouse_region_info = RegionInfo(*data)
 
-    def close_this(self, save_settings=True):
+    def close_this(self, save_settings=True, force_close=False):
         # сохранение настроек тулз
         if save_settings:
             SettingsJson().set_data("TOOLS_SETTINGS", self.tools_settings)
-        if self.tools_window:
-            self.tools_window.update_timer.stop()
-            self.tools_window.hide()
-        self.close()
+        if Globals.close_editor_on_done or force_close:
+            if self.tools_window:
+                self.tools_window.update_timer.stop()
+                self.tools_window.hide()
+            self.close()
+        else:
+            if self.tools_window:
+                self.tools_window.done_button.setEnabled(False)
 
     def do_move_cursor(self, coords):
         c = QCursor()
@@ -4947,13 +4959,13 @@ class ScreenshotWindow(QWidget):
 
     def editing_is_done_handler(self):
         app = QApplication.instance()
-        if Globals.save_to_memory_mode:
-            app.setQuitOnLastWindowClosed(False)
-        else:
-            app.setQuitOnLastWindowClosed(True)
+        app.setQuitOnLastWindowClosed(not Globals.save_to_memory_mode)
         self.close_this()
         app.processEvents()
         self.save_screenshot()
+        if not Globals.close_editor_on_done:
+            if self.tools_window:
+                self.tools_window.done_button.setEnabled(True)
 
     def keyPressEvent(self, event):
         key = event.key()
@@ -5567,6 +5579,8 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
             self.start_time = time.time()
 
             label = "Скриншот готов!"
+            filename = os.path.basename(self.filepath)
+            label += f"\n\n{filename}"
             self.label = QLabel()
             self.label.setText(label)
             self.label.setStyleSheet(self.title_label_style)

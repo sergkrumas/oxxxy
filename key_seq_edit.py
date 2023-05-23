@@ -7,13 +7,16 @@ from PyQt5.QtCore import *
 
 class KeySequenceEdit(QLineEdit):
 
-    def __init__(self, keySequence, defaultKeySequence, callback, *args):
+    def __init__(self, keySequence, defaultKeySequence, callback,
+                        focusInCallback, focusOutCallback, *args):
         super(KeySequenceEdit, self).__init__(*args)
         self.setText(keySequence)
         self.defaultKeySequence = defaultKeySequence
         self.npressed = 0
         self.callback = callback
         self.keys = set()
+        self.focusInCallback = focusInCallback
+        self.focusOutCallback = focusOutCallback
 
     def keyPressEvent(self, event):
         self.keyPressEvent_handler(event)
@@ -55,9 +58,7 @@ class KeySequenceEdit(QLineEdit):
         self.keys.add(key)
 
     def keyReleaseEvent_handler(self, event):
-
         self.npressed -= 1
-
         if self.npressed <= 0:# or Qt.Key_Print in self.keys:
             pt = QKeySequence.PortableText
             keySequence = QKeySequence(*self.keys)
@@ -70,6 +71,17 @@ class KeySequenceEdit(QLineEdit):
                 self.callback(self.text())
             self.keys = set()
             self.npressed = 0
+            self.clearFocus()
+
+    def focusInEvent(self, event):
+        self.focusInCallback()
+        # print("focus in event", flush=True)
+        super().focusInEvent(event)
+
+    def focusOutEvent(self, event):
+        self.focusOutCallback()
+        # print("focus out event", flush=True)
+        super().focusOutEvent(event)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

@@ -5186,7 +5186,7 @@ class StylizedUIBase():
         margin: 2px;
         text-align: center;
     """
-    edit_style_white = """
+    edit_style_white = """QLineEdit {
         font-size: 17px;
         margin: 2px;
         color: white;
@@ -5195,6 +5195,11 @@ class StylizedUIBase():
         background-color: transparent;
         border: 1px solid gray;
         border-radius: 5px;
+    }
+    QLineEdit:focus {
+        border: 1px solid yellow;
+        background-color: rgba(10, 10, 10, 100);
+    }
     """
     info_label_style_settings = """
         font-size: 17px;
@@ -5377,7 +5382,7 @@ class SettingsWindow(QWidget, StylizedUIBase):
             return "  Путь не задан!"
 
     def show(self):
-        register_settings_window_global_hotkeys()
+        # register_settings_window_global_hotkeys()
         super().show()
 
     def hide(self):
@@ -5439,7 +5444,9 @@ class SettingsWindow(QWidget, StylizedUIBase):
             current_keyseq = getattr(Globals, attr_name)
             default_keyseq = getattr(Globals, f'DEFAULT_{attr_name}')
             _field = KeySequenceEdit(current_keyseq, default_keyseq,
-                    partial(on_changed_callback, attr_name[:])
+                    partial(on_changed_callback, attr_name[:]),
+                    register_settings_window_global_hotkeys,
+                    register_user_global_hotkeys
             )
             _field.setStyleSheet(self.edit_style_white)
             _field.setFixedWidth(200)
@@ -5884,8 +5891,8 @@ def is_settings_window_visible():
     return value
 
 def global_hotkey_handler(request):
-    if (Globals.handle_global_hotkeys or Globals.save_to_memory_mode) and \
-                                                                not is_settings_window_visible():
+    if (Globals.handle_global_hotkeys or Globals.save_to_memory_mode):
+                                                        # \ and not is_settings_window_visible():
         if Globals.BLOCK_KEYSEQ_HANDLING_AFTER_FIRST_CALL:
             if not Globals.save_to_memory_mode:
                 Globals.handle_global_hotkeys = False
@@ -5919,6 +5926,7 @@ def init_global_hotkeys_base():
     Globals.win_event_filter = win_event_filter
 
 def register_settings_window_global_hotkeys():
+    # print('register_settings_window_global_hotkeys', flush=True)
     unregister_global_hotkeys()
 
     modifiers = [
@@ -5945,6 +5953,7 @@ def register_settings_window_global_hotkeys():
             Globals.registred_key_seqs.append(keyseq)
 
 def register_user_global_hotkeys():
+    # print('register_user_global_hotkeys', flush=True)
     unregister_global_hotkeys()
 
     if Globals.USE_PRINT_KEY:
@@ -5967,8 +5976,11 @@ def register_user_global_hotkeys():
         Globals.registred_key_seqs.append(Globals.QUICKFULLSCREEN_KEYSEQ)
 
 def unregister_global_hotkeys():
-    for key_seq in Globals.registred_key_seqs:
-        keybinder.unregister_hotkey(0, key_seq)
+    try:
+        for key_seq in Globals.registred_key_seqs:
+            keybinder.unregister_hotkey(0, key_seq)
+    except:
+        pass
     Globals.registred_key_seqs.clear()
 
 def restart_app_in_notification_mode(filepath):
@@ -6010,7 +6022,7 @@ def invoke_screenshot_editor(request_type=None):
     if request_type is None:
         raise Exception("Unknown request type")
     # если было открыто окно-меню около трея - прячем его
-    hide_all_windows()
+    # hide_all_windows()
 
     metadata = generate_metainfo()
     # started_time = time.time()

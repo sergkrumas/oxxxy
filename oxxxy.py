@@ -62,7 +62,7 @@ from on_windows_startup import is_app_in_startup, add_to_startup, remove_from_st
 class Globals():
     DEBUG = True
     DEBUG_SETTINGS_WINDOW = False
-    DEBUG_ELEMENTS = False
+    DEBUG_ELEMENTS = True
     DEBUG_ELEMENTS_STAMP_FRAMING = True
     DEBUG_ELEMENTS_COLLAGE = False
     CRUSH_SIMULATOR = False
@@ -131,7 +131,7 @@ class ToolID():
     numbering =  "numbering"
     blurring = "blurring"
     darkening = "darkening"
-    stamp = "stamp"
+    picture = "picture"
     zoom_in_region = "zoom_in_region"
     copypaste = "copypaste"
 
@@ -677,8 +677,38 @@ class CustomPushButton(QPushButton):
             rect = r.adjusted(10, 8, -11, -15)
             painter.drawRect(rect)
 
-        elif tool_id == ToolID.stamp:
+        elif tool_id == ToolID.picture:
 
+            pen = QPen(QColor(main_color), 3)
+            pen.setJoinStyle(Qt.MiterJoin)
+            painter.setPen(pen)
+            adj = self.rect().adjusted(7, 7, -7, -7)
+            painter.drawRect(adj)
+            adj2 = adj.adjusted(1, 1, -0, -0)
+            points = [
+                adj2.topLeft(),
+                adj2.topRight(),
+                adj2.bottomRight() + QPoint(0, -7),
+
+                adj2.bottomRight() + QPoint(-8, -25), #fisrt top
+                adj2.bottomRight() + QPoint(-15, -10),
+                adj2.bottomRight() + QPoint(-21, -18), #second top
+                adj2.bottomLeft() + QPoint(5, -7),
+
+                adj2.bottomLeft() + QPoint(0, -7),
+            ]
+            poly = QPolygon(points)
+            painter.setBrush(second_color3)
+            painter.setPen(Qt.NoPen)
+            painter.drawPolygon(poly)
+            painter.setBrush(brush)
+            adj3 = adj2.adjusted(3, 3, 0, 0)
+            r = QRect(adj3.topLeft(), adj3.topLeft()+QPoint(9, 9))
+            painter.drawEllipse(r)
+
+        elif tool_id == "TOOLID.UNUSED":
+
+            # aim icon
             w_ = 4
             pen = QPen(main_color, w_)
             painter.setPen(pen)
@@ -1159,7 +1189,7 @@ class StampSelectWindow(QWidget):
 
     def show_at(self):
         for but in self.main_window.tools_window.tools_buttons:
-            if but.property("tool_id") == ToolID.stamp:
+            if but.property("tool_id") == ToolID.picture:
                 break
         if self.auto_positioning:
             pos = but.mapToGlobal(QPoint(0,0))
@@ -1250,7 +1280,7 @@ class ToolsWindow(QWidget):
         self.chb_toolbool.setEnabled(False)
         self.color_slider.setEnabled(True)
         self.size_slider.setEnabled(True)
-        if _type in [ToolID.blurring, ToolID.darkening, ToolID.stamp]:
+        if _type in [ToolID.blurring, ToolID.darkening, ToolID.picture]:
             self.color_slider.setEnabled(False)
             if _type in [ToolID.blurring]:
                 self.chb_toolbool.setEnabled(True)
@@ -1276,7 +1306,7 @@ class ToolsWindow(QWidget):
                 "size_slider_value": self.size_slider.value,
                 "toolbool": self.chb_toolbool.isChecked(),
             }
-        elif self.current_tool == ToolID.stamp:
+        elif self.current_tool == ToolID.picture:
             data =  {
                 "size_slider_value": self.size_slider.value,
                 "stamp_id": self.parent().current_stamp_id,
@@ -1305,7 +1335,7 @@ class ToolsWindow(QWidget):
         self.color_slider.palette_index = data.get("color_slider_palette_index", DEFAULT_COLOR_SLIDER_PALETTE_INDEX)
         self.size_slider.value = data.get("size_slider_value", DEFAULT_SIZE_SLIDER_VALUE)
         self.chb_toolbool.setChecked(data.get("toolbool", DEFAULT_TOOLBOOL_VALUE))
-        if self.current_tool == ToolID.stamp:
+        if self.current_tool == ToolID.picture:
             main_window = self.parent()
             DEFAULT_STAMP_ID = main_window.current_stamp_id
             DEFAULT_STAMP_ANGLE = main_window.current_stamp_angle
@@ -1343,7 +1373,7 @@ class ToolsWindow(QWidget):
         else:
             # условие нужно, чтобы после выбора штампа из меню
             # не деактивировался инструмент штамп
-            if self.current_tool != ToolID.stamp:
+            if self.current_tool != ToolID.picture:
                 self.current_tool = ToolID.none
         transform_tool_activated = False
         if old_tool != ToolID.transform and self.current_tool == ToolID.transform:
@@ -1354,7 +1384,7 @@ class ToolsWindow(QWidget):
         self.parent().elementsMakeSureTheresNoUnfinishedElement()
         if self.initialization:
             self.initialization = False
-        elif self.current_tool == ToolID.stamp and self.parent().current_stamp_pixmap is None:
+        elif self.current_tool == ToolID.picture and self.parent().current_stamp_pixmap is None:
             self.show_stamp_menu(do_ending=False)
         # tb.setChecked(True)
         self.parent().current_tool = self.current_tool
@@ -1422,10 +1452,12 @@ class ToolsWindow(QWidget):
             [ToolID.blurring, "Размытие", "Размытие"],
             [ToolID.darkening, "Затемнение", "Затемнение"],
 
-            [ToolID.stamp, "Штамп", "Размещение стикеров или штампов.<br>Чтобы выбрать нужный"
-                        " стикер/штамп, нажмите правую кнопку мыши<br>Колесо мыши ➜ размер<br>"
-                        "<b>Ctrl</b> + Колесо мыши ➜ поворот на 1°<br><b>Ctrl</b>+<b>Shift</b>"
-                        " + Колесо мыши ➜ поворот на 10°"],
+            [ToolID.picture, "Картинка (ранее Штамп)", "Помогает разместить картинку или штамп.<br>"
+                        "Чтобы выбрать нужную картинку или штамп, "
+                        "нажмите правую кнопку мыши<br>"
+                        "<b>Колесо мыши</b> ➜ задать размер<br>"
+                        "<b>Ctrl</b> + <b>Колесо мыши</b> ➜ поворот на 1°<br>"
+                        "<b>Ctrl</b>+<b>Shift</b> + <b>Колесо мыши</b> ➜ поворот на 10°"],
 
             [ToolID.zoom_in_region, "Лупа", "Размещает увеличенную копию"
                                                  " необходимой области изображения в любом месте"],
@@ -1462,7 +1494,7 @@ class ToolsWindow(QWidget):
             button.setParent(self)
             button.installEventFilter(self)
             button.clicked.connect(self.set_tool_data)
-            if ID == ToolID.stamp:
+            if ID == ToolID.picture:
                 button.right_clicked.connect(self.show_stamp_menu)
             tools.addWidget(button)
             tools.addSpacing(5)
@@ -1626,9 +1658,9 @@ class ToolsWindow(QWidget):
             PreviewsThread(stamps, self.select_window).start()
         else:
             self.select_window.show_at()
-        if self.parent().current_tool != ToolID.stamp:
+        if self.parent().current_tool != ToolID.picture:
             if do_ending:
-                self.set_current_tool(ToolID.stamp)
+                self.set_current_tool(ToolID.picture)
         self.update()
 
     def on_done_clicked(self, event):
@@ -1929,7 +1961,7 @@ class ScreenshotWindow(QWidget):
         painter.setPen(old_pen)
 
     def draw_stamp_tool(self, painter, cursor_pos):
-        if self.current_tool != ToolID.stamp or not self.current_stamp_pixmap:
+        if self.current_tool != ToolID.picture or not self.current_stamp_pixmap:
             return
         if not self.capture_region_rect.contains(cursor_pos):
             return
@@ -2482,7 +2514,7 @@ class ScreenshotWindow(QWidget):
         self.update_tools_window()
         tw = self.tools_window
         tw.initialization = True
-        tw.set_current_tool(ToolID.stamp)
+        tw.set_current_tool(ToolID.picture)
         points = []
         for path_or_pix in paths_or_pixmaps:
             if isinstance(path_or_pix, QPixmap):
@@ -2490,7 +2522,7 @@ class ScreenshotWindow(QWidget):
             else:
                 pixmap = QPixmap(path_or_pix)
             if pixmap.width() != 0:
-                element = self.elementsCreateNew(ToolID.stamp)
+                element = self.elementsCreateNew(ToolID.picture)
                 element.pixmap = pixmap
                 element.angle = 0
                 r = self.elementsSetStampElementPoints(element, pos, pos_as_center=False)
@@ -2522,7 +2554,7 @@ class ScreenshotWindow(QWidget):
             folder_path = os.path.dirname(__file__)
             filepath = os.path.join(folder_path, "docs", "3.png")
             pixmap = QPixmap(filepath)
-            element = self.elementsCreateNew(ToolID.stamp)
+            element = self.elementsCreateNew(ToolID.picture)
             element.pixmap = pixmap
             element.angle = 0
             element.size = 1.0
@@ -2645,7 +2677,7 @@ class ScreenshotWindow(QWidget):
             element.size = tw.size_slider.value
             element.toolbool = tw.chb_toolbool.isChecked()
             element.margin_value = 5
-        elif element.type == ToolID.stamp:
+        elif element.type == ToolID.picture:
             element.size = 1.0
             element.color = QColor(Qt.red)
             element.color_slider_value = 0.01
@@ -2657,7 +2689,7 @@ class ScreenshotWindow(QWidget):
         if element.type == ToolID.blurring:
             self.elementsSetBlurredPixmap(element)
         # только для инструмента transform, ибо иначе на практике не очень удобно
-        if tw and element.type == ToolID.stamp and tw.current_tool == ToolID.transform:
+        if tw and element.type == ToolID.picture and tw.current_tool == ToolID.transform:
             if hasattr(element, "pixmap"):
                 r_first = build_valid_rect(element.start_point, element.end_point)
                 self.elementsSetStampElementPoints(element, r_first.center())
@@ -2971,7 +3003,7 @@ class ScreenshotWindow(QWidget):
                 is_mouse_over1 = text_bounding_rect.contains(cursor_pos)
                 is_mouse_over2 = build_valid_rect(el.start_point, el.end_point).contains(cursor_pos)
                 is_mouse_over = is_mouse_over1 or is_mouse_over2
-            elif el.type == ToolID.stamp:
+            elif el.type == ToolID.picture:
                 is_mouse_over = build_valid_rect(el.start_point, el.end_point).contains(cursor_pos)
             elif el.type == ToolID.numbering:
                 is_mouse_over1 = build_valid_rect(el.start_point, el.end_point).contains(cursor_pos)
@@ -3038,7 +3070,7 @@ class ScreenshotWindow(QWidget):
 
         if self.current_tool == ToolID.none:
             return
-        if self.current_tool == ToolID.stamp and not self.current_stamp_pixmap:
+        if self.current_tool == ToolID.picture and not self.current_stamp_pixmap:
             self.tools_window.show_stamp_menu()
             return
         # основная часть
@@ -3060,7 +3092,7 @@ class ScreenshotWindow(QWidget):
                 self.elementsMousePressEventDefault(element, event)
             elif not element.finished:
                 element.copy_pos = event.pos()
-        elif tool == ToolID.stamp:
+        elif tool == ToolID.picture:
             element.pixmap = self.current_stamp_pixmap
             element.angle = self.current_stamp_angle
             self.elementsSetStampElementPoints(element, event.pos())
@@ -3290,7 +3322,7 @@ class ScreenshotWindow(QWidget):
                 element.end_point = event.pos()
             elif not element.finished:
                 element.copy_pos = event.pos()
-        elif tool == ToolID.stamp:
+        elif tool == ToolID.picture:
             element.pixmap = self.current_stamp_pixmap
             element.angle = self.current_stamp_angle
             self.elementsSetStampElementPoints(element, event.pos())
@@ -3384,7 +3416,7 @@ class ScreenshotWindow(QWidget):
             elif not element.finished:
                 element.copy_pos = event.pos()
                 element.finished = True
-        elif tool == ToolID.stamp:
+        elif tool == ToolID.picture:
             element.pixmap = self.current_stamp_pixmap
             element.angle = self.current_stamp_angle
             self.elementsSetStampElementPoints(element, event.pos())
@@ -3444,7 +3476,7 @@ class ScreenshotWindow(QWidget):
                 if tw:
                     self.elements_history_index = self.prev_elements_history_index
                     tw.forwards_backwards_update()
-                    print('correcting after autodelete')
+                    # print('correcting after autodelete')
 
     def elementsSetBlurredPixmap(self, element):
         if not element.finished:
@@ -3772,7 +3804,7 @@ class ScreenshotWindow(QWidget):
                 # painter.setBrush(QBrush(QColor(150, 150, 0), Qt.BDiagPattern))
                 pass
             painter.drawRect(rect)
-        elif el_type == ToolID.stamp:
+        elif el_type == ToolID.picture:
             pixmap = element.pixmap
             r = build_valid_rect(element.f_start_point, element.f_end_point)
             s = QRect(QPoint(0,0), pixmap.size())
@@ -3839,7 +3871,7 @@ class ScreenshotWindow(QWidget):
         stamps_first = []
         all_the_rest = []
         for element in all_visible_elements:
-            if element.type == ToolID.stamp:
+            if element.type == ToolID.picture:
                 stamps_first.append(element)
             else:
                 all_the_rest.append(element)
@@ -4517,7 +4549,7 @@ class ScreenshotWindow(QWidget):
                     image_rect = QRect(pos, element.pixmap.size())
                     points.append(image_rect.topLeft()-generalOffset)
                     points.append(image_rect.bottomRight()+generalOffset)
-            elif element.type == ToolID.stamp:
+            elif element.type == ToolID.picture:
                 r = build_valid_rect(element.start_point, element.end_point)
                 points.append(r.topLeft()-generalOffset)
                 points.append(r.bottomRight()+generalOffset)
@@ -4549,7 +4581,7 @@ class ScreenshotWindow(QWidget):
 
         elements = []
         for element in self.elementsHistoryFilter():
-            if element.type == ToolID.stamp:
+            if element.type == ToolID.picture:
                 elements.append(element)
 
         cmp_func = lambda x: QRect(x.start_point, x.end_point).center().x()
@@ -4691,7 +4723,7 @@ class ScreenshotWindow(QWidget):
         reset_image_frame = None
         set_image_frame = None
         sel_elem = self.selected_element
-        if sel_elem and sel_elem.type == ToolID.stamp:
+        if sel_elem and sel_elem.type == ToolID.picture:
             if sel_elem.backup_pixmap is not None:
                 reset_image_frame = add_item("Отменить обрезку выделенного изображения")
             set_image_frame = add_item("Обрезать выделенное изображение")
@@ -5110,7 +5142,7 @@ class ScreenshotWindow(QWidget):
                 elif mdata and mdata.hasImage():
                     pixmap = QPixmap().fromImage(mdata.imageData())
                 if pixmap and pixmap.width() > 0:
-                    if self.tools_window.current_tool == ToolID.stamp:
+                    if self.tools_window.current_tool == ToolID.picture:
                         capture_height = max(self.capture_region_rect.height(), 100)
                         if pixmap.height() > capture_height:
                             pixmap = pixmap.scaledToHeight(capture_height, Qt.SmoothTransformation)
@@ -5121,7 +5153,7 @@ class ScreenshotWindow(QWidget):
                         tools_window.on_parameters_changed()
                         self.activateWindow()
                     else:
-                        element = self.elementsCreateNew(ToolID.stamp)
+                        element = self.elementsCreateNew(ToolID.picture)
                         element.pixmap = pixmap
                         element.angle = 0
                         pos = self.capture_region_rect.topLeft()

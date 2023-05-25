@@ -216,7 +216,7 @@ class ViewerWindow(QWidget):
             painter.setPen(QPen(Qt.white, 1))
             painter.setBrush(Qt.NoBrush)
             painter.drawRect(frame_rect)
-    
+
             painter.setPen(QPen(Qt.red, 1))
             painter.setBrush(QBrush(Qt.red, Qt.DiagCrossPattern))
 

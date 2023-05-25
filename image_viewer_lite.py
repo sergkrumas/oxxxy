@@ -249,7 +249,7 @@ class ViewerWindow(QWidget):
 
             frame_rect = QRectF(
                 QPointF(screen_left, screen_top), QPointF(screen_right, screen_bottom)).toRect()
-            self.main_window.elementsFrameStampPixmap(frame_rect=frame_rect,
+            self.main_window.elementsFramePicture(frame_rect=frame_rect,
                                                         frame_data=self.get_image_frame_info())
 
     def mousePressEvent(self, event):

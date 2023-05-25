@@ -351,7 +351,7 @@ def change_ui_text(self, new_tool):
 - **Копипейсту** не нужны ни слайдер цвета, ни слайдер размера/величины, ни галочка:
 ```python
 def set_ui_on_toolchange(self):
-    if self.current_tool in ["blurring", "darkening", "stamp"]:
+    if self.current_tool in ["blurring", "darkening", "picture"]:
         self.color_slider.setEnabled(False)
     else:
         self.color_slider.setEnabled(True)
@@ -377,11 +377,11 @@ def tool_data_dict_from_ui(self):
             "size_slider_value": self.size_slider.value,
             "toolbool": self.chb_toolbool.isChecked()
         }
-    elif self.current_tool == "stamp":
+    elif self.current_tool == "picture":
         data =  {
             "size_slider_value": self.size_slider.value,
-            "stamp_id": self.parent().current_stamp_id,
-            "stamp_angle": self.parent().current_stamp_angle,
+            "picture_id": self.parent().current_picture_id,
+            "picture_angle": self.parent().current_picture_angle,
         }
     else:
         data =  {
@@ -394,26 +394,26 @@ def tool_data_dict_to_ui(self, data):
     DEFAULT_COLOR_SLIDER_VALUE = 0.01
     DEFAULT_SIZE_SLIDER_VALUE = 0.4
     DEFAULT_TEXTBACK_VALUE = True
-    DEFAULT_STAMP_ID = self.parent().current_stamp_id
-    DEFAULT_STAMP_ANGLE = self.parent().current_stamp_angle
+    DEFAULT_PICTURE_ID = self.parent().current_picture_id
+    DEFAULT_PICTURE_ANGLE = self.parent().current_picture_angle
     self.color_slider.value = data.get("color_slider_value", DEFAULT_COLOR_SLIDER_VALUE)
     self.size_slider.value = data.get("size_slider_value", DEFAULT_SIZE_SLIDER_VALUE)
     self.chb_toolbool.setChecked(data.get("toolbool", DEFAULT_TEXTBACK_VALUE))
-    if self.current_tool == "stamp":
+    if self.current_tool == ToolID.picture:
         main_window = self.parent()
-        if main_window.current_stamp_pixmap is None:
-            stamp_id = data.get("stamp_id", DEFAULT_STAMP_ID)
-            stamp_info = StampInfo.load_from_id(stamp_id)
-            if stamp_info:
-                stamp_info.load_from_file()
-                main_window.current_stamp_pixmap = stamp_info.pixmap
-                main_window.current_stamp_id = stamp_info.id
-                main_window.current_stamp_angle = data.get("stamp_angle", DEFAULT_STAMP_ANGLE)
+        if main_window.current_picture_pixmap is None:
+            picture_id = data.get("picture_id", DEFAULT_PICTURE_ID)
+            picture_info = PictureInfo.load_from_id(picture_id)
+            if picture_info:
+                picture_info.load_from_file()
+                main_window.current_picture_pixmap = picture_info.pixmap
+                main_window.current_picture_id = picture_info.id
+                main_window.current_picture_angle = data.get("picture_angle", DEFAULT_PICTURE_ANGLE)
                 self.on_parameters_changed()
             else:
-                main_window.current_stamp_pixmap = None
-                main_window.current_stamp_id = None
-                main_window.current_stamp_angle = 0
+                main_window.current_picture_pixmap = None
+                main_window.current_picture_id = None
+                main_window.current_picture_angle = 0
     self.update()
 ```
 

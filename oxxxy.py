@@ -63,7 +63,7 @@ class Globals():
     DEBUG = True
     DEBUG_SETTINGS_WINDOW = False
     DEBUG_ELEMENTS = True
-    DEBUG_ELEMENTS_STAMP_FRAMING = True
+    DEBUG_ELEMENTS_PICTURE_FRAMING = True
     DEBUG_ELEMENTS_COLLAGE = False
     CRUSH_SIMULATOR = False
 
@@ -784,10 +784,10 @@ class CustomPushButton(QPushButton):
 
         return pix
 
-class StampSelectButton(QPushButton):
-    def __init__(self, stamp_data, button_size, main_window, *args):
+class PictureSelectButton(QPushButton):
+    def __init__(self, picture_data, button_size, main_window, *args):
         super().__init__(*args)
-        self.stamp_data = stamp_data
+        self.picture_data = picture_data
         self.main_window = main_window
         self.setFixedHeight(button_size)
         self.setFixedWidth(button_size)
@@ -801,7 +801,7 @@ class StampSelectButton(QPushButton):
         painter.setClipping(True)
         painter.setClipPath(path)
         painter.fillRect(self.rect(), QBrush(Qt.gray))
-        pixmap = self.stamp_data.display_pixmap
+        pixmap = self.picture_data.display_pixmap
         w = self.rect().width()
         h = self.rect().height()
         x = (w - pixmap.width())/2
@@ -810,25 +810,25 @@ class StampSelectButton(QPushButton):
         painter.end()
 
     def mouseReleaseEvent(self, event):
-        if self.stamp_data.pixmap:
+        if self.picture_data.pixmap:
             main_window = self.main_window
             tools_window = main_window.tools_window
-            if self.stamp_data.id == StampInfo.TYPE_FROM_FILE:
+            if self.picture_data.id == PictureInfo.TYPE_FROM_FILE:
                 path = QFileDialog.getOpenFileName(None, "Выберите файл", "")
                 path = str(path[0])
                 if path and os.path.exists(path):
-                    main_window.current_stamp_pixmap = QPixmap(path)
+                    main_window.current_picture_pixmap = QPixmap(path)
                 else:
-                    main_window.current_stamp_pixmap = StampInfo.PIXMAP_BROKEN
+                    main_window.current_picture_pixmap = PictureInfo.PIXMAP_BROKEN
             else:
-                main_window.current_stamp_pixmap = self.stamp_data.pixmap
-            main_window.current_stamp_id = self.stamp_data.id
-            main_window.current_stamp_angle = 0
+                main_window.current_picture_pixmap = self.picture_data.pixmap
+            main_window.current_picture_id = self.picture_data.id
+            main_window.current_picture_angle = 0
             tools_window.on_parameters_changed()
             tools_window.select_window.hide()
             main_window.activateWindow()
 
-class StampInfo():
+class PictureInfo():
     TYPE_STAMP = "stamp"
     TYPE_DYN = "dyn"
     TYPE_STICKER = "sticker"
@@ -874,9 +874,10 @@ class StampInfo():
         cls.PIXMAP_LOADING = PIXMAP_LOADING
 
     APP_FOLDER = os.path.dirname(__file__)
-    PIC_FOLDER = os.path.join(APP_FOLDER, "stamps", "pictures")
-    SCRIPTS_FOLDERPATH = os.path.join(APP_FOLDER, "stamps", "python")
-    STICKERS_FOLDER = os.path.join(APP_FOLDER, "stamps", "stickers")
+    PICTURE_TOOL_FOLDERNAME = "picture_tool"
+    PIC_FOLDER = os.path.join(APP_FOLDER, PICTURE_TOOL_FOLDERNAME, "pictures")
+    SCRIPTS_FOLDERPATH = os.path.join(APP_FOLDER, PICTURE_TOOL_FOLDERNAME, "python")
+    STICKERS_FOLDER = os.path.join(APP_FOLDER, PICTURE_TOOL_FOLDERNAME, "stickers")
 
     @classmethod
     def check_paths(cls):
@@ -891,7 +892,7 @@ class StampInfo():
             for f_path in folder_paths:
                 if not os.path.exists(f_path):
                     os.mkdir(f_path)
-                    print(f_path, "created (stamp info)")
+                    print(f_path, "created (picture info)")
         for folder in [cls.PIC_FOLDER, cls.SCRIPTS_FOLDERPATH, cls.STICKERS_FOLDER]:
             create_if_not_exists(folder)
 
@@ -899,62 +900,62 @@ class StampInfo():
         prefix = os.path.dirname(__file__)
         return path[len(prefix):]
 
-    def __init__(self, type_, data):
+    def __init__(self, picture_type, data):
         super().__init__()
-        self.type = type_
+        self.picture_type = picture_type
         self.id = None
         self.pixmap = None
         self.display_pixmap = self.PIXMAP_LOADING
-        if self.type in [self.TYPE_STAMP, self.TYPE_STICKER]:
+        if self.picture_type in [self.TYPE_STAMP, self.TYPE_STICKER]:
             self.filepath = data
             self.id = self.remove_prefix(self.filepath)
-        elif self.type == self.TYPE_DYN:
+        elif self.picture_type == self.TYPE_DYN:
             script_path, arg, draw_func = data
             self.arg = arg
             self.filepath = script_path
             self.draw_func = draw_func
             _filepath = self.remove_prefix(self.filepath)
             self.id = f"{_filepath},{self.arg}"
-        elif self.type == self.TYPE_FROM_FILE:
+        elif self.picture_type == self.TYPE_FROM_FILE:
             self.id = "from_file"
             self.filepath = ""
         else:
-            print(self.type)
-            raise Exception("Unknown stamp type")
+            print(self.picture_type)
+            raise Exception("Unknown picture type")
         if self.id is None:
             raise Exception("id is None")
 
     def get_tooltip_text(self):
-        if self.type == self.TYPE_DYN:
+        if self.picture_type == self.TYPE_DYN:
             return self.arg
         else:
             return self.id
 
     @classmethod
-    def load_from_id(cls, stamp_id):
+    def load_from_id(cls, picture_id):
         cls.create_default_pixmaps()
-        if stamp_id is None:
+        if picture_id is None:
             return None
-        elif "," in stamp_id:
+        elif "," in picture_id:
             # dynamic
-            rel_script_path, func_arg = stamp_id.split(",", 1)
+            rel_script_path, func_arg = picture_id.split(",", 1)
             script_path = os.path.join(cls.APP_FOLDER, rel_script_path.strip("/").strip("\\"))
             if os.path.exists(script_path):
                 script_filename = os.path.basename(script_path)
                 m_func, d_func = cls.get_module_functions(script_filename, script_path)
                 if m_func and d_func:
-                    return StampInfo("dyn", (script_path, func_arg, d_func))
+                    return PictureInfo(cls.TYPE_DYN, (script_path, func_arg, d_func))
         else:
             # imagefile
-            stamp_filepath = os.path.join(cls.APP_FOLDER, stamp_id.strip("/").strip("\\"))
-            if os.path.exists(stamp_filepath):
-                return StampInfo("stamp", stamp_filepath)
+            picture_filepath = os.path.join(cls.APP_FOLDER, picture_id.strip("/").strip("\\"))
+            if os.path.exists(picture_filepath):
+                return PictureInfo(cls.TYPE_STAMP, picture_filepath)
         return None
 
     def load_from_file(self):
-        if self.type in [self.TYPE_STAMP, self.TYPE_STICKER]:
+        if self.picture_type in [self.TYPE_STAMP, self.TYPE_STICKER]:
             self.pixmap = QPixmap(self.filepath)
-        elif self.type == self.TYPE_DYN:
+        elif self.picture_type == self.TYPE_DYN:
             dyn_pixmap = QPixmap(240, 240)
             dyn_pixmap.fill(Qt.transparent)
             painter = QPainter()
@@ -963,7 +964,7 @@ class StampInfo():
             painter.end()
             del painter
             self.pixmap = dyn_pixmap
-        elif self.type == self.TYPE_FROM_FILE:
+        elif self.picture_type == self.TYPE_FROM_FILE:
             dyn_pixmap = QPixmap(80, 80)
             dyn_pixmap.fill(Qt.black)
             p = QPainter()
@@ -1005,12 +1006,12 @@ class StampInfo():
     @classmethod
     def scan(cls):
         cls.check_paths()
-        stamps = []
+        pictures = []
         ############################################################
         # FROM FILE dialog
         ############################################################
-        stamp_info = StampInfo("from_file", None)
-        stamps.append(stamp_info)
+        picture_info = PictureInfo(cls.TYPE_FROM_FILE, None)
+        pictures.append(picture_info)
         ############################################################
         # scan pictures
         ############################################################
@@ -1018,8 +1019,8 @@ class StampInfo():
             for filename in files:
                 filepath = os.path.join(cur_folder, filename)
                 if filepath.lower().endswith((".jpg", ".png", ".jpeg", ".webp")):
-                    stamp_info = StampInfo("stamp", filepath)
-                    stamps.append(stamp_info)
+                    picture_info = PictureInfo(cls.TYPE_STAMP, filepath)
+                    pictures.append(picture_info)
         ############################################################
         # scan scripts
         ############################################################
@@ -1033,8 +1034,8 @@ class StampInfo():
                     script_filename = os.path.basename(script_path)
                     m_func, d_func = cls.get_module_functions(script_filename, script_path)
                     for func_arg in m_func():
-                        stamp_info = StampInfo("dyn", (script_path, func_arg, d_func))
-                        stamps.append(stamp_info)
+                        picture_info = PictureInfo(cls.TYPE_DYN, (script_path, func_arg, d_func))
+                        pictures.append(picture_info)
         if cls.SCRIPTS_FOLDERPATH in sys.path:
             sys.path.remove(cls.SCRIPTS_FOLDERPATH)
         ############################################################
@@ -1044,31 +1045,31 @@ class StampInfo():
             for filename in files:
                 filepath = os.path.join(cur_folder, filename)
                 if filepath.lower().endswith((".jpg", ".png", ".jpeg", ".webp")):
-                    stamp_info = StampInfo("sticker", filepath)
-                    stamps.append(stamp_info)
+                    picture_info = PictureInfo(cls.TYPE_STICKER, filepath)
+                    pictures.append(picture_info)
         ############################################################
         # end of scan
         ############################################################
-        return stamps
+        return pictures
 
 class PreviewsThread(QThread):
     update_signal = pyqtSignal(object)
-    def __init__(self, stamps, select_window):
+    def __init__(self, pictures, select_window):
         QThread.__init__(self)
         Globals.background_threads.append(self)
-        self.stamps = stamps
+        self.pictures = pictures
         self.update_signal.connect(lambda data: select_window.content.update())
 
     def start(self):
         super().start(QThread.IdlePriority)
 
     def run(self):
-        for stamp_info in self.stamps:
-            stamp_info.load_from_file()
+        for picture_info in self.pictures:
+            picture_info.load_from_file()
             self.msleep(1)
             self.update_signal.emit(None)
 
-class StampSelectWindow(QWidget):
+class PictureSelectWindow(QWidget):
 
     def drag_rect(self):
         return QRect(10, 5, self.rect().width()-20, 15)
@@ -1117,7 +1118,7 @@ class StampSelectWindow(QWidget):
         app = QApplication.instance()
         app.sendEvent(self.main_window, event)
 
-    def __init__(self, *args, stamps=None):
+    def __init__(self, *args, pictures=None):
         super().__init__(*args)
         self.main_window = self.parent()
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool)
@@ -1150,12 +1151,11 @@ class StampSelectWindow(QWidget):
         self.content = scrollContent
 
         BUTTON_SIZE = 100
-        from_file_stamp = 0
-        len_stamp = len(stamps) + from_file_stamp
-        COL_COUNT = min(15, len_stamp)
+        len_pictures = len(pictures)
+        COL_COUNT = min(15, len_pictures)
         SPACING = 5
         CONTENT_MARGIN = 5
-        rows_count = math.ceil(len_stamp / COL_COUNT)
+        rows_count = math.ceil(len_pictures / COL_COUNT)
 
         width = BUTTON_SIZE*COL_COUNT+(SPACING*2)*(COL_COUNT)+CONTENT_MARGIN*2
         height = min(700, (BUTTON_SIZE+SPACING*2)*rows_count+30)
@@ -1171,11 +1171,11 @@ class StampSelectWindow(QWidget):
         scrollContent.setLayout(grid_layout)
         scroll.setWidget(scrollContent)
         self.buttons = []
-        for n, stamp_data in enumerate(stamps):
-            button = StampSelectButton(stamp_data, BUTTON_SIZE, self.main_window)
+        for n, picture_data in enumerate(pictures):
+            button = PictureSelectButton(picture_data, BUTTON_SIZE, self.main_window)
             button.setParent(self)
             button.setCursor(Qt.PointingHandCursor)
-            button.setToolTip(stamp_data.get_tooltip_text())
+            button.setToolTip(picture_data.get_tooltip_text())
             r = n // COL_COUNT
             c = n % COL_COUNT
             self.buttons.append(button)
@@ -1309,8 +1309,8 @@ class ToolsWindow(QWidget):
         elif self.current_tool == ToolID.picture:
             data =  {
                 "size_slider_value": self.size_slider.value,
-                "stamp_id": self.parent().current_stamp_id,
-                "stamp_angle": self.parent().current_stamp_angle,
+                "picture_id": self.parent().current_picture_id,
+                "picture_angle": self.parent().current_picture_angle,
             }
         else:
             data =  {
@@ -1332,26 +1332,27 @@ class ToolsWindow(QWidget):
         else:
             DEFAULT_TOOLBOOL_VALUE = True
         self.color_slider.value = data.get("color_slider_value", DEFAULT_COLOR_SLIDER_VALUE)
-        self.color_slider.palette_index = data.get("color_slider_palette_index", DEFAULT_COLOR_SLIDER_PALETTE_INDEX)
+        self.color_slider.palette_index = data.get("color_slider_palette_index",
+                                                                DEFAULT_COLOR_SLIDER_PALETTE_INDEX)
         self.size_slider.value = data.get("size_slider_value", DEFAULT_SIZE_SLIDER_VALUE)
         self.chb_toolbool.setChecked(data.get("toolbool", DEFAULT_TOOLBOOL_VALUE))
         if self.current_tool == ToolID.picture:
             main_window = self.parent()
-            DEFAULT_STAMP_ID = main_window.current_stamp_id
-            DEFAULT_STAMP_ANGLE = main_window.current_stamp_angle
-            if main_window.current_stamp_pixmap is None:
-                stamp_id = data.get("stamp_id", DEFAULT_STAMP_ID)
-                stamp_info = StampInfo.load_from_id(stamp_id)
-                if stamp_info:
-                    stamp_info.load_from_file()
-                    main_window.current_stamp_pixmap = stamp_info.pixmap
-                    main_window.current_stamp_id = stamp_info.id
-                    main_window.current_stamp_angle = data.get("stamp_angle", DEFAULT_STAMP_ANGLE)
+            DEFAULT_PICTURE_ID = main_window.current_picture_id
+            DEFAULT_PICTURE_ANGLE = main_window.current_picture_angle
+            if main_window.current_picture_pixmap is None:
+                picture_id = data.get("picture_id", DEFAULT_PICTURE_ID)
+                picture_info = PictureInfo.load_from_id(picture_id)
+                if picture_info:
+                    picture_info.load_from_file()
+                    main_window.current_picture_pixmap = picture_info.pixmap
+                    main_window.current_picture_id = picture_info.id
+                    main_window.current_picture_angle = data.get("picture_angle", DEFAULT_PICTURE_ANGLE)
                     self.on_parameters_changed()
                 else:
-                    main_window.current_stamp_pixmap = None
-                    main_window.current_stamp_id = None
-                    main_window.current_stamp_angle = 0
+                    main_window.current_picture_pixmap = None
+                    main_window.current_picture_id = None
+                    main_window.current_picture_angle = 0
         self.update() #обязательно!
 
     def set_tool_data(self):
@@ -1384,8 +1385,8 @@ class ToolsWindow(QWidget):
         self.parent().elementsMakeSureTheresNoUnfinishedElement()
         if self.initialization:
             self.initialization = False
-        elif self.current_tool == ToolID.picture and self.parent().current_stamp_pixmap is None:
-            self.show_stamp_menu(do_ending=False)
+        elif self.current_tool == ToolID.picture and self.parent().current_picture_pixmap is None:
+            self.show_picture_menu(do_ending=False)
         # tb.setChecked(True)
         self.parent().current_tool = self.current_tool
         # загрузить настройки для текущего инструмента
@@ -1495,7 +1496,7 @@ class ToolsWindow(QWidget):
             button.installEventFilter(self)
             button.clicked.connect(self.set_tool_data)
             if ID == ToolID.picture:
-                button.right_clicked.connect(self.show_stamp_menu)
+                button.right_clicked.connect(self.show_picture_menu)
             tools.addWidget(button)
             tools.addSpacing(5)
 
@@ -1648,14 +1649,14 @@ class ToolsWindow(QWidget):
                 self.initialization = False
                 break
 
-    def show_stamp_menu(self, do_ending=True):
+    def show_picture_menu(self, do_ending=True):
         main_window = self.parent()
         tools_window = self
         if not self.select_window:
-            StampInfo.create_default_pixmaps()
-            stamps = StampInfo.scan()
-            self.select_window = StampSelectWindow(main_window, stamps=stamps)
-            PreviewsThread(stamps, self.select_window).start()
+            PictureInfo.create_default_pixmaps()
+            pictures = PictureInfo.scan()
+            self.select_window = PictureSelectWindow(main_window, pictures=pictures)
+            PreviewsThread(pictures, self.select_window).start()
         else:
             self.select_window.show_at()
         if self.parent().current_tool != ToolID.picture:
@@ -1927,7 +1928,7 @@ class ScreenshotWindow(QWidget):
 
         self.draw_vertical_horizontal_lines(painter, cursor_pos)
 
-        self.draw_stamp_tool(painter, cursor_pos)
+        self.draw_picture_tool(painter, cursor_pos)
         self.draw_tool_size_and_color(painter, cursor_pos)
         self.draw_hint(painter, cursor_pos, text_white_pen)
 
@@ -1960,18 +1961,18 @@ class ScreenshotWindow(QWidget):
         painter.drawPoint(cursor_pos)
         painter.setPen(old_pen)
 
-    def draw_stamp_tool(self, painter, cursor_pos):
-        if self.current_tool != ToolID.picture or not self.current_stamp_pixmap:
+    def draw_picture_tool(self, painter, cursor_pos):
+        if self.current_tool != ToolID.picture or not self.current_picture_pixmap:
             return
         if not self.capture_region_rect.contains(cursor_pos):
             return
-        pixmap = self.current_stamp_pixmap
-        rotation = self.current_stamp_angle
+        pixmap = self.current_picture_pixmap
+        rotation = self.current_picture_angle
         painter.setOpacity(0.5)
-        r = self.elementsStampRect(
+        r = self.elementsPictureRect(
             cursor_pos,
             self.tools_window.size_slider.value,
-            self.current_stamp_pixmap,
+            self.current_picture_pixmap,
         )
         s = QRect(QPoint(0,0), pixmap.size())
         painter.translate(r.center())
@@ -2000,16 +2001,16 @@ class ScreenshotWindow(QWidget):
             painter.setPen(QPen(QColor(255, 255, 255)))
             painter.drawText(rect, Qt.AlignLeft | Qt.AlignTop, text_info)
 
-    def draw_uncaptured_zones(self, painter, type, input_rect, step=1):
+    def draw_uncaptured_zones(self, painter, opacity_type, input_rect, step=1):
         ###### OLD VERSION ONLY FOR STEP == 1:
-        # if type == LayerOpacity.FullTransparent: # full transparent
+        # if opacity_type == LayerOpacity.FullTransparent: # full transparent
         #   painter.fillRect(self.rect(), QColor(0, 0, 0, 100))
-        # elif type == LayerOpacity.HalfTransparent: # ghost
+        # elif opacity_type == LayerOpacity.HalfTransparent: # ghost
         #   painter.fillRect(self.rect(), QColor(0, 0, 0, 100))
         #   painter.setOpacity(0.6)
         #   painter.drawImage(self.rect(), self.source_pixels)
         #   painter.setOpacity(1.0)
-        # elif type == LayerOpacity.Opaque: # stay still
+        # elif opacity_type == LayerOpacity.Opaque: # stay still
         #   painter.fillRect(self.rect(), Qt.black)
         #   painter.setOpacity(0.6)
         #   painter.drawImage(self.rect(), self.source_pixels)
@@ -2018,11 +2019,11 @@ class ScreenshotWindow(QWidget):
         self_rect = QRect(self.rect())
         self_rect.moveCenter(self_rect.center() + self.elements_global_offset)
         if step == 1:
-            if type == LayerOpacity.FullTransparent: # full transparent
+            if opacity_type == LayerOpacity.FullTransparent: # full transparent
                 painter.fillRect(self_rect, QColor(0, 0, 0, 5))
-            elif type == LayerOpacity.HalfTransparent: # ghost
+            elif opacity_type == LayerOpacity.HalfTransparent: # ghost
                 pass
-            elif type == LayerOpacity.Opaque: # stay still
+            elif opacity_type == LayerOpacity.Opaque: # stay still
                 if self.include_screenshot_background:
                     painter.drawImage(self_rect, self.source_pixels)
         elif step == 2:
@@ -2031,15 +2032,15 @@ class ScreenshotWindow(QWidget):
             path.addRect(QRectF(self_rect))
             path.addRect(QRectF(input_rect))
             painter.setClipPath(path)
-            if type == LayerOpacity.FullTransparent: # full transparent
+            if opacity_type == LayerOpacity.FullTransparent: # full transparent
                 pass
-            elif type == LayerOpacity.HalfTransparent: # ghost
+            elif opacity_type == LayerOpacity.HalfTransparent: # ghost
                 painter.fillRect(self_rect, QColor(0, 0, 0, 100))
                 painter.setOpacity(0.6)
                 if self.include_screenshot_background:
                     painter.drawImage(self_rect, self.source_pixels)
                 painter.setOpacity(1.0)
-            elif type == LayerOpacity.Opaque: # stay still
+            elif opacity_type == LayerOpacity.Opaque: # stay still
                 painter.fillRect(self_rect, QColor(0, 0, 0, 100))
             painter.setClipping(False)
         # if self.undermouse_region_rect:
@@ -2407,9 +2408,9 @@ class ScreenshotWindow(QWidget):
         self.setWindowTitle(f"Oxxxy Screenshoter {Globals.VERSION_INFO} {Globals.AUTHOR_INFO}")
 
         self.tools_settings = SettingsJson().get_data("TOOLS_SETTINGS")
-        self.current_stamp_pixmap = None
-        self.current_stamp_id = None
-        self.current_stamp_angle = 0
+        self.current_picture_pixmap = None
+        self.current_picture_id = None
+        self.current_picture_angle = 0
 
         self.editing_ready.connect(self.editing_is_done_handler)
 
@@ -2427,7 +2428,7 @@ class ScreenshotWindow(QWidget):
         self.dialog = None
 
         self.include_screenshot_background = True
-        self.dark_stamps = True
+        self.dark_pictures = True
 
         self.uncapture_mode_label_tstamp = time.time()
 
@@ -2525,7 +2526,7 @@ class ScreenshotWindow(QWidget):
                 element = self.elementsCreateNew(ToolID.picture)
                 element.pixmap = pixmap
                 element.angle = 0
-                r = self.elementsSetStampElementPoints(element, pos, pos_as_center=False)
+                r = self.elementsSetPictureElementPoints(element, pos, pos_as_center=False)
                 pos += QPoint(r.width(), 0)
                 pixmaps.append(pixmap)
                 points.append(element.start_point)
@@ -2550,7 +2551,7 @@ class ScreenshotWindow(QWidget):
         self.drag_inside_capture_zone = False
         self.get_region_info()
         self.update_tools_window()
-        if Globals.DEBUG_ELEMENTS_STAMP_FRAMING:
+        if Globals.DEBUG_ELEMENTS_PICTURE_FRAMING:
             folder_path = os.path.dirname(__file__)
             filepath = os.path.join(folder_path, "docs", "3.png")
             pixmap = QPixmap(filepath)
@@ -2559,7 +2560,7 @@ class ScreenshotWindow(QWidget):
             element.angle = 0
             element.size = 1.0
             pos = self.input_POINT2
-            self.elementsSetStampElementPoints(element, pos, pos_as_center=False)
+            self.elementsSetPictureElementPoints(element, pos, pos_as_center=False)
             self.elementsSetSelected(element)
         self.update()
 
@@ -2692,13 +2693,13 @@ class ScreenshotWindow(QWidget):
         if tw and element.type == ToolID.picture and tw.current_tool == ToolID.transform:
             if hasattr(element, "pixmap"):
                 r_first = build_valid_rect(element.start_point, element.end_point)
-                self.elementsSetStampElementPoints(element, r_first.center())
+                self.elementsSetPictureElementPoints(element, r_first.center())
                 # этим обновляем виджет
                 self.elementsSetSelected(element)
 
-    def elementsSetStampElementPoints(self, element, pos, pos_as_center=True):
+    def elementsSetPictureElementPoints(self, element, pos, pos_as_center=True):
         if pos_as_center:
-            r = self.elementsStampRect(
+            r = self.elementsPictureRect(
                 pos,
                 element.size,
                 element.pixmap,
@@ -2714,7 +2715,7 @@ class ScreenshotWindow(QWidget):
 
         return build_valid_rect(element.start_point, element.end_point)
 
-    def elementsFrameStampPixmap(self, frame_rect=None, frame_data=None):
+    def elementsFramePicture(self, frame_rect=None, frame_data=None):
         sel_elem = self.selected_element
         if frame_rect:
             if sel_elem.backup_pixmap is None:
@@ -2726,7 +2727,7 @@ class ScreenshotWindow(QWidget):
             sel_elem.backup_pixmap = None
         sel_elem.frame_data = frame_data
         pos = (sel_elem.start_point + sel_elem.end_point)/2
-        self.elementsSetStampElementPoints(sel_elem, pos)
+        self.elementsSetPictureElementPoints(sel_elem, pos)
         self.elementsSetSelected(sel_elem)
 
     def get_final_picture(self):
@@ -3070,8 +3071,8 @@ class ScreenshotWindow(QWidget):
 
         if self.current_tool == ToolID.none:
             return
-        if self.current_tool == ToolID.picture and not self.current_stamp_pixmap:
-            self.tools_window.show_stamp_menu()
+        if self.current_tool == ToolID.picture and not self.current_picture_pixmap:
+            self.tools_window.show_picture_menu()
             return
         # основная часть
         el = self.elementsGetLastElement()
@@ -3093,9 +3094,9 @@ class ScreenshotWindow(QWidget):
             elif not element.finished:
                 element.copy_pos = event.pos()
         elif tool == ToolID.picture:
-            element.pixmap = self.current_stamp_pixmap
-            element.angle = self.current_stamp_angle
-            self.elementsSetStampElementPoints(element, event.pos())
+            element.pixmap = self.current_picture_pixmap
+            element.angle = self.current_picture_angle
+            self.elementsSetPictureElementPoints(element, event.pos())
         elif tool in [ToolID.pen, ToolID.marker]:
             if event.modifiers() & Qt.ShiftModifier:
                 element.straight = True
@@ -3323,9 +3324,9 @@ class ScreenshotWindow(QWidget):
             elif not element.finished:
                 element.copy_pos = event.pos()
         elif tool == ToolID.picture:
-            element.pixmap = self.current_stamp_pixmap
-            element.angle = self.current_stamp_angle
-            self.elementsSetStampElementPoints(element, event.pos())
+            element.pixmap = self.current_picture_pixmap
+            element.angle = self.current_picture_angle
+            self.elementsSetPictureElementPoints(element, event.pos())
         elif tool in [ToolID.pen, ToolID.marker]:
             if element.straight:
                 element.end_point = event.pos()
@@ -3417,9 +3418,9 @@ class ScreenshotWindow(QWidget):
                 element.copy_pos = event.pos()
                 element.finished = True
         elif tool == ToolID.picture:
-            element.pixmap = self.current_stamp_pixmap
-            element.angle = self.current_stamp_angle
-            self.elementsSetStampElementPoints(element, event.pos())
+            element.pixmap = self.current_picture_pixmap
+            element.angle = self.current_picture_angle
+            self.elementsSetPictureElementPoints(element, event.pos())
         elif tool in [ToolID.pen, ToolID.marker]:
             if element.straight:
                 element.end_point = event.pos()
@@ -3863,19 +3864,19 @@ class ScreenshotWindow(QWidget):
         old_pen = painter.pen()
         # draw elements
         self.elementsIsFinalDrawing = final
-        if not self.dark_stamps:
+        if not self.dark_pictures:
             self.elementsDrawDarkening(painter)
 
         # штампы (изображения) рисуем первыми, чтобы пометки всегда были поверх них
         all_visible_elements = self.elementsHistoryFilter()
-        stamps_first = []
+        pictures_first = []
         all_the_rest = []
         for element in all_visible_elements:
             if element.type == ToolID.picture:
-                stamps_first.append(element)
+                pictures_first.append(element)
             else:
                 all_the_rest.append(element)
-        for element in stamps_first:
+        for element in pictures_first:
             self.elementsDrawMainElement(painter, element, final)
         for element in all_the_rest:
             self.elementsDrawMainElement(painter, element, final)
@@ -3886,7 +3887,7 @@ class ScreenshotWindow(QWidget):
             painter.setPen(QPen(QColor(Qt.white)))
             text = f"{self.elements_history_index} :: {self.current_tool}"
             painter.drawText(self.capture_region_rect, Qt.AlignCenter, text)
-        if self.dark_stamps:
+        if self.dark_pictures:
             self.elementsDrawDarkening(painter)
         painter.setBrush(old_brush)
         painter.setPen(old_pen)
@@ -3895,7 +3896,7 @@ class ScreenshotWindow(QWidget):
         painter.setRenderHint(QPainter.Antialiasing, False)
         painter.setRenderHint(QPainter.SmoothPixmapTransform, False)
 
-    def elementsStampRect(self, center_point, size, pixmap, user_scale=True):
+    def elementsPictureRect(self, center_point, size, pixmap, user_scale=True):
         s = size
         if user_scale:
             s += 0.5
@@ -4468,7 +4469,7 @@ class ScreenshotWindow(QWidget):
                     value = min(max(value, 0.0), 1.0)
                     self.tools_window.color_slider.value = value
             elif modifiers & Qt.ControlModifier:
-                value = self.current_stamp_angle
+                value = self.current_picture_angle
                 if delta_value < 0.0:
                     delta_value = -1
                 else:
@@ -4476,7 +4477,7 @@ class ScreenshotWindow(QWidget):
                 if modifiers & Qt.ShiftModifier:
                     delta_value *= 10
                 value += delta_value
-                self.current_stamp_angle = value
+                self.current_picture_angle = value
             self.tools_window.on_parameters_changed()
             self.tools_window.update()
             # здесь ещё должна быть запись параметров в словарь!
@@ -4570,7 +4571,7 @@ class ScreenshotWindow(QWidget):
             self.input_POINT2, self.input_POINT1 = get_bounding_points(points)
             self.capture_region_rect = self._build_valid_rect(self.input_POINT1, self.input_POINT2)
 
-    def elementsAutoCollageStamps(self):
+    def elementsAutoCollagePictures(self):
         subMenu = QMenu()
         subMenu.setStyleSheet(self.context_menu_stylesheet)
         horizontal = subMenu.addAction("По горизонтали")
@@ -4609,7 +4610,7 @@ class ScreenshotWindow(QWidget):
                     element.size = max_width / element.pixmap.width()
                 element.size_mode = ElementSizeMode.Special
 
-                r = self.elementsSetStampElementPoints(element, pos, pos_as_center=False)
+                r = self.elementsSetPictureElementPoints(element, pos, pos_as_center=False)
 
                 if action == horizontal:
                     pos += QPoint(r.width(), 0)
@@ -4755,9 +4756,9 @@ class ScreenshotWindow(QWidget):
         include_background.setCheckable(True)
         include_background.setChecked(self.include_screenshot_background)
 
-        toggle_dark_stamps = add_item("Затемнять после отрисовки пометок")
-        toggle_dark_stamps.setCheckable(True)
-        toggle_dark_stamps.setChecked(self.dark_stamps)
+        toggle_dark_pictures = add_item("Затемнять после отрисовки пометок")
+        toggle_dark_pictures.setCheckable(True)
+        toggle_dark_pictures.setChecked(self.dark_pictures)
 
         toggle_extended_mode = add_item("Расширенный режим")
         toggle_extended_mode.setCheckable(True)
@@ -4786,12 +4787,12 @@ class ScreenshotWindow(QWidget):
             self.elementsSetCaptureFromContent()
             self.update()
         elif action == autocollage:
-            self.elementsAutoCollageStamps()
+            self.elementsAutoCollagePictures()
             self.update()
         elif action == halt:
             sys.exit()
         elif action == reset_image_frame:
-            self.elementsFrameStampPixmap()
+            self.elementsFramePicture()
             self.update()
         elif action == set_image_frame:
             if sel_elem.backup_pixmap is None:
@@ -4799,8 +4800,8 @@ class ScreenshotWindow(QWidget):
             else:
                 pixmap = sel_elem.backup_pixmap
             self.show_view_window(lambda: pixmap, _type="edit", data=sel_elem.frame_data)
-        elif action == toggle_dark_stamps:
-            self.dark_stamps = not self.dark_stamps
+        elif action == toggle_dark_pictures:
+            self.dark_pictures = not self.dark_pictures
             self.elementsUpdateFinalPicture()
             self.update()
         elif action == toggle_close_on_done:
@@ -5146,9 +5147,9 @@ class ScreenshotWindow(QWidget):
                         capture_height = max(self.capture_region_rect.height(), 100)
                         if pixmap.height() > capture_height:
                             pixmap = pixmap.scaledToHeight(capture_height, Qt.SmoothTransformation)
-                        self.current_stamp_id = StampInfo.TYPE_FROM_FILE
-                        self.current_stamp_pixmap = pixmap
-                        self.current_stamp_angle = 0
+                        self.current_picture_id = PictureInfo.TYPE_FROM_FILE
+                        self.current_picture_pixmap = pixmap
+                        self.current_picture_angle = 0
                         tools_window = self.tools_window
                         tools_window.on_parameters_changed()
                         self.activateWindow()
@@ -5157,7 +5158,7 @@ class ScreenshotWindow(QWidget):
                         element.pixmap = pixmap
                         element.angle = 0
                         pos = self.capture_region_rect.topLeft()
-                        self.elementsSetStampElementPoints(element, pos, pos_as_center=False)
+                        self.elementsSetPictureElementPoints(element, pos, pos_as_center=False)
                         self.elementsSetSelected(element)
 
 class StylizedUIBase():

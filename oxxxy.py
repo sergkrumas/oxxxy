@@ -2524,6 +2524,7 @@ class ScreenshotWindow(QWidget):
                 pixmap = QPixmap(path_or_pix)
             if pixmap.width() != 0:
                 element = self.elementsCreateNew(ToolID.picture)
+                element.size = 1.0
                 element.pixmap = pixmap
                 element.angle = 0
                 r = self.elementsSetPictureElementPoints(element, pos, pos_as_center=False)

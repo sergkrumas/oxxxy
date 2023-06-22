@@ -74,6 +74,8 @@ class Globals():
     RUN_ONCE = False
     FULL_STOP = False
 
+    ELEMENT_SIZE_RANGE_OFFSET = 0.5
+
     # saved settings
     ENABLE_FLAT_EDITOR_UI = False
     BLOCK_KEYSEQ_HANDLING_AFTER_FIRST_CALL = True
@@ -2710,8 +2712,8 @@ class ScreenshotWindow(QWidget):
             element.end_point = r.bottomRight()
         else:
             element.start_point = QPoint(pos)
-            w = int(element.pixmap.width()*element.size)
-            h = int(element.pixmap.height()*element.size)
+            w = math.ceil(element.pixmap.width()*element.size)
+            h = math.ceil(element.pixmap.height()*element.size)
             element.end_point = pos + QPoint(w, h)
 
         return build_valid_rect(element.start_point, element.end_point)
@@ -2916,7 +2918,7 @@ class ScreenshotWindow(QWidget):
         element = self.selected_element
         self.tools_window.color_slider.value = element.color_slider_value
         self.tools_window.color_slider.palette_index = element.color_slider_palette_index
-        self.tools_window.size_slider.value = element.size
+        self.tools_window.size_slider.value = element.size - Globals.ELEMENT_SIZE_RANGE_OFFSET
         self.tools_window.chb_toolbool.setChecked(element.toolbool)
         if element.type == ToolID.text:
             self.elementsActivateTextElement(element)
@@ -3900,8 +3902,8 @@ class ScreenshotWindow(QWidget):
     def elementsPictureRect(self, center_point, size, pixmap, user_scale=True):
         s = size
         if user_scale:
-            s += 0.5
-        r = QRect(0, 0, int(pixmap.width()*s), int(pixmap.height()*s))
+            s += Globals.ELEMENT_SIZE_RANGE_OFFSET
+        r = QRect(0, 0, math.ceil(pixmap.width()*s), math.ceil(pixmap.height()*s))
         r.moveCenter(center_point)
         return r
 

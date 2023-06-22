@@ -4488,7 +4488,9 @@ class ScreenshotWindow(QWidget):
     def wheelEvent(self, event):
         delta_value = event.angleDelta().y()
         if self.capture_region_rect:
-            self.change_tools_params(delta_value, event.modifiers())
+            if self.selected_element and \
+                        self.selected_element in self.elementsGetElementsUnderMouse(event.pos()):
+                self.change_tools_params(delta_value, event.modifiers())
         else:
             self.change_magnifier_size(delta_value)
         self.update()

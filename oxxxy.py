@@ -2733,6 +2733,19 @@ class ScreenshotWindow(QWidget):
         self.elementsSetPictureElementPoints(sel_elem, pos)
         self.elementsSetSelected(sel_elem)
 
+    def elementsFramedFinalToImageTool(self, frame_rect):
+        self.current_picture_id = PictureInfo.TYPE_STAMP
+        self.current_picture_pixmap = self.elements_final_output.copy(frame_rect)
+        self.current_picture_angle = 0
+
+        tools_window = self.tools_window
+        if tools_window:
+            if tools_window.current_tool != ToolID.picture:
+                tools_window.set_current_tool(ToolID.picture)        
+        tools_window.on_parameters_changed()
+        self.update()
+        tools_window.update()
+
     def get_final_picture(self):
         self.elementsUpdateFinalPicture()
         return self.elements_final_output
@@ -4458,6 +4471,10 @@ class ScreenshotWindow(QWidget):
         self.magnifier_size = values[index]
 
     def change_tools_params(self, delta_value, modifiers):
+        tools_window = self.tools_window
+        if self.selected_element and tools_window.current_tool == ToolID.transform and \
+                not self.selected_element in self.elementsGetElementsUnderMouse(event.pos()):
+            return
         delta_value = delta_value / 24000.0
         if self.tools_window:
             if modifiers == Qt.NoModifier:
@@ -4488,9 +4505,7 @@ class ScreenshotWindow(QWidget):
     def wheelEvent(self, event):
         delta_value = event.angleDelta().y()
         if self.capture_region_rect:
-            if self.selected_element and \
-                        self.selected_element in self.elementsGetElementsUnderMouse(event.pos()):
-                self.change_tools_params(delta_value, event.modifiers())
+            self.change_tools_params(delta_value, event.modifiers())
         else:
             self.change_magnifier_size(delta_value)
         self.update()

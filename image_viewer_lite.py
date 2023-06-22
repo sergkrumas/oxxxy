@@ -252,10 +252,26 @@ class ViewerWindow(QWidget):
             self.main_window.elementsFramePicture(frame_rect=frame_rect,
                                                         frame_data=self.get_image_frame_info())
 
+    def framedfinal_to_imagetool(self):
+        if self.frame_data:
+            image_rect = self.pixmap.rect()
+            base_point = image_rect.topLeft()
+            left, top, right, bottom = self.get_image_frame_info()
+
+            screen_left = base_point.x() + image_rect.width()*left
+            screen_top = base_point.y() + image_rect.height()*top
+
+            screen_right = base_point.x() + image_rect.width()*right
+            screen_bottom = base_point.y() + image_rect.height()*bottom
+
+            frame_rect = QRectF(
+                QPointF(screen_left, screen_top), QPointF(screen_right, screen_bottom)).toRect()
+            self.main_window.elementsFramedFinalToImageTool(frame_rect)
+
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
             if event.modifiers() & Qt.ControlModifier:
-                if self.isInEditorMode():
+                if self.isInEditorMode() or True:
                     self.image_frame_mousePressEvent(event)
             elif self.tranformations_allowed:
                 if self.is_cursor_over_image():
@@ -269,7 +285,7 @@ class ViewerWindow(QWidget):
     def mouseMoveEvent(self, event):
         if event.buttons() == Qt.LeftButton:
             if event.modifiers() & Qt.ControlModifier:
-                if self.isInEditorMode():
+                if self.isInEditorMode() or True:
                     self.image_frame_mouseMoveEvent(event)
             elif self.tranformations_allowed and self.image_translating:
                 new =  self.oldElementPos - (self.oldCursorPos - self.mapped_cursor_pos())
@@ -281,7 +297,7 @@ class ViewerWindow(QWidget):
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.LeftButton:
             if event.modifiers() & Qt.ControlModifier:
-                if self.isInEditorMode():
+                if self.isInEditorMode() or True:
                     self.image_frame_mouseReleaseEvent(event)
             elif self.tranformations_allowed:
                 self.image_translating = False
@@ -642,8 +658,11 @@ class ViewerWindow(QWidget):
             self.close()
         elif key == Qt.Key_Escape:
             self.close()
-        elif self.isInEditorMode() and key in [Qt.Key_Return, Qt.Key_Enter]:
-            self.frame_image()
+        elif key in [Qt.Key_Return, Qt.Key_Enter]:
+            if self.isInEditorMode():
+                self.frame_image()
+            else:
+                self.framedfinal_to_imagetool()
             self.close()
         self.update()
 

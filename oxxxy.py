@@ -4576,6 +4576,36 @@ class ScreenshotWindow(QWidget):
             self.input_POINT2, self.input_POINT1 = get_bounding_points(points)
             self.capture_region_rect = self._build_valid_rect(self.input_POINT1, self.input_POINT2)
 
+    def elementsDoRenderToBackground(self):
+        # render capture zone
+        self.elementsUpdateFinalPicture()
+        if self.extended_editor_mode:
+            pix = self.elements_final_output
+        else:
+            pix = self.elements_final_output.copy(self.capture_region_rect)
+
+        # draw capture zone to background image
+        image = QImage(self.source_pixels)
+        painter = QPainter()
+        painter.begin(image)
+        dest_rect = QRect(pix.rect())
+        dest_rect.moveTopLeft(self.capture_region_rect.topLeft())
+        painter.drawPixmap(
+            dest_rect,
+            pix,
+            pix.rect()
+        )
+        painter.end()
+        self.source_pixels = image 
+
+        # cleaning
+        self.elementsSetSelected(None)
+        self.elements.clear()
+        self.elements_history_index = 0
+        self.elementsUpdateHistoryButtonsStatus()
+        self.update_tools_window()
+        self.update()
+
     def elementsAutoCollagePictures(self):
         subMenu = QMenu()
         subMenu.setStyleSheet(self.context_menu_stylesheet)
@@ -4740,6 +4770,7 @@ class ScreenshotWindow(QWidget):
         if self.background_transformed:
             reset_background_transform = add_item("Сброс трансформации фона")
 
+        render_to_background = add_item("Содержимое в фон")
         special_tool = add_item(icon_multiframing, "Активировать инструмент мультикадрирования")
         reshot = add_item(icon_refresh, "Переснять скриншот")
         autocollage = add_item("Автоколлаж")
@@ -4782,6 +4813,8 @@ class ScreenshotWindow(QWidget):
         action = contextMenu.exec_(self.mapToGlobal(event.pos()))
         if action == None:
             pass
+        elif action == render_to_background:
+            self.elementsDoRenderToBackground()
         elif action == transform_background:
             self.elementsStartTransformBKGMode()
         elif action == reset_background_transform:

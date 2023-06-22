@@ -429,25 +429,22 @@ def make_screenshot_pyqt():
     all_monitors_zone = QRect(QPoint(left, top), QPoint(right+1, bottom+1))
 
     # print(all_monitors_zone)
-    # pixmap = QPixmap(all_monitors_zone.size())
-
-    pixmap = QImage(
+    qimage = QImage(
         all_monitors_zone.width(),
         all_monitors_zone.height(),
         QImage.Format_RGB32
     )
-    pixmap.fill(Qt.black)
+    qimage.fill(Qt.black)
 
     painter = QPainter()
-    painter.begin(pixmap)
+    painter.begin(qimage)
     screens = QGuiApplication.screens()
     for n, screen in enumerate(screens):
         p = screen.grabWindow(0)
         source_rect = QRect(QPoint(0, 0), screen.geometry().size())
         painter.drawPixmap(screen.geometry(), p, source_rect)
     painter.end()
-    return pixmap
-    # return pixmap.toImage()
+    return qimage
 
 def webRGBA(qcolor_value):
     _a = qcolor_value.alpha()

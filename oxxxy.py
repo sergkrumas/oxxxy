@@ -4621,6 +4621,69 @@ class ScreenshotWindow(QWidget):
         self.update_tools_window()
         self.update()
 
+    def elementsFitImagesToSize(self):
+        subMenu = QMenu()
+        subMenu.setStyleSheet(self.context_menu_stylesheet)
+        to_width = subMenu.addAction("По ширине")
+        to_height = subMenu.addAction("По высоте")
+
+        pos = QCursor().pos()
+        action = subMenu.exec_(pos)
+
+        elements = []
+        for element in self.elementsHistoryFilter():
+            if element.type == ToolID.picture:
+                elements.append(element)
+
+        points = []
+
+        if action == None:
+            pass
+        elif elements:
+            if action == to_width:
+                if self.selected_element:
+                    fit_width = self.selected_element.pixmap.width()
+                else:
+                    fit_width = max(el.pixmap.width() for el in elements)
+            elif action == to_height:
+                if self.selected_element:
+                    fit_height = self.selected_element.pixmap.height()
+                else:
+                    fit_height = max(el.pixmap.height() for el in elements)
+
+            pos = QPoint(0, 0)
+
+            group_id = self.elements_get_history_group_id()
+            for n, source_element in enumerate(elements):
+                element = self.elementsCreateModificatedCopyOnNeed(source_element, force_new=True)
+
+                if action == to_width:
+                    element.size = fit_width / element.pixmap.width()
+                elif action == to_height:
+                    element.size = fit_height / element.pixmap.height()
+                element.size_mode = ElementSizeMode.Special
+
+                r = self.elementsSetPictureElementPoints(element, pos, pos_as_center=False)
+
+                if action == to_width:
+                    pos += QPoint(0, n*20)
+                elif action == to_height:
+                    pos += QPoint(n*20, 0)
+
+                element.history_group_id = group_id
+
+                points.append(element.start_point)
+                points.append(element.end_point)
+
+            # обновление области захвата
+            self.input_POINT2, self.input_POINT1 = get_bounding_points(points)
+            self.capture_region_rect = self._build_valid_rect(self.input_POINT1, self.input_POINT2)
+
+            self.elementsSetSelected(None)
+            self.update_tools_window()
+
+        self.update()
+
     def elementsAutoCollagePictures(self):
         subMenu = QMenu()
         subMenu.setStyleSheet(self.context_menu_stylesheet)
@@ -4789,6 +4852,7 @@ class ScreenshotWindow(QWidget):
         special_tool = add_item(icon_multiframing, "Активировать инструмент мультикадрирования")
         reshot = add_item(icon_refresh, "Переснять скриншот")
         autocollage = add_item("Автоколлаж")
+        fit_images_to_size = add_item("Подогнать все картинки по размеру под одну")
         get_toolwindow_in_view = add_item("Подтянуть панель инструментов")
         autocapturezone = add_item("Задать область захвата")
         reset_capture = add_item("Сбросить область захвата")
@@ -4828,6 +4892,8 @@ class ScreenshotWindow(QWidget):
         action = contextMenu.exec_(self.mapToGlobal(event.pos()))
         if action == None:
             pass
+        elif action == fit_images_to_size:
+            self.elementsFitImagesToSize()
         elif action == render_to_background:
             self.elementsDoRenderToBackground()
         elif action == transform_background:

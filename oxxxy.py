@@ -1282,6 +1282,7 @@ class ToolsWindow(QWidget):
         self.chb_toolbool.setEnabled(False)
         self.color_slider.setEnabled(True)
         self.size_slider.setEnabled(True)
+        self.opacity_slider.setEnabled(False)
         if _type in [ToolID.blurring, ToolID.darkening, ToolID.picture]:
             self.color_slider.setEnabled(False)
             if _type in [ToolID.blurring]:
@@ -1292,6 +1293,8 @@ class ToolsWindow(QWidget):
             self.color_slider.setEnabled(False)
             self.size_slider.setEnabled(False)
             self.chb_toolbool.setEnabled(False)
+        if _type in [ToolID.transform, ToolID.picture]:
+            self.opacity_slider.setEnabled(True)
         self.change_ui_text(_type)
         self.parent().update()
 
@@ -1313,18 +1316,21 @@ class ToolsWindow(QWidget):
                 "size_slider_value": self.size_slider.value,
                 "picture_id": self.parent().current_picture_id,
                 "picture_angle": self.parent().current_picture_angle,
+                "opacity_slider_value": self.opacity_slider.value,
             }
         else:
             data =  {
                 "color_slider_value": self.color_slider.value,
                 "color_slider_palette_index": self.color_slider.palette_index,
                 "size_slider_value": self.size_slider.value,
+                "opacity_slider_value": self.opacity_slider.value,
             }
         return data
 
     def tool_data_dict_to_ui(self, data):
         DEFAULT_COLOR_SLIDER_VALUE = 0.01
         DEFAULT_COLOR_SLIDER_PALETTE_INDEX = 0
+        DEFAULT_OPACITY_SLIDER_VALUE = 1.0
         if self.current_tool in [ToolID.oval, ToolID.rect, ToolID.numbering]:
             DEFAULT_SIZE_SLIDER_VALUE = 0.07
         else:
@@ -1337,6 +1343,7 @@ class ToolsWindow(QWidget):
         self.color_slider.palette_index = data.get("color_slider_palette_index",
                                                                 DEFAULT_COLOR_SLIDER_PALETTE_INDEX)
         self.size_slider.value = data.get("size_slider_value", DEFAULT_SIZE_SLIDER_VALUE)
+        self.opacity_slider.vaue = data.get("opacity_slider_value", DEFAULT_OPACITY_SLIDER_VALUE)
         self.chb_toolbool.setChecked(data.get("toolbool", DEFAULT_TOOLBOOL_VALUE))
         if self.current_tool == ToolID.picture:
             main_window = self.parent()
@@ -1508,7 +1515,6 @@ class ToolsWindow(QWidget):
         self.done_button.setCursor(QCursor(Qt.PointingHandCursor))
         self.done_button.setToolTip("Готово")
         self.done_button.installEventFilter(self)
-        # tools.addSpacing(30)
         tools.addSpacing(10)
         tools.addWidget(self.done_button)
 
@@ -1535,6 +1541,7 @@ class ToolsWindow(QWidget):
         self.color_slider = CustomSlider(_type, 400, 0.01, Globals.ENABLE_FLAT_EDITOR_UI)
         self.color_slider.value_changed.connect(self.on_parameters_changed)
         self.color_slider.installEventFilter(self)
+        self.color_slider.setToolTip("Слайдер цвета")
         sliders.addWidget(self.color_slider)
 
         self.chb_toolbool = CheckBoxCustom("Подложка")
@@ -1546,7 +1553,13 @@ class ToolsWindow(QWidget):
         self.size_slider = CustomSlider("SCALAR", 180, 0.2, Globals.ENABLE_FLAT_EDITOR_UI)
         self.size_slider.value_changed.connect(self.on_parameters_changed)
         self.size_slider.installEventFilter(self)
+        self.size_slider.setToolTip("Слайдер размера")
         sliders.addWidget(self.size_slider)
+
+        self.opacity_slider = CustomSlider("SCALAR", 180, 1.0, Globals.ENABLE_FLAT_EDITOR_UI)
+        self.opacity_slider.value_changed.connect(self.on_parameters_changed)
+        self.opacity_slider.installEventFilter(self)
+        self.opacity_slider.setToolTip("Слайдер прозрачности")
 
         tools_settings = self.parent().tools_settings
 
@@ -1586,6 +1599,8 @@ class ToolsWindow(QWidget):
         self.chb_add_meta.setChecked(tools_settings.get("add_meta", False))
         if os.name == 'nt':
             checkboxes.addWidget(self.chb_add_meta)
+
+        checkboxes.addWidget(self.opacity_slider)
 
         spacing = 2
         cms = 2
@@ -2606,6 +2621,8 @@ class ScreenshotWindow(QWidget):
 
             self.size = 1.0
 
+            self.opacity = 1.0
+
         def __getattribute__(self, name):
             if name.startswith("f_"):
                 ret_value = getattr(self, name[len("f_"):])
@@ -2681,6 +2698,7 @@ class ScreenshotWindow(QWidget):
             element.size = tw.size_slider.value
             element.toolbool = tw.chb_toolbool.isChecked()
             element.margin_value = 5
+            element.opacity = tw.opacity_slider.value
         elif element.type == ToolID.picture:
             element.size = 1.0
             element.color = QColor(Qt.red)
@@ -2715,7 +2733,6 @@ class ScreenshotWindow(QWidget):
             w = math.ceil(element.pixmap.width()*element.size)
             h = math.ceil(element.pixmap.height()*element.size)
             element.end_point = pos + QPoint(w, h)
-
         return build_valid_rect(element.start_point, element.end_point)
 
     def elementsFramePicture(self, frame_rect=None, frame_data=None):
@@ -2932,6 +2949,7 @@ class ScreenshotWindow(QWidget):
         self.tools_window.color_slider.value = element.color_slider_value
         self.tools_window.color_slider.palette_index = element.color_slider_palette_index
         self.tools_window.size_slider.value = element.size - Globals.ELEMENT_SIZE_RANGE_OFFSET
+        self.tools_window.opacity_slider.value = element.opacity
         self.tools_window.chb_toolbool.setChecked(element.toolbool)
         if element.type == ToolID.text:
             self.elementsActivateTextElement(element)
@@ -3822,6 +3840,7 @@ class ScreenshotWindow(QWidget):
                 pass
             painter.drawRect(rect)
         elif el_type == ToolID.picture:
+            painter.setOpacity(element.opacity)
             pixmap = element.pixmap
             r = build_valid_rect(element.f_start_point, element.f_end_point)
             s = QRect(QPoint(0,0), pixmap.size())
@@ -3831,6 +3850,7 @@ class ScreenshotWindow(QWidget):
             r = QRect(int(-r.width()/2), int(-r.height()/2), r.width(), r.height())
             painter.drawPixmap(r, pixmap, s)
             painter.resetTransform()
+            painter.setOpacity(1.0)
         elif el_type == ToolID.removing:
             if Globals.CRUSH_SIMULATOR:
                 1 / 0

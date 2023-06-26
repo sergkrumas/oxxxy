@@ -2716,7 +2716,7 @@ class ScreenshotWindow(QWidget):
             if hasattr(element, "pixmap"):
                 r_first = build_valid_rect(element.start_point, element.end_point)
                 self.elementsSetPictureElementPoints(element, r_first.center())
-                # этим обновляем виджет
+                # этим вызовом обновляем виджет
                 self.elementsSetSelected(element)
 
     def elementsSetPictureElementPoints(self, element, pos, pos_as_center=True):
@@ -3330,7 +3330,7 @@ class ScreenshotWindow(QWidget):
         if self.is_point_set(self.input_POINT2):
             self.input_POINT2 = self.capture_region_rect.bottomRight()
         if self.transform_widget:
-            # refresh
+            # refresh widget
             self.elementsSetSelected(self.selected_element)
         self.update()
 
@@ -5299,6 +5299,7 @@ class ScreenshotWindow(QWidget):
                         pos = self.capture_region_rect.topLeft()
                         self.elementsSetPictureElementPoints(element, pos, pos_as_center=False)
                         self.elementsSetSelected(element)
+                        self.elementsSelectedElementParamsToUI()
 
 class StylizedUIBase():
 

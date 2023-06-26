@@ -2580,6 +2580,7 @@ class ScreenshotWindow(QWidget):
             pos = self.input_POINT2
             self.elementsSetPictureElementPoints(element, pos, pos_as_center=False)
             self.elementsSetSelected(element)
+            self.elementsSelectedElementParamsToUI()
         self.update()
 
     def define_class_Element(root_self):
@@ -2719,21 +2720,28 @@ class ScreenshotWindow(QWidget):
                 self.elementsSetSelected(element)
 
     def elementsSetPictureElementPoints(self, element, pos, pos_as_center=True):
+        is_user_mode = element.size_mode == ElementSizeMode.User
+        size = element.size
         if pos_as_center:
-            r = self.elementsPictureRect(
-                pos,
-                element.size,
-                element.pixmap,
-                user_scale=(element.size_mode == ElementSizeMode.User),
-            )
+            r = self.elementsPictureRect(pos, size, element.pixmap, use_user_scale=is_user_mode)
             element.start_point = r.topLeft()
             element.end_point = r.bottomRight()
         else:
+            if is_user_mode:
+                size += Globals.ELEMENT_SIZE_RANGE_OFFSET
+            w = math.ceil(element.pixmap.width()*size)
+            h = math.ceil(element.pixmap.height()*size)
             element.start_point = QPoint(pos)
-            w = math.ceil(element.pixmap.width()*element.size)
-            h = math.ceil(element.pixmap.height()*element.size)
             element.end_point = pos + QPoint(w, h)
         return build_valid_rect(element.start_point, element.end_point)
+
+    def elementsPictureRect(self, center_point, size, pixmap, use_user_scale=True):
+        s = size
+        if use_user_scale:
+            s += Globals.ELEMENT_SIZE_RANGE_OFFSET
+        r = QRect(0, 0, math.ceil(pixmap.width()*s), math.ceil(pixmap.height()*s))
+        r.moveCenter(center_point)
+        return r        
 
     def elementsFramePicture(self, frame_rect=None, frame_data=None):
         sel_elem = self.selected_element
@@ -3931,14 +3939,6 @@ class ScreenshotWindow(QWidget):
         painter.setRenderHint(QPainter.HighQualityAntialiasing, False)
         painter.setRenderHint(QPainter.Antialiasing, False)
         painter.setRenderHint(QPainter.SmoothPixmapTransform, False)
-
-    def elementsPictureRect(self, center_point, size, pixmap, user_scale=True):
-        s = size
-        if user_scale:
-            s += Globals.ELEMENT_SIZE_RANGE_OFFSET
-        r = QRect(0, 0, math.ceil(pixmap.width()*s), math.ceil(pixmap.height()*s))
-        r.moveCenter(center_point)
-        return r
 
     def elementsDrawFinalVersionDebug(self, painter):
         if self.capture_region_rect and self.elements_final_output:

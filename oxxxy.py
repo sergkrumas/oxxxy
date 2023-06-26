@@ -2948,7 +2948,7 @@ class ScreenshotWindow(QWidget):
         element = self.selected_element
         self.tools_window.color_slider.value = element.color_slider_value
         self.tools_window.color_slider.palette_index = element.color_slider_palette_index
-        self.tools_window.size_slider.value = element.size - Globals.ELEMENT_SIZE_RANGE_OFFSET
+        self.tools_window.size_slider.value = element.size
         self.tools_window.opacity_slider.value = element.opacity
         self.tools_window.chb_toolbool.setChecked(element.toolbool)
         if element.type == ToolID.text:

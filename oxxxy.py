@@ -5139,6 +5139,69 @@ class ScreenshotWindow(QWidget):
             if self.tools_window:
                 self.tools_window.done_button.setEnabled(True)
 
+    def elementsPasteImageFromBuffer(self, event):
+        mods = event.modifiers()
+        ctrl = mods & Qt.ControlModifier
+        if not (ctrl and self.tools_window):
+            return
+        app = QApplication.instance()
+        cb = app.clipboard()
+        mdata = cb.mimeData()
+        pixmap = None
+        if mdata and mdata.hasText():
+            path = mdata.text()
+            qt_supported_exts = (
+                ".jpg", ".jpeg", ".jfif",
+                ".bmp",
+                ".gif",
+                ".png",
+                ".tif", ".tiff",
+                ".webp",
+            )
+            svg_exts = (
+                ".svg",
+                ".svgz"
+            )
+            PREFIX = "file:///"
+            if path.startswith(PREFIX):
+                filepath = path[len(PREFIX):]
+                if path.lower().endswith(qt_supported_exts):
+                    pixmap = QPixmap(filepath)
+                if path.lower().endswith(svg_exts):
+                    contextMenu = QMenu()
+                    contextMenu.setStyleSheet(self.context_menu_stylesheet)
+                    factors = [1, 5, 10, 20, 30, 40, 50, 80, 100]
+                    actions = []
+                    for factor in factors:
+                        action = contextMenu.addAction(f"x{factor}")
+                        actions.append((action, factor))
+                    cur_action = contextMenu.exec_(QCursor().pos())
+                    if cur_action is not None:
+                        for (action, factor) in actions:
+                            if cur_action == action:
+                                pixmap = load_svg(filepath, scale_factor=factor)
+        elif mdata and mdata.hasImage():
+            pixmap = QPixmap().fromImage(mdata.imageData())
+        if pixmap and pixmap.width() > 0:
+            if self.tools_window.current_tool == ToolID.picture:
+                capture_height = max(self.capture_region_rect.height(), 100)
+                if pixmap.height() > capture_height:
+                    pixmap = pixmap.scaledToHeight(capture_height, Qt.SmoothTransformation)
+                self.current_picture_id = PictureInfo.TYPE_FROM_FILE
+                self.current_picture_pixmap = pixmap
+                self.current_picture_angle = 0
+                tools_window = self.tools_window
+                tools_window.on_parameters_changed()
+                self.activateWindow()
+            else:
+                element = self.elementsCreateNew(ToolID.picture)
+                element.pixmap = pixmap
+                element.angle = 0
+                pos = self.capture_region_rect.topLeft()
+                self.elementsSetPictureElementPoints(element, pos, pos_as_center=False)
+                self.elementsSetSelected(element)
+                self.elementsSelectedElementParamsToUI()
+
     def keyPressEvent(self, event):
         key = event.key()
         arrow_keys = [Qt.Key_Up, Qt.Key_Down, Qt.Key_Right, Qt.Key_Left]
@@ -5240,66 +5303,7 @@ class ScreenshotWindow(QWidget):
         if check_scancode_for(event, "P"):
             self.show_view_window(self.get_final_picture)
         if check_scancode_for(event, "V"):
-            mods = event.modifiers()
-            ctrl = mods & Qt.ControlModifier
-            if ctrl and self.tools_window:
-                app = QApplication.instance()
-                cb = app.clipboard()
-                mdata = cb.mimeData()
-                pixmap = None
-                if mdata and mdata.hasText():
-                    path = mdata.text()
-                    qt_supported_exts = (
-                        ".jpg", ".jpeg", ".jfif",
-                        ".bmp",
-                        ".gif",
-                        ".png",
-                        ".tif", ".tiff",
-                        ".webp",
-                    )
-                    svg_exts = (
-                        ".svg",
-                        ".svgz"
-                    )
-                    PREFIX = "file:///"
-                    if path.startswith(PREFIX):
-                        filepath = path[len(PREFIX):]
-                        if path.lower().endswith(qt_supported_exts):
-                            pixmap = QPixmap(filepath)
-                        if path.lower().endswith(svg_exts):
-                            contextMenu = QMenu()
-                            contextMenu.setStyleSheet(self.context_menu_stylesheet)
-                            factors = [1, 5, 10, 20, 30, 40, 50, 80, 100]
-                            actions = []
-                            for factor in factors:
-                                action = contextMenu.addAction(f"x{factor}")
-                                actions.append((action, factor))
-                            cur_action = contextMenu.exec_(QCursor().pos())
-                            if cur_action is not None:
-                                for (action, factor) in actions:
-                                    if cur_action == action:
-                                        pixmap = load_svg(filepath, scale_factor=factor)
-                elif mdata and mdata.hasImage():
-                    pixmap = QPixmap().fromImage(mdata.imageData())
-                if pixmap and pixmap.width() > 0:
-                    if self.tools_window.current_tool == ToolID.picture:
-                        capture_height = max(self.capture_region_rect.height(), 100)
-                        if pixmap.height() > capture_height:
-                            pixmap = pixmap.scaledToHeight(capture_height, Qt.SmoothTransformation)
-                        self.current_picture_id = PictureInfo.TYPE_FROM_FILE
-                        self.current_picture_pixmap = pixmap
-                        self.current_picture_angle = 0
-                        tools_window = self.tools_window
-                        tools_window.on_parameters_changed()
-                        self.activateWindow()
-                    else:
-                        element = self.elementsCreateNew(ToolID.picture)
-                        element.pixmap = pixmap
-                        element.angle = 0
-                        pos = self.capture_region_rect.topLeft()
-                        self.elementsSetPictureElementPoints(element, pos, pos_as_center=False)
-                        self.elementsSetSelected(element)
-                        self.elementsSelectedElementParamsToUI()
+            self.elementsPasteImageFromBuffer(event)
 
 class StylizedUIBase():
 

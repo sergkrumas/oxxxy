@@ -235,38 +235,29 @@ class ViewerWindow(QWidget):
             painter.setPen(old_pen)
             painter.setBrush(old_brush)
 
+    def get_frame_rect(self):
+        image_rect = self.pixmap.rect()
+        base_point = image_rect.topLeft()
+        left, top, right, bottom = self.get_image_frame_info()
+
+        screen_left = base_point.x() + image_rect.width()*left
+        screen_top = base_point.y() + image_rect.height()*top
+
+        screen_right = base_point.x() + image_rect.width()*right
+        screen_bottom = base_point.y() + image_rect.height()*bottom
+
+        frame_rect = QRectF(
+            QPointF(screen_left, screen_top), QPointF(screen_right, screen_bottom)).toRect()
+        return frame_rect
+
     def frame_image(self):
         if self.frame_data:
-            image_rect = self.pixmap.rect()
-            base_point = image_rect.topLeft()
-            left, top, right, bottom = self.get_image_frame_info()
-
-            screen_left = base_point.x() + image_rect.width()*left
-            screen_top = base_point.y() + image_rect.height()*top
-
-            screen_right = base_point.x() + image_rect.width()*right
-            screen_bottom = base_point.y() + image_rect.height()*bottom
-
-            frame_rect = QRectF(
-                QPointF(screen_left, screen_top), QPointF(screen_right, screen_bottom)).toRect()
-            self.main_window.elementsFramePicture(frame_rect=frame_rect,
+            self.main_window.elementsFramePicture(frame_rect=self.get_frame_rect(),
                                                         frame_data=self.get_image_frame_info())
 
     def framedfinal_to_imagetool(self):
         if self.frame_data:
-            image_rect = self.pixmap.rect()
-            base_point = image_rect.topLeft()
-            left, top, right, bottom = self.get_image_frame_info()
-
-            screen_left = base_point.x() + image_rect.width()*left
-            screen_top = base_point.y() + image_rect.height()*top
-
-            screen_right = base_point.x() + image_rect.width()*right
-            screen_bottom = base_point.y() + image_rect.height()*bottom
-
-            frame_rect = QRectF(
-                QPointF(screen_left, screen_top), QPointF(screen_right, screen_bottom)).toRect()
-            self.main_window.elementsFramedFinalToImageTool(frame_rect)
+            self.main_window.elementsFramedFinalToImageTool(self.get_frame_rect())
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:

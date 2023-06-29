@@ -2308,9 +2308,8 @@ class ScreenshotWindow(QWidget):
                 painter.drawRect(self.undermouse_region_rect)
         else:
             painter.setPen(line_pen)
-            curpos = self.mapFromGlobal(cursor_pos)
-            pos_x = curpos.x()
-            pos_y = curpos.y()
+            pos_x = cursor_pos.x()
+            pos_y = cursor_pos.y()
             painter.drawLine(pos_x, 0, pos_x, self.height())
             painter.drawLine(0, pos_y, self.width(), pos_y)
         if self.extended_editor_mode:

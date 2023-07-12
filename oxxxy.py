@@ -2718,7 +2718,8 @@ class ScreenshotWindow(QWidget):
                 # этим вызовом обновляем виджет
                 self.elementsSetSelected(element)
 
-    def elementsSetPictureElementPoints(self, element, pos, pos_as_center=True):
+    def elementsSetPictureElementPoints(self, element, pos, pos_as_center=True,
+                                                                            apply_user_mode=True):
         is_user_mode = element.size_mode == ElementSizeMode.User
         size = element.size
         if pos_as_center:
@@ -2726,7 +2727,7 @@ class ScreenshotWindow(QWidget):
             element.start_point = r.topLeft()
             element.end_point = r.bottomRight()
         else:
-            if is_user_mode:
+            if apply_user_mode and is_user_mode:
                 size += Globals.ELEMENT_SIZE_RANGE_OFFSET
             w = math.ceil(element.pixmap.width()*size)
             h = math.ceil(element.pixmap.height()*size)
@@ -4742,7 +4743,8 @@ class ScreenshotWindow(QWidget):
                     element.size = max_width / element.pixmap.width()
                 element.size_mode = ElementSizeMode.Special
 
-                r = self.elementsSetPictureElementPoints(element, pos, pos_as_center=False)
+                r = self.elementsSetPictureElementPoints(element, pos, pos_as_center=False,
+                                apply_user_mode=False)
 
                 if action == horizontal:
                     pos += QPoint(r.width(), 0)

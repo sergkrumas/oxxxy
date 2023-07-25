@@ -89,6 +89,9 @@ class ViewerWindow(QWidget):
     def close(self):
         if self.main_window:
             self.main_window.view_window = None
+        else:
+            app = QApplication.instance()
+            app.exit()
         super().close()
 
     def update_for_center_label_fade_effect(self):
@@ -776,11 +779,24 @@ def get_filepaths_dialog(path=""):
 if __name__ == '__main__':
 
     app = QApplication(sys.argv)
-    window = ViewerWindow()
-    # window.resize(500, 500)
-    # window.show()
-    window.showMaximized()
-    images = get_filepaths_dialog()
+
+
+
+    filepath = os.path.join(os.path.dirname(__file__), "image_viewer_test_path.txt")
+    path = ""
+    if os.path.exists(filepath):
+        data = None
+        with open(filepath, "r", encoding="utf8") as file:
+            data = file.read()
+            path = data.split("\n")[0]
+
+
+
+    images = get_filepaths_dialog(path)
     if images:
+        window = ViewerWindow()
+        window.resize(2200, 1000)
+        # window.show()
+        window.showMaximized()
         window.show_image(QPixmap(images[0]))
         app.exec()

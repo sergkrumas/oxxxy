@@ -513,7 +513,7 @@ class ViewerWindow(QWidget):
                 if self.isInEditorMode() or True:
                     self.mousePressEventCaptureRect(event)
 
-                    self.image_frame_mousePressEvent(event)
+                    self.calculate_image_frame_info()
             elif self.tranformations_allowed:
                 if self.is_cursor_over_image():
                     self.image_translating = True
@@ -536,7 +536,7 @@ class ViewerWindow(QWidget):
                 if self.isInEditorMode() or True:
 
                     self.mouseMoveEventCaptureRect(event)
-                    self.image_frame_mouseMoveEvent(event)
+                    self.calculate_image_frame_info()
             elif self.tranformations_allowed and self.image_translating:
                 new = self.oldElementPos - (self.oldCursorPos - self.mapped_cursor_pos())
                 old = QPoint(self.image_center_position)
@@ -557,8 +557,7 @@ class ViewerWindow(QWidget):
         if event.button() == Qt.LeftButton:
             if event.modifiers() & Qt.ControlModifier:
                 if self.isInEditorMode() or True:
-
-                    self.image_frame_mouseReleaseEvent(event)
+                    self.calculate_image_frame_info()
             elif self.tranformations_allowed:
                 self.image_translating = False
                 self.update()
@@ -566,25 +565,6 @@ class ViewerWindow(QWidget):
         self.update()
         super().mouseReleaseEvent(event)
 
-
-
-
-    def image_frame_mousePressEvent(self, event):
-        # self.INPUT_POINT1 = event.pos()
-        # self.INPUT_POINT2 = None
-        # self.input_rect = None
-        # self.frame_data = None
-        self.calculate_image_frame_info()
-
-    def image_frame_mouseMoveEvent(self, event):
-        # self.INPUT_POINT2 = event.pos()
-        # self.build_input_rect()
-        # self.frame_data = self.get_image_frame_info()
-        self.calculate_image_frame_info()
-
-    def image_frame_mouseReleaseEvent(self, event):
-        # self.INPUT_POINT2 = event.pos()
-        self.calculate_image_frame_info()
 
     def calculate_image_frame_info(self):
         self.build_input_rect()

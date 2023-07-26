@@ -22,8 +22,10 @@ import os
 import sys
 import time
 import math
+from collections import namedtuple
+import time
 
-from PyQt5.QtWidgets import (QApplication, QMenu, QFileDialog, QWidget)
+from PyQt5.QtWidgets import (QApplication, QMenu, QFileDialog, QWidget, QDesktopWidget)
 from PyQt5.QtCore import (QTimer, Qt, QRect, QRectF, QPoint, QPointF)
 from PyQt5.QtGui import (QPixmap, QPainterPath, QPainter, QCursor, QBrush, QPicture,
                                                                 QPen, QColor, QTransform)
@@ -33,6 +35,14 @@ from _utils import *
 __all__ = (
     'ViewerWindow',
 )
+
+class Globals:
+    DEBUG_VIZ = False
+
+
+RegionInfo = namedtuple('RegionInfo', 'setter coords getter')
+
+
 
 class ViewerWindow(QWidget):
 
@@ -61,7 +71,7 @@ class ViewerWindow(QWidget):
         self.set_window_style()
         self.tranformations_allowed = True
         self.image_translating = False
-        self.image_center_position = QPointF(0, 0)
+        self.image_center_position = QPoint(0, 0)
         self.image_rotation = 0
         self.image_scale = 1.0
         self.pixmap = None
@@ -85,6 +95,242 @@ class ViewerWindow(QWidget):
         self.type = _type
 
         self.frame_data = data
+        self.frame_data_backup = data
+
+        self.user_input_started = False
+        self.is_rect_defined = False
+
+        self.capture_region_rect = None
+
+        self._custom_cursor_data = None
+
+        self.undermouse_region_info = None
+
+        self.drag_inside_capture_zone = False
+
+        self._custom_cursor_cycle = 0
+
+        self.is_rect_being_redefined = False
+
+        self.undermouse_region_rect = None
+        self.undermouse_region_info = None
+        self.region_num = 0
+
+        self.set_size_and_position()
+
+        self.setMouseTracking(True)
+
+    def no_frame_data(self):
+        self.INPUT_POINT1 = self.INPUT_POINT2 = None
+        self.input_rect = None
+
+        self.frame_data = self.frame_data_backup
+
+        self.user_input_started = False
+        self.is_rect_defined = False
+
+        self.capture_region_rect = None
+
+        self._custom_cursor_data = None
+
+        self.undermouse_region_info = None
+
+        self.drag_inside_capture_zone = False
+
+        self._custom_cursor_cycle = 0
+
+        self.is_rect_being_redefined = False
+
+        self.undermouse_region_rect = None
+        self.undermouse_region_info = None
+        self.region_num = 0
+
+
+    def set_size_and_position(self):
+        desktop = QDesktopWidget()
+        MAX = 1000000000
+        left = MAX
+        right = -MAX
+        top = MAX
+        bottom = -MAX
+        for i in range(0, desktop.screenCount()):
+            r = desktop.screenGeometry(screen=i)
+            left = min(r.left(), left)
+            right = max(r.right(), right)
+            top = min(r.top(), top)
+            bottom = max(r.bottom(), bottom)
+        self.move(0,0)
+        self.resize(right-left+1, bottom-top+1)
+        self._all_monitors_rect = QRect(QPoint(left, top), QPoint(right+1, bottom+1))
+
+    def equilateral_delta(self, delta):
+        sign = math.copysign(1.0, delta.x())
+        if delta.y() < 0:
+            if delta.x() < 0:
+                sign = 1.0
+            else:
+                sign = -1.0
+        delta.setX(int(delta.y()*sign))
+        return delta
+
+    def _build_valid_rect(self, p1, p2):
+        return build_valid_rect(p1, p2)
+
+    def is_point_set(self, p):
+        return p is not None
+
+    def get_first_set_point(self, points, default):
+        for point in points:
+            if self.is_point_set(point):
+                return point
+        return default
+
+    def is_input_points_set(self):
+        return self.is_point_set(self.INPUT_POINT1) and self.is_point_set(self.INPUT_POINT2)
+
+    def build_input_rect2(self, cursor_pos):
+        ip1 = self.get_first_set_point([self.INPUT_POINT1], cursor_pos)
+        ip2 = self.get_first_set_point([self.INPUT_POINT2, self.INPUT_POINT1], cursor_pos)
+        return self._build_valid_rect(ip1, ip2)
+
+    def get_region_info(self):
+        self.define_regions_rects_and_set_cursor()
+        self.update()
+
+    def get_custom_cross_cursor(self):
+        if True or not self._custom_cursor_data:
+            w = 32
+            w2 = w/2
+            w4 = w/4
+            self.pix = QPixmap(w, w)
+            self.pix.fill(Qt.transparent)
+            painter = QPainter(self.pix)
+            self._custom_cursor_cycle = (self._custom_cursor_cycle + 1) % 3
+            color_vars = {
+                0: Qt.green,
+                1: Qt.red,
+                2: Qt.cyan,
+            }
+            color = color_vars[self._custom_cursor_cycle]
+            painter.setPen(QPen(color, 1))
+            painter.drawLine(int(w2), int(w4), int(w2), int(w-w4*2-3))
+            painter.drawLine(int(w4), int(w2), int(w-w4*2-3), int(w2))
+            painter.drawLine(int(w2), int(w4*3), int(w2), int(w-w4*2+3))
+            painter.drawLine(int(w4*3), int(w2), int(w-w4*2+3), int(w2))
+            painter.drawPoint(int(w2), int(w2))
+            self._custom_cursor_data = QCursor(self.pix)
+        return self._custom_cursor_data
+
+    def elementsDefineCursorShape(self):
+        return self.get_custom_cross_cursor()
+
+
+    def define_regions_rects_and_set_cursor(self, write_data=True):
+
+        # --------------------------------- #
+        # 1         |2          |3          #
+        #           |           |           #
+        # ----------x-----------x---------- #
+        # 4         |5 (sel)    |6          #
+        #           |           |           #
+        # ----------x-----------x---------- #
+        # 7         |8          |9          #
+        #           |           |           #
+        # --------------------------------- #
+
+        touching_move_data = {
+            1: ("setTopLeft",       "xy",   "topLeft"       ),
+            2: ("setTop",           "y",    "top"           ),
+            3: ("setTopRight",      "xy",   "topRight"      ),
+            4: ("setLeft",          "x",    "left"          ),
+            5: (None,               None,   None            ),
+            6: ("setRight",         "x",    "right"         ),
+            7: ("setBottomLeft",    "xy",   "bottomLeft"    ),
+            8: ("setBottom",        "y",    "bottom"        ),
+            9: ("setBottomRight",   "xy",   "bottomRight"   ),
+        }
+        regions_cursors = {
+            1: QCursor(Qt.SizeFDiagCursor),
+            2: QCursor(Qt.SizeVerCursor),
+            3: QCursor(Qt.SizeBDiagCursor),
+            4: QCursor(Qt.SizeHorCursor),
+            5: self.elementsDefineCursorShape(),
+            # 5: QCursor(Qt.CrossCursor),
+            6: QCursor(Qt.SizeHorCursor),
+            7: QCursor(Qt.SizeBDiagCursor),
+            8: QCursor(Qt.SizeVerCursor),
+            9: QCursor(Qt.SizeFDiagCursor)
+        }
+
+        if not self.capture_region_rect:
+            self.setCursor(self.elementsDefineCursorShape())
+            return
+
+        crr = self.capture_region_rect
+        amr = self._all_monitors_rect
+        regions = {
+            1: QRect(QPoint(0, 0), crr.topLeft()),
+            2: QRect(QPoint(crr.left(), 0), crr.topRight()),
+            3: QRect(QPoint(crr.right(), 0), QPoint(amr.right(), crr.top())),
+            4: QRect(QPoint(0, crr.top()), crr.bottomLeft()),
+            5: crr,
+            6: QRect(crr.topRight(), QPoint(amr.right(), crr.bottom())),
+            7: QRect(QPoint(0, crr.bottom()), QPoint(crr.left(), amr.bottom())),
+            8: QRect(crr.bottomLeft(), QPoint(crr.right(), amr.bottom())),
+            9: QRect(crr.bottomRight(), amr.bottomRight())
+        }
+        cursor_pos = self.mapFromGlobal(QCursor().pos())
+        for number, rect in regions.items():
+            if rect.contains(cursor_pos):
+                self.undermouse_region_rect = rect
+                self.region_num = number
+                if write_data:
+                    self.setCursor(regions_cursors[number])
+                # чтобы не глитчили курсоры
+                # на пограничных зонах прекращаем цикл
+                break
+        if write_data:
+            if self.region_num == 5:
+                self.undermouse_region_info = None
+            else:
+                data = touching_move_data[self.region_num]
+                self.undermouse_region_info = RegionInfo(*data)
+
+
+    def draw_vertical_horizontal_lines(self, painter, cursor_pos):
+        if True:
+            line_pen = QPen(QColor(127, 127, 127, 172), 2, Qt.DashLine)
+            old_comp_mode = painter.compositionMode()
+            painter.setCompositionMode(QPainter.RasterOp_SourceXorDestination)
+
+        if self.is_input_points_set():
+            painter.setPen(line_pen)
+            left = self.INPUT_POINT1.x()
+            top = self.INPUT_POINT1.y()
+            right = self.INPUT_POINT2.x()
+            bottom = self.INPUT_POINT2.y()
+            # vertical left
+            painter.drawLine(left, 0, left, self.height())
+            # horizontal top
+            painter.drawLine(0, top, self.width(), top)
+            # vertical right
+            painter.drawLine(right, 0, right, self.height())
+            # horizontal bottom
+            painter.drawLine(0, bottom, self.width(), bottom)
+            if self.undermouse_region_rect and Globals.DEBUG_VIZ:
+                painter.setBrush(QBrush(Qt.green, Qt.DiagCrossPattern))
+                painter.drawRect(self.undermouse_region_rect)
+        # else:
+        #     painter.setPen(line_pen)
+        #     curpos = self.mapFromGlobal(cursor_pos)
+        #     pos_x = curpos.x()
+        #     pos_y = curpos.y()
+        #     painter.drawLine(pos_x, 0, pos_x, self.height())
+        #     painter.drawLine(0, pos_y, self.width(), pos_y)
+
+        if True:
+            painter.setCompositionMode(old_comp_mode)
+
 
     def close(self):
         if self.main_window:
@@ -154,11 +400,13 @@ class ViewerWindow(QWidget):
     def is_cursor_over_image(self):
         return self.cursor_in_rect(self.get_image_viewport_rect())
 
-
-
     def get_image_frame_info(self):
         rect = self.input_rect
         image_rect = self.get_image_viewport_rect()
+
+        assert rect is not None
+        assert image_rect is not None
+
         screen_delta1 = rect.topLeft() - image_rect.topLeft()
         screen_delta2 = rect.bottomRight() - image_rect.topLeft()
 
@@ -171,47 +419,35 @@ class ViewerWindow(QWidget):
         return left, top, right, bottom
 
     def build_input_rect(self):
-        if self.INPUT_POINT1 and self.INPUT_POINT2:
+        if self.is_point_set(self.INPUT_POINT1) and self.is_point_set(self.INPUT_POINT2):
             self.input_rect = build_valid_rect(self.INPUT_POINT1, self.INPUT_POINT2)
 
-    def image_frame_mousePressEvent(self, event):
-        self.INPUT_POINT1 = event.pos()
-        self.INPUT_POINT2 = None
-        self.input_rect = None
-        self.frame_data = None
 
-    def image_frame_mouseMoveEvent(self, event):
-        self.INPUT_POINT2 = event.pos()
-        self.build_input_rect()
-        self.frame_data = self.get_image_frame_info()
 
-    def image_frame_mouseReleaseEvent(self, event):
-        self.INPUT_POINT2 = event.pos()
-        self.build_input_rect()
-        if self.input_rect.width() > 50 and self.input_rect.height() > 50:
-            self.input_rect = self.input_rect.intersected(self.get_image_viewport_rect())
-            self.frame_data = self.get_image_frame_info()
-        else:
-            self.input_rect = None
-            self.frame_data = None
-            self.show_center_label("Задаваемая область слишком мала")
+    def get_frame_rect_to_draw(self):
+
+        image_rect = self.get_image_viewport_rect()
+
+        base_point = image_rect.topLeft()
+        left, top, right, bottom = self.frame_data
+
+        screen_left = base_point.x() + image_rect.width()*left
+        screen_top = base_point.y() + image_rect.height()*top
+
+        screen_right = base_point.x() + image_rect.width()*right
+        screen_bottom = base_point.y() + image_rect.height()*bottom
+
+        frame_rect = QRectF(
+            QPointF(screen_left, screen_top), QPointF(screen_right, screen_bottom)).toRect()
+
+        return frame_rect
 
     def draw_image_frame(self, painter):
         if self.frame_data:
 
             image_rect = self.get_image_viewport_rect()
 
-            base_point = image_rect.topLeft()
-            left, top, right, bottom = self.frame_data
-
-            screen_left = base_point.x() + image_rect.width()*left
-            screen_top = base_point.y() + image_rect.height()*top
-
-            screen_right = base_point.x() + image_rect.width()*right
-            screen_bottom = base_point.y() + image_rect.height()*bottom
-
-            frame_rect = QRectF(
-                QPointF(screen_left, screen_top), QPointF(screen_right, screen_bottom)).toRect()
+            frame_rect = self.get_frame_rect_to_draw()
 
             old_pen = painter.pen()
             old_brush = painter.brush()
@@ -262,10 +498,21 @@ class ViewerWindow(QWidget):
         if self.frame_data:
             self.main_window.elementsFramedFinalToImageTool(self.get_frame_rect())
 
+
+
+
+
+
+
+
+
     def mousePressEvent(self, event):
+
         if event.button() == Qt.LeftButton:
             if event.modifiers() & Qt.ControlModifier:
                 if self.isInEditorMode() or True:
+                    self.mousePressEventCaptureRect(event)
+
                     self.image_frame_mousePressEvent(event)
             elif self.tranformations_allowed:
                 if self.is_cursor_over_image():
@@ -273,31 +520,207 @@ class ViewerWindow(QWidget):
                     self.oldCursorPos = self.mapped_cursor_pos()
                     self.oldElementPos = self.image_center_position
                     self.update()
+
         self.update()
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
+
+        if event.buttons() == Qt.NoButton:
+            # определяем только тут, иначе при быстрых перемещениях мышки при зажатой кнопке мыши
+            # возможна потеря удержания - как будто бы если кнопка мыши была отпущена
+            self.get_region_info()
+
         if event.buttons() == Qt.LeftButton:
             if event.modifiers() & Qt.ControlModifier:
                 if self.isInEditorMode() or True:
+
+                    self.mouseMoveEventCaptureRect(event)
                     self.image_frame_mouseMoveEvent(event)
             elif self.tranformations_allowed and self.image_translating:
-                new =  self.oldElementPos - (self.oldCursorPos - self.mapped_cursor_pos())
-                old = self.image_center_position
+                new = self.oldElementPos - (self.oldCursorPos - self.mapped_cursor_pos())
+                old = QPoint(self.image_center_position)
                 self.image_center_position = new
+
+                delta =  new - old
+                if self.is_point_set(self.INPUT_POINT1) and self.is_point_set(self.INPUT_POINT2):
+                    self.INPUT_POINT1 += delta
+                    self.INPUT_POINT2 += delta
+                    self.capture_region_rect = build_valid_rect(self.INPUT_POINT1, self.INPUT_POINT2)
+
         self.update()
         super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
+        self.mouseReleaseEventCaptureRect(event)
+
         if event.button() == Qt.LeftButton:
             if event.modifiers() & Qt.ControlModifier:
                 if self.isInEditorMode() or True:
+
                     self.image_frame_mouseReleaseEvent(event)
             elif self.tranformations_allowed:
                 self.image_translating = False
                 self.update()
+
         self.update()
         super().mouseReleaseEvent(event)
+
+
+
+
+    def image_frame_mousePressEvent(self, event):
+        # self.INPUT_POINT1 = event.pos()
+        # self.INPUT_POINT2 = None
+        # self.input_rect = None
+        # self.frame_data = None
+        self.calculate_image_frame_info()
+
+    def image_frame_mouseMoveEvent(self, event):
+        # self.INPUT_POINT2 = event.pos()
+        # self.build_input_rect()
+        # self.frame_data = self.get_image_frame_info()
+        self.calculate_image_frame_info()
+
+    def image_frame_mouseReleaseEvent(self, event):
+        # self.INPUT_POINT2 = event.pos()
+        self.calculate_image_frame_info()
+
+    def calculate_image_frame_info(self):
+        self.build_input_rect()
+        if self.input_rect and self.input_rect.width() > 50 and self.input_rect.height() > 50:
+            self.input_rect = self.input_rect.intersected(self.get_image_viewport_rect())
+            self.frame_data = self.get_image_frame_info()
+            self.hide_center_label()
+        else:
+            self.input_rect = None
+            self.frame_data = None
+            self.show_center_label("Задаваемая область слишком мала")
+
+
+
+
+    def mouseMoveEventCaptureRect(self, event):
+
+        if event.buttons() == Qt.LeftButton:
+            if not self.is_rect_defined:
+                # для первичного задания области захвата
+                self.user_input_started = True
+                if not self.is_point_set(self.INPUT_POINT1):
+                    self.INPUT_POINT1 = event.pos()
+                else:
+                    self.INPUT_POINT2 = event.pos()
+
+
+                    # modifiers = event.modifiers()
+                    # if modifiers == Qt.NoModifier:
+                    #     self.INPUT_POINT2 = event.pos()
+                    # else:
+                    #     delta = self.INPUT_POINT1 - event.pos()
+                    #     if modifiers & Qt.ControlModifier:
+                    #         delta.setX(delta.x() // 10 * 10 + 1)
+                    #         delta.setY(delta.y() // 10 * 10 + 1)
+                    #     if modifiers & Qt.ShiftModifier:
+                    #         delta = self.equilateral_delta(delta)
+                    #     self.INPUT_POINT2 = self.INPUT_POINT1 - delta
+
+            elif self.undermouse_region_info and not self.drag_inside_capture_zone:
+                # для изменения области захвата после первичного задания
+                self.is_rect_being_redefined = True
+                cursor_pos = event.pos()
+                delta = QPoint(cursor_pos - self.old_cursor_position)
+                uri = self.undermouse_region_info
+                set_func_attr = uri.setter
+                data_id = uri.coords
+                get_func_attr = uri.getter
+                get_func = getattr(self.capture_region_rect, get_func_attr)
+                set_func = getattr(self.capture_region_rect, set_func_attr)
+                if data_id == "x":
+                    set_func(get_func() + delta.x())
+                if data_id == "y":
+                    set_func(get_func() + delta.y())
+                if data_id == "xy":
+                    set_func(get_func() + delta)
+                self.old_cursor_position = event.globalPos()
+                self.capture_region_rect = self._build_valid_rect(
+                    self.capture_region_rect.topLeft(),
+                    self.capture_region_rect.bottomRight(),
+                )
+
+                self.INPUT_POINT1 = self.capture_region_rect.topLeft()
+                self.INPUT_POINT2 = self.capture_region_rect.bottomRight()
+
+            elif self.drag_inside_capture_zone and self.capture_region_rect:
+                pass
+
+        elif event.buttons() == Qt.RightButton:
+            pass
+
+        if event.buttons() == Qt.LeftButton and not self.is_rect_being_redefined:
+            self.setCursor(self.get_custom_cross_cursor())
+
+        self.update()
+
+        # super().mouseMoveEvent(event)
+
+    def mousePressEventCaptureRect(self, event):
+        isLeftButton = event.button() == Qt.LeftButton
+        if not self.capture_region_rect:
+            self.INPUT_POINT1 = event.pos()
+        if isLeftButton:
+            self.old_cursor_position = event.pos()
+            self.get_region_info()
+            if self.undermouse_region_info is None:
+                self.drag_inside_capture_zone = True
+            else:
+                self.drag_inside_capture_zone = False
+
+        # super().mousePressEvent(event)
+        self.update()
+
+    def mouseReleaseEventCaptureRect(self, event):
+        if event.button() == Qt.LeftButton:
+            if self.drag_inside_capture_zone:
+                self.drag_inside_capture_zone = False
+            if self.user_input_started:
+                if not self.is_input_points_set():
+                    # это должно помочь от крашей
+                    self.INPUT_POINT1 = None
+                    self.INPUT_POINT2 = None
+                    return
+                self.is_rect_defined = True
+                self.capture_region_rect = \
+                                    self._build_valid_rect(self.INPUT_POINT1, self.INPUT_POINT2)
+            self.get_region_info() # здесь только для установки курсора
+        self.is_rect_being_redefined = False
+        self.user_input_started = False
+
+        # super().mouseReleaseEvent(event)
+        self.update()
+
+    def paintEvent(self, event):
+        painter = QPainter()
+        painter.begin(self)
+        painter.setRenderHint(QPainter.Antialiasing, True)
+        painter.setRenderHint(QPainter.SmoothPixmapTransform, True)
+        painter.setRenderHint(QPainter.HighQualityAntialiasing, True)
+        painter.setOpacity(0.8)
+        painter.setBrush(QBrush(Qt.black, Qt.SolidPattern))
+        painter.drawRect(self.rect())
+        painter.setOpacity(1.0)
+        self.draw_content(painter)
+
+
+        cursor_pos = self.mapFromGlobal(QCursor().pos())
+        input_rect = self.build_input_rect2(cursor_pos)
+
+        self.draw_vertical_horizontal_lines(painter, cursor_pos)
+
+        painter.end()
+
+
+
+
 
     def get_center_position(self):
         return QPoint(
@@ -305,12 +728,15 @@ class ViewerWindow(QWidget):
             int(self.frameGeometry().height()/2)
         )
 
+    def is_wheel_allowed(self):
+        return not (self.user_input_started or self.is_rect_being_redefined)
+
     def wheelEvent(self, event):
         scroll_value = event.angleDelta().y()/240
         ctrl = event.modifiers() & Qt.ControlModifier
         shift = event.modifiers() & Qt.ShiftModifier
         no_mod = event.modifiers() == Qt.NoModifier
-        if no_mod:
+        if no_mod and self.is_wheel_allowed():
             self.do_scale_image(scroll_value)
             self.show_center_label("scale")
 
@@ -419,6 +845,12 @@ class ViewerWindow(QWidget):
                 self.image_scale = image_scale
             self.image_center_position = image_center_position.toPoint()
 
+
+        if self.capture_region_rect:
+            rect = self.get_frame_rect_to_draw()
+            self.INPUT_POINT1 = rect.topLeft()
+            self.INPUT_POINT2 = rect.bottomRight()
+            self.capture_region_rect = rect
         self.update()
 
     def scale_label_opacity(self):
@@ -501,18 +933,7 @@ class ViewerWindow(QWidget):
 
         painter.setFont(old_font)
 
-    def paintEvent(self, event):
-        painter = QPainter()
-        painter.begin(self)
-        painter.setRenderHint(QPainter.Antialiasing, True)
-        painter.setRenderHint(QPainter.SmoothPixmapTransform, True)
-        painter.setRenderHint(QPainter.HighQualityAntialiasing, True)
-        painter.setOpacity(0.8)
-        painter.setBrush(QBrush(Qt.black, Qt.SolidPattern))
-        painter.drawRect(self.rect())
-        painter.setOpacity(1.0)
-        self.draw_content(painter)
-        painter.end()
+
 
     def draw_content(self, painter):
         # draw image
@@ -697,6 +1118,7 @@ class ViewerWindow(QWidget):
         info = contextMenu.addAction(info_text)
         info.setEnabled(False)
         contextMenu.addSeparator()
+        unset_capture_rect = contextMenu.addAction("Сбросить область захвата")
         maximize = contextMenu.addAction("Максимально увеличить")
         set_original_scale = contextMenu.addAction("Задать масштаб 1:1")
         zoom_in = contextMenu.addAction("Увеличить масштаб")
@@ -710,6 +1132,8 @@ class ViewerWindow(QWidget):
         self.contextMenuActivated = False
         if action is None:
             pass
+        elif action == unset_capture_rect:
+            self.no_frame_data()
         elif action == close_app:
             self.close()
         elif action == maximize:
@@ -727,6 +1151,7 @@ class ViewerWindow(QWidget):
             self.rotate_counterclockwise()
         elif action == place_at_center:
             self.restore_image_transformations()
+        self.update()
 
     def correct_scale(self):
         # корректировка скейла для всех картинок таким образом
@@ -791,12 +1216,13 @@ if __name__ == '__main__':
             path = data.split("\n")[0]
 
 
-
-    images = get_filepaths_dialog(path)
-    if images:
+    if not path:
+        images = get_filepaths_dialog(path)
+        path = images[0]
+    if path:
         window = ViewerWindow()
         window.resize(2200, 1000)
         # window.show()
         window.showMaximized()
-        window.show_image(QPixmap(images[0]))
+        window.show_image(QPixmap(path))
         app.exec()

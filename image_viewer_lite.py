@@ -1174,11 +1174,11 @@ class ViewerWindow(QWidget):
         self.update()
 
 def get_filepaths_dialog(path=""):
-    file_name = QFileDialog()
-    file_name.setFileMode(QFileDialog.ExistingFiles)
+    dialog = QFileDialog()
+    dialog.setFileMode(QFileDialog.ExistingFiles)
     title = ""
     filter_data = "All files (*.*)"
-    data = file_name.getOpenFileNames(None, title, path, filter_data)
+    data = dialog.getOpenFileNames(None, title, path, filter_data)
     return data[0]
 
 if __name__ == '__main__':

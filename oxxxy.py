@@ -32,6 +32,7 @@ import locale
 import argparse
 import importlib.util
 import math
+import json
 from functools import partial
 
 import pyperclip
@@ -41,7 +42,8 @@ from PyQt5.QtWidgets import (QSystemTrayIcon, QWidget, QMessageBox, QMenu, QGrap
     QGraphicsScene, QFileDialog, QHBoxLayout, QCheckBox, QVBoxLayout, QTextEdit, QGridLayout,
     QPushButton, QGraphicsBlurEffect, QLabel, QApplication, QScrollArea, QDesktopWidget)
 from PyQt5.QtCore import (QUrl, QMimeData, pyqtSignal, QPoint, QPointF, pyqtSlot, QRect, QEvent,
-    QTimer, Qt, QSize, QRectF, QThread, QAbstractNativeEventFilter, QAbstractEventDispatcher)
+    QTimer, Qt, QSize, QRectF, QThread, QAbstractNativeEventFilter, QAbstractEventDispatcher,
+    QFile, QDataStream, QIODevice)
 from PyQt5.QtGui import (QPainterPath, QColor, QKeyEvent, QMouseEvent, QBrush, QPixmap,
     QPaintEvent, QPainter, QWindow, QPolygon, QImage, QTransform, QPen, QLinearGradient,
     QIcon, QFont, QCursor, QPolygonF)
@@ -118,6 +120,10 @@ class RequestType(Enum):
 class ElementSizeMode(Enum):
     User = 0
     Special = 0
+
+    def __int__(self):
+        return self.value
+
 
 class ToolID():
     none = "none"
@@ -2483,7 +2489,7 @@ class ScreenshotWindow(QWidget):
                 self.input_POINT1 = rect.bottomRight()
                 self.capture_region_rect = self._build_valid_rect(self.input_POINT1,
                                                                                 self.input_POINT2)
-                self.user_input_started = True
+                self.user_input_started = False
                 self.is_rect_defined = True
                 self.drag_inside_capture_zone = False
                 self.get_region_info()
@@ -2494,7 +2500,7 @@ class ScreenshotWindow(QWidget):
         self.input_POINT2 = QPoint(0, 0)
         self.input_POINT1 = self.frameGeometry().bottomRight()
         self.capture_region_rect = self._build_valid_rect(self.input_POINT1, self.input_POINT2)
-        self.user_input_started = True
+        self.user_input_started = False
         self.is_rect_defined = True
         self.drag_inside_capture_zone = False
         self.get_region_info()
@@ -2524,7 +2530,7 @@ class ScreenshotWindow(QWidget):
         pos = QPoint(0, 0)
         self.input_POINT2 = QPoint(0, 0)
         self.input_POINT1 = self.frameGeometry().bottomRight()
-        self.user_input_started = True
+        self.user_input_started = False
         self.is_rect_defined = True
         self.drag_inside_capture_zone = False
         self.get_region_info()
@@ -2563,7 +2569,7 @@ class ScreenshotWindow(QWidget):
         self.input_POINT2 = QPoint(300, 200)
         self.input_POINT1 = QPoint(1400, 800)
         self.capture_region_rect = self._build_valid_rect(self.input_POINT1, self.input_POINT2)
-        self.user_input_started = True
+        self.user_input_started = False
         self.is_rect_defined = True
         self.drag_inside_capture_zone = False
         self.get_region_info()
@@ -2581,6 +2587,326 @@ class ScreenshotWindow(QWidget):
             self.elementsSetSelected(element)
             self.elementsSelectedElementParamsToUI()
         self.update()
+
+    def save_project(self):
+        # задание папки для скриншота
+
+        SettingsWindow.set_screenshot_folder_path()
+        if not os.path.exists(Globals.SCREENSHOT_FOLDER_PATH):
+            return
+
+        formated_datetime = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        folder_path = os.path.join(Globals.SCREENSHOT_FOLDER_PATH,
+                                                f"OxxxyProject_{formated_datetime}")
+        os.mkdir(folder_path)
+        if not os.path.exists(folder_path):
+            return
+        project_filepath = os.path.join(folder_path, "project.oxxxyshot")
+
+
+        # инициализация словаря
+        data = dict()
+
+        # СОХРАНЕНИЕ ДАННЫХ
+
+        # сохранение переменных, задаваемых через контекстное меню
+        data.update({'extended_editor_mode':             self.extended_editor_mode              })
+        data.update({'include_screenshot_background':    self.include_screenshot_background     })
+        data.update({'dark_pictures':                    self.dark_pictures                     })
+        data.update({'close_editor_on_done':             Globals.close_editor_on_done           })
+
+
+        # сохранение готовых изображений из памяти
+        data.update({'save_to_memory_mode':              Globals.save_to_memory_mode            })
+        if Globals.save_to_memory_mode:
+            subfolder_path = os.path.join(folder_path, "in_memory")
+            os.mkdir(subfolder_path)
+            for n, image_in_memory in enumerate(Globals.images_in_memory):
+                image_path = os.path.join(subfolder_path, f'{n}.png')
+                image_in_memory.save(image_path)
+
+
+        # сохранение картинки-фона
+        image_path = os.path.join(folder_path, "background.png")
+        self.source_pixels.save(image_path)
+
+        # сохранение инфы о трансформации картинки-фона
+        data.update({'background_transformed':     self.background_transformed                  })
+
+
+        # дополнительное сохранение данных при изменнёном фоне
+        image_path = os.path.join(folder_path, "background_backup.png")
+        if self.background_transformed:
+            self.source_pixels_backup.save(image_path)
+
+
+        # сохранение метаданных
+        data.update({'metadata':                   self.metadata                                })
+
+
+        # сохранение обтравки маской
+        data.update({'masked':                     self.tools_window.chb_masked.isChecked()     })
+
+
+        # сохранение обтравки маской в виде шестиугольника
+        data.update({'hex_mask':                   self.hex_mask                                })
+
+
+        # сохранение области захвата
+        if self.capture_region_rect is not None:
+            r = self.capture_region_rect
+            data.update({'capture_region_rect': (r.left(), r.top(), r.width(), r.height())      })
+        else:
+            data.update({'capture_region_rect': (0, 0, 0, 0)                                    })
+
+        # !!! не сохраняются input_POINT1 и input_POINT2, так как это будет избыточным
+        #
+        data.update({'is_rect_defined':            self.is_rect_defined                         })
+
+
+        # сохранение текущего инструмента
+        data.update({'current_tool':               self.current_tool                            })
+
+
+        # сохранение индексов для истории действий
+        data.update({'elements_history_index':     self.elements_history_index                  })
+        data.update({'history_group_counter':      self.history_group_counter                   })
+
+
+        # сохранение вектора глобального сдвига
+        v = self.elements_global_offset
+        data.update({'elements_global_offset':     tuple((v.x(), v.y()))                        })
+
+
+        elements_to_store = list()
+        # сохранение элементов
+        for n, element in enumerate(self.elements):
+
+            element_base = list()
+            elements_to_store.append(element_base)
+
+            attributes = element.__dict__.items()
+            for attr_name, attr_value in attributes:
+
+                if attr_name.startswith("f_"):
+                    continue
+
+                attr_type = type(attr_value).__name__
+
+                if isinstance(attr_value, QPoint):
+                    attr_data = (attr_value.x(), attr_value.y())
+
+                elif isinstance(attr_value, (bool, int, float, str, tuple, list)):
+                    attr_data = attr_value
+
+                elif isinstance(attr_value, ElementSizeMode):
+                    attr_data = int(attr_value)
+
+                elif isinstance(attr_value, QPainterPath):
+                    filename = f"path_{attr_name}_{n:04}.data"
+                    filepath = os.path.join(folder_path, filename)
+                    file_handler = QFile(filepath)
+                    file_handler.open(QIODevice.WriteOnly)
+                    stream = QDataStream(file_handler)
+                    stream << attr_value
+                    attr_data = filename
+
+                elif isinstance(attr_value, QPixmap):
+                    filename = f"pixmap_{attr_name}_{n:04}.png"
+                    filepath = os.path.join(folder_path, filename)
+                    attr_value.save(filepath)
+                    attr_data = filename
+
+                elif isinstance(attr_value, QColor):
+                    attr_data = attr_value.getRgbF()
+
+                elif attr_value is None or attr_name in ["textbox"]:
+                    attr_data = None
+
+                else:
+                    status = f"name: '{attr_name}' type: '{attr_type}' value: '{attr_value}'"
+                    raise Exception(f"Unable to handle attribute, {status}")
+
+                element_base.append((attr_name, attr_type, attr_data))
+
+        data.update({'elements': elements_to_store})
+
+        # ЗАПИСЬ В ФАЙЛ НА ДИСКЕ
+        data_to_write = json.dumps(data, indent=True)
+        with open(project_filepath, "w+", encoding="utf8") as file:
+            file.write(data_to_write)
+
+        # ВЫВОД СООБЩЕНИЯ О ЗАВЕРШЕНИИ
+        text = f"Проект сохранён в \n{project_filepath}"
+        self.show_notify_dialog(text)
+
+    def show_notify_dialog(self, text):
+        self.dialog = NotifyDialog(self, label_text=text)
+        self.dialog.show_at_center()
+
+    def dialog_open_project(self):
+        dialog = QFileDialog()
+        dialog.setFileMode(QFileDialog.ExistingFile)
+        title = ""
+        filter_data = "OXXXY Project File (*.oxxxyshot)"
+        SettingsWindow.set_screenshot_folder_path()
+        data = dialog.getOpenFileName(self, title, Globals.SCREENSHOT_FOLDER_PATH, filter_data)
+        return data[0]
+
+    # при написании этой функции использовался готовый проект, который загружался сразу
+    def open_project(self):
+
+        project_filepath = ""
+
+        project_filepath = self.dialog_open_project()
+
+        is_file_exists = os.path.exists(project_filepath)
+        is_file_extension_ok = project_filepath.lower().endswith(".oxxxyshot")
+        is_file = os.path.isfile(project_filepath)
+        if not (is_file_exists and is_file_extension_ok and is_file):
+            self.show_notify_dialog("Ошибка: либо файла не существует, либо расширение не то. Отмена!")
+            return
+
+        # чтение json
+        read_data = ""
+        with open(project_filepath, "r", encoding="utf8") as file:
+            read_data = file.read()
+
+        try:
+            data = json.loads(read_data)
+        except:
+            self.show_notify_dialog("Ошибка при чтении файла. Отмена!")
+            return
+
+        # подготовка перед загрузкой данных
+        self.elementsInit()
+        folder_path = os.path.dirname(project_filepath)
+
+        # ЗАГРУЗКА ДАННЫХ
+
+        # загрузка переменных, задаваемых через контекстное меню
+        self.extended_editor_mode = data.get('extended_editor_mode', True)
+        self.include_screenshot_background = data.get('include_screenshot_background', True)
+        self.dark_pictures = data.get('dark_pictures', True)
+        Globals.close_editor_on_done = data.get('close_editor_on_done', True)
+
+
+        # загрузка готовых изображений в память
+        Globals.save_to_memory_mode = data.get('save_to_memory_mode', False)
+        if Globals.save_to_memory_mode:
+            subfolder_path = os.path.join(folder_path, "in_memory")
+            if os.path.exists(subfolder_path):
+                filenames = os.listdir(subfolder_path)
+                filenames = list(sorted(filenames))
+                for filename in filenames:
+                    filepath = os.path.join(subfolder_path, filename)
+                    if not filepath.lower().endswith(".png"):
+                        continue
+                    Globals.images_in_memory.append(QPixmap(filepath))
+
+
+        # загрузка картинки-фона
+        image_path = os.path.join(folder_path, "background.png")
+        self.source_pixels = QImage(image_path)
+
+
+        # загрузка инфы о трансформации картинки-фона
+        self.background_transformed = data.get('background_transformed', False)
+
+
+        # дополнительная загрузка данных при изменнёном фоне
+        image_path = os.path.join(folder_path, "background_backup.png")
+        if self.background_transformed:
+            self.source_pixels_backup = QImage(image_path)
+
+
+        # загрузка метаданных
+        self.metadata = data.get('metadata', ("", ""))
+
+
+        # загрузка состояния обтравки маской
+        self.tools_window.chb_masked.setChecked(data.get("masked", False))
+
+
+        # загрузка состояния обтравки маской в виде шестиугольника
+        self.hex_mask = data.get('hex_mask', False)
+
+
+        # загрузка области захвата
+        rect_tuple = data.get('capture_region_rect', (0, 0, 0, 0))
+        if rect_tuple == (0, 0, 0, 0):
+            self.capture_region_rect = None
+            self.input_POINT1 = None
+            self.input_POINT2 = None
+            self.is_rect_defined = False
+        else:
+            self.capture_region_rect = QRect(*rect_tuple)
+            self.input_POINT1 = self.capture_region_rect.topLeft()
+            self.input_POINT2 = self.capture_region_rect.bottomRight()
+            self.is_rect_defined = True
+
+
+        # загрузка текущего инструмента
+        self.tools_window.set_current_tool(data.get('current_tool', 'none'))
+
+
+        # загрузка индексов для истории действий
+        self.elements_history_index = data.get('elements_history_index', 0)
+        self.history_group_counter = data.get('history_group_counter', 0)
+
+
+        # загрузка вектора глобального сдвига
+        self.elements_global_offset = QPoint(*data.get('elements_global_offset', (0, 0)))
+
+
+        # загрузка элементов и их данных
+        elements_from_store = data.get('elements', [])
+        for element_attributes in elements_from_store:
+            element = self.elementsCreateNew(ToolID.TEMPORARY_TYPE_NOT_DEFINED)
+
+            for attr_name, attr_type, attr_data in element_attributes:
+
+                if attr_type in ['QPoint']:
+                    attr_value = QPoint(*attr_data)
+
+                elif attr_type in ['bool', 'int', 'float', 'str', 'tuple', 'list']:
+                    attr_value = attr_data
+
+                elif attr_type in ['ElementSizeMode']:
+                    attr_value = ElementSizeMode(attr_data)
+
+                elif attr_type in ['QPainterPath']:
+                    filepath = os.path.join(folder_path, attr_data)
+                    file_handler = QFile(filepath)
+                    file_handler.open(QIODevice.ReadOnly)
+                    stream = QDataStream(file_handler)
+                    path = QPainterPath()
+                    stream >> path
+                    attr_value = path
+
+                elif attr_type in ['QPixmap']:
+                    filepath = os.path.join(folder_path, attr_data)
+                    attr_value = QPixmap(filepath)
+
+                elif attr_type in ['QColor']:
+                    attr_value = QColor()
+                    attr_value.setRgbF(*attr_data)
+
+                elif attr_type in ['NoneType'] or attr_name in ["textbox"]:
+                    attr_value = None
+
+                else:
+                    status = f"name: '{attr_name}' type: '{attr_type}' value: '{attr_data}'"
+                    raise Exception(f"Unable to handle attribute, {status}")
+
+                setattr(element, attr_name, attr_value)
+
+        #  приготовление UI
+        self.tools_window.forwards_backwards_update()
+        self.update_tools_window()
+        self.update()
+
+        self.show_notify_dialog("Файл загружен")
 
     def define_class_Element(root_self):
         def __init__(self, _type, elements_list):
@@ -2625,6 +2951,7 @@ class ScreenshotWindow(QWidget):
 
         def __getattribute__(self, name):
             if name.startswith("f_"):
+                # remove prefix 'f_' in the attribute name and get the attribute
                 ret_value = getattr(self, name[len("f_"):])
                 ret_value = QPoint(ret_value) #copy
                 if root_self.elementsIsFinalDrawing:
@@ -2741,7 +3068,7 @@ class ScreenshotWindow(QWidget):
             s += Globals.ELEMENT_SIZE_RANGE_OFFSET
         r = QRect(0, 0, math.ceil(pixmap.width()*s), math.ceil(pixmap.height()*s))
         r.moveCenter(center_point)
-        return r        
+        return r
 
     def elementsFramePicture(self, frame_rect=None, frame_data=None):
         sel_elem = self.selected_element
@@ -2766,7 +3093,7 @@ class ScreenshotWindow(QWidget):
         tools_window = self.tools_window
         if tools_window:
             if tools_window.current_tool != ToolID.picture:
-                tools_window.set_current_tool(ToolID.picture)        
+                tools_window.set_current_tool(ToolID.picture)
         tools_window.on_parameters_changed()
         self.update()
         tools_window.update()
@@ -2977,13 +3304,18 @@ class ScreenshotWindow(QWidget):
         self.activateWindow() # чтобы фокус не соскакивал на панель иструментов
 
     def elementsActivateTextElement(self, element):
-        element.textbox.setParent(self)
-        element.textbox.show()
-        element.textbox.setFocus()
+        if element.textbox is None:
+            # после загрузки open_project
+            parent = self
+            self.elementsCreateTextbox(parent, element)
+        else:
+            element.textbox.setParent(self)
+            element.textbox.show()
+            element.textbox.setFocus()
 
     def elementsDeactivateTextElements(self):
         for element in self.elementsHistoryFilter():
-            if element.type == ToolID.text and element.textbox.parent():
+            if element.type == ToolID.text and element.textbox and element.textbox.parent():
                 self.elementsOnTextChanged(element)
                 element.textbox.hide()
                 element.textbox.setParent(None)
@@ -3152,8 +3484,8 @@ class ScreenshotWindow(QWidget):
         elif tool == ToolID.line:
             self.elementsMousePressEventDefault(element, event)
         elif tool in [ToolID.oval, ToolID.rect, ToolID.numbering, ToolID.special]:
-            element.equilateral = event.modifiers() & Qt.ShiftModifier
-            element.filled = event.modifiers() & Qt.ControlModifier
+            element.equilateral = bool(event.modifiers() & Qt.ShiftModifier)
+            element.filled = bool(event.modifiers() & Qt.ControlModifier)
             self.elementsMousePressEventDefault(element, event)
         elif tool == ToolID.text:
             self.elementsMousePressEventDefault(element, event)
@@ -3381,8 +3713,8 @@ class ScreenshotWindow(QWidget):
                 element.end_point = elements45DegreeConstraint(element.start_point,
                                                                             element.end_point)
         elif tool in [ToolID.oval, ToolID.rect, ToolID.numbering, ToolID.special]:
-            element.filled = event.modifiers() & Qt.ControlModifier
-            element.equilateral = event.modifiers() & Qt.ShiftModifier
+            element.filled = bool(event.modifiers() & Qt.ControlModifier)
+            element.equilateral = bool(event.modifiers() & Qt.ShiftModifier)
             if element.equilateral:
                 delta = element.start_point - event.pos()
                 delta = self.equilateral_delta(delta)
@@ -3393,7 +3725,7 @@ class ScreenshotWindow(QWidget):
             element.end_point = event.pos()
             element.modify_end_point = False
         elif tool in [ToolID.blurring, ToolID.darkening]:
-            element.equilateral = event.modifiers() & Qt.ShiftModifier
+            element.equilateral = bool(event.modifiers() & Qt.ShiftModifier)
             if element.equilateral:
                 delta = element.start_point - event.pos()
                 delta = self.equilateral_delta(delta)
@@ -3487,7 +3819,7 @@ class ScreenshotWindow(QWidget):
             element.modify_end_point = False
             self.elementsCreateTextbox(self, element)
         elif tool in [ToolID.blurring, ToolID.darkening]:
-            element.equilateral = event.modifiers() & Qt.ShiftModifier
+            element.equilateral = bool(event.modifiers() & Qt.ShiftModifier)
             if element.equilateral:
                 delta = element.start_point - event.pos()
                 delta = self.equilateral_delta(delta)
@@ -3592,6 +3924,10 @@ class ScreenshotWindow(QWidget):
 
     def elementsOnTextChanged(self, elem):
         tb = elem.textbox
+        textbox_text = tb.toPlainText()
+        if textbox_text: # проверяем есть ли текст,
+                         # это нужно чтобы при иниализации не стёрлось ничего
+            elem.text = textbox_text
         size = tb.document().size().toSize()
         # correcting height
         new_height = size.height()+elem.margin_value*2
@@ -3625,6 +3961,8 @@ class ScreenshotWindow(QWidget):
 
     def elementsCreateTextbox(self, parent, elem):
         textbox = QTextEdit()
+        if hasattr(elem, "text"):
+            textbox.setText(elem.text)
         self.elementsTextBoxInit(textbox, parent, elem)
 
     def elementsTextBoxInit(self, textbox, parent, elem):
@@ -3825,7 +4163,7 @@ class ScreenshotWindow(QWidget):
                         image_rect.width(), image_rect.height()).toRect()
                 painter.rotate(element.rotation)
                 editing = not final and (element is self.selected_element or \
-                                                element is element.textbox.isVisible())
+                                    (element.textbox is not None and element.textbox.isVisible()))
                 if editing:
                     painter.setOpacity(0.5)
                 painter.drawPixmap(image_rect, pixmap)
@@ -4054,7 +4392,7 @@ class ScreenshotWindow(QWidget):
         # задание папки для скриншота
         SettingsWindow.set_screenshot_folder_path()
         # сохранение файла
-        formated_datetime = datetime.datetime.now().strftime("%d-%m-%Y %H-%M-%S")
+        formated_datetime = datetime.datetime.now().strftime("%Y-%m-%d %H-%M-%S")
         if grabbed_image:
             # QUICK FULLSCREEN
             filepath = get_screenshot_filepath(formated_datetime)
@@ -4452,7 +4790,7 @@ class ScreenshotWindow(QWidget):
             if self.user_input_started:
                 if not self.is_input_points_set():
                     # это должно помочь от крашей
-                    self.user_input_started = True
+                    self.user_input_started = False
                     self.input_POINT1 = None
                     self.input_POINT2 = None
                     return
@@ -4631,7 +4969,7 @@ class ScreenshotWindow(QWidget):
             pix.rect()
         )
         painter.end()
-        self.source_pixels = image 
+        self.source_pixels = image
 
         # cleaning
         self.elementsSetSelected(None)
@@ -4879,6 +5217,11 @@ class ScreenshotWindow(QWidget):
         reset_capture = add_item("Сбросить область захвата")
         contextMenu.addSeparator() ###############################################################
 
+        save_project = add_item("Сохранить проект")
+        open_project = add_item("Открыть проект")
+
+        contextMenu.addSeparator()
+
         start_save_to_memory_mode = add_item("Сохранить скриншот в память")
         start_save_to_memory_mode.setCheckable(True)
         start_save_to_memory_mode.setChecked(Globals.save_to_memory_mode)
@@ -4913,6 +5256,10 @@ class ScreenshotWindow(QWidget):
         action = contextMenu.exec_(self.mapToGlobal(event.pos()))
         if action == None:
             pass
+        elif action == save_project:
+            self.save_project()
+        elif action == open_project:
+            self.open_project()
         elif action == fit_images_to_size:
             self.elementsFitImagesToSize()
         elif action == render_to_background:
@@ -5283,6 +5630,8 @@ class ScreenshotWindow(QWidget):
         if key == Qt.Key_Delete:
             if self.elements:
                 self.elementsRemoveElement()
+                if self.tools_window:
+                    self.tools_window.forwards_backwards_update()
         if check_scancode_for(event, "H"):
             if self.tools_window and self.tools_window.chb_masked.isChecked():
                 self.hex_mask = not self.hex_mask
@@ -6001,6 +6350,56 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
         app = QApplication.instance()
         app.quit()
 
+class NotifyDialog(QWidget, StylizedUIBase):
+    WIDTH = 1500
+
+    def __init__(self, *args, label_text=None, **kwargs):
+        super().__init__( *args, **kwargs)
+        self.setWindowFlags(Qt.Dialog | Qt.FramelessWindowHint)
+        self.setAttribute(Qt.WA_TranslucentBackground, True)
+        self.setWindowModality(Qt.WindowModal)
+        main_layout = QVBoxLayout()
+        self.button = QPushButton("Ок")
+        self.button.setCursor(Qt.PointingHandCursor)
+        self.button.setStyleSheet(self.button_style)
+        self.button.clicked.connect(self.yes_handler)
+
+        self.setWindowTitle(f"Oxxxy Screenshoter {Globals.VERSION_INFO}")
+
+        self.label = QLabel()
+        self.label.setText(label_text)
+        self.label.setStyleSheet(self.title_label_style)
+        self.label.setFixedWidth(self.WIDTH - self.CLOSE_BUTTON_RADIUS)
+        self.label.setWordWrap(True)
+
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.update_handler)
+        self.timer.setInterval(100)
+        self.timer.start()
+        main_layout.addWidget(self.label)
+        main_layout.addWidget(self.button)
+        self.setLayout(main_layout)
+        self.resize(self.WIDTH, 200)
+        self.setMouseTracking(True)
+
+    def yes_handler(self):
+        self.close()
+
+    def update_handler(self):
+        self.update()
+
+    def show_at_center(self):
+        self.show()
+        cp = QDesktopWidget().availableGeometry().center()
+        qr = self.frameGeometry()
+        qr.moveCenter(cp)
+        self.move(qr.topLeft())
+        self.activateWindow()
+
+    def mouseReleaseEvent(self, event):
+        if self.inside_close_button():
+            self.close()
+
 class QuitDialog(QWidget, StylizedUIBase):
     WIDTH = 500
 
@@ -6299,11 +6698,11 @@ def excepthook(exc_type, exc_value, exc_tb):
     sys.exit()
 
 def get_filepaths_dialog(path=""):
-    file_name = QFileDialog()
-    file_name.setFileMode(QFileDialog.ExistingFiles)
+    dialog = QFileDialog()
+    dialog.setFileMode(QFileDialog.ExistingFiles)
     title = ""
     filter_data = "All files (*.*)"
-    data = file_name.getOpenFileNames(None, title, path, filter_data)
+    data = dialog.getOpenFileNames(None, title, path, filter_data)
     return data[0]
 
 def exit_threads():

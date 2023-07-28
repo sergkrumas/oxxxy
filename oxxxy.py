@@ -5757,6 +5757,8 @@ class StylizedUIBase():
         }
     """
 
+    temp_v = 0
+
     CLOSE_BUTTON_RADIUS = 50
 
     def mouseMoveEvent(self, event):
@@ -5795,7 +5797,8 @@ class StylizedUIBase():
         painter.setClipPath(path)
         painter.setPen(Qt.NoPen)
         color = QColor("#303940")
-        color = QColor(48, 57, 64)
+        v = self.temp_v
+        color = QColor(48+v, 57+v, 64+v)
         painter.setBrush(QBrush(color))
         painter.drawPath(path)
         self.draw_close_button(painter)
@@ -6374,7 +6377,7 @@ class NotifyDialog(QWidget, StylizedUIBase):
 
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_handler)
-        self.timer.setInterval(100)
+        self.timer.setInterval(10)
         self.timer.start()
         main_layout.addWidget(self.label)
         main_layout.addWidget(self.button)
@@ -6387,6 +6390,7 @@ class NotifyDialog(QWidget, StylizedUIBase):
 
     def update_handler(self):
         self.update()
+        self.temp_v = int(math.sin(time.time()*10)*5)
 
     def show_at_center(self):
         self.show()
@@ -6424,7 +6428,7 @@ class QuitDialog(QWidget, StylizedUIBase):
 
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_handler)
-        self.timer.setInterval(100)
+        self.timer.setInterval(10)
         self.timer.start()
         main_layout.addWidget(self.label)
         main_layout.addWidget(self.button)
@@ -6438,6 +6442,7 @@ class QuitDialog(QWidget, StylizedUIBase):
 
     def update_handler(self):
         self.update()
+        self.temp_v = int(math.sin(time.time()*10)*5)
 
     def show_at_center(self):
         self.show()

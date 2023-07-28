@@ -2039,7 +2039,12 @@ class ScreenshotWindow(QWidget):
         #   painter.drawImage(self.rect(), self.source_pixels)
         #   painter.setOpacity(1.0)
         ###### NEW VERSION FOR STEP == 1 AND STEP == 2:
-        self_rect = QRect(self.rect())
+        if True:
+            # поправочка нужна для случая, когда использована команда "Содержимое в фон"
+            # и после неё габариты изображения уже не равны габаритам монитора(ов)
+            self_rect = QRect(self.source_pixels.rect())
+        else:
+            self_rect = QRect(self.rect())
         self_rect.moveCenter(self_rect.center() + self.elements_global_offset)
         if step == 1:
             if opacity_type == LayerOpacity.FullTransparent: # full transparent
@@ -4950,6 +4955,15 @@ class ScreenshotWindow(QWidget):
             self.capture_region_rect = self._build_valid_rect(self.input_POINT1, self.input_POINT2)
 
     def elementsDoRenderToBackground(self):
+
+        subMenu = QMenu()
+        subMenu.setStyleSheet(self.context_menu_stylesheet)
+        action_extend = subMenu.addAction("Расширить картинку-фон, если контент будет превосходить её размеры")
+        action_keep = subMenu.addAction("Оставить размеры картинки-фона как есть")
+
+        pos = self.mapFromGlobal(QCursor().pos())
+        action = subMenu.exec_(pos)
+
         # render capture zone
         self.elementsUpdateFinalPicture()
         if self.extended_editor_mode:
@@ -4958,16 +4972,38 @@ class ScreenshotWindow(QWidget):
             pix = self.elements_final_output.copy(self.capture_region_rect)
 
         # draw capture zone to background image
-        image = QImage(self.source_pixels)
+        image = None
+        if action == None:
+            return
+        elif action == action_extend:
+            points = []
+            for element in self.elementsHistoryFilter():
+                if element.type != ToolID.picture:
+                    continue
+                points.append(element.start_point)
+                points.append(element.end_point)
+
+            if points:
+                content_rect = self._build_valid_rect(*get_bounding_points(points))
+                new_width = max(self.source_pixels.width(), content_rect.width())
+                new_height = max(self.source_pixels.height(), content_rect.height())
+
+                image = QImage(new_width, new_height, QImage.Format_ARGB32)
+                image.fill(Qt.transparent)
+                p = QPainter()
+                p.begin(image)
+                p.drawImage(self.source_pixels.rect(), self.source_pixels,
+                            self.source_pixels.rect())
+                p.end()
+
+        if image is None:
+            image = QImage(self.source_pixels)
+
         painter = QPainter()
         painter.begin(image)
         dest_rect = QRect(pix.rect())
         dest_rect.moveTopLeft(self.capture_region_rect.topLeft())
-        painter.drawPixmap(
-            dest_rect,
-            pix,
-            pix.rect()
-        )
+        painter.drawPixmap(dest_rect, pix, pix.rect())
         painter.end()
         self.source_pixels = image
 
@@ -4985,7 +5021,7 @@ class ScreenshotWindow(QWidget):
         to_width = subMenu.addAction("По ширине")
         to_height = subMenu.addAction("По высоте")
 
-        pos = QCursor().pos()
+        pos = self.mapFromGlobal(QCursor().pos())
         action = subMenu.exec_(pos)
 
         elements = []
@@ -5207,7 +5243,7 @@ class ScreenshotWindow(QWidget):
         if self.background_transformed:
             reset_background_transform = add_item("Сброс трансформации фона")
 
-        render_to_background = add_item("Содержимое в фон")
+        render_elements_to_background = add_item("Содержимое в фон")
         special_tool = add_item(icon_multiframing, "Активировать инструмент мультикадрирования")
         reshot = add_item(icon_refresh, "Переснять скриншот")
         autocollage = add_item("Автоколлаж")
@@ -5262,7 +5298,7 @@ class ScreenshotWindow(QWidget):
             self.open_project()
         elif action == fit_images_to_size:
             self.elementsFitImagesToSize()
-        elif action == render_to_background:
+        elif action == render_elements_to_background:
             self.elementsDoRenderToBackground()
         elif action == transform_background:
             self.elementsStartTransformBKGMode()

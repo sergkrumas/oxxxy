@@ -84,6 +84,9 @@ __all__ = (
     'interpolate_values',
     'fit',
     'fit01',
+
+    'load_image_respect_orientation',
+    'is_webp_file_animated',
 )
 
 # Python3 program to find convex hull of a set of points. Refer
@@ -696,3 +699,24 @@ def draw_thirds(self, painter, image_rect):
     # horizontal
     painter.drawLine(QPoint(0, h//3)+offset, QPoint(w, h//3)+offset)
     painter.drawLine(QPoint(0, h//3*2)+offset, QPoint(w, h//3*2)+offset)
+
+
+def load_image_respect_orientation(filepath):
+    imgReader = QImageReader(filepath)
+    imgReader.setAutoTransform(True)
+    img = imgReader.read()
+    return QPixmap().fromImage(img)
+
+def is_webp_file_animated(filepath):
+    result = False
+    file_h = open(filepath, "rb")
+    file_h.seek(12)
+    if file_h.read(4) == b"VP8X":
+        file_h.seek(20)
+        byte = file_h.read(1)
+        if (ord(byte)>>1) & 1:
+            result = True
+        else:
+            result = False
+    file_h.close()
+    return result

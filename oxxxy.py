@@ -55,7 +55,7 @@ from _utils import (convex_hull, check_scancode_for, SettingsJson,
      generate_metainfo, build_valid_rect, dot, get_nearest_point_on_rect, get_creation_date,
      find_browser_exe_file, open_link_in_browser, open_in_google_chrome, save_meta_info,
      make_screenshot_pyqt, webRGBA, generate_gradient, draw_shadow, draw_cyberpunk,
-     elements45DegreeConstraint, get_bounding_points, load_svg)
+     elements45DegreeConstraint, get_bounding_points, load_svg, is_webp_file_animated)
 
 from _sliders import (CustomSlider,)
 from _transform_widget import (TransformWidget,)
@@ -90,6 +90,8 @@ class Globals():
 
     save_to_memory_mode = False
     images_in_memory = []
+
+    dasPictureMagazin = []
 
     close_editor_on_done = True
 
@@ -841,6 +843,7 @@ class PictureInfo():
     TYPE_DYN = "dyn"
     TYPE_STICKER = "sticker"
     TYPE_FROM_FILE = "from_file"
+    TYPE_FROM_MAGAZIN = "from_magazin"
     BUTTON_SIZE = 100
 
     @classmethod
@@ -1952,6 +1955,7 @@ class ScreenshotWindow(QWidget):
         self.draw_vertical_horizontal_lines(painter, cursor_pos)
 
         self.draw_picture_tool(painter, cursor_pos)
+
         self.draw_tool_size_and_color(painter, cursor_pos)
         self.draw_hint(painter, cursor_pos, text_white_pen)
 
@@ -2004,6 +2008,35 @@ class ScreenshotWindow(QWidget):
         painter.drawPixmap(r, pixmap, s)
         painter.resetTransform()
         painter.setOpacity(1.0)
+
+        # счётчик оставшихся изображений в магазине
+        painter.setRenderHint(QPainter.HighQualityAntialiasing, True)
+        painter.setRenderHint(QPainter.Antialiasing, True)
+        painter.setRenderHint(QPainter.SmoothPixmapTransform, True)
+        if Globals.dasPictureMagazin:
+            count = len(Globals.dasPictureMagazin)
+            count_str = str(count)
+
+            r = QRect(0, 0, 25, 25)
+            rect = painter.drawText(r, Qt.AlignCenter | Qt.AlignVCenter, count_str)
+            rect = r
+            rect.moveTopLeft(cursor_pos)
+            painter.setBrush(QBrush(Qt.red))
+            painter.setPen(Qt.NoPen)
+            painter.drawEllipse(rect)
+
+            painter.setPen(Qt.white)
+            old_font = QFont(painter.font())
+            font = painter.font()
+            font.setFamily("Consolas")
+            font.setWeight(1600)
+            painter.setFont(font)
+            painter.drawText(rect, Qt.AlignCenter | Qt.AlignVCenter, count_str)
+            painter.setFont(old_font)
+
+        painter.setRenderHint(QPainter.HighQualityAntialiasing, False)
+        painter.setRenderHint(QPainter.Antialiasing, False)
+        painter.setRenderHint(QPainter.SmoothPixmapTransform, False)
 
     def draw_uncapture_zones_mode_info(self, painter):
         info = {
@@ -2944,7 +2977,7 @@ class ScreenshotWindow(QWidget):
 
             self.choose_default_subelement = True # for copypaste and zoom_in_region
 
-            self.frame_data = None
+            self.frame_info = None
 
             self.size_mode = ElementSizeMode.User
 
@@ -3051,7 +3084,7 @@ class ScreenshotWindow(QWidget):
                 self.elementsSetSelected(element)
 
     def elementsSetPictureElementPoints(self, element, pos, pos_as_center=True,
-                                                                            apply_user_mode=True):
+                                                                            do_not_resize=True):
         is_user_mode = element.size_mode == ElementSizeMode.User
         size = element.size
         if pos_as_center:
@@ -3059,7 +3092,7 @@ class ScreenshotWindow(QWidget):
             element.start_point = r.topLeft()
             element.end_point = r.bottomRight()
         else:
-            if apply_user_mode and is_user_mode:
+            if do_not_resize and is_user_mode:
                 size += Globals.ELEMENT_SIZE_RANGE_OFFSET
             w = math.ceil(element.pixmap.width()*size)
             h = math.ceil(element.pixmap.height()*size)
@@ -3075,7 +3108,7 @@ class ScreenshotWindow(QWidget):
         r.moveCenter(center_point)
         return r
 
-    def elementsFramePicture(self, frame_rect=None, frame_data=None):
+    def elementsFramePicture(self, frame_rect=None, frame_info=None):
         sel_elem = self.selected_element
         if frame_rect:
             if sel_elem.backup_pixmap is None:
@@ -3085,10 +3118,57 @@ class ScreenshotWindow(QWidget):
             # reset
             sel_elem.pixmap = sel_elem.backup_pixmap
             sel_elem.backup_pixmap = None
-        sel_elem.frame_data = frame_data
+        sel_elem.frame_info = frame_info
         pos = (sel_elem.start_point + sel_elem.end_point)/2
         self.elementsSetPictureElementPoints(sel_elem, pos)
         self.elementsSetSelected(sel_elem)
+
+    def elementsSetPixmapFromMagazin(self):
+        if not Globals.dasPictureMagazin and \
+                                        self.current_picture_id in [PictureInfo.TYPE_FROM_MAGAZIN]:
+            self.current_picture_id = PictureInfo.TYPE_FROM_FILE
+            self.current_picture_pixmap = None
+            self.current_picture_angle = 0
+
+        if Globals.dasPictureMagazin:
+            pixmap = Globals.dasPictureMagazin.pop(0)
+
+            capture_height = max(self.capture_region_rect.height(), 100)
+            if pixmap.height() > capture_height:
+                pixmap = pixmap.scaledToHeight(capture_height, Qt.SmoothTransformation)
+            self.current_picture_id = PictureInfo.TYPE_FROM_MAGAZIN
+            self.current_picture_pixmap = pixmap
+            self.current_picture_angle = 0
+            tw = self.tools_window
+            tw.on_parameters_changed()
+            self.activateWindow()
+
+
+    def elementsFramePictures(self, data):
+        pictures = []
+        for pixmap, frame_rect in data:
+            pictures.append(pixmap.copy(frame_rect))
+
+        tw = self.tools_window
+        if tw and tw.current_tool == ToolID.picture:
+                Globals.dasPictureMagazin = pictures
+                self.elementsSetPixmapFromMagazin()
+
+        else:
+            pos = self.capture_region_rect.topLeft()
+            for picture in pictures:
+                element = self.elementsCreateNew(ToolID.picture)
+                element.pixmap = picture
+                element.size = 1.0
+                # element.size_mode = ElementSizeMode.Special
+                element.angle = 0
+                self.elementsSetPictureElementPoints(element, QPoint(pos), pos_as_center=False,
+                    do_not_resize=False)
+                pos += QPoint(element.pixmap.width(), 0)
+                # self.elementsSetSelected(element)
+                self.elementsSelectedElementParamsToUI()
+
+        self.update()
 
     def elementsFramedFinalToImageTool(self, frame_rect):
         self.current_picture_id = PictureInfo.TYPE_STAMP
@@ -3107,7 +3187,7 @@ class ScreenshotWindow(QWidget):
         self.elementsUpdateFinalPicture()
         return self.elements_final_output
 
-    def show_view_window(self, callback_func, _type="final", data=None):
+    def show_view_window(self, get_pixmap_callback_func, _type="final", data=None):
         if self.view_window:
             self.view_window.show()
             self.view_window.activateWindow()
@@ -3116,7 +3196,21 @@ class ScreenshotWindow(QWidget):
             self.view_window.show()
             self.view_window.move(0, 0)
             self.view_window.resize(self.width()//2, self.height())
-            self.view_window.show_image(callback_func())
+            self.view_window.show_image_default(get_pixmap_callback_func())
+            self.view_window.activateWindow()
+
+    def show_view_window_for_animated(self, filepath):
+        # if self.view_window:
+        #     self.view_window.show()
+        #     self.view_window.activateWindow()
+        # else:
+        if True:
+            self.view_window = ViewerWindow(self, main_window=self, _type="final", data=None)
+            self.view_window.show()
+            self.view_window.move(0, 0)
+            # показываем только на первом мониторе слева
+            self.view_window.resize(self.width()//2, self.height())
+            self.view_window.show_image(filepath)
             self.view_window.activateWindow()
 
     def elementsActivateTransformTool(self):
@@ -3800,6 +3894,7 @@ class ScreenshotWindow(QWidget):
             element.pixmap = self.current_picture_pixmap
             element.angle = self.current_picture_angle
             self.elementsSetPictureElementPoints(element, event.pos())
+            self.elementsSetPixmapFromMagazin()
         elif tool in [ToolID.pen, ToolID.marker]:
             if element.straight:
                 element.end_point = event.pos()
@@ -5118,7 +5213,7 @@ class ScreenshotWindow(QWidget):
                 element.size_mode = ElementSizeMode.Special
 
                 r = self.elementsSetPictureElementPoints(element, pos, pos_as_center=False,
-                                apply_user_mode=False)
+                                do_not_resize=False)
 
                 if action == horizontal:
                     pos += QPoint(r.width(), 0)
@@ -5322,7 +5417,7 @@ class ScreenshotWindow(QWidget):
                 pixmap = sel_elem.pixmap
             else:
                 pixmap = sel_elem.backup_pixmap
-            self.show_view_window(lambda: pixmap, _type="edit", data=sel_elem.frame_data)
+            self.show_view_window(lambda: pixmap, _type="edit", data=sel_elem.frame_info)
         elif action == toggle_dark_pictures:
             self.dark_pictures = not self.dark_pictures
             self.elementsUpdateFinalPicture()
@@ -5523,15 +5618,15 @@ class ScreenshotWindow(QWidget):
             if self.tools_window:
                 self.tools_window.done_button.setEnabled(True)
 
-    def elementsPasteImageFromBuffer(self, event):
-        mods = event.modifiers()
-        ctrl = mods & Qt.ControlModifier
-        if not (ctrl and self.tools_window):
-            return
+    def elementsGetImageFromBuffer(self):
         app = QApplication.instance()
         cb = app.clipboard()
         mdata = cb.mimeData()
         pixmap = None
+
+        is_gif_file = lambda fp: fp.lower().endswith(".gif")
+        is_webp_file = lambda fp: fp.lower().endswith(".webp")
+
         if mdata and mdata.hasText():
             path = mdata.text()
             qt_supported_exts = (
@@ -5549,9 +5644,15 @@ class ScreenshotWindow(QWidget):
             PREFIX = "file:///"
             if path.startswith(PREFIX):
                 filepath = path[len(PREFIX):]
-                if path.lower().endswith(qt_supported_exts):
+                _gif_file = is_gif_file(filepath)
+                _webp_animated_file = is_webp_file(filepath) and is_webp_file_animated(filepath)
+                if _gif_file or _webp_animated_file:
+                    return filepath
+                # supported exts
+                elif path.lower().endswith(qt_supported_exts):
                     pixmap = QPixmap(filepath)
-                if path.lower().endswith(svg_exts):
+                # svg-files
+                elif path.lower().endswith(svg_exts):
                     contextMenu = QMenu()
                     contextMenu.setStyleSheet(self.context_menu_stylesheet)
                     factors = [1, 5, 10, 20, 30, 40, 50, 80, 100]
@@ -5566,7 +5667,10 @@ class ScreenshotWindow(QWidget):
                                 pixmap = load_svg(filepath, scale_factor=factor)
         elif mdata and mdata.hasImage():
             pixmap = QPixmap().fromImage(mdata.imageData())
-        if pixmap and pixmap.width() > 0:
+        return pixmap
+
+    def elementsPasteImageToImageToolOrImageElement(self, pixmap):
+        if pixmap and not pixmap.isNull():
             if self.tools_window.current_tool == ToolID.picture:
                 capture_height = max(self.capture_region_rect.height(), 100)
                 if pixmap.height() > capture_height:
@@ -5585,6 +5689,23 @@ class ScreenshotWindow(QWidget):
                 self.elementsSetPictureElementPoints(element, pos, pos_as_center=False)
                 self.elementsSetSelected(element)
                 self.elementsSelectedElementParamsToUI()
+        else:
+            print("image is broken")
+
+    def elementsPasteImageFromBuffer(self, event):
+        mods = event.modifiers()
+        ctrl = mods & Qt.ControlModifier
+        if not (ctrl and self.tools_window):
+            return
+        data = self.elementsGetImageFromBuffer()
+        if isinstance(data, QPixmap):
+            pixmap = data
+            self.elementsPasteImageToImageToolOrImageElement(pixmap)
+        elif data is not None:
+            filepath = data
+            self.show_view_window_for_animated(filepath)
+        else:
+            print("Nothing to paste")
 
     def keyPressEvent(self, event):
         key = event.key()
@@ -5688,7 +5809,7 @@ class ScreenshotWindow(QWidget):
             self.update()
         if check_scancode_for(event, "P"):
             self.show_view_window(self.get_final_picture)
-        if check_scancode_for(event, "V"):
+        if check_scancode_for(event, "V") and event.modifiers() & Qt.ControlModifier:
             self.elementsPasteImageFromBuffer(event)
 
 class StylizedUIBase():

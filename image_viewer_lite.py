@@ -28,7 +28,7 @@ import time
 from PyQt5.QtWidgets import (QApplication, QMenu, QFileDialog, QWidget, QDesktopWidget)
 from PyQt5.QtCore import (QTimer, Qt, QRect, QRectF, QPoint, QPointF)
 from PyQt5.QtGui import (QPixmap, QPainterPath, QPainter, QCursor, QBrush, QPicture,
-                                                                QPen, QColor, QTransform)
+                                                            QPen, QColor, QTransform, QMovie)
 
 from _utils import *
 
@@ -88,14 +88,19 @@ class ViewerWindow(QWidget):
         self.invert_image = False
         self.show_thirds = False
 
+        self.movie = None
+        self.invalid_movie = False
+
         self.contextMenuActivated = False
 
         self.INPUT_POINT1 = self.INPUT_POINT2 = None
         self.input_rect = None
         self.type = _type
 
-        self.frame_data = data
-        self.frame_data_backup = data
+        self.frame_info = data
+        self.frame_info_backup = data
+
+        self.animated_frame_info = dict()
 
         self.user_input_started = False
         self.is_rect_defined = False
@@ -115,16 +120,21 @@ class ViewerWindow(QWidget):
         self.undermouse_region_rect = None
         self.undermouse_region_info = None
         self.region_num = 0
+        self.animated = False
+
+        self.anim_paused = True
 
         self.set_size_and_position()
 
+        self.left_button_pressed = False
+
         self.setMouseTracking(True)
 
-    def no_frame_data(self):
+    def no_frame_info(self):
         self.INPUT_POINT1 = self.INPUT_POINT2 = None
         self.input_rect = None
 
-        self.frame_data = self.frame_data_backup
+        self.frame_info = self.frame_info_backup
 
         self.user_input_started = False
         self.is_rect_defined = False
@@ -144,6 +154,10 @@ class ViewerWindow(QWidget):
         self.undermouse_region_rect = None
         self.undermouse_region_info = None
         self.region_num = 0
+        if self.animated:
+            cur_frame = self.movie.currentFrameNumber()
+            if cur_frame in self.animated_frame_info.keys():
+                self.animated_frame_info.pop(cur_frame)
 
 
     def set_size_and_position(self):
@@ -187,11 +201,6 @@ class ViewerWindow(QWidget):
 
     def is_input_points_set(self):
         return self.is_point_set(self.INPUT_POINT1) and self.is_point_set(self.INPUT_POINT2)
-
-    def build_input_rect2(self, cursor_pos):
-        ip1 = self.get_first_set_point([self.INPUT_POINT1], cursor_pos)
-        ip2 = self.get_first_set_point([self.INPUT_POINT2, self.INPUT_POINT1], cursor_pos)
-        return self._build_valid_rect(ip1, ip2)
 
     def get_region_info(self):
         self.define_regions_rects_and_set_cursor()
@@ -356,8 +365,15 @@ class ViewerWindow(QWidget):
         self.pixmap = None
         self.tranformations_allowed = False
         self.rotated_pixmap = None
+        self.animated = False
 
-    def show_image(self, pixmap):
+    def show_static(self, filepath, pass_=1):
+        pixmap = load_image_respect_orientation(filepath)
+        if pixmap and not pixmap.isNull():
+            self.pixmap = pixmap
+            self.image_filepath = filepath
+
+    def show_image_default(self, pixmap):
         self.viewer_reset(simple=True)
         self.pixmap = pixmap
         self.tranformations_allowed = True
@@ -365,21 +381,103 @@ class ViewerWindow(QWidget):
         self.restore_image_transformations()
         self.update()
 
+    def show_image(self, filepath):
+        self.viewer_reset(simple=True)
+
+        is_gif_file = lambda fp: fp.lower().endswith(".gif")
+        is_webp_file = lambda fp: fp.lower().endswith(".webp")
+
+        _gif_file = is_gif_file(filepath)
+        _webp_animated_file = is_webp_file(filepath) and is_webp_file_animated(filepath)
+        if _gif_file or _webp_animated_file:
+            self.show_animated(filepath)
+        else:
+            self.show_static(filepath)
+
+        self.get_rotated_pixmap()
+        self.restore_image_transformations()
+        self.update()
+
+    def is_animated_file_valid(self):
+        self.movie.jumpToFrame(0)
+        self.animation_stamp()
+        fr = self.movie.frameRect()
+        if fr.width() == 0 or fr.height() == 0:
+            self.invalid_movie = True
+            self.tranformations_allowed = False
+
+    def show_animated(self, filepath):
+        if filepath is not None:
+            self.invalid_movie = False
+            self.movie = QMovie(filepath)
+            self.movie.setCacheMode(QMovie.CacheAll)
+            self.image_filepath = filepath
+            self.tranformations_allowed = True
+            self.animated = True            
+            self.is_animated_file_valid()
+            self.show_center_label("Воспроизведение остановлено\nКлавиша Space ➜ воспроизвести или остановить")
+        else:
+            if self.movie:
+                self.movie.deleteLater()
+                self.movie = None
+
+    def animation_stamp(self):
+        self.frame_delay = self.movie.nextFrameDelay()
+        self.frame_time = time.time()
+
+    def tick_animation(self):
+        delta = (time.time() - self.frame_time) * 1000
+        is_playing = not self.anim_paused
+        is_animation = self.movie.frameCount() > 1
+        if delta > self.frame_delay and is_playing and is_animation:
+            self.movie.jumpToNextFrame()
+            self.animation_stamp()
+            self.frame_delay = self.movie.nextFrameDelay()
+            self.pixmap = self.movie.currentPixmap()
+            self.get_rotated_pixmap(force_update=True)
+            self.retrieve_frame_info_to_ui()
+
+    def retrieve_frame_info_to_ui(self):
+        cur_frame = self.movie.currentFrameNumber()
+        frame_data = self.animated_frame_info.get(cur_frame, None)
+        self.input_rect = None
+        self.frame_info = None
+        self.input_POINT1 = None
+        self.input_POINT2 = None
+        self.capture_region_rect = None
+        self.is_rect_defined = False
+        if frame_data is not None:
+            if frame_data["input_rect"] is not None:
+                input_rect = QRect(frame_data["input_rect"])
+                self.input_POINT1 = input_rect.topLeft()
+                self.input_POINT2 = input_rect.bottomRight()
+                self.input_rect = input_rect
+                self.capture_region_rect = QRect(input_rect)
+                self.frame_info = (frame_data["frame_info"])[:]
+                self.is_rect_defined = True
+                # frame_data["frame_rect"]
+        self.update_capture_region_due_to_frame_info()
+
     def get_rotated_pixmap(self, force_update=True):
         if self.rotated_pixmap is None or force_update:
             rm = QTransform()
             rm.rotate(self.image_rotation)
+            if self.pixmap is None and self.animated:
+                self.pixmap = self.movie.currentPixmap()
             self.rotated_pixmap = self.pixmap.transformed(rm)
         return self.rotated_pixmap
 
     def get_image_viewport_rect(self, debug=False):
         image_rect = QRect()
-        if self.pixmap:
-            pixmap = self.get_rotated_pixmap()
-            orig_width = pixmap.rect().width()
-            orig_height = pixmap.rect().height()
+        if self.pixmap or self.invalid_movie or self.animated:
+            if self.pixmap:
+                pixmap = self.get_rotated_pixmap()
+                orig_width = pixmap.rect().width()
+                orig_height = pixmap.rect().height()
+            else:
+                orig_width = orig_height = 1000
         else:
-            orig_width = orig_height = 1000
+            orig_width = orig_height = 0
         image_rect.setLeft(0)
         image_rect.setTop(0)
         image_scale = self.image_scale
@@ -394,21 +492,79 @@ class ViewerWindow(QWidget):
         image_rect.setHeight(int(new_height))
         return image_rect
 
+    def do_scroll_playspeed(self, scroll_value):
+        if not self.animated:
+            return
+        speed_values = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 120, 140, 160, 180, 200]
+        index = speed_values.index(int(self.movie.speed()))
+        if index == len(speed_values)-1 and scroll_value > 0:
+            pass
+        elif index == 0 and scroll_value < 0:
+            pass
+        else:
+            if scroll_value < 0:
+                index -=1
+            if scroll_value > 0:
+                index +=1
+        self.movie.setSpeed(speed_values[index])
+
+    def do_scroll_playbar(self, scroll_value):
+        if not self.animated:
+            return
+        frames_list = list(range(0, self.movie.frameCount()))
+        if scroll_value > 0:
+            pass
+        else:
+            frames_list = list(reversed(frames_list))
+        frames_list.append(0)
+        i = frames_list.index(self.movie.currentFrameNumber()) + 1
+        self.movie.jumpToFrame(frames_list[i])
+        self.pixmap = self.movie.currentPixmap()
+        self.get_rotated_pixmap(force_update=True)
+        self.anim_paused = True
+        self.retrieve_frame_info_to_ui()
+        self.update()
+
+    def is_wheel_allowed(self):
+        return not (self.user_input_started or self.is_rect_being_redefined)
+
+    def wheelEvent(self, event):
+
+        scroll_value = event.angleDelta().y()/240
+        ctrl = event.modifiers() & Qt.ControlModifier
+        shift = event.modifiers() & Qt.ShiftModifier
+        no_mod = event.modifiers() == Qt.NoModifier
+
+        if self.left_button_pressed:
+            self.do_scroll_playbar(scroll_value)
+            self.show_center_label("framenumber")
+        if shift and ctrl:
+            self.do_scroll_playspeed(scroll_value)
+            self.show_center_label("playspeed")
+        if no_mod and self.is_wheel_allowed()and not self.left_button_pressed:
+            self.do_scale_image(scroll_value)
+            self.show_center_label("scale")
+
+        self.update()
+
     def on_timer(self):
         self.update_for_center_label_fade_effect()
+        if self.animated:
+            self.tick_animation()
+        self.update()
 
     def is_cursor_over_image(self):
         return self.cursor_in_rect(self.get_image_viewport_rect())
 
-    def get_image_frame_info(self):
-        rect = self.input_rect
+    def get_image_frame_info_from_input_rect(self):
+        input_rect = self.input_rect
         image_rect = self.get_image_viewport_rect()
 
-        assert rect is not None
+        assert input_rect is not None
         assert image_rect is not None
 
-        screen_delta1 = rect.topLeft() - image_rect.topLeft()
-        screen_delta2 = rect.bottomRight() - image_rect.topLeft()
+        screen_delta1 = input_rect.topLeft() - image_rect.topLeft()
+        screen_delta2 = input_rect.bottomRight() - image_rect.topLeft()
 
         left = screen_delta1.x()/image_rect.width()
         top = screen_delta1.y()/image_rect.height()
@@ -418,10 +574,6 @@ class ViewerWindow(QWidget):
 
         return left, top, right, bottom
 
-    def build_input_rect(self):
-        if self.is_point_set(self.INPUT_POINT1) and self.is_point_set(self.INPUT_POINT2):
-            self.input_rect = build_valid_rect(self.INPUT_POINT1, self.INPUT_POINT2)
-
 
 
     def get_frame_rect_to_draw(self):
@@ -429,7 +581,7 @@ class ViewerWindow(QWidget):
         image_rect = self.get_image_viewport_rect()
 
         base_point = image_rect.topLeft()
-        left, top, right, bottom = self.frame_data
+        left, top, right, bottom = self.frame_info
 
         screen_left = base_point.x() + image_rect.width()*left
         screen_top = base_point.y() + image_rect.height()*top
@@ -443,7 +595,7 @@ class ViewerWindow(QWidget):
         return frame_rect
 
     def draw_image_frame(self, painter):
-        if self.frame_data:
+        if self.frame_info:
 
             image_rect = self.get_image_viewport_rect()
 
@@ -477,7 +629,7 @@ class ViewerWindow(QWidget):
     def get_frame_rect(self):
         image_rect = self.pixmap.rect()
         base_point = image_rect.topLeft()
-        left, top, right, bottom = self.get_image_frame_info()
+        left, top, right, bottom = self.get_image_frame_info_from_input_rect()
 
         screen_left = base_point.x() + image_rect.width()*left
         screen_top = base_point.y() + image_rect.height()*top
@@ -489,24 +641,65 @@ class ViewerWindow(QWidget):
             QPointF(screen_left, screen_top), QPointF(screen_right, screen_bottom)).toRect()
         return frame_rect
 
-    def frame_image(self):
-        if self.frame_data:
-            self.main_window.elementsFramePicture(frame_rect=self.get_frame_rect(),
-                                                        frame_data=self.get_image_frame_info())
+    def toggle_pickup(self):
+        if self.animated:
+            cur_frame = self.movie.currentFrameNumber()
+            frame_info = self.animated_frame_info.get(cur_frame, None)
+            if frame_info is None or frame_info["input_rect"] is None:
+                # задаём дефолтный
+                pixmap = self.movie.currentPixmap()
+                self.animated_frame_info[cur_frame] = \
+                {
+                    "input_rect": QRect(self.get_image_viewport_rect()),
+                    "frame_rect": QRect(pixmap.rect()),
+                    "frame_info": (0.0, 0.0, 1.0, 1.0),
+                }
+            else:
+                # убираем рамку
+                self.animated_frame_info.pop(cur_frame)
+        self.retrieve_frame_info_to_ui()
+        self.update()
 
-    def framedfinal_to_imagetool(self):
-        if self.frame_data:
-            self.main_window.elementsFramedFinalToImageTool(self.get_frame_rect())
+    def frame_picture(self):
+        if self.main_window:
+            if self.frame_info:
+                self.main_window.elementsFramePicture(frame_rect=self.get_frame_rect(),
+                                        frame_info=self.get_image_frame_info_from_input_rect())
+        else:
+            print('frame_rect', self.get_frame_rect())
+            print('frame_info', self.get_image_frame_info_from_input_rect())
+        self.close()
 
+    def frame_final_picture_to_picture_tool(self):
+        if self.main_window:
+            if self.frame_info:
+                self.main_window.elementsFramedFinalToImageTool(self.get_frame_rect())
+        else:
+            print('frame_rect', self.get_frame_rect())
+        self.close()
 
-
-
+    def frame_pictures_from_animated(self):
+        if self.main_window:
+            pictures_and_frame_data = []
+            for i, data in self.animated_frame_info.items():
+                if data["input_rect"] is None:
+                    continue
+                self.movie.jumpToFrame(i)
+                pixmap = self.movie.currentPixmap()
+                pictures_and_frame_data.append((pixmap, data['frame_rect']))
+            self.main_window.elementsFramePictures(pictures_and_frame_data)
+        else:
+            print(self.animated_frame_info)
+        self.close()
 
 
 
 
 
     def mousePressEvent(self, event):
+
+        if event.button() == Qt.LeftButton:
+            self.left_button_pressed = True
 
         if event.button() == Qt.LeftButton:
             if event.modifiers() & Qt.ControlModifier:
@@ -555,6 +748,9 @@ class ViewerWindow(QWidget):
         self.mouseReleaseEventCaptureRect(event)
 
         if event.button() == Qt.LeftButton:
+            self.left_button_pressed = False
+
+        if event.button() == Qt.LeftButton:
             if event.modifiers() & Qt.ControlModifier:
                 if self.isInEditorMode() or True:
                     self.calculate_image_frame_info()
@@ -565,17 +761,35 @@ class ViewerWindow(QWidget):
         self.update()
         super().mouseReleaseEvent(event)
 
+    def build_input_rect(self):
+        if self.is_point_set(self.INPUT_POINT1) and self.is_point_set(self.INPUT_POINT2):
+            self.input_rect = build_valid_rect(self.INPUT_POINT1, self.INPUT_POINT2)
 
     def calculate_image_frame_info(self):
         self.build_input_rect()
         if self.input_rect and self.input_rect.width() > 50 and self.input_rect.height() > 50:
             self.input_rect = self.input_rect.intersected(self.get_image_viewport_rect())
-            self.frame_data = self.get_image_frame_info()
+            self.frame_info = self.get_image_frame_info_from_input_rect()
             self.hide_center_label()
         else:
             self.input_rect = None
-            self.frame_data = None
+            self.frame_info = None
             self.show_center_label("Задаваемая область слишком мала")
+        if self.animated:
+            cur_frame = self.movie.currentFrameNumber()
+            if self.input_rect is None:
+                data = {
+                    "input_rect": None,
+                    "frame_rect": None,
+                    "frame_info": None,
+                }
+            else:
+                data = {
+                    "input_rect": QRect(self.input_rect),
+                    "frame_rect": QRect(self.get_frame_rect()),
+                    "frame_info": self.frame_info[:],
+                }
+            self.animated_frame_info[cur_frame] = data
 
 
 
@@ -590,7 +804,6 @@ class ViewerWindow(QWidget):
                     self.INPUT_POINT1 = event.pos()
                 else:
                     self.INPUT_POINT2 = event.pos()
-
 
                     # modifiers = event.modifiers()
                     # if modifiers == Qt.NoModifier:
@@ -641,8 +854,6 @@ class ViewerWindow(QWidget):
 
         self.update()
 
-        # super().mouseMoveEvent(event)
-
     def mousePressEventCaptureRect(self, event):
         isLeftButton = event.button() == Qt.LeftButton
         if not self.capture_region_rect:
@@ -655,7 +866,6 @@ class ViewerWindow(QWidget):
             else:
                 self.drag_inside_capture_zone = False
 
-        # super().mousePressEvent(event)
         self.update()
 
     def mouseReleaseEventCaptureRect(self, event):
@@ -675,7 +885,6 @@ class ViewerWindow(QWidget):
         self.is_rect_being_redefined = False
         self.user_input_started = False
 
-        # super().mouseReleaseEvent(event)
         self.update()
 
     def paintEvent(self, event):
@@ -688,37 +897,18 @@ class ViewerWindow(QWidget):
         painter.setBrush(QBrush(Qt.black, Qt.SolidPattern))
         painter.drawRect(self.rect())
         painter.setOpacity(1.0)
+
         self.draw_content(painter)
-
-
         cursor_pos = self.mapFromGlobal(QCursor().pos())
-        input_rect = self.build_input_rect2(cursor_pos)
-
         self.draw_vertical_horizontal_lines(painter, cursor_pos)
 
         painter.end()
-
-
-
-
 
     def get_center_position(self):
         return QPoint(
             int(self.frameGeometry().width()/2),
             int(self.frameGeometry().height()/2)
         )
-
-    def is_wheel_allowed(self):
-        return not (self.user_input_started or self.is_rect_being_redefined)
-
-    def wheelEvent(self, event):
-        scroll_value = event.angleDelta().y()/240
-        ctrl = event.modifiers() & Qt.ControlModifier
-        shift = event.modifiers() & Qt.ShiftModifier
-        no_mod = event.modifiers() == Qt.NoModifier
-        if no_mod and self.is_wheel_allowed():
-            self.do_scale_image(scroll_value)
-            self.show_center_label("scale")
 
     def set_original_scale(self):
         self.image_scale = 1.0
@@ -825,13 +1015,20 @@ class ViewerWindow(QWidget):
                 self.image_scale = image_scale
             self.image_center_position = image_center_position.toPoint()
 
-
-        if self.capture_region_rect:
-            rect = self.get_frame_rect_to_draw()
-            self.INPUT_POINT1 = rect.topLeft()
-            self.INPUT_POINT2 = rect.bottomRight()
-            self.capture_region_rect = rect
+        self.update_capture_region_due_to_frame_info()
         self.update()
+
+    def update_capture_region_due_to_frame_info(self):
+        if self.input_rect:
+            if self.capture_region_rect:
+                rect = self.get_frame_rect_to_draw()
+                self.INPUT_POINT1 = rect.topLeft()
+                self.INPUT_POINT2 = rect.bottomRight()
+                self.capture_region_rect = rect
+        else:
+            self.capture_region_rect = None
+            self.INPUT_POINT1 = None
+            self.INPUT_POINT2 = None
 
     def scale_label_opacity(self):
         delta = time.time() - self.center_label_time
@@ -973,6 +1170,13 @@ class ViewerWindow(QWidget):
                 if self.center_label_info_type == "scale":
                     value = math.ceil(self.image_scale*100)
                     text = f"{value:,}%".replace(',', ' ')
+                elif self.center_label_info_type == "playspeed":
+                    speed = self.movie.speed()
+                    text = f"speed {speed}%"
+                elif self.center_label_info_type == "framenumber":
+                    frame_num = self.movie.currentFrameNumber()+1
+                    frame_count = self.movie.frameCount()
+                    text = f"frame {frame_num}/{frame_count}"
                 else:
                     text = self.center_label_info_type
                 self.draw_center_label(painter, text)
@@ -986,6 +1190,28 @@ class ViewerWindow(QWidget):
             font.setPixelSize(20)
             painter.setFont(font)
             painter.drawText(self.rect(), Qt.AlignHCenter | Qt.AlignVCenter, "Image Viewer Lite")
+
+        # draw animation progressbar
+        if self.movie:
+            r = self.get_image_viewport_rect()
+            progress_width = r.width() * (self.movie.currentFrameNumber()+1)/self.movie.frameCount()
+            progress_bar_rect = QRect(r.left(), r.bottom(), int(progress_width), 10)
+            painter.setBrush(QBrush(Qt.green))
+            painter.setPen(Qt.NoPen)
+            painter.drawRect(progress_bar_rect)
+
+            for n, frame_info in self.animated_frame_info.items():
+                input_rect = frame_info["input_rect"]
+                if input_rect is None:
+                    continue
+
+                width = r.width() / self.movie.frameCount()
+                left = width * n
+                # print(width, left)
+                image_included_rect = QRect(r.left() + int(left), r.bottom()+10, int(width), 10)
+                painter.setBrush(QBrush(Qt.red))
+                painter.setPen(Qt.NoPen)
+                painter.drawRect(image_included_rect)
 
 
     def draw_center_point(self, painter, pos):
@@ -1049,16 +1275,35 @@ class ViewerWindow(QWidget):
             self.mirror_current_image()
         elif check_scancode_for(event, "R"):
             self.rotate_clockwise()
+        elif key == Qt.Key_Space:
+            if self.animated:
+                self.anim_paused = not self.anim_paused
+                if self.anim_paused:
+                    self.show_center_label("stopped")
+            self.update()
         elif check_scancode_for(event, "P"):
             self.close()
         elif key == Qt.Key_Escape:
             self.close()
+        elif key in [Qt.Key_Left]:
+            self.do_scroll_playbar(-1.0)
+            self.show_center_label("framenumber")
+        elif key in [Qt.Key_Right]:
+            self.do_scroll_playbar(1.0)
+            self.show_center_label("framenumber")
         elif key in [Qt.Key_Return, Qt.Key_Enter]:
-            if self.isInEditorMode():
-                self.frame_image()
+            if self.animated:
+                ctrl = bool(event.modifiers() & Qt.ControlModifier)
+                if ctrl:
+                    self.frame_pictures_from_animated()
+                else:
+                    self.toggle_pickup()
             else:
-                self.framedfinal_to_imagetool()
-            self.close()
+                if self.isInEditorMode():
+                    self.frame_picture()
+                else:
+                    self.frame_final_picture_to_picture_tool()
+
         self.update()
 
     def contextMenuEvent(self, event):
@@ -1113,7 +1358,7 @@ class ViewerWindow(QWidget):
         if action is None:
             pass
         elif action == unset_capture_rect:
-            self.no_frame_data()
+            self.no_frame_info()
         elif action == close_app:
             self.close()
         elif action == maximize:
@@ -1195,7 +1440,6 @@ if __name__ == '__main__':
             data = file.read()
             path = data.split("\n")[0]
 
-
     if not path:
         images = get_filepaths_dialog(path)
         path = images[0]
@@ -1204,5 +1448,6 @@ if __name__ == '__main__':
         window.resize(2200, 1000)
         # window.show()
         window.showMaximized()
-        window.show_image(QPixmap(path))
+        window.show_image(path)
+        window.activateWindow()
         app.exec()

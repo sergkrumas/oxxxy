@@ -3940,6 +3940,7 @@ class ScreenshotWindow(QWidget):
         if tool != ToolID.transform:
             self.elementsSetSelected(None)
         self.elementsAutoDeleteInvisibleElement(element)
+        self.tools_window.forwards_backwards_update()
         self.update()
 
     def elementsAutoDeleteInvisibleElement(self, element):
@@ -3947,10 +3948,8 @@ class ScreenshotWindow(QWidget):
         if tool in [ToolID.line, ToolID.pen, ToolID.marker]:
             if element.end_point == element.start_point:
                 self.elements.remove(element)
-                tw = self.tools_window
-                if tw:
+                if self.tools_window:
                     self.elements_history_index = self.prev_elements_history_index
-                    tw.forwards_backwards_update()
                     # print('correcting after autodelete')
 
     def elementsSetBlurredPixmap(self, element):

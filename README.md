@@ -1,5 +1,5 @@
 
-# [Russian] Oxxxy Screenshoter v0.9 for Windows by Sergei Krumas
+# [Russian] [PyQt] Oxxxy Screenshoter v0.9 for Windows by Sergei Krumas
 
 ![](docs/oxxxy_logo.png)
 
@@ -66,4 +66,4 @@
 
 ## [Ручное тестирование и рефакторинг](MANUAL_TESTING.md)
 
-## [Туториал по созданию нового инструмента](TUTORIAL.md)
+## [Туториал по созданию нового инструмента (Python и PyQt)](TUTORIAL.md)

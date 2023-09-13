@@ -67,12 +67,12 @@ class Globals():
     DEBUG_ELEMENTS = True
     DEBUG_ELEMENTS_PICTURE_FRAMING = True
     DEBUG_ELEMENTS_COLLAGE = False
-    CRUSH_SIMULATOR = False
+    CRASH_SIMULATOR = False
 
     DEBUG_VIZ = False
     DEBUG_ANALYSE_CORNERS_SPACES = False
 
-    AFTERCRUSH = False
+    AFTERCRASH = False
     RUN_ONCE = False
     FULL_STOP = False
 
@@ -4297,7 +4297,7 @@ class ScreenshotWindow(QWidget):
             painter.resetTransform()
             painter.setOpacity(1.0)
         elif el_type == ToolID.removing:
-            if Globals.CRUSH_SIMULATOR:
+            if Globals.CRASH_SIMULATOR:
                 1 / 0
         elif el_type in [ToolID.zoom_in_region, ToolID.copypaste]:
             f_input_rect = build_valid_rect(element.f_start_point, element.f_end_point)
@@ -6332,8 +6332,8 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
 
             open_settings_btn = QPushButton("Настройки")
 
-            show_crushlog_btn = QPushButton("Открыть crush.log")
-            self.show_crushlog_btn = show_crushlog_btn
+            show_crashlog_btn = QPushButton("Открыть crash.log")
+            self.show_crashlog_btn = show_crashlog_btn
 
             # в подвале окна
             quit_btn = QPushButton("Выход")
@@ -6341,7 +6341,7 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
             show_source_code_btn.clicked.connect(self.show_source_code)
             object_name_list = [
                 # open_settings_btn,
-                show_crushlog_btn,
+                show_crashlog_btn,
                 quit_btn,
                 show_source_code_btn
             ]
@@ -6360,7 +6360,7 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
 
             self.thrid_row = QVBoxLayout()
             self.thrid_row.addWidget(open_settings_btn)
-            self.thrid_row.addWidget(show_crushlog_btn)
+            self.thrid_row.addWidget(show_crashlog_btn)
 
             self.bottom_row = QHBoxLayout()
             self.bottom_row.addWidget(quit_btn)
@@ -6383,7 +6383,7 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
             screenshot_fragment_btn.clicked.connect(self.start_screenshot_editor_fragment)
             screenshot_fullscreens_btn.clicked.connect(self.start_screenshot_editor_fullscreen)
             open_settings_btn.clicked.connect(self.open_settings_window)
-            show_crushlog_btn.clicked.connect(show_crush_log)
+            show_crashlog_btn.clicked.connect(show_crash_log)
             quit_btn.clicked.connect(self.app_quit)
             btn_list = [
                 screenshot_fragment_btn,
@@ -6393,7 +6393,7 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
                 open_history_btn,
                 open_recent_screenshot_btn,
                 open_settings_btn,
-                show_crushlog_btn,
+                show_crashlog_btn,
                 quit_btn,
                 show_source_code_btn
             ]
@@ -6420,10 +6420,10 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
         if self.isVisible():
             self.hide()
         if self.widget_type == "menu":
-            if os.path.exists(get_crushlog_filepath()):
-                self.show_crushlog_btn.setVisible(True)
+            if os.path.exists(get_crashlog_filepath()):
+                self.show_crashlog_btn.setVisible(True)
             else:
-                self.show_crushlog_btn.setVisible(False)
+                self.show_crashlog_btn.setVisible(False)
             self.place_window()
 
     def open_recent_screenshot(self):
@@ -6816,20 +6816,20 @@ def invoke_screenshot_editor(request_type=None):
             app = QApplication.instance()
             app.exit()
 
-def show_crush_log():
-    path = get_crushlog_filepath()
+def show_crash_log():
+    path = get_crashlog_filepath()
     if os.path.exists(path):
         open_link_in_browser(path)
     else:
         QMessageBox.critical(None, "Сообщение",
                 "Файла не нашлось, видимо программа ещё не крашилась.")
 
-def get_crushlog_filepath():
+def get_crashlog_filepath():
     if Globals.DEBUG:
         root = os.path.dirname(__file__)
     else:
         root = os.path.expanduser("~")
-    path = os.path.normpath(os.path.join(root, "oxxxy_crush.log"))
+    path = os.path.normpath(os.path.join(root, "oxxxy_crash.log"))
     return path
 
 def excepthook(exc_type, exc_value, exc_tb):
@@ -6842,11 +6842,11 @@ def excepthook(exc_type, exc_value, exc_tb):
     datetime_string = time.strftime("%A, %d %B %Y %X").capitalize()
     dt = "{0} {1} {0}".format(" "*15, datetime_string)
     dt_framed = "{0}\n{1}\n{0}\n".format("-"*len(dt), dt)
-    with open(get_crushlog_filepath(), "a+", encoding="utf8") as crush_log:
-        crush_log.write("\n"*10)
-        crush_log.write(dt_framed)
-        crush_log.write("\n")
-        crush_log.write(traceback_lines)
+    with open(get_crashlog_filepath(), "a+", encoding="utf8") as crash_log:
+        crash_log.write("\n"*10)
+        crash_log.write(dt_framed)
+        crash_log.write("\n")
+        crash_log.write(traceback_lines)
     print("*** excepthook info ***")
     print(traceback_lines)
     app = QApplication.instance()
@@ -6855,7 +6855,7 @@ def excepthook(exc_type, exc_value, exc_tb):
         if stray_icon:
             stray_icon.hide()
     if (not Globals.DEBUG) and (not Globals.RUN_ONCE):
-        _restart_app(aftercrush=True)
+        _restart_app(aftercrash=True)
     sys.exit()
 
 def get_filepaths_dialog(path=""):
@@ -6872,10 +6872,10 @@ def exit_threads():
         thread.terminate()
         # нужно вызывать terminate вместо exit
 
-def _restart_app(aftercrush=False):
+def _restart_app(aftercrash=False):
     # Обязательный перезапуск после созданного скриншота или отмены!
-    if aftercrush:
-        subprocess.Popen([sys.executable, sys.argv[0], "-aftercrush"])
+    if aftercrash:
+        subprocess.Popen([sys.executable, sys.argv[0], "-aftercrash"])
     else:
         subprocess.Popen([sys.executable, sys.argv[0]])
 
@@ -6898,11 +6898,11 @@ def _main():
     os.chdir(os.path.dirname(__file__))
     sys.excepthook = excepthook
 
-    if Globals.CRUSH_SIMULATOR:
+    if Globals.CRASH_SIMULATOR:
         1 / 0
 
     RERUN_ARG = '-rerun'
-    if (RERUN_ARG not in sys.argv) and ("-aftercrush" not in sys.argv):
+    if (RERUN_ARG not in sys.argv) and ("-aftercrash" not in sys.argv):
         subprocess.Popen([sys.executable, *sys.argv, RERUN_ARG])
         sys.exit()
 
@@ -6912,15 +6912,15 @@ def _main():
     # введения переменной this_filepath ниже
     parser.add_argument('-user_mode', help="", action="store_true")
     parser.add_argument('-notification', help="", action="store_true")
-    parser.add_argument('-aftercrush', help="", action="store_true")
+    parser.add_argument('-aftercrash', help="", action="store_true")
     parser.add_argument('-rerun', help="", action="store_true")
     args = parser.parse_args(sys.argv[1:])
     if args.path:
         path = args.path
     if args.user_mode:
         Globals.DEBUG = False
-    if args.aftercrush:
-        Globals.AFTERCRUSH = True
+    if args.aftercrash:
+        Globals.AFTERCRASH = True
 
     read_settings_file()
 
@@ -6939,8 +6939,8 @@ def _main():
     app.setEffectEnabled(Qt.UI_AnimateTooltip, False)
     app.setEffectEnabled(Qt.UI_FadeTooltip, False)
 
-    if Globals.AFTERCRUSH:
-        filepath = get_crushlog_filepath()
+    if Globals.AFTERCRASH:
+        filepath = get_crashlog_filepath()
         msg0 = f"Информация сохранена в файл\n\t{filepath}"
         msg = f"Скриншотер Oxxxy упал.\n{msg0}\n\nПерезапустить Oxxxy?"
         ret = QMessageBox.question(None, 'Сбой',
@@ -6986,7 +6986,7 @@ def _main():
     sys.exit(0)
 
 def main():
-    # try ... except needed for crush reports into the file
+    # try ... except needed for crash reports into the file
     try:
         _main()
     except Exception as e:

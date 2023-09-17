@@ -3108,20 +3108,23 @@ class ScreenshotWindow(QWidget):
         r.moveCenter(center_point)
         return r
 
-    def elementsFramePicture(self, frame_rect=None, frame_info=None):
-        sel_elem = self.selected_element
+    def elementsFramePicture(self, frame_rect=None, frame_info=None, pixmap=None):
+        se = self.selected_element
         if frame_rect:
-            if sel_elem.backup_pixmap is None:
-                sel_elem.backup_pixmap = sel_elem.pixmap
-            sel_elem.pixmap = sel_elem.backup_pixmap.copy(frame_rect)
+            if se.backup_pixmap is None:
+                se.backup_pixmap = se.pixmap
+            if pixmap is not None:
+                se.pixmap = pixmap.copy(frame_rect)
+            else:
+                se.pixmap = se.backup_pixmap.copy(frame_rect)
         else:
             # reset
-            sel_elem.pixmap = sel_elem.backup_pixmap
-            sel_elem.backup_pixmap = None
-        sel_elem.frame_info = frame_info
-        pos = (sel_elem.start_point + sel_elem.end_point)/2
-        self.elementsSetPictureElementPoints(sel_elem, pos)
-        self.elementsSetSelected(sel_elem)
+            se.pixmap = se.backup_pixmap
+            se.backup_pixmap = None
+        se.frame_info = frame_info
+        pos = (se.start_point + se.end_point)/2
+        self.elementsSetPictureElementPoints(se, pos)
+        self.elementsSetSelected(se)
 
     def elementsSetPixmapFromMagazin(self):
         if not Globals.dasPictureMagazin and \
@@ -3170,9 +3173,9 @@ class ScreenshotWindow(QWidget):
 
         self.update()
 
-    def elementsFramedFinalToImageTool(self, frame_rect):
+    def elementsFramedFinalToImageTool(self, pixmap, frame_rect):
         self.current_picture_id = PictureInfo.TYPE_STAMP
-        self.current_picture_pixmap = self.elements_final_output.copy(frame_rect)
+        self.current_picture_pixmap = pixmap.copy(frame_rect)
         self.current_picture_angle = 0
 
         tools_window = self.tools_window
@@ -3273,6 +3276,7 @@ class ScreenshotWindow(QWidget):
         source = self.source_pixels_backup
 
         output_image = QPixmap(source.size())
+        output_image.fill(Qt.transparent)
         painter = QPainter()
 
         painter.begin(output_image)

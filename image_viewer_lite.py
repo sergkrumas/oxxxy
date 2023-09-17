@@ -134,8 +134,11 @@ class ViewerWindow(QWidget):
         self.left_button_pressed = False
 
         self.control_panel_init()
+        self.transform_widget_init()
 
         self.setMouseTracking(True)
+
+        self.transformed_frames_for_animated = dict()
 
     def no_frame_info(self):
         self.INPUT_POINT1 = self.INPUT_POINT2 = None
@@ -444,7 +447,13 @@ class ViewerWindow(QWidget):
             self.movie.jumpToNextFrame()
             self.animation_stamp()
             self.frame_delay = self.movie.nextFrameDelay()
-            self.pixmap = self.movie.currentPixmap()
+            cur_frame_num = self.movie.currentFrameNumber()
+            current_pixmap = self.transformed_frames_for_animated.get(cur_frame_num, None)
+            self.image_transformed = True
+            if current_pixmap is None:
+                current_pixmap = self.movie.currentPixmap()
+                self.image_transformed = False
+            self.pixmap = current_pixmap
             self.get_rotated_pixmap(force_update=True)
             self.retrieve_frame_info_to_ui()
 
@@ -530,7 +539,13 @@ class ViewerWindow(QWidget):
         frames_list.append(0)
         i = frames_list.index(self.movie.currentFrameNumber()) + 1
         self.movie.jumpToFrame(frames_list[i])
-        self.pixmap = self.movie.currentPixmap()
+        cur_frame_num = self.movie.currentFrameNumber()
+        current_pixmap = self.transformed_frames_for_animated.get(cur_frame_num, None)
+        self.image_transformed = True
+        if current_pixmap is None:
+            current_pixmap = self.movie.currentPixmap()
+            self.image_transformed = False
+        self.pixmap = current_pixmap
         self.get_rotated_pixmap(force_update=True)
         self.anim_paused = True
         self.retrieve_frame_info_to_ui()
@@ -674,9 +689,17 @@ class ViewerWindow(QWidget):
 
     def frame_picture(self):
         if self.main_window:
-            if self.frame_info:
-                self.main_window.elementsFramePicture(frame_rect=self.get_frame_rect(),
-                                        frame_info=self.get_image_frame_info_from_input_rect())
+            if self.image_transformed:
+                pixmap = self.pixmap
+            else:
+                pixmap = None
+            pixmap_rect = self.get_frame_rect() if self.frame_info else self.pixmap.rect()
+            frame_info = self.get_image_frame_info_from_input_rect() if self.frame_info else (0.0, 0.0, 1.0, 1.0)
+            self.main_window.elementsFramePicture(
+                frame_rect=pixmap_rect,
+                frame_info=frame_info,
+                pixmap=pixmap
+            )
         else:
             print('frame_rect', self.get_frame_rect())
             print('frame_info', self.get_image_frame_info_from_input_rect())
@@ -684,8 +707,8 @@ class ViewerWindow(QWidget):
 
     def frame_final_picture_to_picture_tool(self):
         if self.main_window:
-            if self.frame_info:
-                self.main_window.elementsFramedFinalToImageTool(self.get_frame_rect())
+            pixmap_rect = self.get_frame_rect() if self.frame_info else self.pixmap.rect()
+            self.main_window.elementsFramedFinalToImageTool(self.pixmap, pixmap_rect)
         else:
             print('frame_rect', self.get_frame_rect())
         self.close()
@@ -697,20 +720,40 @@ class ViewerWindow(QWidget):
                 if data["input_rect"] is None:
                     continue
                 self.movie.jumpToFrame(i)
-                pixmap = self.movie.currentPixmap()
-                pictures_and_frame_data.append((pixmap, data['frame_rect']))
+                current_pixmap = self.transformed_frames_for_animated.get(i, None)
+                if current_pixmap is None:
+                    current_pixmap = self.movie.currentPixmap()
+                pictures_and_frame_data.append((current_pixmap, data['frame_rect']))
             self.main_window.elementsFramePictures(pictures_and_frame_data)
         else:
             print(self.animated_frame_info)
         self.close()
 
-
+    def click_done(self):
+        if self.animated:
+            ctrl = bool(QApplication.queryKeyboardModifiers() & Qt.ControlModifier)
+            if ctrl:
+                self.toggle_pickup()
+            else:
+                self.frame_pictures_from_animated()
+        else:
+            if self.isInEditorMode():
+                self.frame_picture()
+            else:
+                self.frame_final_picture_to_picture_tool()
+        self.update()
 
 
 
     def mousePressEvent(self, event):
 
         if self.control_panel_button_clicked() is not None:
+            return
+
+        self.transform_widget_mousePressEvent(event)
+        if self.transform_image_widget_mode:
+            self.update()
+            super().mouseMoveEvent(event)
             return
 
         if event.button() == Qt.LeftButton:
@@ -734,15 +777,21 @@ class ViewerWindow(QWidget):
 
     def mouseMoveEvent(self, event):
 
+        self.transform_widget_mouseMoveEvent(event)
+        if self.transform_image_widget_mode:
+            self.update()
+            super().mouseMoveEvent(event)
+            return
+
         if event.buttons() == Qt.NoButton:
             # определяем только тут, иначе при быстрых перемещениях мышки при зажатой кнопке мыши
             # возможна потеря удержания - как будто бы если кнопка мыши была отпущена
             self.get_region_info()
 
+
         if event.buttons() == Qt.LeftButton:
             if event.modifiers() & Qt.ControlModifier:
                 if self.isInEditorMode() or True:
-
                     self.mouseMoveEventCaptureRect(event)
                     self.calculate_image_frame_info()
             elif self.tranformations_allowed and self.image_translating:
@@ -1178,7 +1227,10 @@ class ViewerWindow(QWidget):
 
             # 3. DRAW IMAGE
             pixmap = self.get_rotated_pixmap()
+            cm = painter.compositionMode()
+            painter.setCompositionMode(QPainter.CompositionMode_SourceOver)
             painter.drawPixmap(image_rect, pixmap, pixmap.rect())
+            painter.setCompositionMode(cm)
             if self.invert_image:
                 cm = painter.compositionMode()
                 painter.setCompositionMode(QPainter.RasterOp_NotDestination)
@@ -1244,6 +1296,9 @@ class ViewerWindow(QWidget):
                 painter.setBrush(QBrush(Qt.red))
                 painter.setPen(Qt.NoPen)
                 painter.drawRect(image_included_rect)
+
+        if self.pixmap:
+            self.draw_transform_widget(painter)
 
 
     def draw_center_point(self, painter, pos):
@@ -1316,7 +1371,10 @@ class ViewerWindow(QWidget):
         elif check_scancode_for(event, "P"):
             self.close()
         elif key == Qt.Key_Escape:
-            self.close()
+            if self.transform_image_widget_mode:
+                self.transform_widget_finish_transform()
+            else:
+                self.close()
         elif key in [Qt.Key_Left]:
             self.show_previous()
         elif key in [Qt.Key_Right]:
@@ -1325,7 +1383,10 @@ class ViewerWindow(QWidget):
             self.click_done()
         elif key in [Qt.Key_F1]:
             self.toggle_help()
-
+        elif check_scancode_for(event, "X"):
+            self.transform_widget_scale_x = not self.transform_widget_scale_x
+        elif check_scancode_for(event, "Y"):
+            self.transform_widget_scale_y = not self.transform_widget_scale_y
 
         self.update()
 
@@ -1361,6 +1422,11 @@ class ViewerWindow(QWidget):
         self.contextMenuActivated = True
 
         close_app = contextMenu.addAction("Закрыть")
+        contextMenu.addSeparator()
+        transform_background = contextMenu.addAction("Трансформация картинки")
+        reset_background_transform = None
+        if self.image_transformed:
+            reset_background_transform = contextMenu.addAction("Сброс трансформации картинки")
 
         action = contextMenu.exec_(self.mapToGlobal(event.pos()))
         self.contextMenuActivated = False
@@ -1368,21 +1434,18 @@ class ViewerWindow(QWidget):
             pass
         elif action == close_app:
             self.close()
-
-        self.update()
-
-    def click_done(self):
-        if self.animated:
-            ctrl = bool(QApplication.queryKeyboardModifiers() & Qt.ControlModifier)
-            if ctrl:
-                self.toggle_pickup()
+        elif action == transform_background:
+            self.transform_widget_start_transform()
+        elif action == reset_background_transform:
+            self.image_transformed = False
+            if self.animated:
+                self.pixmap = self.movie.currentPixmap()
+                cur_frame = self.movie.currentFrameNumber()
+                self.transformed_frames_for_animated.pop(cur_frame)
             else:
-                self.frame_pictures_from_animated()
-        else:
-            if self.isInEditorMode():
-                self.frame_picture()
-            else:
-                self.frame_final_picture_to_picture_tool()
+                self.pixmap = self.pixmap_backup
+            self.update()
+
         self.update()
 
     def show_previous(self):
@@ -1697,7 +1760,6 @@ class ViewerWindow(QWidget):
         text_rect.adjust(-5, -5, 5, 5)
         painter.fillRect(text_rect, QBrush(QColor(255, 255, 255, opacity255)))
         painter.drawText(text_rect, Qt.AlignCenter | Qt.AlignHCenter, text_value)
-
 
     def get_normalized_opacity(self):
         return min(1.0, max(self.panel_opacity, 0.0))
@@ -2067,17 +2129,165 @@ class ViewerWindow(QWidget):
             pass
 
 
-        # bitmap_cancel = QPixmap(50, 50)
-        # bitmap_cancel.fill(Qt.transparent)
-        # painter = QPainter()
-        # painter.begin(bitmap_cancel)
-        # inner_rect = bitmap_cancel.rect().adjusted(13, 13, -13, -13)
-        # pen = QPen(QColor(200, 100, 0), 10)
-        # pen.setCapStyle(Qt.RoundCap)
-        # painter.setPen(pen)
-        # painter.drawLine(inner_rect.topLeft(), inner_rect.bottomRight())
-        # painter.drawLine(inner_rect.bottomLeft(), inner_rect.topRight())
-        # painter.end()
+
+
+
+
+    def transform_widget_init(self):
+
+        self.pixmap_backup = None
+
+        self.transform_image_widget_mode = False
+        self.transform_widget_state_1 = None
+        self.transform_widget_state_2 = None
+        self.image_transformed = False
+        self.TRANSFORM_WIDGET_BORDER_RADIUS = 300
+        self.transform_widget_scale_x = True
+        self.transform_widget_scale_y = True
+
+    def draw_transform_widget(self, painter):
+        if self.transform_image_widget_mode:
+            painter.setBrush(Qt.NoBrush)
+            transform_widget_state_1 = self.transform_widget_state_1 or self.mapFromGlobal(QCursor().pos())
+            transform_widget_state_2 = self.transform_widget_state_2 or self.mapFromGlobal(QCursor().pos())
+
+            old_comp_mode = painter.compositionMode()
+            painter.setCompositionMode(QPainter.RasterOp_SourceXorDestination)
+            painter.drawLine(transform_widget_state_1, transform_widget_state_2)
+            painter.setCompositionMode(old_comp_mode)
+
+            radius_v = QPoint(transform_widget_state_1-transform_widget_state_2)
+            radius = math.sqrt(radius_v.x()**2 + radius_v.y()**2)
+            radius_int = int(radius)
+            offset = QPoint(radius_int, radius_int)
+            rect = build_valid_rect(transform_widget_state_1 + offset, transform_widget_state_1 - offset)
+            painter.drawEllipse(rect)
+
+            scale_status_str = ""
+            if self.transform_widget_scale_x:
+                scale_status_str += "X"
+            if self.transform_widget_scale_y:
+                scale_status_str += "Y"
+            painter.drawText(transform_widget_state_2+QPoint(10, 10), scale_status_str)
+
+            font = painter.font()
+            font.setWeight(900)
+            painter.setFont(font)
+            for r, text in [(self.TRANSFORM_WIDGET_BORDER_RADIUS, "1.0"),
+                                                    (int(self.TRANSFORM_WIDGET_BORDER_RADIUS/2), "0.5")]:
+                offset = QPoint(r, r)
+                rect = build_valid_rect(transform_widget_state_1 + offset, transform_widget_state_1 - offset)
+                painter.setPen(QPen(Qt.red))
+                painter.drawEllipse(rect)
+                painter.setPen(QPen(Qt.white))
+                painter.drawText(transform_widget_state_1 + QPoint(r+4, 0), text)
+
+    def transform_widget_do_transform(self):
+
+        def mapFromWindowToPixmap(pos):
+            # Так как само изображение скейлится в окне,
+            # надо вводить коррекцию координаты.
+            vr = self.get_image_viewport_rect()
+            _delta = pos - vr.topLeft()
+            mapped_x = int(_delta.x()/self.image_scale)
+            mapped_y = int(_delta.y()/self.image_scale)
+            mapped_pos = QPoint(mapped_x, mapped_y)
+            return mapped_pos
+
+        if self.animated:
+            source = self.movie.currentPixmap()
+        else:
+            if self.pixmap_backup is None:
+                self.pixmap_backup = QPixmap(self.pixmap)
+            source = self.pixmap_backup
+
+        output_image = QPixmap(source.size())
+        output_image.fill(Qt.transparent)
+        painter = QPainter()
+
+        painter.begin(output_image)
+        painter.setRenderHint(QPainter.HighQualityAntialiasing, True)
+        painter.setRenderHint(QPainter.Antialiasing, True)
+        painter.setRenderHint(QPainter.SmoothPixmapTransform, True)
+
+        transform_widget_state_1 = self.transform_widget_state_1
+        transform_widget_state_2 = self.transform_widget_state_2 or self.mapFromGlobal(QCursor().pos())
+
+        transform_widget_state_1_m = mapFromWindowToPixmap(transform_widget_state_1)
+        transform_widget_state_2_m = mapFromWindowToPixmap(transform_widget_state_2)
+
+        translate_value = transform_widget_state_1_m
+
+        painter.translate(translate_value)
+
+        delta = transform_widget_state_1_m - transform_widget_state_2_m
+        radians_angle = math.atan2(delta.y(), delta.x())
+        painter.rotate(180+180/3.14*radians_angle)
+
+        radius_v = QPoint(transform_widget_state_1-transform_widget_state_2)
+        radius = math.sqrt(radius_v.x()**2 + radius_v.y()**2)
+        sx = sy = 1.0
+        if radius > self.TRANSFORM_WIDGET_BORDER_RADIUS:
+            scale = radius/self.TRANSFORM_WIDGET_BORDER_RADIUS
+
+        elif radius > self.TRANSFORM_WIDGET_BORDER_RADIUS/2:
+            scale = radius/self.TRANSFORM_WIDGET_BORDER_RADIUS
+        else:
+            scale = max(self.TRANSFORM_WIDGET_BORDER_RADIUS/2, radius)/self.TRANSFORM_WIDGET_BORDER_RADIUS
+        if self.transform_widget_scale_x:
+            sx = scale
+        if self.transform_widget_scale_y:
+            sy = scale
+        painter.scale(sx, sy)
+
+        painter.drawPixmap(-translate_value, source)
+
+        painter.drawPoint(transform_widget_state_1_m)
+
+        painter.end()
+
+        self.pixmap = output_image
+        if self.animated:
+            cur_frame_num = self.movie.currentFrameNumber()
+            self.transformed_frames_for_animated[cur_frame_num] = output_image
+        self.image_transformed = True
+        self.update()
+
+    def transform_widget_mouseMoveEvent(self, event):
+        if self.transform_image_widget_mode:
+            if self.transform_widget_state_1:
+                self.transform_widget_do_transform()
+                self.update()
+
+    def transform_widget_mousePressEvent(self, event):
+        txt = "Когда масштабирование и поворот устраивает,\nнажмите левую кнопку мыши ещё раз"
+        if event.button() == Qt.LeftButton:
+            if self.transform_image_widget_mode:
+                if self.transform_widget_state_1 is None:
+                    self.transform_widget_state_1 = self.mapFromGlobal(QCursor().pos())
+                    self.show_center_label(txt)
+                elif self.transform_widget_state_2 is None:
+                    self.transform_widget_state_2 = self.mapFromGlobal(QCursor().pos())
+                    self.transform_widget_finish_transform()
+                self.update()
+
+    def transform_widget_start_transform(self):
+        self.transform_image_widget_mode = True
+        self.transform_widget_scale_x = True
+        self.transform_widget_scale_y = True
+        self.show_center_label("Выберите расположение пивота кликом левой кнопки мышки")
+        self.update()
+
+    def transform_widget_finish_transform(self):
+        self.transform_image_widget_mode = False
+        self.transform_widget_state_1 = None
+        self.transform_widget_state_2 = None
+        self.update()
+
+
+
+
+
 
 
 

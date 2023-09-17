@@ -1628,8 +1628,8 @@ class ViewerWindow(QWidget):
             ))
 
         self.buttons_list.extend((
-            self.rotate_clockwise_btn,
             self.rotate_counterclockwise_btn,
+            self.rotate_clockwise_btn,
 
             self.space_btn_generator(),
             self.space_btn_generator(),

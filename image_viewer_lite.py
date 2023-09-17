@@ -1258,9 +1258,13 @@ class ViewerWindow(QWidget):
     def hide_center_label(self):
         self.center_label_time = time.time() - self.CENTER_LABEL_TIME_LIMIT
 
-    def mirror_current_image(self):
+    def mirror_current_image(self, ctrl_pressed):
         if self.pixmap:
-            tm = QTransform().scale(-1, 1)
+            tm = QTransform()
+            if ctrl_pressed:
+                tm = tm.scale(1, -1)
+            else:
+                tm = tm.scale(-1, 1)
             self.pixmap = self.rotated_pixmap = self.get_rotated_pixmap().transformed(tm)
             self.update()
 
@@ -1304,7 +1308,7 @@ class ViewerWindow(QWidget):
             self.invert_image = not self.invert_image
             self.update()
         elif check_scancode_for(event, "M"):
-            self.mirror_current_image()
+            self.mirror_current_image(event.modifiers() & Qt.ControlModifier)
         elif check_scancode_for(event, "R"):
             self.rotate_clockwise()
         elif key == Qt.Key_Space:

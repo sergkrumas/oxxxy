@@ -26,6 +26,7 @@ from PyQt5.QtGui import (QWindow, QPixmap, QBrush, QRegion, QImage, QRadialGradi
 from _utils import (dot, elements45DegreeConstraint)
 
 import sys
+import math
 
 __all__ = (
     # 'TransformWidgetPoint',
@@ -145,6 +146,12 @@ class TransformWidget():
         self.points.extend(self.edge_points)
         self.points.append(self.pCenter)
 
+        self.br_aspect_ratio = self.get_bounding_rect_from_corners()
+        if self.br_aspect_ratio.width() != 0:
+            self.aspect_ratio = self.br_aspect_ratio.width()/self.br_aspect_ratio.height()
+        else:
+            self.aspect_ratio = 1.0
+
         self.current_point = None
         # scale_mode выключен по той причине, что из-за действий пользователя
         # хотя бы по одной из осей прямоугольник может схлопнутся, а то даже и сразу по двум
@@ -221,9 +228,24 @@ class TransformWidget():
         # для всех точек кроме центральной
         if self.current_point != self.pCenter:
             event_pos = event.pos()
-            if QApplication.queryKeyboardModifiers() & Qt.ShiftModifier:
+            shift_mod = bool(QApplication.queryKeyboardModifiers() & Qt.ShiftModifier)
+            ctrl_mod = bool(QApplication.queryKeyboardModifiers() & Qt.ControlModifier)
+            if shift_mod and ctrl_mod:
+                # 45 градусов. для контента типа пикч и прочего даёт квадратные размеры
                 pp = self.get_pivot_point().point
                 event_pos = elements45DegreeConstraint(pp, event_pos).toPoint()
+            if shift_mod and not ctrl_mod:
+                # для пропорционального редактирования
+                pp = self.get_pivot_point().point
+                delta = pp - event.pos()
+                sign = math.copysign(1.0, delta.x())
+                if delta.y() < 0:
+                    if delta.x() < 0:
+                        sign = 1.0
+                    else:
+                        sign = -1.0
+                delta.setX(int(delta.y()*sign*self.aspect_ratio))
+                event_pos = pp - delta
             new_pos = self.current_point.point + event_pos - self.current_point.old_pos
             if self.current_point.type == "edge":
                 if self.current_point in [self.peAC, self.peBD]:

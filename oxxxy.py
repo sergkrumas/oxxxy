@@ -3197,8 +3197,10 @@ class ScreenshotWindow(QWidget):
         else:
             self.view_window = ViewerWindow(self, main_window=self, _type=_type, data=data)
             self.view_window.show()
+            # показываем только на первом мониторе слева
             self.view_window.move(0, 0)
-            self.view_window.resize(self.width()//2, self.height())
+            desktop_rect = QDesktopWidget().screenGeometry(screen=0)
+            self.view_window.resize(desktop_rect.width(), desktop_rect.height())
             self.view_window.show_image_default(get_pixmap_callback_func())
             self.view_window.activateWindow()
 
@@ -3210,9 +3212,10 @@ class ScreenshotWindow(QWidget):
         if True:
             self.view_window = ViewerWindow(self, main_window=self, _type="final", data=None)
             self.view_window.show()
-            self.view_window.move(0, 0)
             # показываем только на первом мониторе слева
-            self.view_window.resize(self.width()//2, self.height())
+            self.view_window.move(0, 0)
+            desktop_rect = QDesktopWidget().screenGeometry(screen=0)
+            self.view_window.resize(desktop_rect.width(), desktop_rect.height())
             self.view_window.show_image(filepath)
             self.view_window.activateWindow()
 

@@ -1368,9 +1368,11 @@ class ToolsWindow(QWidget):
                     main_window.current_picture_angle = data.get("picture_angle", DEFAULT_PICTURE_ANGLE)
                     self.on_parameters_changed()
                 else:
-                    main_window.current_picture_pixmap = None
-                    main_window.current_picture_id = None
+                    # для случаев, когда pixmap генерируется на лету, а потом при перезапуске генерация уже не существует
+                    main_window.current_picture_pixmap = PictureInfo.PIXMAP_BROKEN
+                    main_window.current_picture_id = PictureInfo.TYPE_STAMP
                     main_window.current_picture_angle = 0
+                    self.on_parameters_changed()
         self.update() #обязательно!
 
     def set_tool_data(self):

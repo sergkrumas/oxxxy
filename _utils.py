@@ -621,7 +621,7 @@ def elements45DegreeConstraint(pivot, point):
     return point
 
 def fit_rect_into_rect(source_rect, input_rect):
-    # main_rect = input_rect or self.rect()
+    # копируем прямоугольники, чтобы не изменять исходники
     main_rect = QRect(input_rect)
     size_rect = QRect(source_rect)
     w = size_rect.width()

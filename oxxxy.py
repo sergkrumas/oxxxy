@@ -1141,23 +1141,58 @@ class PictureSelectWindow(QWidget):
         self.setMouseTracking(True)
         self.auto_positioning = True
 
-        scroll = QScrollArea(self)
+        scroll_area = QScrollArea(self)
         main_layout.addSpacing(20)
-        main_layout.addWidget(scroll)
-        scroll.setWidgetResizable(True)
-        style = """
+        main_layout.addWidget(scroll_area)
+        scroll_area.setWidgetResizable(True)
+        scroll_area.verticalScrollBar().setStyleSheet("""
+            QScrollBar {
+                border-radius: 5px;
+                background: rgb(40, 40, 40);
+            }
+
+            QScrollBar:vertical {
+                width: 10px;
+                border-radius: 5px;
+            }
+
+            QScrollBar::handle {
+                background: rgb(210, 210, 210);
+                border-radius: 5px;
+            }
+
+            QScrollBar::handle:vertical {
+                width: 10px;
+                min-height: 10px;
+                border-radius: 5px;
+            }
+
+             QScrollBar::add-line:vertical {
+                 background: transparent;
+             }
+
+             QScrollBar::sub-line:vertical {
+                 background: transparent;
+             }
+             QScrollBar::up-arrow:vertical, QScrollBar::down-arrow:vertical {
+                 background: transparent;
+             }
+
+             QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+                 background: transparent;
+             }
+
+            """)
+
+        scroll_area.setStyleSheet("""
             QScrollArea:vertical {
-                border: none;
-                background: red;
                 height: 15px;
+                background-color: transparent;
+                border: none;
             }
-            QScrollArea::handle:vertical {
-                background: red;
-                min-width: 20px;
-            }
-        """
-        scroll.setStyleSheet(style)
-        scrollContent = QWidget(scroll)
+            """)
+
+        scrollContent = QWidget(scroll_area)
         scrollContent.setStyleSheet("background: black; border: none;")
         self.content = scrollContent
 
@@ -1180,7 +1215,7 @@ class PictureSelectWindow(QWidget):
         grid_layout.setContentsMargins(CONTENT_MARGIN,
             CONTENT_MARGIN, CONTENT_MARGIN, CONTENT_MARGIN)
         scrollContent.setLayout(grid_layout)
-        scroll.setWidget(scrollContent)
+        scroll_area.setWidget(scrollContent)
         self.buttons = []
         for n, picture_data in enumerate(pictures):
             button = PictureSelectButton(picture_data, BUTTON_SIZE, self.main_window)

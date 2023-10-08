@@ -999,8 +999,6 @@ class ViewerWindow(QWidget):
 
     def do_scale_image(self, scroll_value, cursor_pivot=True, override_factor=None):
 
-        if not self.tranformations_allowed:
-            return
 
         if self.image_scale >= self.UPPER_SCALE_LIMIT-0.001:
             if scroll_value > 0.0:
@@ -1010,93 +1008,64 @@ class ViewerWindow(QWidget):
             if scroll_value < 0.0:
                 return
 
-        before_scale = self.image_scale
-
-        # эти значения должны быть вычислены до изменения self.image_scale
-        r = self.get_image_viewport_rect()
-        p1 = r.topLeft()
-        p2 = r.bottomRight()
 
         if not override_factor:
-            if self.image_scale > 1.0: # если масштаб больше нормального
-                factor = self.image_scale/self.UPPER_SCALE_LIMIT
-                if scroll_value < 0.0:
-                    self.image_scale -= 0.1 + 8.5*factor #0.2
-                else:
-                    self.image_scale += 0.1 + 8.5*factor #0.2
+            scale_speed = 10
+            if scroll_value > 0:
+                factor = scale_speed/(scale_speed-1)
+            else:
+                factor = (scale_speed-1)/scale_speed
 
-            else: # если масштаб меньше нормального
-                if scroll_value < 0.0:
-                    self.image_scale -= 0.05 #0.1
-                else:
-                    self.image_scale += 0.05 #0.1
+        else:
+            factor = override_factor
 
-        delta = before_scale - self.image_scale
-        self.image_scale = min(max(self.LOWER_SCALE_LIMIT, self.image_scale),
-                                                                    self.UPPER_SCALE_LIMIT)
-        pixmap = self.get_rotated_pixmap()
-        width = pixmap.rect().width()
-        height = pixmap.rect().height()
-
+        current_image_rect = QRectF(self.get_image_viewport_rect())
         if override_factor:
             pivot = QPointF(self.rect().center())
         else:
             if cursor_pivot:
-                if r.contains(self.mapped_cursor_pos()):
+                if current_image_rect.contains(self.mapped_cursor_pos()):
                     pivot = QPointF(self.mapped_cursor_pos())
                 else:
                     pivot = QPointF(self.rect().center())
             else:
                 pivot = QPointF(self.image_center_position)
 
-        p1 = p1 - pivot
-        p2 = p2 - pivot
 
-        if False:
-            factor = (1.0 - delta)
-            # delta  -->  factor
-            #  -0.1  -->  1.1: больше 1.0
-            #  -0.2  -->  1.2: больше 1.0
-            #   0.2  -->  0.8: меньше 1.0
-            #   0.1  -->  0.9: меньше 1.0
-            # Единственный недостаток factor = (1.0 - delta) в том,
-            # что он увеличивает намного больше, чем должен:
-            # из-за этого постоянно по факту превышается UPPER_SCALE_LIMIT.
-            # Вариант ниже как раз призван устранить этот недостаток.
-            # Хотя прелесть factor = (1.0 - delta) в том,
-            # что не нужно создавать хитровыебанные дельты с множителями,
-            # как это сделано чуть выше.
-        else:
-            w = p2.x() - p1.x()
-            factor = 1.0 - (before_scale - self.image_scale)*width/w
 
+
+        before_scale = self.image_scale
+        center_position = QPointF(self.image_center_position)
+        scale = self.image_scale
+
+        new_scale = scale * factor
+        if (before_scale < 1.0 and new_scale > 1.0) or (before_scale > 1.0 and new_scale < 1.0):
+            factor = 1.0/scale
+            # print("scale is clamped to 100%")
+ 
+        if new_scale > self.UPPER_SCALE_LIMIT:
+            factor = self.UPPER_SCALE_LIMIT/scale
+
+        center_position -= pivot
+        center_position = QPointF(center_position.x()*factor, center_position.y()*factor)
+        scale *= factor
+        center_position += pivot
+
+        # end
         if override_factor:
-            factor = override_factor
-
-        p1 = QPointF(p1.x()*factor, p1.y()*factor)
-        p2 = QPointF(p2.x()*factor, p2.y()*factor)
-
-        p1 = p1 + pivot
-        p2 = p2 + pivot
-
-        # здесь задаём размер и положение
-        new_width = abs(p2.x() - p1.x())
-        new_height = abs(p2.y() - p1.y())
-
-        image_scale = new_width / width
-        image_center_position = (p1 + p2)/2
-
-        if override_factor:
-            return image_scale, image_center_position.toPoint()
+            return scale, center_position
         else:
-            if self.image_scale == 100.0 and image_scale < 100.0 and scroll_value > 0.0:
-                # Предохранитель от постепенного заплыва картинки в сторону верхнего левого угла
-                # из-за кручения колеса мыши в область ещё большего увеличения
-                # Так происходит, потому что переменная image_scale при этом чуть меньше 100.0
-                pass
+
+            self.image_scale = scale
+
+            viewport_rect = self.get_image_viewport_rect()
+            is_vr_small = viewport_rect.width() < 150 or viewport_rect.height() < 150
+            if before_scale < self.image_scale and is_vr_small:
+                self.image_center_position = QPoint(QCursor().pos())
             else:
-                self.image_scale = image_scale
-            self.image_center_position = image_center_position.toPoint()
+                self.image_center_position = center_position.toPoint()
+
+        self.show_center_label("scale")
 
         self.update_capture_region_due_to_frame_info()
         self.update()

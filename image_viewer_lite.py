@@ -67,6 +67,20 @@ class ViewerWindow(QWidget):
     def cursor_in_rect(self, r):
         return r.contains(self.mapped_cursor_pos())
 
+
+    class label_type():
+        FRAME_NUMBER = 'FRAMENUMBER'
+        PLAYSPEED = 'PLAYSPEED'
+        SCALE = 'SCALE'
+
+        @classmethod
+        def all(cls):
+            return [
+                cls.FRAME_NUMBER,
+                cls.PLAYSPEED,
+                cls.SCALE,
+            ]
+
     def __init__(self, *args, main_window=None, _type="", data=None, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -83,7 +97,8 @@ class ViewerWindow(QWidget):
 
         self.CENTER_LABEL_TIME_LIMIT = 2
         self.center_label_time = time.time() - self.CENTER_LABEL_TIME_LIMIT - 1
-        self.center_label_info_type = "scale" #["scale", "playspeed", "framenumber"]
+        self.center_label_info_type = self.label_type.SCALE
+        self.center_label_error = False
 
         self.timer = QTimer()
         self.timer.timeout.connect(self.on_timer)
@@ -563,13 +578,13 @@ class ViewerWindow(QWidget):
 
         if self.left_button_pressed:
             self.do_scroll_playbar(scroll_value)
-            self.show_center_label("framenumber")
+            self.show_center_label(self.label_type.FRAME_NUMBER)
         if shift and ctrl:
             self.do_scroll_playspeed(scroll_value)
-            self.show_center_label("playspeed")
+            self.show_center_label(self.label_type.PLAYSPEED)
         if no_mod and self.is_wheel_allowed()and not self.left_button_pressed:
             self.do_scale_image(scroll_value)
-            self.show_center_label("scale")
+            self.show_center_label(self.label_type.SCALE)
 
         self.update()
 
@@ -1065,7 +1080,7 @@ class ViewerWindow(QWidget):
             else:
                 self.image_center_position = center_position.toPoint()
 
-        self.show_center_label("scale")
+        self.show_center_label(self.label_type.SCALE)
 
         self.update_capture_region_due_to_frame_info()
         self.update()
@@ -1133,7 +1148,10 @@ class ViewerWindow(QWidget):
             r = QRectF(r)
             path.addRoundedRect(r, RADIUS, RADIUS)
             # draw rounded backplate
-            c = QColor(80, 80, 80)
+            if self.center_label_error:
+                c = QColor(0, 0, 0)
+            else:
+                c = QColor(80, 80, 80)
             painter.setPen(Qt.NoPen)
             painter.setBrush(QBrush(c))
             painter.drawPath(path)
@@ -1145,8 +1163,12 @@ class ViewerWindow(QWidget):
         if large:
             # c = QColor("#e1db74")
             # c.setAlphaF(0.4)
-            c = QColor(Qt.white)
-            c.setAlphaF(0.9)
+            # c = QColor(Qt.white)
+            # c.setAlphaF(0.9)
+            if self.center_label_error:
+                c = QColor(QColor(200, 0, 0))
+            else:
+                c = QColor(Qt.white)
             painter.setPen(QPen(c))
             painter.setOpacity(1.0)
         else:
@@ -1220,16 +1242,16 @@ class ViewerWindow(QWidget):
                 self.draw_center_point(painter, self.image_center_position)
             # draw scale label
             if self.image_center_position:
-                if self.center_label_info_type == "scale":
+                if self.center_label_info_type == self.label_type.SCALE:
                     value = math.ceil(self.image_scale*100)
                     text = f"{value:,}%".replace(',', ' ')
-                elif self.center_label_info_type == "playspeed":
+                elif self.center_label_info_type == self.label_type.PLAYSPEED:
                     speed = self.movie.speed()
                     text = f"speed {speed}%"
-                elif self.center_label_info_type == "framenumber":
+                elif self.center_label_info_type == self.label_type.FRAME_NUMBER:
                     frame_num = self.movie.currentFrameNumber()+1
                     frame_count = self.movie.frameCount()
-                    text = f"frame {frame_num}/{frame_count}"
+                    text = f"{frame_num}/{frame_count}"
                 else:
                     text = self.center_label_info_type
                 self.draw_center_label(painter, text)
@@ -1274,8 +1296,14 @@ class ViewerWindow(QWidget):
         painter.setPen(QPen(Qt.green, 5, Qt.SolidLine))
         painter.drawPoint(pos)
 
-    def show_center_label(self, info_type):
+    def show_center_label(self, info_type, error=False):
+        self.center_label_error = error
         self.center_label_info_type = info_type
+        if info_type not in self.label_type.all():
+            # текстовые сообщения показываем дольше
+            self.CENTER_LABEL_TIME_LIMIT = 5.0
+        else:
+            self.CENTER_LABEL_TIME_LIMIT = 2.0
         # show center label on screen
         self.center_label_time = time.time()
 
@@ -1296,10 +1324,10 @@ class ViewerWindow(QWidget):
         key = event.key()
         if key == Qt.Key_Up:
             self.do_scale_image(0.05, cursor_pivot=False)
-            self.show_center_label("scale")
+            self.show_center_label(self.label_type.SCALE)
         elif key == Qt.Key_Down:
             self.do_scale_image(-0.05, cursor_pivot=False)
-            self.show_center_label("scale")
+            self.show_center_label(self.label_type.SCALE)
 
         self.update()
 
@@ -1420,13 +1448,13 @@ class ViewerWindow(QWidget):
     def show_previous(self):
         if self.animated:
             self.do_scroll_playbar(-1.0)
-            self.show_center_label("framenumber")
+            self.show_center_label(self.label_type.FRAME_NUMBER)
             self.update()
 
     def show_next(self):
         if self.animated:
             self.do_scroll_playbar(1.0)
-            self.show_center_label("framenumber")
+            self.show_center_label(self.label_type.FRAME_NUMBER)
             self.update()
 
     def play_stop(self):
@@ -1469,19 +1497,19 @@ class ViewerWindow(QWidget):
     def set_original_scale(self):
         # "Задать масштаб 1:1"
         self.image_scale = 1.0
-        self.show_center_label("scale")
+        self.show_center_label(self.label_type.SCALE)
         self.update()
 
     def zoom_in(self):
         # "Увеличить масштаб"
         self.do_scale_image(0.05, cursor_pivot=False)
-        self.show_center_label("scale")
+        self.show_center_label(self.label_type.SCALE)
         self.update()
 
     def zoom_out(self):
         # "Уменьшить масштаб"
         self.do_scale_image(-0.05, cursor_pivot=False)
-        self.show_center_label("scale")
+        self.show_center_label(self.label_type.SCALE)
         self.update()
 
     def rotate_clockwise(self):

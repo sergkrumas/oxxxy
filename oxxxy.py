@@ -35,7 +35,6 @@ import math
 import json
 from functools import partial
 
-import pyperclip
 from pyqtkeybind import keybinder
 
 from PyQt5.QtWidgets import (QSystemTrayIcon, QWidget, QMessageBox, QMenu, QGraphicsPixmapItem,
@@ -1834,17 +1833,10 @@ class ScreenshotWindow(QWidget, ElementsMixin):
 
     editing_ready = pyqtSignal(object)
 
-    def set_clipboard(self, data):
-        # некроссплатформенное решение,
-        # во время которого ещё появлятся блядская консоль,
-        # что уж совсем не нужно
-            # # приходится писать во временный файл с нужной кодировкой,
-            # # чтобы clip выводил русские буквы нормально, а не хуй пойми как
-            # with open("temp.txt", "w+", encoding="utf-16") as temp:
-            #     temp.write(data)
-            # os.system('clip < "%s"' % "temp.txt")
-            # os.remove("temp.txt")
-        pyperclip.copy(data)
+    def set_clipboard(self, text):
+        cb = QApplication.clipboard()
+        cb.clear(mode=cb.Clipboard)
+        cb.setText(text, mode=cb.Clipboard)
 
     def circle_mask_image(self, pxm, size=64, scale=False):
         image = pxm.toImage().convertToFormat(QImage.Format_ARGB32)

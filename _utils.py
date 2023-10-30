@@ -620,10 +620,14 @@ def elements45DegreeConstraint(pivot, point):
     point = pivot + current_dir*value
     return point
 
-def fit_rect_into_rect(source_rect, input_rect):
+def fit_rect_into_rect(source_rect, input_rect, float_mode=False):
     # копируем прямоугольники, чтобы не изменять исходники
-    main_rect = QRect(input_rect)
-    size_rect = QRect(source_rect)
+    if float_mode:
+        main_rect = QRectF(input_rect)
+        size_rect = QRectF(source_rect)
+    else:
+        main_rect = QRect(input_rect)
+        size_rect = QRect(source_rect)
     w = size_rect.width()
     h = size_rect.height()
     nw = size_rect.width()
@@ -653,7 +657,11 @@ def fit_rect_into_rect(source_rect, input_rect):
     center = main_rect.center()
     new_width = int(nw)
     new_height = int(nh)
-    return QRectF(QPointF(center) - QPointF(new_width/2-1, new_height/2-1), QSizeF(new_width, new_height)).toRect()
+    result = QRectF(QPointF(center) - QPointF(new_width/2-1, new_height/2-1), QSizeF(new_width, new_height))
+    if float_mode:
+        return result
+    else:
+        return result.toRect()
 
 def fit(t, input_a, input_b, output_a, output_b):
     t = max(input_a, min(input_b, t))

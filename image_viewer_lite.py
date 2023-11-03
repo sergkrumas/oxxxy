@@ -1128,14 +1128,8 @@ class ViewerWindow(QWidget):
             pr.setFont(font)
             return old_font
 
-        pic = QPicture()
-        p = QPainter(pic)
-        set_font(p)
-        r = self.rect()
-        brect = p.drawText(r.x(), r.y(), r.width(), r.height(), Qt.AlignCenter, text)
-        p.end()
-        del p
-        del pic
+        old_font = set_font(painter)
+        brect = painter.boundingRect(self.rect(), Qt.AlignCenter, text)
 
         opacity = self.scale_label_opacity()
         if not large:
@@ -1157,8 +1151,6 @@ class ViewerWindow(QWidget):
             painter.drawPath(path)
             # back to normal
             painter.setOpacity(1.0*opacity)
-
-        old_font = set_font(painter)
 
         if large:
             # c = QColor("#e1db74")

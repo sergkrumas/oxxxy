@@ -310,14 +310,13 @@ def dot(p1, p2):
     return p1.x()*p2.x() + p1.y()*p2.y()
 
 def get_nearest_point_on_rect(r, cursor):
-    def length(a, b):
-        delta = a - b
-        return math.sqrt(math.pow(delta.x(), 2)+math.pow(delta.y(), 2))
+    def distance_length(a, b):
+        return QVector2D(a - b).length()
     def create_points(a, b):
         a = QPointF(a)
         b = QPointF(b)
         ps = []
-        count = int(length(a, b)/10)
+        count = int(distance_length(a, b)/10)
         for i in range(count+1):
             if i == 0:
                 continue
@@ -333,7 +332,7 @@ def get_nearest_point_on_rect(r, cursor):
     nearest_point = QPoint(0, 0)
     l = 100000.0
     for p in points:
-        delta_length = length(cursor, p)
+        delta_length = distance_length(cursor, p)
         if delta_length < l:
             l = delta_length
             nearest_point = p

@@ -34,7 +34,7 @@ from PyQt5.QtCore import (QUrl, QMimeData, pyqtSignal, QPoint, QPointF, pyqtSlot
     QFile, QDataStream, QIODevice)
 from PyQt5.QtGui import (QPainterPath, QColor, QKeyEvent, QMouseEvent, QBrush, QPixmap,
     QPaintEvent, QPainter, QWindow, QPolygon, QImage, QTransform, QPen, QLinearGradient,
-    QIcon, QFont, QCursor, QPolygonF)
+    QIcon, QFont, QCursor, QPolygonF, QVector2D)
 
 from _utils import (convex_hull, check_scancode_for, SettingsJson,
      generate_metainfo, build_valid_rect, dot, get_nearest_point_on_rect, get_creation_date,
@@ -1997,10 +1997,10 @@ class ElementsMixin():
 
     def elementsDrawArrow(self, painter, start_point, tip_point, size, sharp):
         painter.translate(start_point)
-        delta = start_point - tip_point
-        radians_angle = math.atan2(delta.y(), delta.x())
+        dist_delta = start_point - tip_point
+        radians_angle = math.atan2(dist_delta.y(), dist_delta.x())
         painter.rotate(180+180/3.14*radians_angle)
-        arrow_length = math.sqrt(math.pow(delta.x(), 2) + math.pow(delta.y(), 2))
+        arrow_length = QVector2D(dist_delta).length()
         tip = QPointF(arrow_length, 0)
         offset_x = 40
         offset_y = 19

@@ -28,7 +28,8 @@ import time
 from PyQt5.QtWidgets import (QApplication, QMenu, QFileDialog, QWidget, QDesktopWidget)
 from PyQt5.QtCore import (QTimer, Qt, QRect, QRectF, QPoint, QPointF, QSize)
 from PyQt5.QtGui import (QPixmap, QPainterPath, QPainter, QCursor, QBrush, QPicture,
-                        QPen, QColor, QTransform, QMovie, QPolygonF, QRegion, QImageReader)
+                        QPen, QColor, QTransform, QMovie, QPolygonF, QRegion, QImageReader,
+                        QVector2D)
 
 from _utils import *
 
@@ -2150,7 +2151,7 @@ class ViewerWindow(QWidget):
             painter.setCompositionMode(old_comp_mode)
 
             radius_v = QPoint(transform_widget_state_1-transform_widget_state_2)
-            radius = math.sqrt(radius_v.x()**2 + radius_v.y()**2)
+            radius = QVector2D(radius_v).length()
             radius_int = int(radius)
             offset = QPoint(radius_int, radius_int)
             rect = build_valid_rect(transform_widget_state_1 + offset, transform_widget_state_1 - offset)
@@ -2218,7 +2219,7 @@ class ViewerWindow(QWidget):
         painter.rotate(180+180/3.14*radians_angle)
 
         radius_v = QPoint(transform_widget_state_1-transform_widget_state_2)
-        radius = math.sqrt(radius_v.x()**2 + radius_v.y()**2)
+        radius = QVector2D(radius_v).length()
         sx = sy = 1.0
         if radius > self.TRANSFORM_WIDGET_BORDER_RADIUS:
             scale = radius/self.TRANSFORM_WIDGET_BORDER_RADIUS

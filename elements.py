@@ -694,7 +694,7 @@ class ElementsMixin():
             painter.setCompositionMode(old_comp_mode)
 
             radius_v = QPoint(transform_BKG_1-transform_BKG_2)
-            radius = math.sqrt(radius_v.x()**2 + radius_v.y()**2)
+            radius = QVector2D(radius_v).length()
             radius_int = int(radius)
             offset = QPoint(radius_int, radius_int)
             rect = build_valid_rect(transform_BKG_1 + offset, transform_BKG_1 - offset)
@@ -751,7 +751,7 @@ class ElementsMixin():
         painter.rotate(180+180/3.14*radians_angle)
 
         radius_v = QPoint(transform_BKG_1-transform_BKG_2)
-        radius = math.sqrt(radius_v.x()**2 + radius_v.y()**2)
+        radius = QVector2D(radius_v).length()
         sx = sy = 1.0
         if radius > self.WIDGET_BORDER_RADIUS:
             scale = radius/self.WIDGET_BORDER_RADIUS

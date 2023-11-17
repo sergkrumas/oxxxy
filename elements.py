@@ -495,13 +495,26 @@ class ElementsMixin():
         self.elements_final_output = None
         self.Element = self.define_class_Element()
 
-        self.elements_global_offset = QPoint(0, 0)
+        self.canvas_origin = QPointF(0, 0)
+        self.canvas_scale_x = 1.0
+        self.canvas_scale_y = 1.0
+
         self.drag_global = False
         self.current_elements_global_offset = QPoint(0, 0)
 
         self.NUMBERING_WIDTH = 25
 
         self.elementsIsFinalDrawing = False
+
+    def elementsMapFromViewportToCanvas(self, viewport_pos):
+        delta = QPointF(viewport_pos - self.canvas_origin)
+        canvas_pos = QPointF(delta.x()/self.canvas_scale_x, delta.y()/self.canvas_scale_y)
+        return canvas_pos
+
+    def elementsMapFromCanvasToViewport(self, canvas_pos):
+        scaled_rel_pos = QPointF(canvas_pos.x()*self.canvas_scale_x, canvas_pos.y()*self.canvas_scale_y)
+        viewport_pos = self.canvas_origin + scaled_rel_pos
+        return viewport_pos
 
     def elementsResetCapture(self):
         self.elementsSetSelected(None)

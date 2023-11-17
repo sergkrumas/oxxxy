@@ -100,6 +100,69 @@ class ElementsMixin():
         self.Globals.images_in_memory.clear()
         self.elementsUpdateUI()
 
+    def mapped_cursor_pos(self):
+        return self.mapFromGlobal(QCursor().pos())
+
+    def elementsDoScaleCanvas(self, scroll_value, ctrl, shift, no_mod,
+                pivot=None, factor_x=None, factor_y=None, precalculate=False, canvas_origin=None, canvas_scale_x=None, canvas_scale_y=None):
+
+        if pivot is None:
+            pivot = self.mapped_cursor_pos()
+
+        scale_speed = 10.0
+        if scroll_value > 0:
+            factor = scale_speed/(scale_speed-1)
+        else:
+            factor = (scale_speed-1)/scale_speed
+
+        if factor_x is None:
+            factor_x = factor
+
+        if factor_y is None:
+            factor_y = factor
+
+        if ctrl:
+            factor_x = factor
+            factor_y = 1.0
+        elif shift:
+            factor_x = 1.0
+            factor_y = factor
+
+        _canvas_origin = canvas_origin if canvas_origin is not None else self.canvas_origin
+        _canvas_scale_x = canvas_scale_x if canvas_scale_x is not None else self.canvas_scale_x
+        _canvas_scale_y = canvas_scale_y if canvas_scale_y is not None else self.canvas_scale_y
+
+        _canvas_scale_x *= factor_x
+        _canvas_scale_y *= factor_y
+
+        _canvas_origin -= pivot
+        _canvas_origin = QPointF(_canvas_origin.x()*factor_x, _canvas_origin.y()*factor_y)
+        _canvas_origin += pivot
+
+        if precalculate:
+            return _canvas_scale_x, _canvas_scale_y, _canvas_origin
+
+        self.canvas_origin  = _canvas_origin
+        self.canvas_scale_x = _canvas_scale_x
+        self.canvas_scale_y = _canvas_scale_y
+
+        # if self.selection_rect:
+        #     self.canvas_selection_callback(QApplication.queryKeyboardModifiers() == Qt.ShiftModifier)
+        # self.update_selection_bouding_box()
+
+        # event_pos = self.mapped_cursor_pos()
+        # if self.scaling_ongoing:
+        #     self.canvas_START_selected_items_SCALING(None, viewport_zoom_changed=True)
+        #     self.canvas_DO_selected_items_SCALING(event_pos)
+
+        # if self.rotation_ongoing:
+        #     self.canvas_START_selected_items_ROTATION(event_pos, viewport_zoom_changed=True)
+        #     self.canvas_DO_selected_items_ROTATION(event_pos)
+
+        self.update()
+
+
+
     def save_project(self):
         # задание папки для скриншота
 
@@ -471,7 +534,7 @@ class ElementsMixin():
                     # тут обрабатывается случай для QPoint,
                     # а для QPainterPath такой же по смыслу код
                     # находится в функции draw_transformed_path
-                    ret_value -= root_self.elements_global_offset
+                    ret_value -= root_self.canvas_origin
                     ret_value -= root_self.get_capture_offset()
                 return ret_value
             else:
@@ -500,7 +563,7 @@ class ElementsMixin():
         self.canvas_scale_y = 1.0
 
         self.drag_global = False
-        self.current_elements_global_offset = QPoint(0, 0)
+        self.current_canvas_origin = QPoint(0, 0)
 
         self.NUMBERING_WIDTH = 25
 
@@ -537,7 +600,7 @@ class ElementsMixin():
         if self.capture_region_rect:
             self.elementsInitMoveGlobalOffset()
             self.elementsMoveGlobalOffset(-self.elements_global_offset)
-        self.current_elements_global_offset = QPoint(0, 0)
+        self.current_canvas_origin = QPoint(0, 0)
         self.elements_global_offset = QPoint(0, 0)
         self.elementsResetCapture()
         self.update()
@@ -1181,7 +1244,7 @@ class ElementsMixin():
     def elementsInitMoveGlobalOffset(self):
         if not self.is_rect_defined:
             return
-        self.current_elements_global_offset = QPoint(self.elements_global_offset)
+        self.current_canvas_origin = QPointF(self.canvas_origin)
         self.current_capture_zone_center = self.capture_region_rect.center()
         for element in self.elements[:]:
             attributes = dict(element.__dict__).items()
@@ -1199,7 +1262,7 @@ class ElementsMixin():
     def elementsMoveGlobalOffset(self, delta):
         if not self.is_rect_defined:
             return
-        self.elements_global_offset = self.current_elements_global_offset + delta
+        self.canvas_origin = self.current_canvas_origin + delta
         for element in self.elements[:]:
             attributes = dict(element.__dict__).items()
             for attr_name, attr_value in attributes:
@@ -1235,13 +1298,11 @@ class ElementsMixin():
     def elementsMouseMoveEvent(self, event):
         tool = self.current_tool
         isLeftButton = event.buttons() == Qt.LeftButton
+        isMiddleButton = event.buttons() == Qt.MiddleButton
         if self.drag_capture_zone and isLeftButton:
             delta = QPoint(event.pos() - self.ocp)
             self.move_capture_rect(delta)
-        if self.drag_global and isLeftButton:
-            delta = QPoint(event.pos() - self.ocp)
-            self.elementsMoveGlobalOffset(delta)
-            return
+
         if tool == ToolID.none:
             return
         # основная часть
@@ -1934,7 +1995,7 @@ class ElementsMixin():
 
     def get_capture_offset(self):
         capture_offset = self.capture_region_rect.topLeft()
-        capture_offset -= self.elements_global_offset
+        capture_offset -= self.canvas_origin.toPoint()
         return capture_offset
 
 

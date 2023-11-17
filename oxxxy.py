@@ -1967,8 +1967,14 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         if Globals.DEBUG:
             self.draw_analyse_corners(painter)
             self.elementsDrawFinalVersionDebug(painter)
+            self.draw_canvas_origin(painter)
 
         painter.end()
+
+    def draw_canvas_origin(self, painter):
+        pen = QPen(Qt.red, 30)
+        painter.setPen(pen)
+        painter.drawPoint(self.canvas_origin)
 
     def draw_tool_size_and_color(self, painter, cursor_pos):
         if not self.capture_region_rect:
@@ -2457,7 +2463,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         # Этого хочется избежать - именно для исправления
         # такого ненужного поведения и нужна эта переменная
         self.drag_inside_capture_zone = False
-        self.isAltPanning = False
+        self.isPanningActivated = False
         # задаём курсор
         self.setCursor(self.get_custom_cross_cursor())
         # лупа
@@ -2756,7 +2762,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
                     self.update_saved_capture()
 
             elif self.undermouse_region_info and not self.drag_inside_capture_zone \
-                                                                        and not self.isAltPanning:
+                                                                        and not self.isPanningActivated:
                 # для изменения области захвата после первичного задания
                 self.is_rect_being_redefined = True
                 cursor_pos = event.pos()
@@ -2788,12 +2794,16 @@ class ScreenshotWindow(QWidget, ElementsMixin):
 
                 self.update_saved_capture()
 
-            elif (self.drag_inside_capture_zone or self.isAltPanning) and self.capture_region_rect:
+            elif (self.drag_inside_capture_zone or self.isPanningActivated) and self.capture_region_rect:
                 # для добавления элементов поверх скриншота
                 self.elementsMouseMoveEvent(event)
 
         elif event.buttons() == Qt.RightButton:
             pass
+
+        elif event.buttons() == Qt.MiddleButton:
+            delta = QPoint(event.pos() - self.ocp)
+            self.elementsMoveGlobalOffset(delta)
 
         if event.buttons() == Qt.LeftButton and not self.is_rect_being_redefined:
             self.setCursor(self.get_custom_cross_cursor())
@@ -2810,7 +2820,13 @@ class ScreenshotWindow(QWidget, ElementsMixin):
     def mousePressEvent(self, event):
         isAltOnly = event.modifiers() == Qt.AltModifier
         isLeftButton = event.button() == Qt.LeftButton
-        self.isAltPanning = isAltOnly and isLeftButton
+        self.isPanningActivated = event.button() == Qt.MiddleButton
+        if self.isPanningActivated:
+            if self.extended_editor_mode:
+                self.elementsInitMoveGlobalOffset()
+                self.ocp = event.pos()
+                return
+
         if isLeftButton:
             self.old_cursor_position = event.pos()
             self.get_region_info()
@@ -2822,22 +2838,11 @@ class ScreenshotWindow(QWidget, ElementsMixin):
                     self.elementsFinishTransformBKGMode()
                 self.update()
             elif self.undermouse_region_info is None:
-                if self.isAltPanning:
-                    self.drag_inside_capture_zone = False
-                else:
-                    self.drag_inside_capture_zone = True
-                    if self.capture_region_rect:
-                        self.elementsMousePressEvent(event)
+                self.drag_inside_capture_zone = True
+                if self.capture_region_rect:
+                    self.elementsMousePressEvent(event)
             else:
                 self.drag_inside_capture_zone = False
-            if self.isAltPanning:
-                if self.extended_editor_mode:
-                    self.elementsInitMoveGlobalOffset()
-                    self.ocp = event.pos()
-                    self.drag_global = True
-                    return
-            else:
-                self.drag_global = False
         if event.button() == Qt.MidButton and self.tools_window:
             self.tools_window.size_slider.value = 0.5
             self.tools_window.on_parameters_changed()
@@ -2870,7 +2875,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             self.get_region_info() # здесь только для установки курсора
         if Globals.DEBUG:
             self.elementsUpdateFinalPicture()
-        self.isAltPanning = False
+        self.isPanningActivated = False
         self.update()
         self.update_tools_window()
         super().mouseReleaseEvent(event)
@@ -2927,8 +2932,16 @@ class ScreenshotWindow(QWidget, ElementsMixin):
 
     def wheelEvent(self, event):
         delta_value = event.angleDelta().y()
+
+        scroll_value = event.angleDelta().y()/240
+        ctrl = event.modifiers() & Qt.ControlModifier
+        shift = event.modifiers() & Qt.ShiftModifier
+        no_mod = event.modifiers() == Qt.NoModifier
+
+
         if self.capture_region_rect:
-            pass
+            self.elementsDoScaleCanvas(scroll_value, ctrl, shift, no_mod)
+
         else:
             self.change_magnifier_size(delta_value)
         self.update()

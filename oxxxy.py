@@ -51,7 +51,7 @@ from image_viewer_lite import ViewerWindow
 from key_seq_edit import KeySequenceEdit
 
 from _utils import (convex_hull, check_scancode_for, SettingsJson,
-     generate_metainfo, build_valid_rect, dot, get_nearest_point_on_rect, get_creation_date,
+     generate_metainfo, build_valid_rect, build_valid_rectF, dot, get_nearest_point_on_rect, get_creation_date,
      find_browser_exe_file, open_link_in_browser, open_in_google_chrome, save_meta_info,
      make_screenshot_pyqt, webRGBA, generate_gradient, draw_shadow, draw_cyberpunk,
      get_bounding_points, load_svg, is_webp_file_animated)
@@ -1913,6 +1913,11 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         ip2 = self.get_first_set_point([self.input_POINT2, self.input_POINT1], cursor_pos)
         return self._build_valid_rect(ip1, ip2)
 
+    def build_input_rectF(self, cursor_pos):
+        ip1 = self.get_first_set_point([self.input_POINT1], cursor_pos)
+        ip2 = self.get_first_set_point([self.input_POINT2, self.input_POINT1], cursor_pos)
+        return build_valid_rectF(ip1, ip2)
+
     def paintEvent(self, event):
         painter = QPainter()
         painter.begin(self)
@@ -1924,7 +1929,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         painter.setFont(font)
 
         cursor_pos = self.mapFromGlobal(QCursor().pos())
-        input_rect = self.build_input_rect(cursor_pos)
+        input_rect = self.build_input_rectF(cursor_pos)
 
         if self.extended_editor_mode:
             old_brush = painter.brush()
@@ -2071,10 +2076,10 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         if True:
             # поправочка нужна для случая, когда использована команда "Содержимое в фон"
             # и после неё габариты изображения уже не равны габаритам монитора(ов)
-            self_rect = QRect(self.source_pixels.rect())
+            self_rect = QRectF(self.source_pixels.rect())
         else:
-            self_rect = QRect(self.rect())
-        self_rect.moveCenter(self_rect.center() + self.elements_global_offset)
+            self_rect = QRectF(self.rect())
+        self_rect.moveCenter(self_rect.center() + self.canvas_origin)
         if step == 1:
             if opacity_type == LayerOpacity.FullTransparent: # full transparent
                 painter.fillRect(self_rect, QColor(0, 0, 0, 5))
@@ -2275,9 +2280,9 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         if shot == 1 and self.is_input_points_set():
             if self.include_screenshot_background:
                 input_rect_dest = input_rect
-                input_rect_source = QRect(input_rect)
+                input_rect_source = QRectF(input_rect)
                 input_rect_source.moveCenter(
-                                        input_rect_source.center()-self.elements_global_offset)
+                                        input_rect_source.center()-self.canvas_origin)
                 painter.drawImage(input_rect_dest,
                             # self.source_pixels_backup or
                             self.source_pixels, input_rect_source)

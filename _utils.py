@@ -59,6 +59,7 @@ __all__ = (
     'generate_metainfo',
     'get_bounding_points',
     'build_valid_rect',
+    'build_valid_rectF',
     'dot',
     'get_nearest_point_on_rect',
     'get_creation_date',
@@ -305,6 +306,19 @@ def get_bounding_points(points):
 
 def build_valid_rect(p1, p2):
     return QRect(*get_bounding_points((p1, p2)))
+
+def build_valid_rectF(p1, p2):
+    MAX = sys.maxsize
+    left = MAX
+    right = -MAX
+    top = MAX
+    bottom = -MAX
+    for p in [p1, p2]:
+        left = min(p.x(), left)
+        right = max(p.x(), right)
+        top = min(p.y(), top)
+        bottom = max(p.y(), bottom)
+    return QRectF(QPointF(left, top), QPointF(right, bottom))
 
 def dot(p1, p2):
     return p1.x()*p2.x() + p1.y()*p2.y()

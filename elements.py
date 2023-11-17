@@ -2494,3 +2494,10 @@ class ElementsMixin():
             self.show_view_window_for_animated(filepath)
         else:
             print("Nothing to paste")
+
+
+# для запуска программы прямо из этого файла при разработке и отладке
+if __name__ == '__main__':
+    import subprocess
+    subprocess.Popen([sys.executable, "-u", "oxxxy.py"])
+    sys.exit()

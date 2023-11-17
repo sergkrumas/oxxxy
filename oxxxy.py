@@ -2918,11 +2918,12 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             self.tools_window.on_parameters_changed()
             self.tools_window.update()
             # здесь ещё должна быть запись параметров в словарь!
+                # TODO: кстати, а где она, блядь?!
 
     def wheelEvent(self, event):
         delta_value = event.angleDelta().y()
         if self.capture_region_rect:
-            self.change_tools_params(delta_value, event.modifiers())
+            pass
         else:
             self.change_magnifier_size(delta_value)
         self.update()

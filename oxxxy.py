@@ -2078,11 +2078,11 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         #   painter.drawImage(self.rect(), self.source_pixels)
         #   painter.setOpacity(1.0)
         ###### NEW VERSION FOR STEP == 1 AND STEP == 2:
-        
+
         # поправочка нужна для случая, когда использована команда "Содержимое в фон"
         # и после неё габариты изображения уже не равны габаритам монитора(ов)
         self_rect = QRectF(self.source_pixels.rect()) # self_rect = QRectF(self.rect())
-        self_rect = self.elementsMapFromCanvasToViewportRectF(self_rect) 
+        self_rect = self.elementsMapFromCanvasToViewportRectF(self_rect)
         if step == 1:
             if opacity_type == LayerOpacity.FullTransparent: # full transparent
                 painter.fillRect(self_rect, QColor(0, 0, 0, 5))
@@ -2817,7 +2817,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
 
         if event.button() == Qt.LeftButton:
             self.start_cursor_position = self.elementsMapFromViewportToCanvas(QPointF(event.pos()))
-            self.capture_redefine_start_value = None            
+            self.capture_redefine_start_value = None
             self.get_region_info()
             if self.undermouse_region_info is None:
                 self.drag_inside_capture_zone = True

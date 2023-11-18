@@ -1929,8 +1929,8 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         painter.setFont(font)
 
         cursor_pos = self.mapFromGlobal(QCursor().pos())
-        input_rect = self.elementsMapFromCanvasToViewportRectF(self.build_input_rectF(cursor_pos))
-        # input_rect = self.build_input_rectF(cursor_pos)
+        _input_rect = self.build_input_rectF(cursor_pos)
+        input_rect = self.elementsMapFromCanvasToViewportRectF(_input_rect)
 
         if self.extended_editor_mode:
             old_brush = painter.brush()
@@ -1949,7 +1949,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
 
         self.draw_uncaptured_zones(painter, self.uncapture_draw_type, input_rect, step=2)
 
-        self.draw_magnifier(painter, input_rect, cursor_pos, text_pen, text_white_pen)
+        self.draw_magnifier(painter, _input_rect, cursor_pos, text_pen, text_white_pen)
         self.draw_wrapper_cyberpunk(painter)
         self.draw_wrapper_shadow(painter)
         self.draw_capture_zone_resolution_label(painter, text_pen, input_rect)
@@ -2127,8 +2127,11 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         MAGNIFIER_ADVANCED = True
         if self.capture_region_rect:
             return
+
+        _cursor_pos = cursor_pos
+
         # позиционирование в завимости от свободного места около курсора
-        focus_point = input_rect.bottomRight() or cursor_pos
+        focus_point = input_rect.bottomRight() or _cursor_pos
         # позиция внизу справа от курсора
         focus_rect = self._build_valid_rect(
             focus_point + QPoint(10, 10),
@@ -2141,23 +2144,23 @@ class ScreenshotWindow(QWidget, ElementsMixin):
                 focus_point + -1*QPoint(10 + MAGNIFIER_SIZE, 10 + MAGNIFIER_SIZE)
             )
             # зона от начала координат в левом верхнем углу до курсора
-            t = self._build_valid_rect(QPoint(0, 0), cursor_pos)
+            t = self._build_valid_rect(QPoint(0, 0), _cursor_pos)
             if not t.contains(focus_rect):
                 focus_rect = self._build_valid_rect(
                     focus_point + QPoint(10, -10),
                     focus_point + QPoint(10 + MAGNIFIER_SIZE, -10-MAGNIFIER_SIZE)
                 )
                 # зона от курсора до верхней правой границы экранного пространства
-                t2 = self._build_valid_rect(cursor_pos, self._all_monitors_rect.topRight())
+                t2 = self._build_valid_rect(_cursor_pos, self._all_monitors_rect.topRight())
                 if not t2.contains(focus_rect):
                     focus_rect = self._build_valid_rect(
                         focus_point + QPoint(-10, 10),
                         focus_point + QPoint(-10-MAGNIFIER_SIZE, 10+MAGNIFIER_SIZE)
                     )
         # magnifier
-        magnifier_source_rect = QRect(cursor_pos - QPoint(10, 10), cursor_pos + QPoint(10, 10))
-        mh = magnifier_source_rect.height()
-        mw = magnifier_source_rect.width()
+        magnifier_source_rect = QRectF(_cursor_pos - QPointF(10, 10), _cursor_pos + QPointF(10, 10))
+        mh = int(magnifier_source_rect.height())
+        mw = int(magnifier_source_rect.width())
         if MAGNIFIER_ADVANCED:
             # лупа с прицелом
             magnifier_pixmap = QPixmap(mw, mh)
@@ -2165,7 +2168,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             magnifier = QPainter()
             magnifier.begin(magnifier_pixmap)
             magnifier.drawImage(
-                QRect(0, 0, mw, mh),
+                QRectF(0, 0, mw, mh),
                 self.source_pixels,
                 magnifier_source_rect,
             )
@@ -2204,7 +2207,8 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         font = QFont(old_font)
         font.setPixelSize(int(mag_text_rect.height()/2.0+5))
         painter.setFont(font)
-        self.color_at_pixel = QColor(self.source_pixels.pixel(cursor_pos))
+        cp = self.elementsMapFromCanvasToViewport(QPointF(cursor_pos)).toPoint()
+        self.color_at_pixel = QColor(self.source_pixels.pixel(cp))
         color_hex_string = self.color_at_pixel.name()
         painter.drawText(mag_text_rect, Qt.AlignCenter, color_hex_string)
         painter.setFont(old_font)

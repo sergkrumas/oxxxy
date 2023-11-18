@@ -1949,7 +1949,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
 
         self.draw_uncaptured_zones(painter, self.uncapture_draw_type, input_rect, step=2)
 
-        self.draw_magnifier(painter, _input_rect, cursor_pos, text_pen, text_white_pen)
+        self.draw_magnifier(painter, input_rect, cursor_pos, text_pen, text_white_pen)
         self.draw_wrapper_cyberpunk(painter)
         self.draw_wrapper_shadow(painter)
         self.draw_capture_zone_resolution_label(painter, text_pen, input_rect)
@@ -2207,7 +2207,8 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         font = QFont(old_font)
         font.setPixelSize(int(mag_text_rect.height()/2.0+5))
         painter.setFont(font)
-        cp = self.elementsMapFromCanvasToViewport(QPointF(cursor_pos)).toPoint()
+        cp = self.elementsMapFromCanvasToViewport(QPointF(cursor_pos) - self.canvas_origin)
+        cp = cp.toPoint()
         self.color_at_pixel = QColor(self.source_pixels.pixel(cp))
         color_hex_string = self.color_at_pixel.name()
         painter.drawText(mag_text_rect, Qt.AlignCenter, color_hex_string)
@@ -2916,8 +2917,8 @@ class ScreenshotWindow(QWidget, ElementsMixin):
 
         if self.capture_region_rect:
             self.elementsDoScaleCanvas(scroll_value, ctrl, shift, no_mod)
-        elif alt:
-            self.elementsDoScaleCanvas(scroll_value, ctrl, shift, no_mod)
+        elif shift and ctrl:
+            self.elementsDoScaleCanvas(scroll_value, False, False, no_mod)
         else:
             self.change_magnifier_size(delta_value)
         self.update()

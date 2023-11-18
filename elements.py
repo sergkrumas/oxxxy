@@ -1759,7 +1759,7 @@ class ElementsMixin():
         if self.capture_region_rect and self.elements_final_output:
 
             # draw final picture
-            p = self.capture_region_rect.topRight()
+            p = self.elementsMapFromCanvasToViewport(self.capture_region_rect.topRight())
             painter.setOpacity(0.6)
             painter.drawPixmap(p, self.elements_final_output)
             painter.setOpacity(1.0)

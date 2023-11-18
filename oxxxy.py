@@ -2670,14 +2670,15 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             # copy_image_data_to_clipboard(filepath)
             save_meta_info(metadata, filepath)
         else:
+            self._canvas_origin = QPointF(self.canvas_origin)
+            self._canvas_scale_x = self.canvas_scale_x
+            self._canvas_scale_y = self.canvas_scale_y
+
+            self.canvas_origin = QPointF(0, 0)
+            self.canvas_scale_x = 1.0
+            self.canvas_scale_y = 1.0
             self.elementsUpdateFinalPicture()
-            if self.specials_case:
-                pix = self.elements_final_output
-            else:
-                if self.extended_editor_mode:
-                    pix = self.elements_final_output
-                else:
-                    pix = self.elements_final_output.copy(self.capture_region_rect)
+            pix = self.elements_final_output
             if self.tools_window.chb_masked.isChecked():
                 pix = self.circle_mask_image(pix)
 

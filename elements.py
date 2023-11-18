@@ -1248,6 +1248,10 @@ class ElementsMixin():
         else:
             return self.get_custom_cross_cursor()
 
+    def move_capture_rect(self, delta):
+        self.capture_region_rect.moveCenter(self.current_capture_zone_center + delta)
+        self.input_POINT1 = self.capture_region_rect.topLeft()
+        self.input_POINT2 = self.capture_region_rect.bottomRight()
 
     def elementsMouseMoveEvent(self, event):
         tool = self.current_tool
@@ -1255,7 +1259,8 @@ class ElementsMixin():
         isMiddleButton = event.buttons() == Qt.MiddleButton
         if self.drag_capture_zone and isLeftButton:
             delta = QPoint(event.pos() - self.ocp)
-            self.move_capture_rect(delta)
+            delta = QPointF(delta.x()/self.canvas_scale_x, delta.y()/self.canvas_scale_y)
+            self.move_capture_rect(delta.toPoint())
 
         if tool == ToolID.none:
             return

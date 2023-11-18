@@ -2652,11 +2652,6 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             self.view_window.show_image(filepath)
             self.view_window.activateWindow()
 
-    def move_capture_rect(self, delta):
-        self.capture_region_rect.moveCenter(self.current_capture_zone_center + delta)
-        self.input_POINT1 = self.capture_region_rect.topLeft()
-        self.input_POINT2 = self.capture_region_rect.bottomRight()
-
     def save_screenshot(self, grabbed_image=None, metadata=None):
         def copy_image_data_to_clipboard(fp):
             # засовывает содержимое картинки в буфер,

@@ -1831,7 +1831,16 @@ class ElementsMixin():
                 self.elements_final_output.fill(Qt.transparent)
                 painter = QPainter()
                 painter.begin(self.elements_final_output)
+                self._canvas_origin = QPointF(self.canvas_origin)
+                self._canvas_scale_x = self.canvas_scale_x
+                self._canvas_scale_y = self.canvas_scale_y
+                self.canvas_origin = QPointF(0, 0)
+                self.canvas_scale_x = 1.0
+                self.canvas_scale_y = 1.0
                 self.elementsDrawMain(painter, final=True)
+                self.canvas_origin = self._canvas_origin
+                self.canvas_scale_x = self._canvas_scale_x
+                self.canvas_scale_y = self._canvas_scale_y
                 painter.end()
 
 

@@ -1768,7 +1768,7 @@ class ElementsMixin():
         # draw debug elements' list
         if self.elements:
             if self.capture_region_rect:
-                pos = self.capture_region_rect.bottomLeft()
+                pos = self.elementsMapFromCanvasToViewport(self.capture_region_rect.bottomLeft())
             else:
                 pos = self.mapFromGlobal(QCursor().pos())
             all_elements = self.elements

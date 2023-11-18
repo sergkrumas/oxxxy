@@ -2702,6 +2702,9 @@ class ScreenshotWindow(QWidget, ElementsMixin):
                 # чтобы оно не пропадало и не падало за основное
                 self.tools_window = ToolsWindow(self)
                 self.tools_window.show()
+        self.autopos_tools_window()
+
+    def autopos_tools_window(self):
         if self.tools_window:
             capture_region_rect = self.elementsMapFromCanvasToViewportRectF(self.capture_region_rect)
             self.tools_window.do_autopositioning(capture_region_rect)
@@ -2794,6 +2797,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         elif event.buttons() == Qt.MiddleButton:
             delta = QPoint(event.pos() - self.ocp)
             self.canvas_origin = self.start_canvas_origin + delta
+            self.autopos_tools_window()
 
         if event.buttons() == Qt.LeftButton and not self.is_rect_being_redefined:
             self.setCursor(self.get_custom_cross_cursor())

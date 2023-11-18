@@ -2124,7 +2124,6 @@ class ScreenshotWindow(QWidget, ElementsMixin):
 
     def draw_magnifier(self, painter, input_rect, cursor_pos, text_pen, text_white_pen):
         MAGNIFIER_SIZE = self.magnifier_size
-        MAGNIFIER_ADVANCED = True
         if self.capture_region_rect:
             return
 
@@ -2158,38 +2157,51 @@ class ScreenshotWindow(QWidget, ElementsMixin):
                         focus_point + QPoint(-10-MAGNIFIER_SIZE, 10+MAGNIFIER_SIZE)
                     )
         # magnifier
-        magnifier_source_rect = QRectF(_cursor_pos - QPointF(10, 10), _cursor_pos + QPointF(10, 10))
+        cp = QPoint(_cursor_pos)
+        cp -= self.canvas_origin
+        cp = QPointF(
+            cp.x()/self.source_pixels.width()/self.canvas_scale_x,
+            cp.y()/self.source_pixels.height()/self.canvas_scale_y
+        )
+
+        x = int(cp.x()*self.source_pixels.width())
+        y = int(cp.y()*self.source_pixels.height())
+        cp = QPointF(
+            min(max(0, x), self.source_pixels.width()),
+            min(max(0, y), self.source_pixels.height())
+        ).toPoint()
+
+        magnifier_source_rect = QRect(cp - QPoint(10, 10), cp + QPoint(10, 10))
         mh = int(magnifier_source_rect.height())
         mw = int(magnifier_source_rect.width())
-        if MAGNIFIER_ADVANCED:
-            # лупа с прицелом
-            magnifier_pixmap = QPixmap(mw, mh)
-            magnifier_pixmap.fill(Qt.black)
-            magnifier = QPainter()
-            magnifier.begin(magnifier_pixmap)
-            magnifier.drawImage(
-                QRectF(0, 0, mw, mh),
-                self.source_pixels,
-                magnifier_source_rect,
-            )
-            center = QPoint(int(mw/2), int(mh/2))
-            magnifier.setPen(QPen(QColor(255, 255, 255, 40), 1))
-            offset = 1
-            magnifier.drawLine(center.x(), 0, center.x(), int(mh/2-offset))
-            magnifier.drawLine(center.x(), int(mh/2+offset), center.x(), mh)
-            magnifier.drawLine(0, center.y(), int(mw/2-offset), center.y())
-            magnifier.drawLine(int(mw/2+offset), center.y(), mw, center.y())
-            offset = 2
-            magnifier.setPen(QPen(QColor(255, 255, 255, 20), 1))
-            magnifier.drawLine(center.x(), 0, center.x(), int(mh/2-offset))
-            magnifier.drawLine(center.x(), int(mh/2+offset), center.x(), mh)
-            magnifier.drawLine(0, center.y(), int(mw/2-offset), center.y())
-            magnifier.drawLine(int(mw/2+offset), center.y(), mw, center.y())
-            magnifier.end()
-            painter.drawPixmap(focus_rect, magnifier_pixmap, QRect(0, 0, mw, mh))
-        else:
-            # лупа без прицела
-            painter.drawImage(focus_rect, self.source_pixels, magnifier_source_rect)
+
+        # лупа с прицелом
+        magnifier_pixmap = QPixmap(mw, mh)
+        magnifier_pixmap.fill(Qt.black)
+        magnifier = QPainter()
+        magnifier.begin(magnifier_pixmap)
+        magnifier.drawImage(
+            QRect(0, 0, mw, mh),
+            self.source_pixels,
+            magnifier_source_rect,
+        )
+        center = QPoint(int(mw/2), int(mh/2))
+        magnifier.setPen(QPen(QColor(255, 255, 255, 40), 1))
+        offset = 1
+        magnifier.drawLine(center.x(), 0, center.x(), int(mh/2-offset))
+        magnifier.drawLine(center.x(), int(mh/2+offset), center.x(), mh)
+        magnifier.drawLine(0, center.y(), int(mw/2-offset), center.y())
+        magnifier.drawLine(int(mw/2+offset), center.y(), mw, center.y())
+        offset = 2
+        magnifier.setPen(QPen(QColor(255, 255, 255, 20), 1))
+        magnifier.drawLine(center.x(), 0, center.x(), int(mh/2-offset))
+        magnifier.drawLine(center.x(), int(mh/2+offset), center.x(), mh)
+        magnifier.drawLine(0, center.y(), int(mw/2-offset), center.y())
+        magnifier.drawLine(int(mw/2+offset), center.y(), mw, center.y())
+        magnifier.end()
+        painter.drawPixmap(focus_rect, magnifier_pixmap, QRect(0, 0, mw, mh))
+        magnifier_image = magnifier_pixmap.toImage()
+
         # label for hex color value
         painter.setPen(text_pen)
         mag_text_rect = QRect(focus_rect)
@@ -2207,8 +2219,9 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         font = QFont(old_font)
         font.setPixelSize(int(mag_text_rect.height()/2.0+5))
         painter.setFont(font)
-        cp = cursor_pos
-        self.color_at_pixel = QColor(self.source_pixels.pixel(cp))
+        cp = QPoint(magnifier_source_rect.width()//2, magnifier_source_rect.height()//2)
+        # self.color_at_pixel = QColor(self.source_pixels.pixel(cursor_pos))
+        self.color_at_pixel = QColor(magnifier_image.pixel(cp))
         color_hex_string = self.color_at_pixel.name()
         painter.drawText(mag_text_rect, Qt.AlignCenter, color_hex_string)
         painter.setFont(old_font)

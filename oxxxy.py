@@ -1775,16 +1775,16 @@ class ToolsWindow(QWidget):
         k_corner = screenshot_rect.bottomLeft()
         d_corner = screenshot_rect.topLeft()
         offset = 10
-        default_corner_space = build_valid_rect(m_corner + QPoint(-offset, offset),
+        default_corner_space = build_valid_rectF(m_corner + QPointF(-offset, offset),
             all_rect.bottomLeft())
-        reserved_corner_1_space = build_valid_rect(m_corner + QPoint(offset, offset),
+        reserved_corner_1_space = build_valid_rectF(m_corner + QPointF(offset, offset),
             all_rect.bottomRight())
-        reserved_corner_2_space = build_valid_rect(m_corner + QPoint(offset, -offset),
+        reserved_corner_2_space = build_valid_rectF(m_corner + QPointF(offset, -offset),
             all_rect.topRight())
-        reserved_corner_3_space = build_valid_rect(k_corner + QPoint(-offset, -offset),
-            QPoint(0, 0))
-        reserved_corner_4_space = build_valid_rect(d_corner + QPoint(offset, -offset),
-            QPoint(screenshot_rect.right(), 0))
+        reserved_corner_3_space = build_valid_rectF(k_corner + QPointF(-offset, -offset),
+            QPointF(0, 0))
+        reserved_corner_4_space = build_valid_rectF(d_corner + QPointF(offset, -offset),
+            QPointF(screenshot_rect.right(), 0))
         # для отрисовки в специальном отладочном режиме
         self.parent().default_corner_space = default_corner_space
         self.parent().reserved_corner_1_space = reserved_corner_1_space
@@ -1827,7 +1827,7 @@ class ToolsWindow(QWidget):
         else: #screenshot zone
             x_value = screenshot_rect.right() - self.width()
             y_value = screenshot_rect.bottom() - self.height()
-        self.move(x_value, y_value)
+        self.move(int(x_value), int(y_value))
 
 class ScreenshotWindow(QWidget, ElementsMixin):
 
@@ -2441,7 +2441,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         self.undermouse_region_info = None
         self.region_num = 0
 
-        self.old_cursor_position = QPoint(0, 0)
+        self.start_cursor_position = QPointF(0, 0)
 
         self.tools_window = None
 
@@ -2540,7 +2540,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
                 rect = QRect(*rect_params)
                 self.input_POINT2 = rect.topLeft()
                 self.input_POINT1 = rect.bottomRight()
-                self.capture_region_rect = self._build_valid_rect(self.input_POINT1,
+                self.capture_region_rect = build_valid_rectF(self.input_POINT1,
                                                                                 self.input_POINT2)
                 self.user_input_started = False
                 self.is_rect_defined = True
@@ -2552,7 +2552,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
     def request_fullscreen_capture_region(self):
         self.input_POINT2 = QPoint(0, 0)
         self.input_POINT1 = self.frameGeometry().bottomRight()
-        self.capture_region_rect = self._build_valid_rect(self.input_POINT1, self.input_POINT2)
+        self.capture_region_rect = build_valid_rectF(self.input_POINT1, self.input_POINT2)
         self.user_input_started = False
         self.is_rect_defined = True
         self.drag_inside_capture_zone = False
@@ -2594,7 +2594,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         else:
             self.input_POINT2 = QPoint(0, 0)
             self.input_POINT1 = self.frameGeometry().bottomRight()
-        self.capture_region_rect = self._build_valid_rect(self.input_POINT1, self.input_POINT2)
+        self.capture_region_rect = build_valid_rectF(self.input_POINT1, self.input_POINT2)
         tw.set_current_tool(ToolID.transform)
         tw.forwards_backwards_update()
         self.update_tools_window()
@@ -2603,7 +2603,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
     def request_elements_debug_mode(self):
         self.input_POINT2 = QPoint(300, 200)
         self.input_POINT1 = QPoint(1400, 800)
-        self.capture_region_rect = self._build_valid_rect(self.input_POINT1, self.input_POINT2)
+        self.capture_region_rect = build_valid_rectF(self.input_POINT1, self.input_POINT2)
         self.user_input_started = False
         self.is_rect_defined = True
         self.drag_inside_capture_zone = False
@@ -2711,7 +2711,8 @@ class ScreenshotWindow(QWidget, ElementsMixin):
                 self.tools_window = ToolsWindow(self)
                 self.tools_window.show()
         if self.tools_window:
-            self.tools_window.do_autopositioning(self.capture_region_rect)
+            capture_region_rect = self.elementsMapFromCanvasToViewportRectF(self.capture_region_rect)
+            self.tools_window.do_autopositioning(capture_region_rect)
 
     def update_saved_capture(self):
         ts = self.tools_settings
@@ -2765,36 +2766,32 @@ class ScreenshotWindow(QWidget, ElementsMixin):
                                                                         and not self.isPanningActivated:
                 # для изменения области захвата после первичного задания
                 self.is_rect_being_redefined = True
-                cursor_pos = event.pos()
-                delta = QPoint(cursor_pos - self.old_cursor_position)
+                delta = self.elementsMapFromViewportToCanvas(QPointF(event.pos())) - self.start_cursor_position
                 set_func_attr = self.undermouse_region_info.setter
                 data_id = self.undermouse_region_info.coords
                 get_func_attr = self.undermouse_region_info.getter
                 get_func = getattr(self.capture_region_rect, get_func_attr)
                 set_func = getattr(self.capture_region_rect, set_func_attr)
+                if self.capture_redefine_start_value is None:
+                    self.capture_redefine_start_value = get_func()
                 if data_id == "x":
-                    set_func(get_func() + delta.x())
+                    set_func(self.capture_redefine_start_value + delta.x())
                 if data_id == "y":
-                    set_func(get_func() + delta.y())
+                    set_func(self.capture_redefine_start_value + delta.y())
                 if data_id == "xy":
-                    set_func(get_func() + delta)
-                self.old_cursor_position = event.globalPos()
-                self.capture_region_rect = self._build_valid_rect(
-                    self.capture_region_rect.topLeft(),
-                    self.capture_region_rect.bottomRight(),
+                    set_func(self.capture_redefine_start_value + delta)
+
+                # необходимо для нормальной работы
+                self.capture_region_rect = build_valid_rectF(
+                    self.capture_region_rect.topLeft(), self.capture_region_rect.bottomRight()
                 )
-                if not self.extended_editor_mode:
-                    # специальное ограничение, чтобы область захвата
-                    # не съехала с экранной области
-                    # и тем самым в скриншот не попала чернота
-                    self.capture_region_rect = \
-                                    self._all_monitors_rect.intersected(self.capture_region_rect)
+
                 self.input_POINT1 = self.capture_region_rect.topLeft()
                 self.input_POINT2 = self.capture_region_rect.bottomRight()
 
                 self.update_saved_capture()
 
-            elif (self.drag_inside_capture_zone or self.isPanningActivated) and self.capture_region_rect:
+            elif self.drag_inside_capture_zone and self.capture_region_rect:
                 # для добавления элементов поверх скриншота
                 self.elementsMouseMoveEvent(event)
 
@@ -2824,7 +2821,8 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             return
 
         if event.button() == Qt.LeftButton:
-            self.old_cursor_position = event.pos()
+            self.start_cursor_position = self.elementsMapFromViewportToCanvas(QPointF(event.pos()))
+            self.capture_redefine_start_value = None            
             self.get_region_info()
             if self.transform_BKG_widget_mode:
                 if self.transform_BKG_1 is None:
@@ -2860,8 +2858,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
                     self.input_POINT2 = None
                     return
                 self.is_rect_defined = True
-                self.capture_region_rect = \
-                                    self._build_valid_rect(self.input_POINT1, self.input_POINT2)
+                self.capture_region_rect = build_valid_rectF(self.input_POINT1, self.input_POINT2)
                 if not self.extended_editor_mode:
                     # специальное ограничение, чтобы область захвата не съехала с экранной области
                     # и тем самым в скриншот не попала чернота

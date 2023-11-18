@@ -604,11 +604,7 @@ class ElementsMixin():
         self.update()
 
     def elementsCancelExtendedMode(self):
-        if self.capture_region_rect:
-            self.elementsInitMoveGlobalOffset()
-            self.elementsMoveGlobalOffset(-self.elements_global_offset)
-        self.current_canvas_origin = QPoint(0, 0)
-        self.elements_global_offset = QPoint(0, 0)
+        self.canvas_origin = QPointF(0, 0)
         self.elementsResetCapture()
         self.update()
 
@@ -1932,7 +1928,7 @@ class ElementsMixin():
             else:
                 self.specials_case = False
                 if self.extended_editor_mode:
-                    self.elements_final_output = QPixmap(self.capture_region_rect.size())
+                    self.elements_final_output = QPixmap(self.capture_region_rect.size().toSize())
                     self.elements_final_output.fill(Qt.transparent)
                     painter = QPainter()
                     painter.begin(self.elements_final_output)

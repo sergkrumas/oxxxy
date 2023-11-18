@@ -579,6 +579,13 @@ class ElementsMixin():
         viewport_pos = self.canvas_origin + scaled_rel_pos
         return viewport_pos
 
+    def elementsMapFromCanvasToViewportRectF(self, rect):
+        rect = QRectF(
+            self.elementsMapFromCanvasToViewport(rect.topLeft()),
+            self.elementsMapFromCanvasToViewport(rect.bottomRight())
+        )
+        return rect
+
     def elementsResetCapture(self):
         self.elementsSetSelected(None)
 
@@ -1241,59 +1248,6 @@ class ElementsMixin():
         else:
             return self.get_custom_cross_cursor()
 
-    def elementsInitMoveGlobalOffset(self):
-        if not self.is_rect_defined:
-            return
-        self.current_canvas_origin = QPointF(self.canvas_origin)
-        self.current_capture_zone_center = self.capture_region_rect.center()
-        for element in self.elements[:]:
-            attributes = dict(element.__dict__).items()
-            for attr_name, attr_value in attributes:
-                if attr_name.startswith("_temp_"):
-                    continue
-                type_class = type(attr_value)
-                # if type_class.__name__ in ['QPoint', 'QRect', 'QPainterPath']:
-                if type_class.__name__ in ['QPoint', 'QPainterPath']:
-                    final_value = type_class(attr_value)
-                    attr_name = f'_temp_{attr_name}'
-                    setattr(element, attr_name, final_value)
-        self.update()
-
-    def elementsMoveGlobalOffset(self, delta):
-        if not self.is_rect_defined:
-            return
-        self.canvas_origin = self.current_canvas_origin + delta
-        for element in self.elements[:]:
-            attributes = dict(element.__dict__).items()
-            for attr_name, attr_value in attributes:
-                if attr_name.startswith('_temp_'):
-                    set_attr_name = attr_name[len('_temp_'):]
-                    type_class = type(attr_value)
-                    classname = type_class.__name__
-                    if classname == 'QPoint':
-                        final_value = attr_value + delta
-                    # elif classname == 'QRect':
-                    #     _temp = QRect(attr_value)
-                    #     _temp.moveCenter(_temp.center() + delta)
-                    #     final_value = _temp
-                    elif classname == "QPainterPath":
-                        _temp = QPainterPath(attr_value)
-                        _temp.translate(delta)
-                        final_value = _temp
-                    else:
-                        raise Exception("elementsMoveGlobalOffset Exception")
-                    setattr(element, set_attr_name, final_value)
-            if element.type == ToolID.text:
-                element.textbox.move(delta)
-        self.move_capture_rect(delta)
-        if self.is_point_set(self.input_POINT1):
-            self.input_POINT1 = self.capture_region_rect.topLeft()
-        if self.is_point_set(self.input_POINT2):
-            self.input_POINT2 = self.capture_region_rect.bottomRight()
-        if self.transform_widget:
-            # refresh widget
-            self.elementsSetSelected(self.selected_element)
-        self.update()
 
     def elementsMouseMoveEvent(self, event):
         tool = self.current_tool

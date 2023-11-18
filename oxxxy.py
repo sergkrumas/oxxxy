@@ -63,7 +63,7 @@ from elements import ElementsMixin, ToolID
 class Globals():
     DEBUG = True
     DEBUG_SETTINGS_WINDOW = False
-    DEBUG_ELEMENTS = True
+    DEBUG_ELEMENTS = False
     DEBUG_ELEMENTS_PICTURE_FRAMING = True
     DEBUG_ELEMENTS_COLLAGE = False
     CRASH_SIMULATOR = False
@@ -1929,7 +1929,8 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         painter.setFont(font)
 
         cursor_pos = self.mapFromGlobal(QCursor().pos())
-        input_rect = self.build_input_rectF(cursor_pos)
+        input_rect = self.elementsMapFromCanvasToViewportRectF(self.build_input_rectF(cursor_pos))
+        # input_rect = self.build_input_rectF(cursor_pos)
 
         if self.extended_editor_mode:
             old_brush = painter.brush()
@@ -2320,9 +2321,10 @@ class ScreenshotWindow(QWidget, ElementsMixin):
 
     def draw_wrapper_shadow(self, painter):
         if self.capture_region_rect:
+            capture_region_rect = self.elementsMapFromCanvasToViewportRectF(self.capture_region_rect)
             draw_shadow(
                 painter,
-                self.capture_region_rect, 50,
+                capture_region_rect, 50,
                 webRGBA(QColor(0, 0, 0, 100)),
                 webRGBA(QColor(0, 0, 0, 0))
             )
@@ -2330,7 +2332,8 @@ class ScreenshotWindow(QWidget, ElementsMixin):
     def draw_wrapper_cyberpunk(self, painter):
         tw = self.tools_window
         if tw and tw.chb_draw_thirds.isChecked() and self.capture_region_rect:
-            draw_cyberpunk(painter, self.capture_region_rect)
+            capture_region_rect = self.elementsMapFromCanvasToViewportRectF(self.capture_region_rect)
+            draw_cyberpunk(painter, capture_region_rect)
 
     def draw_vertical_horizontal_lines(self, painter, cursor_pos):
         if self.extended_editor_mode:
@@ -2342,18 +2345,20 @@ class ScreenshotWindow(QWidget, ElementsMixin):
 
         if self.is_input_points_set():
             painter.setPen(line_pen)
-            left = self.input_POINT1.x()
-            top = self.input_POINT1.y()
-            right = self.input_POINT2.x()
-            bottom = self.input_POINT2.y()
+            input_POINT1 = self.elementsMapFromCanvasToViewport(self.input_POINT1)
+            input_POINT2 = self.elementsMapFromCanvasToViewport(self.input_POINT2)
+            left = input_POINT1.x()
+            top = input_POINT1.y()
+            right = input_POINT2.x()
+            bottom = input_POINT2.y()
             # vertical left
-            painter.drawLine(left, 0, left, self.height())
+            painter.drawLine(QPointF(left, 0), QPointF(left, self.height()))
             # horizontal top
-            painter.drawLine(0, top, self.width(), top)
+            painter.drawLine(QPointF(0, top), QPointF(self.width(), top))
             # vertical right
-            painter.drawLine(right, 0, right, self.height())
+            painter.drawLine(QPointF(right, 0), QPointF(right, self.height()))
             # horizontal bottom
-            painter.drawLine(0, bottom, self.width(), bottom)
+            painter.drawLine(QPointF(0, bottom), QPointF(self.width(), bottom))
             if self.undermouse_region_rect and Globals.DEBUG_VIZ:
                 painter.setBrush(QBrush(Qt.green, Qt.DiagCrossPattern))
                 painter.drawRect(self.undermouse_region_rect)
@@ -2803,7 +2808,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
 
         elif event.buttons() == Qt.MiddleButton:
             delta = QPoint(event.pos() - self.ocp)
-            self.elementsMoveGlobalOffset(delta)
+            self.canvas_origin = self.start_canvas_origin + delta
 
         if event.buttons() == Qt.LeftButton and not self.is_rect_being_redefined:
             self.setCursor(self.get_custom_cross_cursor())
@@ -2818,16 +2823,12 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         # super().mouseMoveEvent(event)
 
     def mousePressEvent(self, event):
-        isAltOnly = event.modifiers() == Qt.AltModifier
-        isLeftButton = event.button() == Qt.LeftButton
-        self.isPanningActivated = event.button() == Qt.MiddleButton
-        if self.isPanningActivated:
-            if self.extended_editor_mode:
-                self.elementsInitMoveGlobalOffset()
-                self.ocp = event.pos()
-                return
+        if event.button() == Qt.MiddleButton:
+            self.start_canvas_origin = QPointF(self.canvas_origin)
+            self.ocp = event.pos()
+            return
 
-        if isLeftButton:
+        if event.button() == Qt.LeftButton:
             self.old_cursor_position = event.pos()
             self.get_region_info()
             if self.transform_BKG_widget_mode:

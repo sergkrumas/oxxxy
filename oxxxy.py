@@ -1929,7 +1929,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         painter.setFont(font)
 
         cursor_pos = self.mapFromGlobal(QCursor().pos())
-        _input_rect = self.build_input_rectF(cursor_pos)
+        _input_rect = self.build_input_rectF(self.elementsMapFromViewportToCanvas(cursor_pos))
         input_rect = self.elementsMapFromCanvasToViewportRectF(_input_rect)
 
         if self.extended_editor_mode:
@@ -2207,8 +2207,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         font = QFont(old_font)
         font.setPixelSize(int(mag_text_rect.height()/2.0+5))
         painter.setFont(font)
-        cp = self.elementsMapFromCanvasToViewport(QPointF(cursor_pos) - self.canvas_origin)
-        cp = cp.toPoint()
+        cp = cursor_pos
         self.color_at_pixel = QColor(self.source_pixels.pixel(cp))
         color_hex_string = self.color_at_pixel.name()
         painter.drawText(mag_text_rect, Qt.AlignCenter, color_hex_string)

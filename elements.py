@@ -30,14 +30,14 @@ from PyQt5.QtWidgets import (QSystemTrayIcon, QWidget, QMessageBox, QMenu, QGrap
     QGraphicsScene, QFileDialog, QHBoxLayout, QCheckBox, QVBoxLayout, QTextEdit, QGridLayout,
     QPushButton, QGraphicsBlurEffect, QLabel, QApplication, QScrollArea, QDesktopWidget)
 from PyQt5.QtCore import (QUrl, QMimeData, pyqtSignal, QPoint, QPointF, pyqtSlot, QRect, QEvent,
-    QTimer, Qt, QSize, QRectF, QThread, QAbstractNativeEventFilter, QAbstractEventDispatcher,
+    QTimer, Qt, QSize, QSizeF, QRectF, QThread, QAbstractNativeEventFilter, QAbstractEventDispatcher,
     QFile, QDataStream, QIODevice)
 from PyQt5.QtGui import (QPainterPath, QColor, QKeyEvent, QMouseEvent, QBrush, QPixmap,
     QPaintEvent, QPainter, QWindow, QPolygon, QImage, QTransform, QPen, QLinearGradient,
     QIcon, QFont, QCursor, QPolygonF, QVector2D)
 
 from _utils import (convex_hull, check_scancode_for, SettingsJson,
-     generate_metainfo, build_valid_rect, dot, get_nearest_point_on_rect, get_creation_date,
+     generate_metainfo, build_valid_rect, build_valid_rectF, dot, get_nearest_point_on_rect, get_creation_date,
      find_browser_exe_file, open_link_in_browser, open_in_google_chrome, save_meta_info,
      make_screenshot_pyqt, webRGBA, generate_gradient, draw_shadow, draw_cyberpunk,
      elements45DegreeConstraint, get_bounding_points, load_svg, is_webp_file_animated)
@@ -94,7 +94,6 @@ class ElementsMixin():
 
     def elementsFinishSaveToMemoryMode(self):
         self.Globals.save_to_memory_mode = False
-        self.include_screenshot_background = False
         self.request_editor_mode(self.Globals.images_in_memory)
         self.Globals.images_in_memory.clear()
         self.elementsUpdateUI()
@@ -184,8 +183,6 @@ class ElementsMixin():
         # СОХРАНЕНИЕ ДАННЫХ
 
         # сохранение переменных, задаваемых через контекстное меню
-        data.update({'extended_editor_mode':             self.extended_editor_mode              })
-        data.update({'include_screenshot_background':    self.include_screenshot_background     })
         data.update({'dark_pictures':                    self.dark_pictures                     })
         data.update({'close_editor_on_done':             self.Globals.close_editor_on_done      })
 
@@ -359,8 +356,6 @@ class ElementsMixin():
         # ЗАГРУЗКА ДАННЫХ
 
         # загрузка переменных, задаваемых через контекстное меню
-        self.extended_editor_mode = data.get('extended_editor_mode', True)
-        self.include_screenshot_background = data.get('include_screenshot_background', True)
         self.dark_pictures = data.get('dark_pictures', True)
         self.Globals.close_editor_on_done = data.get('close_editor_on_done', True)
 
@@ -528,7 +523,7 @@ class ElementsMixin():
             if name.startswith("f_"):
                 # remove prefix 'f_' in the attribute name and get the attribute
                 ret_value = getattr(self, name[len("f_"):])
-                ret_value = QPoint(ret_value) #copy
+                ret_value = QPointF(ret_value) #copy
                 if root_self.elementsIsFinalDrawing:
                     # тут обрабатывается случай для QPoint,
                     # а для QPainterPath такой же по смыслу код
@@ -602,11 +597,6 @@ class ElementsMixin():
             self.tools_window = None
         self.update()
 
-    def elementsCancelExtendedMode(self):
-        self.canvas_origin = QPointF(0, 0)
-        self.elementsResetCapture()
-        self.update()
-
     def elementsSetElementParameters(self, element):
         tw = self.tools_window
         if tw:
@@ -649,15 +639,15 @@ class ElementsMixin():
                 size += self.Globals.ELEMENT_SIZE_RANGE_OFFSET
             w = math.ceil(element.pixmap.width()*size)
             h = math.ceil(element.pixmap.height()*size)
-            element.start_point = QPoint(pos)
-            element.end_point = pos + QPoint(w, h)
+            element.start_point = QPointF(pos)
+            element.end_point = pos + QPointF(w, h)
         return build_valid_rect(element.start_point, element.end_point)
 
     def elementsPictureRect(self, center_point, size, pixmap, use_user_scale=True):
         s = size
         if use_user_scale:
             s += self.Globals.ELEMENT_SIZE_RANGE_OFFSET
-        r = QRect(0, 0, math.ceil(pixmap.width()*s), math.ceil(pixmap.height()*s))
+        r = QRectF(0, 0, math.ceil(pixmap.width()*s), math.ceil(pixmap.height()*s))
         r.moveCenter(center_point)
         return r
 
@@ -1674,14 +1664,15 @@ class ElementsMixin():
         elif el_type == ToolID.picture:
             painter.setOpacity(element.opacity)
             pixmap = element.pixmap
-            r = build_valid_rect(element.f_start_point, element.f_end_point)
-            s = QRect(QPoint(0,0), pixmap.size())
-            painter.translate(r.center())
-            rotation = element.angle
-            painter.rotate(rotation)
-            r = QRect(int(-r.width()/2), int(-r.height()/2), r.width(), r.height())
+            r = build_valid_rectF(element.f_start_point, element.f_end_point)
+            r = self.elementsMapFromCanvasToViewportRectF(r)
+            s = QRectF(QPointF(0,0), QSizeF(pixmap.size()))
+            # painter.translate(r.center())
+            # rotation = element.angle
+            # painter.rotate(rotation)
+            # r = QRect(int(-r.width()/2), int(-r.height()/2), r.width(), r.height())
             painter.drawPixmap(r, pixmap, s)
-            painter.resetTransform()
+            # painter.resetTransform()
             painter.setOpacity(1.0)
         elif el_type == ToolID.removing:
             if self.Globals.CRASH_SIMULATOR:
@@ -1782,8 +1773,8 @@ class ElementsMixin():
                 pos = self.mapFromGlobal(QCursor().pos())
             all_elements = self.elements
             visible_elements = self.elementsHistoryFilter()
-            info_rect = QRect(QPoint(0, 0), pos-QPoint(10, 10))
-            painter.fillRect(QRect(QPoint(0, 0), pos), QColor(0, 0, 0, 180))
+            info_rect = QRectF(QPointF(0, 0), pos-QPointF(10, 10))
+            painter.fillRect(QRectF(QPointF(0, 0), pos), QColor(0, 0, 0, 180))
             for index, element in reversed(list(enumerate(all_elements))):
                 painter.setPen(QPen(Qt.white))
                 info_text = ""
@@ -1836,26 +1827,13 @@ class ElementsMixin():
                 painter.end()
             else:
                 self.specials_case = False
-                if self.extended_editor_mode:
-                    self.elements_final_output = QPixmap(self.capture_region_rect.size().toSize())
-                    self.elements_final_output.fill(Qt.transparent)
-                    painter = QPainter()
-                    painter.begin(self.elements_final_output)
-                    if self.include_screenshot_background:
-                        painter.drawImage(-self.get_capture_offset(), self.source_pixels)
-                    self.elementsDrawMain(painter, final=True)
-                    painter.end()
-                else:
-                    # legacy draw code
-                    _rect = QRect(QPoint(0, 0), self.capture_region_rect.bottomRight())
-                    self.elements_final_output = QPixmap(_rect.size())
-                    painter = QPainter()
-                    painter.begin(self.elements_final_output)
-                    if self.include_screenshot_background:
-                        painter.drawImage(self.capture_region_rect, self.source_pixels,
-                                                                        self.capture_region_rect)
-                    self.elementsDrawMain(painter, final=True)
-                    painter.end()
+                self.elements_final_output = QPixmap(self.capture_region_rect.size().toSize())
+                self.elements_final_output.fill(Qt.transparent)
+                painter = QPainter()
+                painter.begin(self.elements_final_output)
+                self.elementsDrawMain(painter, final=True)
+                painter.end()
+
 
     def get_capture_offset(self):
         capture_offset = self.capture_region_rect.topLeft()
@@ -2159,10 +2137,7 @@ class ElementsMixin():
 
         # render capture zone
         self.elementsUpdateFinalPicture()
-        if self.extended_editor_mode:
-            pix = self.elements_final_output
-        else:
-            pix = self.elements_final_output.copy(self.capture_region_rect)
+        pix = self.elements_final_output.copy(self.capture_region_rect)
 
         # draw capture zone to background image
         image = None

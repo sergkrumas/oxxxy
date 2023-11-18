@@ -2078,21 +2078,19 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         #   painter.drawImage(self.rect(), self.source_pixels)
         #   painter.setOpacity(1.0)
         ###### NEW VERSION FOR STEP == 1 AND STEP == 2:
-        if True:
-            # поправочка нужна для случая, когда использована команда "Содержимое в фон"
-            # и после неё габариты изображения уже не равны габаритам монитора(ов)
-            self_rect = QRectF(self.source_pixels.rect())
-        else:
-            self_rect = QRectF(self.rect())
-        self_rect.moveCenter(self_rect.center() + self.canvas_origin)
+        
+        # поправочка нужна для случая, когда использована команда "Содержимое в фон"
+        # и после неё габариты изображения уже не равны габаритам монитора(ов)
+        self_rect = QRectF(self.source_pixels.rect()) # self_rect = QRectF(self.rect())
+        self_rect = self.elementsMapFromCanvasToViewportRectF(self_rect) 
         if step == 1:
             if opacity_type == LayerOpacity.FullTransparent: # full transparent
                 painter.fillRect(self_rect, QColor(0, 0, 0, 5))
             elif opacity_type == LayerOpacity.HalfTransparent: # ghost
                 pass
             elif opacity_type == LayerOpacity.Opaque: # stay still
-                if self.include_screenshot_background:
-                    painter.drawImage(self_rect, self.source_pixels)
+                pass
+                # painter.drawImage(self_rect, self.source_pixels)
         elif step == 2:
             painter.setClipping(True)
             path = QPainterPath()
@@ -2102,11 +2100,11 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             if opacity_type == LayerOpacity.FullTransparent: # full transparent
                 pass
             elif opacity_type == LayerOpacity.HalfTransparent: # ghost
-                painter.fillRect(self_rect, QColor(0, 0, 0, 100))
-                painter.setOpacity(0.6)
-                if self.include_screenshot_background:
-                    painter.drawImage(self_rect, self.source_pixels)
-                painter.setOpacity(1.0)
+                pass
+                # painter.fillRect(self_rect, QColor(0, 0, 0, 100))
+                # painter.setOpacity(0.6)
+                # painter.drawImage(self_rect, self.source_pixels)
+                # painter.setOpacity(1.0)
             elif opacity_type == LayerOpacity.Opaque: # stay still
                 painter.fillRect(self_rect, QColor(0, 0, 0, 100))
             painter.setClipping(False)
@@ -2283,14 +2281,8 @@ class ScreenshotWindow(QWidget, ElementsMixin):
     def draw_capture_zone(self, painter, input_rect, shot=1):
         tw = self.tools_window
         if shot == 1 and self.is_input_points_set():
-            if self.include_screenshot_background:
-                input_rect_dest = input_rect
-                input_rect_source = QRectF(input_rect)
-                input_rect_source.moveCenter(
-                                        input_rect_source.center()-self.canvas_origin)
-                painter.drawImage(input_rect_dest,
-                            # self.source_pixels_backup or
-                            self.source_pixels, input_rect_source)
+            # раньше тут рисовалось фоновое изображение
+            pass
 
         if shot == 2 and self.is_input_points_set():
             if tw and tw.chb_masked.isChecked():
@@ -2477,6 +2469,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         self.show_help_hint = False
         # для рисования элементов на скриншоте
         self.elementsInit()
+        self.create_background_pictures()
 
         self.setWindowTitle(f"Oxxxy Screenshoter {Globals.VERSION_INFO} {Globals.AUTHOR_INFO}")
 
@@ -2500,7 +2493,6 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         self.transform_widget = None
         self.dialog = None
 
-        self.include_screenshot_background = True
         self.dark_pictures = True
 
         self.uncapture_mode_label_tstamp = time.time()
@@ -2552,6 +2544,15 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         self.get_region_info()
         self.update_tools_window()
         self.update()
+
+    def create_background_pictures(self):
+        background_pixmap = QPixmap.fromImage(self.source_pixels)
+        element = self.elementsCreateNew(ToolID.picture)
+        element.size = 0.5
+        element.pixmap = background_pixmap
+        element.angle = 0
+        pos = QPointF(background_pixmap.width()/2, background_pixmap.height()/2)
+        r = self.elementsSetPictureElementPoints(element, pos, pos_as_center=True)
 
     def request_editor_mode(self, paths_or_pixmaps):
         pixmaps = []
@@ -3035,17 +3036,9 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         else:
             finish_save_to_memory_mode = None
 
-        include_background = add_item("Фон")
-        include_background.setCheckable(True)
-        include_background.setChecked(self.include_screenshot_background)
-
         toggle_dark_pictures = add_item("Затемнять после отрисовки пометок")
         toggle_dark_pictures.setCheckable(True)
         toggle_dark_pictures.setChecked(self.dark_pictures)
-
-        toggle_extended_mode = add_item("Расширенный режим")
-        toggle_extended_mode.setCheckable(True)
-        toggle_extended_mode.setChecked(self.extended_editor_mode)
 
         toggle_close_on_done = add_item("Закрывать редактор после нажатия кнопки Готово")
         toggle_close_on_done.setCheckable(True)
@@ -3091,9 +3084,6 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             self.update()
         elif action == toggle_close_on_done:
             Globals.close_editor_on_done = not Globals.close_editor_on_done
-        elif action == include_background:
-            self.include_screenshot_background = not self.include_screenshot_background
-            self.update()
         elif action == start_save_to_memory_mode:
             self.elementsStartSaveToMemoryMode()
         elif action == finish_save_to_memory_mode:
@@ -3105,11 +3095,6 @@ class ScreenshotWindow(QWidget, ElementsMixin):
                 tw.move(self.mapFromGlobal(QCursor().pos()))
         elif action == reset_capture:
             self.elementsResetCapture()
-        elif action == toggle_extended_mode:
-            self.extended_editor_mode = not self.extended_editor_mode
-            if not self.extended_editor_mode:
-                self.elementsCancelExtendedMode()
-                self.update()
         elif action == minimize:
             self.showMinimized()
         elif action == special_tool:

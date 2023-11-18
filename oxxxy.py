@@ -2733,15 +2733,16 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         elif event.buttons() == Qt.LeftButton:
             if not self.is_rect_defined:
                 # для первичного задания области захвата
+                event_pos = self.elementsMapFromViewportToCanvas(event.pos())
                 if not self.is_point_set(self.input_POINT1):
                     self.user_input_started = True
-                    self.input_POINT1 = event.pos()
+                    self.input_POINT1 = event_pos
                 else:
                     modifiers = event.modifiers()
                     if modifiers == Qt.NoModifier:
-                        self.input_POINT2 = event.pos()
+                        self.input_POINT2 = event_pos
                     else:
-                        delta = self.input_POINT1 - event.pos()
+                        delta = self.input_POINT1 - event_pos
                         if modifiers & Qt.ControlModifier:
                             delta.setX(delta.x() // 10 * 10 + 1)
                             delta.setY(delta.y() // 10 * 10 + 1)
@@ -2905,12 +2906,14 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         scroll_value = event.angleDelta().y()/240
         ctrl = event.modifiers() & Qt.ControlModifier
         shift = event.modifiers() & Qt.ShiftModifier
+        alt = event.modifiers() & Qt.AltModifier
         no_mod = event.modifiers() == Qt.NoModifier
 
 
         if self.capture_region_rect:
             self.elementsDoScaleCanvas(scroll_value, ctrl, shift, no_mod)
-
+        elif alt:
+            self.elementsDoScaleCanvas(scroll_value, ctrl, shift, no_mod)
         else:
             self.change_magnifier_size(delta_value)
         self.update()

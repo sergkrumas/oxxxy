@@ -1963,8 +1963,6 @@ class ScreenshotWindow(QWidget, ElementsMixin):
 
         self.draw_uncapture_zones_mode_info(painter)
 
-        self.draw_transform_BKG_widget(painter)
-
         if Globals.DEBUG:
             self.draw_analyse_corners(painter)
             self.elementsDrawFinalVersionDebug(painter)
@@ -2525,13 +2523,8 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         self.view_window = None
         self.history_group_counter = 0
 
-        self.transform_BKG_widget_mode = False
-        self.transform_BKG_1 = None
-        self.transform_BKG_2 = None
         self.background_transformed = False
         self.WIDGET_BORDER_RADIUS = 300
-        self.transform_BKG_scale_x = True
-        self.transform_BKG_scale_y = True
 
     def set_saved_capture_frame(self):
         if self.tools_settings.get("savecaptureframe", False):
@@ -2805,11 +2798,6 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         if event.buttons() == Qt.LeftButton and not self.is_rect_being_redefined:
             self.setCursor(self.get_custom_cross_cursor())
 
-        if self.transform_BKG_widget_mode:
-            if self.transform_BKG_1:
-                self.elementsTransformBackground()
-                self.update()
-
         self.update()
         self.update_tools_window()
         # super().mouseMoveEvent(event)
@@ -2824,14 +2812,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             self.start_cursor_position = self.elementsMapFromViewportToCanvas(QPointF(event.pos()))
             self.capture_redefine_start_value = None            
             self.get_region_info()
-            if self.transform_BKG_widget_mode:
-                if self.transform_BKG_1 is None:
-                    self.transform_BKG_1 = event.pos()
-                elif self.transform_BKG_2 is None:
-                    self.transform_BKG_2 = event.pos()
-                    self.elementsFinishTransformBKGMode()
-                self.update()
-            elif self.undermouse_region_info is None:
+            if self.undermouse_region_info is None:
                 self.drag_inside_capture_zone = True
                 if self.capture_region_rect:
                     self.elementsMousePressEvent(event)
@@ -3030,11 +3011,6 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             set_image_frame = add_item("Обрезать выделенное изображение")
             contextMenu.addSeparator()
 
-        transform_background = add_item("Трансформация фона")
-        reset_background_transform = None
-        if self.background_transformed:
-            reset_background_transform = add_item("Сброс трансформации фона")
-
         render_elements_to_background = add_item("Содержимое в фон")
         special_tool = add_item(icon_multiframing, "Активировать инструмент мультикадрирования")
         reshot = add_item(icon_refresh, "Переснять скриншот")
@@ -3092,12 +3068,6 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             self.elementsFitImagesToSize()
         elif action == render_elements_to_background:
             self.elementsDoRenderToBackground()
-        elif action == transform_background:
-            self.elementsStartTransformBKGMode()
-        elif action == reset_background_transform:
-            self.background_transformed = False
-            self.source_pixels = self.source_pixels_backup
-            self.update()
         elif action == autocapturezone:
             self.elementsSetCaptureFromContent()
             self.update()
@@ -3344,9 +3314,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             show_quit_dialog = False
             if self.tools_window:
                 select_window = self.tools_window.select_window
-            if self.transform_BKG_widget_mode:
-                self.elementsFinishTransformBKGMode()
-            elif select_window and select_window.isVisible():
+            if select_window and select_window.isVisible():
                 select_window.hide()
             elif event.modifiers() & Qt.ShiftModifier:
                 show_quit_dialog = True
@@ -3409,12 +3377,6 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         if key in (Qt.Key_Space,):
             if self.is_rect_defined:
                 self.elementsActivateTransformTool()
-        if check_scancode_for(event, "X"):
-            self.transform_BKG_scale_x = not self.transform_BKG_scale_x
-            self.update()
-        if check_scancode_for(event, "Y"):
-            self.transform_BKG_scale_y = not self.transform_BKG_scale_y
-            self.update()
         if check_scancode_for(event, "P"):
             self.show_view_window(self.get_final_picture)
         if check_scancode_for(event, "V") and event.modifiers() & Qt.ControlModifier:

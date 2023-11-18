@@ -761,96 +761,6 @@ class ElementsMixin():
             tools_window.set_current_tool(ToolID.transform)
         self.update()
 
-    def draw_transform_BKG_widget(self, painter):
-        if self.transform_BKG_widget_mode:
-            transform_BKG_1 = self.transform_BKG_1 or self.mapFromGlobal(QCursor().pos())
-            transform_BKG_2 = self.transform_BKG_2 or self.mapFromGlobal(QCursor().pos())
-
-            old_comp_mode = painter.compositionMode()
-            painter.setCompositionMode(QPainter.RasterOp_SourceXorDestination)
-            painter.drawLine(transform_BKG_1, transform_BKG_2)
-            painter.setCompositionMode(old_comp_mode)
-
-            radius_v = QPoint(transform_BKG_1-transform_BKG_2)
-            radius = QVector2D(radius_v).length()
-            radius_int = int(radius)
-            offset = QPoint(radius_int, radius_int)
-            rect = build_valid_rect(transform_BKG_1 + offset, transform_BKG_1 - offset)
-            painter.drawEllipse(rect)
-
-            scale_status_str = ""
-            if self.transform_BKG_scale_x:
-                scale_status_str += "X"
-            if self.transform_BKG_scale_y:
-                scale_status_str += "Y"
-            painter.drawText(transform_BKG_2+QPoint(10, 10), scale_status_str)
-
-            font = painter.font()
-            font.setWeight(900)
-            painter.setFont(font)
-            for r, text in [(self.WIDGET_BORDER_RADIUS, "1.0"),
-                                                    (int(self.WIDGET_BORDER_RADIUS/2), "0.5")]:
-                offset = QPoint(r, r)
-                rect = build_valid_rect(transform_BKG_1 + offset, transform_BKG_1 - offset)
-                painter.setPen(QPen(Qt.red))
-                painter.drawEllipse(rect)
-                painter.setPen(QPen(Qt.white))
-                painter.drawText(transform_BKG_1 + QPoint(r+4, 0), text)
-
-    def elementsTransformBackground(self):
-        if self.source_pixels_backup is None:
-            self.source_pixels_backup = QImage(self.source_pixels)
-
-        source = self.source_pixels_backup
-
-        output_image = QPixmap(source.size())
-        output_image.fill(Qt.transparent)
-        painter = QPainter()
-
-        painter.begin(output_image)
-        painter.setRenderHint(QPainter.HighQualityAntialiasing, True)
-        painter.setRenderHint(QPainter.Antialiasing, True)
-        painter.setRenderHint(QPainter.SmoothPixmapTransform, True)
-
-        transform_BKG_1 = self.transform_BKG_1
-        transform_BKG_2 = self.transform_BKG_2 or self.mapFromGlobal(QCursor().pos())
-
-        translate_value = transform_BKG_1 - self.elements_global_offset
-
-        old_brush = painter.brush()
-        painter.setBrush(self.checkerboard_brush)
-        painter.drawRect(QRect(0, 0, source.width(), source.height()))
-        painter.setBrush(old_brush)
-
-        painter.translate(translate_value)
-
-        delta = transform_BKG_1 - transform_BKG_2
-        radians_angle = math.atan2(delta.y(), delta.x())
-        painter.rotate(180+180/3.14*radians_angle)
-
-        radius_v = QPoint(transform_BKG_1-transform_BKG_2)
-        radius = QVector2D(radius_v).length()
-        sx = sy = 1.0
-        if radius > self.WIDGET_BORDER_RADIUS:
-            scale = radius/self.WIDGET_BORDER_RADIUS
-        elif radius > self.WIDGET_BORDER_RADIUS/2:
-            scale = radius/self.WIDGET_BORDER_RADIUS
-        else:
-            scale = max(self.WIDGET_BORDER_RADIUS/2, radius)/self.WIDGET_BORDER_RADIUS
-        if self.transform_BKG_scale_x:
-            sx = scale
-        if self.transform_BKG_scale_y:
-            sy = scale
-        painter.scale(sx, sy)
-
-        painter.drawImage(-translate_value, source)
-
-        painter.end()
-
-        self.source_pixels = output_image.toImage()
-        self.background_transformed = True
-        self.update()
-
     def elementsRemoveElement(self):
         if not self.elements:
             return
@@ -2420,18 +2330,6 @@ class ElementsMixin():
             self.elementsSetSelected(None)
             self.update_tools_window()
 
-        self.update()
-
-    def elementsStartTransformBKGMode(self):
-        self.transform_BKG_widget_mode = True
-        self.transform_BKG_scale_x = True
-        self.transform_BKG_scale_y = True
-        self.update()
-
-    def elementsFinishTransformBKGMode(self):
-        self.transform_BKG_widget_mode = False
-        self.transform_BKG_1 = None
-        self.transform_BKG_2 = None
         self.update()
 
     def elementsGetImageFromBuffer(self):

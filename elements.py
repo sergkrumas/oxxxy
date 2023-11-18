@@ -1515,7 +1515,6 @@ class ElementsMixin():
             to_zero = -orig_bounding_rect.topLeft()
             if final:
                 path = QPainterPath(path)
-                path.translate(-self.elements_global_offset)
                 path.translate(-self.get_capture_offset())
             path = path.translated(to_zero.x(), to_zero.y())
             # задаём трансформацию полотна
@@ -1531,7 +1530,6 @@ class ElementsMixin():
             path = element.path
             if final:
                 path = QPainterPath(path)
-                path.translate(-self.elements_global_offset)
                 path.translate(-self.get_capture_offset())
             painter.drawPath(path)
 

@@ -42,7 +42,6 @@ from _utils import (convex_hull, check_scancode_for, SettingsJson,
      make_screenshot_pyqt, webRGBA, generate_gradient, draw_shadow, draw_cyberpunk,
      elements45DegreeConstraint, get_bounding_points, load_svg, is_webp_file_animated)
 
-from _transform_widget import (TransformWidget,)
 
 class ElementSizeMode(Enum):
     User = 0

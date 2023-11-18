@@ -2437,6 +2437,8 @@ class ScreenshotWindow(QWidget, ElementsMixin):
 
         self.start_cursor_position = QPointF(0, 0)
 
+        self.show_background = True
+
         self.tools_window = None
 
         self.default_corner_space = None
@@ -2555,6 +2557,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         element.size = 0.5
         element.pixmap = background_pixmap
         element.angle = 0
+        element.background_image = True
         pos = QPointF(background_pixmap.width()/2, background_pixmap.height()/2)
         r = self.elementsSetPictureElementPoints(element, pos, pos_as_center=True)
 
@@ -2930,6 +2933,9 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         self.define_regions_rects_and_set_cursor()
         self.update()
 
+    def toggle_show_background(self):
+        self.show_background = not self.show_background
+
     def contextMenuEvent(self, event):
         contextMenu = QMenu()
         contextMenu.setStyleSheet(self.context_menu_stylesheet)
@@ -3041,6 +3047,10 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         else:
             finish_save_to_memory_mode = None
 
+        show_background = add_item("Фон")
+        show_background.setCheckable(True)
+        show_background.setChecked(self.show_background)
+
         toggle_dark_pictures = add_item("Затемнять после отрисовки пометок")
         toggle_dark_pictures.setCheckable(True)
         toggle_dark_pictures.setChecked(self.dark_pictures)
@@ -3062,6 +3072,8 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             self.save_project()
         elif action == open_project:
             self.open_project()
+        elif action == show_background:
+            self.toggle_show_background()
         elif action == fit_images_to_size:
             self.elementsFitImagesToSize()
         elif action == render_elements_to_background:

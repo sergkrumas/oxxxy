@@ -489,6 +489,8 @@ class ElementsMixin():
 
             self.rotation = 0
 
+            self.background_image = False
+
             elements_list.append(self)
 
             n = 0
@@ -1662,18 +1664,21 @@ class ElementsMixin():
                 pass
             painter.drawRect(rect)
         elif el_type == ToolID.picture:
-            painter.setOpacity(element.opacity)
-            pixmap = element.pixmap
-            r = build_valid_rectF(element.f_start_point, element.f_end_point)
-            r = self.elementsMapFromCanvasToViewportRectF(r)
-            s = QRectF(QPointF(0,0), QSizeF(pixmap.size()))
-            # painter.translate(r.center())
-            # rotation = element.angle
-            # painter.rotate(rotation)
-            # r = QRect(int(-r.width()/2), int(-r.height()/2), r.width(), r.height())
-            painter.drawPixmap(r, pixmap, s)
-            # painter.resetTransform()
-            painter.setOpacity(1.0)
+            if element.background_image and not self.show_background:
+                pass
+            else:
+                painter.setOpacity(element.opacity)
+                pixmap = element.pixmap
+                r = build_valid_rectF(element.f_start_point, element.f_end_point)
+                r = self.elementsMapFromCanvasToViewportRectF(r)
+                s = QRectF(QPointF(0,0), QSizeF(pixmap.size()))
+                # painter.translate(r.center())
+                # rotation = element.angle
+                # painter.rotate(rotation)
+                # r = QRect(int(-r.width()/2), int(-r.height()/2), r.width(), r.height())
+                painter.drawPixmap(r, pixmap, s)
+                # painter.resetTransform()
+                painter.setOpacity(1.0)
         elif el_type == ToolID.removing:
             if self.Globals.CRASH_SIMULATOR:
                 1 / 0

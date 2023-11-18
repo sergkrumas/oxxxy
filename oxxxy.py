@@ -2936,8 +2936,10 @@ class ScreenshotWindow(QWidget, ElementsMixin):
 
         if self.capture_region_rect:
             self.elementsDoScaleCanvas(scroll_value, ctrl, shift, no_mod)
+            self.autopos_tools_window()
         elif shift and ctrl:
             self.elementsDoScaleCanvas(scroll_value, False, False, no_mod)
+            self.autopos_tools_window()
         else:
             self.change_magnifier_size(delta_value)
         self.update()

@@ -3228,18 +3228,18 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             self.setCursor(self.elementsDefineCursorShape())
             return
 
-        crr = self.capture_region_rect
+        crr = self.elementsMapFromCanvasToViewportRectF(self.capture_region_rect)
         amr = self._all_monitors_rect
         regions = {
-            1: QRect(QPoint(0, 0), crr.topLeft()),
-            2: QRect(QPoint(crr.left(), 0), crr.topRight()),
-            3: QRect(QPoint(crr.right(), 0), QPoint(amr.right(), crr.top())),
-            4: QRect(QPoint(0, crr.top()), crr.bottomLeft()),
+            1: QRectF(QPointF(0, 0), crr.topLeft()),
+            2: QRectF(QPointF(crr.left(), 0), crr.topRight()),
+            3: QRectF(QPointF(crr.right(), 0), QPointF(amr.right(), crr.top())),
+            4: QRectF(QPointF(0, crr.top()), crr.bottomLeft()),
             5: crr,
-            6: QRect(crr.topRight(), QPoint(amr.right(), crr.bottom())),
-            7: QRect(QPoint(0, crr.bottom()), QPoint(crr.left(), amr.bottom())),
-            8: QRect(crr.bottomLeft(), QPoint(crr.right(), amr.bottom())),
-            9: QRect(crr.bottomRight(), amr.bottomRight())
+            6: QRectF(crr.topRight(), QPointF(amr.right(), crr.bottom())),
+            7: QRectF(QPointF(0, crr.bottom()), QPointF(crr.left(), amr.bottom())),
+            8: QRectF(crr.bottomLeft(), QPointF(crr.right(), amr.bottom())),
+            9: QRectF(crr.bottomRight(), amr.bottomRight())
         }
         cursor_pos = self.mapFromGlobal(QCursor().pos())
         for number, rect in regions.items():

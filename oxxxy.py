@@ -2534,9 +2534,6 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         self.view_window = None
         self.history_group_counter = 0
 
-        self.background_transformed = False
-        self.WIDGET_BORDER_RADIUS = 300
-
     def set_saved_capture_frame(self):
         if self.tools_settings.get("savecaptureframe", False):
             rect_params = self.tools_settings.get("capture_frame", None)

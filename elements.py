@@ -1715,7 +1715,8 @@ class ElementsMixin():
             self.elementsDrawMainElement(painter, element, final)
 
         if not final:
-            self.draw_transform_widget(painter)
+            # !!! здесь рисовался виджет
+            pass
         if self.Globals.DEBUG and self.capture_region_rect and not final:
             painter.setPen(QPen(QColor(Qt.white)))
             text = f"{self.elements_history_index} :: {self.current_tool}"
@@ -1838,47 +1839,12 @@ class ElementsMixin():
             self.elementsSetSelected(new_element, keep_old_widget=keep_old_widget)
             return new_element
 
-    def init_transform_widget(self):
-        se = self.selected_element
-        if hasattr(se, "path"):
-            r = se.path.boundingRect().toRect()
-            return TransformWidget(r)
-        if se.type in [ToolID.copypaste, ToolID.zoom_in_region]:
-            if se.choose_default_subelement:
-                r = build_valid_rect(se.start_point, se.end_point)
-                return TransformWidget(r, center_point_only=False)
-            else:
-                subelement_rect = self.elementsBuildSubelementRect(se, se.copy_pos)
-                points = (subelement_rect.topLeft(), subelement_rect.bottomRight())
-                return TransformWidget(points, center_point_only=True)
-        else:
-            delta = (se.start_point - se.end_point)
-            if se.type == ToolID.numbering:
-                cp_only = (abs(delta.x()) < 5 and abs(delta.y()) < 5)
-                points = (se.start_point, se.end_point)
-                return TransformWidget(points, center_point_only=cp_only)
-            elif se.type in [ToolID.line, ToolID.arrow, ToolID.text]:
-                points = (se.start_point, se.end_point)
-                return TransformWidget(points, center_point_only=False)
-            elif se.type in [ToolID.marker, ToolID.pen] and hasattr(se, "straight") and se.straight:
-                points = (se.start_point, se.end_point)
-                return TransformWidget(points, center_point_only=False)
-            else:
-                r = build_valid_rect(se.start_point, se.end_point)
-                return TransformWidget(r, center_point_only=False)
-
-    def draw_transform_widget(self, painter):
-        if self.transform_widget:
-            self.transform_widget.draw_widget(painter)
 
     def elementsSetSelected(self, element, keep_old_widget=False):
-        if element:
-            self.selected_element = element
-            if not keep_old_widget:
-                self.transform_widget = self.init_transform_widget()
-        else:
-            self.selected_element = None
-            self.transform_widget = None
+        """
+            Deprecated
+        """
+        pass
 
     def elementsParametersChanged(self):
         tw = self.tools_window

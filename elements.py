@@ -201,15 +201,6 @@ class ElementsMixin():
         image_path = os.path.join(folder_path, "background.png")
         self.source_pixels.save(image_path)
 
-        # сохранение инфы о трансформации картинки-фона
-        data.update({'background_transformed':     self.background_transformed                  })
-
-
-        # дополнительное сохранение данных при изменнёном фоне
-        image_path = os.path.join(folder_path, "background_backup.png")
-        if self.background_transformed:
-            self.source_pixels_backup.save(image_path)
-
 
         # сохранение метаданных
         data.update({'metadata':                   self.metadata                                })
@@ -378,15 +369,6 @@ class ElementsMixin():
         image_path = os.path.join(folder_path, "background.png")
         self.source_pixels = QImage(image_path)
 
-
-        # загрузка инфы о трансформации картинки-фона
-        self.background_transformed = data.get('background_transformed', False)
-
-
-        # дополнительная загрузка данных при изменнёном фоне
-        image_path = os.path.join(folder_path, "background_backup.png")
-        if self.background_transformed:
-            self.source_pixels_backup = QImage(image_path)
 
 
         # загрузка метаданных

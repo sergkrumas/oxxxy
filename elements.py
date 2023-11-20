@@ -995,11 +995,7 @@ class ElementsMixin():
                 element.finished = False
         elif tool == ToolID.transform:
             self.widget_activated = False
-            if self.transform_widget:
-                widget_control_point = None
-                widget_control_point = self.transform_widget.control_point_under_mouse(event.pos())
-                if widget_control_point and event.button() == Qt.LeftButton:
-                    self.widget_activated = True
+            # здесь был код, который проверял, попала и позиция курсора в контрол поинт виджета
             if not self.widget_activated:
                 ######################
                 # selection code!
@@ -1181,35 +1177,7 @@ class ElementsMixin():
             if self.transform_widget and self.widget_activated:
                 element = self.elementsCreateModificatedCopyOnNeed(self.selected_element,
                                                                         keep_old_widget=True)
-                self.transform_widget.retransform(event)
-                sel_elem = self.selected_element
-                if hasattr(sel_elem, "path"):
-                    sel_elem.pApos = self.transform_widget.pA.point
-                    sel_elem.pBpos = self.transform_widget.pB.point
-                    current_topLeft = sel_elem.path.boundingRect().topLeft()
-                    sel_elem.path.translate(-QPointF(current_topLeft))
-                    sel_elem.path.translate(
-                        QPointF(build_valid_rect(sel_elem.pApos, sel_elem.pBpos).topLeft())
-                    )
-                elif sel_elem.type == ToolID.blurring:
-                    sel_elem.finished = False
-                    sel_elem.start_point = self.transform_widget.pA.point
-                    sel_elem.end_point = self.transform_widget.pB.point
-                elif sel_elem.type == ToolID.text:
-                    element.modify_end_point = True
-                    # для смены позиции текстового поля при перетаскивании
-                    self.elementsOnTextChanged(sel_elem)
-                    sel_elem.start_point = self.transform_widget.pA.point
-                    sel_elem.end_point = self.transform_widget.pB.point
-                elif sel_elem.type in [ToolID.copypaste, ToolID.zoom_in_region]:
-                    if element.choose_default_subelement:
-                        sel_elem.start_point = self.transform_widget.pA.point
-                        sel_elem.end_point = self.transform_widget.pB.point
-                    else:
-                        sel_elem.copy_pos = self.transform_widget.pCenter.point
-                else:
-                    sel_elem.start_point = self.transform_widget.pA.point
-                    sel_elem.end_point = self.transform_widget.pB.point
+
         self.update()
 
     def elementsMouseReleaseEvent(self, event):

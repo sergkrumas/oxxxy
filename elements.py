@@ -244,10 +244,10 @@ class ElementsMixin():
         data.update({'history_group_counter':      self.history_group_counter                   })
 
 
-        # сохранение вектора глобального сдвига
-        v = self.elements_global_offset
-        data.update({'elements_global_offset':     tuple((v.x(), v.y()))                        })
-
+        # сохранение сдвига холста
+        data.update({'canvas_origin':   tuple((self.canvas_origin.x(), self.canvas_origin.y())) })
+        # сохранение зума холста
+        data.update({'canvas_scale':      tuple((self.canvas_scale_x, self.canvas_scale_y))     })
 
         elements_to_store = list()
         # сохранение элементов
@@ -424,9 +424,11 @@ class ElementsMixin():
         self.history_group_counter = data.get('history_group_counter', 0)
 
 
-        # загрузка вектора глобального сдвига
-        self.elements_global_offset = QPoint(*data.get('elements_global_offset', (0, 0)))
-
+        # сохранение сдвига холста
+        self.canvas_origin = QPointF(*data.get('canvas_origin', (0.0, 0.0)))
+        # сохранение зума холста
+        self.canvas_scale_x = data.get('canvas_scale_x')
+        self.canvas_scale_y = data.get('canvas_scale_y')
 
         # загрузка элементов и их данных
         elements_from_store = data.get('elements', [])
@@ -1712,7 +1714,7 @@ class ElementsMixin():
                 # с прямоугольником производятся корректировки, чтобы последствия перемещения
                 # рамки захвата и перемещения окна не сказывались на копируемой области
                 if not final:
-                    f_input_rect.moveCenter(f_input_rect.center() - self.elements_global_offset)
+                    f_input_rect.moveCenter(f_input_rect.center() - self.canvas_origin)
                 else:
                     # get_capture_offset вычитался во время вызова build_valid_rect,
                     # а здесь прибавляется для того, чтобы всё работало как надо
@@ -2132,7 +2134,7 @@ class ElementsMixin():
                 f_input_rect = build_valid_rect(element.f_start_point, element.f_end_point)
                 final_pos = element.f_copy_pos
                 final_version_rect = self.elementsBuildSubelementRect(element, final_pos)
-                f_input_rect.moveCenter(f_input_rect.center() - self.elements_global_offset)
+                f_input_rect.moveCenter(f_input_rect.center() - self.canvas_origin)
 
                 points.append(f_input_rect.topLeft()-generalOffset)
                 points.append(f_input_rect.bottomRight()+generalOffset)

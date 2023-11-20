@@ -296,9 +296,6 @@ class ElementsMixin():
             attributes = element.__dict__.items()
             for attr_name, attr_value in attributes:
 
-                if attr_name.startswith("f_"):
-                    continue
-
                 attr_type = type(attr_value).__name__
 
                 if isinstance(attr_value, QPoint):
@@ -437,7 +434,7 @@ class ElementsMixin():
             self.input_POINT2 = None
             self.is_rect_defined = False
         else:
-            self.capture_region_rect = QRect(*rect_tuple)
+            self.capture_region_rect = QRectF(*rect_tuple)
             self.input_POINT1 = self.capture_region_rect.topLeft()
             self.input_POINT2 = self.capture_region_rect.bottomRight()
             self.is_rect_defined = True
@@ -467,6 +464,9 @@ class ElementsMixin():
 
                 if attr_type in ['QPoint']:
                     attr_value = QPoint(*attr_data)
+
+                elif attr_type in ['QPointF']:
+                    attr_value = QPointF(*attr_data)
 
                 elif attr_type in ['bool', 'int', 'float', 'str', 'tuple', 'list']:
                     attr_value = attr_data
@@ -853,7 +853,7 @@ class ElementsMixin():
         return non_deleted_elements
 
     def elementsBuildSubelementRect(self, element, copy_pos):
-        _rect = build_valid_rect(element.f_start_point, element.f_end_point)
+        _rect = build_valid_rect(element.start_point, element.end_point)
         if element.type == ToolID.zoom_in_region:
             factor = 1.0 + element.size*4.0
             _rect.setWidth(int(_rect.width()*factor))
@@ -1429,7 +1429,7 @@ class ElementsMixin():
                 if element.type == ToolID.darkening:
                     at_least_one_exists = True
                     darkening_value = element.size
-                    r = build_valid_rect(element.f_start_point, element.f_end_point)
+                    r = build_valid_rect(element.start_point, element.end_point)
                     piece = QPainterPath()
                     piece.addRect(QRectF(r))
                     darkening_zone = darkening_zone.united(piece)
@@ -1520,16 +1520,15 @@ class ElementsMixin():
         painter.setBrush(QBrush(color))
         if el_type == ToolID.arrow:
             painter.setPen(Qt.NoPen)
-            self.elementsDrawArrow(painter, element.f_start_point,
-                                                            element.f_end_point, size, True)
+            self.elementsDrawArrow(painter, element.start_point, element.end_point, size, True)
         elif el_type in [ToolID.pen, ToolID.marker]:
             painter.setBrush(Qt.NoBrush)
             if element.straight:
-                painter.drawLine(element.f_start_point, element.f_end_point)
+                painter.drawLine(element.start_point, element.end_point)
             else:
                 self.draw_transformed_path(element, element.path, painter, final)
         elif el_type == ToolID.line:
-            painter.drawLine(element.f_start_point, element.f_end_point)
+            painter.drawLine(element.start_point, element.end_point)
         elif el_type == ToolID.special and not final:
             _pen = painter.pen()
             _brush = painter.brush()
@@ -1537,7 +1536,7 @@ class ElementsMixin():
             painter.setBrush(Qt.NoBrush)
             cm = painter.compositionMode()
             painter.setCompositionMode(QPainter.RasterOp_NotDestination) #RasterOp_SourceXorDestination
-            rect = build_valid_rect(element.f_start_point, element.f_end_point)
+            rect = build_valid_rect(element.start_point, element.end_point)
             painter.drawRect(rect)
             painter.setCompositionMode(cm)
             painter.setPen(_pen)
@@ -1546,14 +1545,14 @@ class ElementsMixin():
             cur_brush = painter.brush()
             if not element.filled:
                 painter.setBrush(Qt.NoBrush)
-            rect = build_valid_rect(element.f_start_point, element.f_end_point)
+            rect = build_valid_rect(element.start_point, element.end_point)
             if el_type == ToolID.oval:
                 painter.drawEllipse(rect)
             else:
                 painter.drawRect(rect)
             if el_type == ToolID.numbering:
                 w = self.NUMBERING_WIDTH
-                end_point_rect = QRect(element.f_end_point - QPoint(int(w/2), int(w/2)),
+                end_point_rect = QRect(element.end_point - QPoint(int(w/2), int(w/2)),
                                                                                 QSize(w, w))
                 painter.setBrush(cur_brush)
                 painter.setPen(Qt.NoPen)
@@ -1576,7 +1575,7 @@ class ElementsMixin():
                 p.begin(pixmap)
                 p.setClipping(True)
                 path = QPainterPath()
-                pos = element.f_end_point - QPoint(0, element.pixmap.height())
+                pos = element.end_point - QPoint(0, element.pixmap.height())
                 text_rect = QRect(pos, element.pixmap.size())
                 text_rect = QRect(QPoint(0, 0), element.pixmap.size())
                 path.addRoundedRect(QRectF(text_rect), element.margin_value,
@@ -1587,15 +1586,15 @@ class ElementsMixin():
                 p.end()
 
             painter.setPen(Qt.NoPen)
-            if element.f_start_point != element.f_end_point:
+            if element.start_point != element.end_point:
                 if element.modify_end_point:
                     modified_end_point = get_nearest_point_on_rect(
                         QRect(pos, QSize(element.pixmap.width(), element.pixmap.height())),
-                        element.f_start_point
+                        element.start_point
                     )
                 else:
-                    modified_end_point = element.f_end_point
-                self.elementsDrawArrow(painter, modified_end_point, element.f_start_point,
+                    modified_end_point = element.end_point
+                self.elementsDrawArrow(painter, modified_end_point, element.start_point,
                                                                                 size, False)
             if element.pixmap:
                 image_rect = QRect(pos, pixmap.size())
@@ -1613,14 +1612,14 @@ class ElementsMixin():
                 painter.resetTransform()
 
         elif el_type in [ToolID.blurring, ToolID.darkening]:
-            rect = build_valid_rect(element.f_start_point, element.f_end_point)
+            rect = build_valid_rect(element.start_point, element.end_point)
             painter.setBrush(Qt.NoBrush)
             painter.setPen(Qt.NoPen)
             if el_type == ToolID.blurring:
                 if not element.finished:
                     painter.setBrush(QBrush(QColor(150, 0, 0), Qt.DiagCrossPattern))
                 else:
-                    rect = build_valid_rect(element.f_start_point, element.f_end_point)
+                    rect = build_valid_rect(element.start_point, element.end_point)
                     painter.drawPixmap(rect.topLeft(), element.pixmap)
             elif el_type == ToolID.darkening:
                 # painter.setBrush(QBrush(QColor(150, 150, 0), Qt.BDiagPattern))
@@ -1649,9 +1648,9 @@ class ElementsMixin():
             if self.Globals.CRASH_SIMULATOR:
                 1 / 0
         elif el_type in [ToolID.zoom_in_region, ToolID.copypaste]:
-            f_input_rect = build_valid_rect(element.f_start_point, element.f_end_point)
+            input_rect = build_valid_rect(element.start_point, element.end_point)
             curpos = QCursor().pos()
-            final_pos = element.f_copy_pos if element.finished else self.mapFromGlobal(curpos)
+            final_pos = element.copy_pos if element.finished else self.mapFromGlobal(curpos)
             final_version_rect = self.elementsBuildSubelementRect(element, final_pos)
             painter.setBrush(Qt.NoBrush)
             if el_type == ToolID.zoom_in_region:
@@ -1660,13 +1659,13 @@ class ElementsMixin():
                 painter.setPen(QPen(Qt.red, 1, Qt.DashLine))
             if el_type == ToolID.zoom_in_region or \
                             (el_type == ToolID.copypaste and not final):
-                painter.drawRect(f_input_rect)
+                painter.drawRect(input_rect)
             if element.zoom_second_input or element.finished:
                 if element.toolbool and el_type == ToolID.zoom_in_region:
                     points = []
                     attrs_names = ["topLeft", "topRight", "bottomLeft", "bottomRight"]
                     for corner_attr_name in attrs_names:
-                        p1 = getattr(f_input_rect, corner_attr_name)()
+                        p1 = getattr(input_rect, corner_attr_name)()
                         p2 = getattr(final_version_rect, corner_attr_name)()
                         points.append(p1)
                         points.append(p2)
@@ -1677,12 +1676,12 @@ class ElementsMixin():
                 # с прямоугольником производятся корректировки, чтобы последствия перемещения
                 # рамки захвата и перемещения окна не сказывались на копируемой области
                 if not final:
-                    f_input_rect.moveCenter(f_input_rect.center() - self.canvas_origin)
+                    input_rect.moveCenter(input_rect.center() - self.canvas_origin)
                 else:
                     # get_capture_offset вычитался во время вызова build_valid_rect,
                     # а здесь прибавляется для того, чтобы всё работало как надо
-                    f_input_rect.moveCenter(f_input_rect.center() + self.get_capture_offset())
-                painter.drawImage(final_version_rect, source_pixels, f_input_rect)
+                    input_rect.moveCenter(input_rect.center() + self.get_capture_offset())
+                painter.drawImage(final_version_rect, source_pixels, input_rect)
                 if el_type == ToolID.zoom_in_region:
                     painter.drawRect(final_version_rect)
 
@@ -2073,18 +2072,18 @@ class ElementsMixin():
                 points.append(r.topLeft()-generalOffset)
                 points.append(r.bottomRight()+generalOffset)
             elif element.type == ToolID.text:
-                if element.f_start_point != element.f_end_point:
+                if element.start_point != element.end_point:
                     if element.modify_end_point:
                         modified_end_point = get_nearest_point_on_rect(
                             QRect(pos, QSize(element.pixmap.width(), element.pixmap.height())),
-                            element.f_start_point
+                            element.start_point
                         )
                     else:
-                        modified_end_point = element.f_end_point
+                        modified_end_point = element.end_point
                     points.append(modified_end_point)
-                    points.append(element.f_start_point)
+                    points.append(element.start_point)
                 if element.pixmap:
-                    pos = element.f_end_point - QPoint(0, element.pixmap.height())
+                    pos = element.end_point - QPoint(0, element.pixmap.height())
                     image_rect = QRect(pos, element.pixmap.size())
                     points.append(image_rect.topLeft()-generalOffset)
                     points.append(image_rect.bottomRight()+generalOffset)
@@ -2094,13 +2093,13 @@ class ElementsMixin():
                 points.append(r.bottomRight()+generalOffset)
             elif element.type in [ToolID.zoom_in_region, ToolID.copypaste]:
 
-                f_input_rect = build_valid_rect(element.f_start_point, element.f_end_point)
-                final_pos = element.f_copy_pos
+                input_rect = build_valid_rect(element.start_point, element.end_point)
+                final_pos = element.copy_pos
                 final_version_rect = self.elementsBuildSubelementRect(element, final_pos)
-                f_input_rect.moveCenter(f_input_rect.center() - self.canvas_origin)
+                input_rect.moveCenter(input_rect.center() - self.canvas_origin)
 
-                points.append(f_input_rect.topLeft()-generalOffset)
-                points.append(f_input_rect.bottomRight()+generalOffset)
+                points.append(input_rect.topLeft()-generalOffset)
+                points.append(input_rect.bottomRight()+generalOffset)
                 points.append(final_version_rect.topLeft()-generalOffset)
                 points.append(final_version_rect.bottomRight()+generalOffset)
 

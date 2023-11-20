@@ -2181,8 +2181,10 @@ class ScreenshotWindow(QWidget, ElementsMixin):
     "\n         + Ctrl - умножает текущую величину перемещения на 5;"
     "\n         Enter - подтверждение ввода позиций начального и конечного углов прямоугольной"
                                                                                 " области захвата."
+    "\n     ➜ Зажатое колесо мыши - перенос холста;"
+    "\n     ➜ Крутить колесо мыши - зумить холст;"
     "\n     ➜ Лупа:"
-    "\n         Колесом мыши можно задавать размер лупы;"
+    "\n         Ctrl + колесо мыши - задать размер лупы;"
     "\n         Ctrl + C - копировать цвет под прицелом в буфер обмена;"
     "\n             При копировании текущего цвета в буфер копируются также и прыдущие цвета."
     "\n     ➜ Доступно контекстное меню для возможности выхода из приложения или сворачивания"
@@ -2939,15 +2941,11 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         alt = event.modifiers() & Qt.AltModifier
         no_mod = event.modifiers() == Qt.NoModifier
 
-
-        if self.capture_region_rect:
+        if ctrl:
+            self.change_magnifier_size(delta_value)
+        else:
             self.elementsDoScaleCanvas(scroll_value, ctrl, shift, no_mod)
             self.autopos_tools_window()
-        elif shift and ctrl:
-            self.elementsDoScaleCanvas(scroll_value, False, False, no_mod)
-            self.autopos_tools_window()
-        else:
-            self.change_magnifier_size(delta_value)
         self.update()
 
     def get_region_info(self):

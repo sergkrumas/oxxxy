@@ -79,6 +79,52 @@ class ToolID():
     TEMPORARY_TYPE_NOT_DEFINED = "TEMPORARY_TYPE_NOT_DEFINED"
 
 
+
+class Element():
+
+    def __init__(self, _type, elements_list):
+        self.textbox = None
+        self.type = _type
+        self.finished = False
+
+        self.copy_pos = None
+        self.zoom_second_input = False
+
+        self.rotation = 0
+
+        self.background_image = False
+
+        elements_list.append(self)
+
+        n = 0
+        for el in elements_list:
+            if el.type == ToolID.numbering:
+                n += 1
+        self.number = n
+
+        if hasattr(type(self), "_counter"):
+            type(self)._counter += 1
+        else:
+            type(self)._counter = 0
+        self.unique_index = type(self)._counter
+
+        self.fresh = True
+
+        self.backup_pixmap = None
+
+        self.choose_default_subelement = True # for copypaste and zoom_in_region
+
+        self.frame_info = None
+
+        self.size_mode = ElementSizeMode.User
+
+        self.history_group_id = None
+
+        self.size = 1.0
+
+        self.opacity = 1.0
+
+
 class ElementsMixin():
 
     def elementsUpdateUI(self):
@@ -461,70 +507,6 @@ class ElementsMixin():
 
         self.show_notify_dialog("Файл загружен")
 
-
-    def define_class_Element(root_self):
-        def __init__(self, _type, elements_list):
-            self.textbox = None
-            self.type = _type
-            self.finished = False
-
-            self.copy_pos = None
-            self.zoom_second_input = False
-
-            self.rotation = 0
-
-            self.background_image = False
-
-            elements_list.append(self)
-
-            n = 0
-            for el in elements_list:
-                if el.type == ToolID.numbering:
-                    n += 1
-            self.number = n
-
-            if hasattr(type(self), "_counter"):
-                type(self)._counter += 1
-            else:
-                type(self)._counter = 0
-            self.unique_index = type(self)._counter
-
-            self.fresh = True
-
-            self.backup_pixmap = None
-
-            self.choose_default_subelement = True # for copypaste and zoom_in_region
-
-            self.frame_info = None
-
-            self.size_mode = ElementSizeMode.User
-
-            self.history_group_id = None
-
-            self.size = 1.0
-
-            self.opacity = 1.0
-
-        def __getattribute__(self, name):
-            if name.startswith("f_"):
-                # remove prefix 'f_' in the attribute name and get the attribute
-                ret_value = getattr(self, name[len("f_"):])
-                ret_value = QPointF(ret_value) #copy
-                if root_self.elementsIsFinalDrawing:
-                    # тут обрабатывается случай для QPoint,
-                    # а для QPainterPath такой же по смыслу код
-                    # находится в функции draw_transformed_path
-                    ret_value -= root_self.canvas_origin
-                    ret_value -= root_self.get_capture_offset()
-                return ret_value
-            else:
-                return object.__getattribute__(self, name)
-
-        return type("Element", (), {
-                "__init__": __init__,
-                "__getattribute__": __getattribute__}
-        )
-
     def elementsInit(self):
         self.current_tool = ToolID.none
         self.drag_capture_zone = False
@@ -536,7 +518,6 @@ class ElementsMixin():
         self.elementsSetSelected(None)
 
         self.elements_final_output = None
-        self.Element = self.define_class_Element()
 
         self.canvas_origin = QPointF(0, 0)
         self.canvas_scale_x = 1.0
@@ -847,7 +828,7 @@ class ElementsMixin():
         is_removing = case1 or case2 or case3
         self.elements = self.elementsHistoryFilter(only_filter=is_removing)
         # создание элемента
-        element = self.Element(element_type, self.elements)
+        element = Element(element_type, self.elements)
         self.elementsSetElementParameters(element)
         # обновление индекса после создания элемента
         self.elements_history_index = len(self.elements)
@@ -1654,7 +1635,7 @@ class ElementsMixin():
                 # print(picture_opacity)
                 painter.setOpacity(min(1.0, picture_opacity))
                 pixmap = element.pixmap
-                r = build_valid_rectF(element.f_start_point, element.f_end_point)
+                r = build_valid_rectF(element.start_point, element.end_point)
                 r = self.elementsMapFromCanvasToViewportRectF(r)
                 s = QRectF(QPointF(0,0), QSizeF(pixmap.size()))
                 # painter.translate(r.center())

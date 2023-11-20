@@ -1665,7 +1665,10 @@ class ElementsMixin():
             if element.background_image and not self.show_background:
                 pass
             else:
-                painter.setOpacity(element.opacity)
+                current_opacity = painter.opacity()
+                picture_opacity = current_opacity*element.opacity
+                # print(picture_opacity)
+                painter.setOpacity(min(1.0, picture_opacity))
                 pixmap = element.pixmap
                 r = build_valid_rectF(element.f_start_point, element.f_end_point)
                 r = self.elementsMapFromCanvasToViewportRectF(r)
@@ -1676,7 +1679,7 @@ class ElementsMixin():
                 # r = QRect(int(-r.width()/2), int(-r.height()/2), r.width(), r.height())
                 painter.drawPixmap(r, pixmap, s)
                 # painter.resetTransform()
-                painter.setOpacity(1.0)
+                painter.setOpacity(current_opacity)
         elif el_type == ToolID.removing:
             if self.Globals.CRASH_SIMULATOR:
                 1 / 0
@@ -1718,7 +1721,7 @@ class ElementsMixin():
                 if el_type == ToolID.zoom_in_region:
                     painter.drawRect(final_version_rect)
 
-    def elementsDrawMain(self, painter, final=False):
+    def elementsDrawMain(self, painter, final=False, draw_background_only=False):
         painter.setRenderHint(QPainter.HighQualityAntialiasing, True)
         painter.setRenderHint(QPainter.Antialiasing, True)
         painter.setRenderHint(QPainter.SmoothPixmapTransform, True)
@@ -1733,11 +1736,15 @@ class ElementsMixin():
         all_visible_elements = self.elementsHistoryFilter()
         pictures_first = []
         all_the_rest = []
-        for element in all_visible_elements:
-            if element.type == ToolID.picture:
-                pictures_first.append(element)
-            else:
-                all_the_rest.append(element)
+        if draw_background_only:
+            pictures_first = [el for el in all_visible_elements if el.background_image]
+        else:
+            for element in all_visible_elements:
+                if element.type == ToolID.picture:
+                    if not element.background_image or final:
+                        pictures_first.append(element)
+                else:
+                    all_the_rest.append(element)
         for element in pictures_first:
             self.elementsDrawMainElement(painter, element, final)
         for element in all_the_rest:

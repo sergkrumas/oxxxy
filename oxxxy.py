@@ -1941,11 +1941,11 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         self.draw_uncaptured_zones(painter, self.uncapture_draw_type, input_rect, step=1)
 
         # background image
-        self.draw_capture_zone(painter, input_rect, shot=1)
+        self.draw_capture_zone(painter, input_rect, _input_rect, shot=1)
         # elements
         self.elementsDrawMain(painter)
         # mask overlay
-        self.draw_capture_zone(painter, input_rect, shot=2)
+        self.draw_capture_zone(painter, input_rect, None, shot=2)
 
         self.draw_uncaptured_zones(painter, self.uncapture_draw_type, input_rect, step=2)
 
@@ -2046,9 +2046,9 @@ class ScreenshotWindow(QWidget, ElementsMixin):
 
     def draw_uncapture_zones_mode_info(self, painter):
         info = {
-            LayerOpacity.FullTransparent: 'Прозрачность: 100%',
-            LayerOpacity.HalfTransparent: 'Прозрачность: 50%',
-            LayerOpacity.Opaque: 'Прозрачность: 0%',
+            LayerOpacity.FullTransparent: 'Прозрачность фона: 100%',
+            LayerOpacity.HalfTransparent: 'Прозрачность фона: 50%',
+            LayerOpacity.Opaque: 'Прозрачность фона: 0%',
         }
         if time.time() - self.uncapture_mode_label_tstamp < 1.5:
             text_info = info[self.uncapture_draw_type]
@@ -2062,65 +2062,6 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             painter.drawRect(rect)
             painter.setPen(QPen(QColor(255, 255, 255)))
             painter.drawText(rect, Qt.AlignLeft | Qt.AlignTop, text_info)
-
-    def draw_uncaptured_zones(self, painter, opacity_type, input_rect, step=1):
-        ###### OLD VERSION ONLY FOR STEP == 1:
-        # if opacity_type == LayerOpacity.FullTransparent: # full transparent
-        #   painter.fillRect(self.rect(), QColor(0, 0, 0, 100))
-        # elif opacity_type == LayerOpacity.HalfTransparent: # ghost
-        #   painter.fillRect(self.rect(), QColor(0, 0, 0, 100))
-        #   painter.setOpacity(0.6)
-        #   painter.drawImage(self.rect(), self.source_pixels)
-        #   painter.setOpacity(1.0)
-        # elif opacity_type == LayerOpacity.Opaque: # stay still
-        #   painter.fillRect(self.rect(), Qt.black)
-        #   painter.setOpacity(0.6)
-        #   painter.drawImage(self.rect(), self.source_pixels)
-        #   painter.setOpacity(1.0)
-        ###### NEW VERSION FOR STEP == 1 AND STEP == 2:
-
-        # поправочка нужна для случая, когда использована команда "Содержимое в фон"
-        # и после неё габариты изображения уже не равны габаритам монитора(ов)
-        self_rect = QRectF(self.source_pixels.rect()) # self_rect = QRectF(self.rect())
-        self_rect = self.elementsMapFromCanvasToViewportRectF(self_rect)
-        if step == 1:
-            if opacity_type == LayerOpacity.FullTransparent: # full transparent
-                painter.fillRect(self_rect, QColor(0, 0, 0, 5))
-            elif opacity_type == LayerOpacity.HalfTransparent: # ghost
-                pass
-            elif opacity_type == LayerOpacity.Opaque: # stay still
-                pass
-                # painter.drawImage(self_rect, self.source_pixels)
-        elif step == 2:
-            painter.setClipping(True)
-            path = QPainterPath()
-            path.addRect(QRectF(self_rect))
-            path.addRect(QRectF(input_rect))
-            painter.setClipPath(path)
-            if opacity_type == LayerOpacity.FullTransparent: # full transparent
-                pass
-            elif opacity_type == LayerOpacity.HalfTransparent: # ghost
-                pass
-                # painter.fillRect(self_rect, QColor(0, 0, 0, 100))
-                # painter.setOpacity(0.6)
-                # painter.drawImage(self_rect, self.source_pixels)
-                # painter.setOpacity(1.0)
-            elif opacity_type == LayerOpacity.Opaque: # stay still
-                painter.fillRect(self_rect, QColor(0, 0, 0, 100))
-            painter.setClipping(False)
-        # if self.undermouse_region_rect:
-        #   pen = painter.pen()
-        #   brush = painter.brush()
-        #   painter.setPen(Qt.NoPen)
-        #   b = QBrush(Qt.green)
-        #   b.setStyle(Qt.DiagCrossPattern)
-        #   painter.setBrush(b)
-        #   painter.setOpacity(0.06)
-        #   self.define_regions_rects_and_set_cursor(write_data=False)
-        #   painter.drawRect(self.undermouse_region_rect)
-        #   painter.setOpacity(1.0)
-        #   painter.setPen(pen)
-        #   painter.setBrush(brush)
 
     def draw_magnifier(self, painter, input_rect, cursor_pos, text_pen, text_white_pen):
         MAGNIFIER_SIZE = self.magnifier_size
@@ -2295,11 +2236,79 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         hexaF = QPolygonF(hexaPointsF)
         return hexaF
 
-    def draw_capture_zone(self, painter, input_rect, shot=1):
+    def draw_uncaptured_zones(self, painter, opacity_type, input_rect, step=1):
+        ###### OLD VERSION ONLY FOR STEP == 1:
+        # if opacity_type == LayerOpacity.FullTransparent: # full transparent
+        #   painter.fillRect(self.rect(), QColor(0, 0, 0, 100))
+        # elif opacity_type == LayerOpacity.HalfTransparent: # ghost
+        #   painter.fillRect(self.rect(), QColor(0, 0, 0, 100))
+        #   painter.setOpacity(0.6)
+        #   painter.drawImage(self.rect(), self.source_pixels)
+        #   painter.setOpacity(1.0)
+        # elif opacity_type == LayerOpacity.Opaque: # stay still
+        #   painter.fillRect(self.rect(), Qt.black)
+        #   painter.setOpacity(0.6)
+        #   painter.drawImage(self.rect(), self.source_pixels)
+        #   painter.setOpacity(1.0)
+        ###### NEW VERSION FOR STEP == 1 AND STEP == 2:
+
+        # поправочка нужна для случая, когда использована команда "Содержимое в фон"
+        # и после неё габариты получившегося изображения уже не равны
+        # габаритам скриншота монитора(ов)
+        self_rect = QRectF(self.source_pixels.rect()) # self_rect = QRectF(self.rect())
+        self_rect = self.elementsMapFromCanvasToViewportRectF(self_rect)
+        if step == 1:
+            if opacity_type == LayerOpacity.FullTransparent: # full transparent
+                painter.fillRect(self_rect, QColor(0, 0, 0, 5))
+            elif opacity_type == LayerOpacity.HalfTransparent: # ghost
+                pass
+            elif opacity_type == LayerOpacity.Opaque: # stay still
+                # painter.drawImage(self_rect, self.source_pixels)
+                self.elementsDrawMain(painter, final=False, draw_background_only=True)
+        elif step == 2:
+            painter.setClipping(True)
+            path = QPainterPath()
+            path.addRect(QRectF(self.rect()))
+            path.addRect(QRectF(input_rect))
+            painter.setClipPath(path)
+            if opacity_type == LayerOpacity.FullTransparent: # full transparent
+                pass
+            elif opacity_type == LayerOpacity.HalfTransparent: # ghost
+                painter.fillRect(self_rect, QColor(0, 0, 0, 100))
+                painter.setOpacity(0.6)
+                self.elementsDrawMain(painter, final=False, draw_background_only=True)
+                # painter.drawImage(self_rect, self.source_pixels)
+                painter.setOpacity(1.0)
+            elif opacity_type == LayerOpacity.Opaque: # stay still
+                painter.fillRect(self_rect, QColor(0, 0, 0, 100))
+            painter.setClipping(False)
+        # if self.undermouse_region_rect:
+        #   pen = painter.pen()
+        #   brush = painter.brush()
+        #   painter.setPen(Qt.NoPen)
+        #   b = QBrush(Qt.green)
+        #   b.setStyle(Qt.DiagCrossPattern)
+        #   painter.setBrush(b)
+        #   painter.setOpacity(0.06)
+        #   self.define_regions_rects_and_set_cursor(write_data=False)
+        #   painter.drawRect(self.undermouse_region_rect)
+        #   painter.setOpacity(1.0)
+        #   painter.setPen(pen)
+        #   painter.setBrush(brush)
+
+    def draw_capture_zone(self, painter, input_rect, _input_rect, shot=1):
         tw = self.tools_window
         if shot == 1 and self.is_input_points_set():
-            # раньше тут рисовалось фоновое изображение
-            pass
+            if self.show_background:
+                # input_rect_dest = input_rect
+                # input_rect_source = QRectF(_input_rect)
+                # painter.drawImage(input_rect_dest, self.source_pixels, input_rect_source)
+                painter.setClipping(True)
+                path = QPainterPath()
+                path.addRect(QRectF(input_rect))
+                painter.setClipPath(path)
+                self.elementsDrawMain(painter, final=False, draw_background_only=True)
+                painter.setClipping(False)
 
         if shot == 2 and self.is_input_points_set():
             if tw and tw.chb_masked.isChecked():

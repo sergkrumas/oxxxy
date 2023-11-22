@@ -1777,7 +1777,7 @@ class ElementsMixin():
                 self._canvas_origin = QPointF(self.canvas_origin)
                 self._canvas_scale_x = self.canvas_scale_x
                 self._canvas_scale_y = self.canvas_scale_y
-                self.canvas_origin = QPointF(0, 0)
+                self.canvas_origin = -self.capture_region_rect.topLeft()
                 self.canvas_scale_x = 1.0
                 self.canvas_scale_y = 1.0
                 self.elementsDrawMain(painter, final=True)

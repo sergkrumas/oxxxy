@@ -3398,7 +3398,8 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             if self.is_rect_defined:
                 self.elementsActivateTransformTool()
         if check_scancode_for(event, "P"):
-            self.show_view_window(self.get_final_picture)
+            if self.capture_region_rect is not None:
+                self.show_view_window(self.get_final_picture)
         if check_scancode_for(event, "V") and event.modifiers() & Qt.ControlModifier:
             self.elementsPasteImageFromBuffer(event)
 

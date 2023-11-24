@@ -700,7 +700,6 @@ class ElementsMixin():
         self.elementsUpdateFinalPicture()
         return self.elements_final_output
 
-
     def elementsActivateTransformTool(self):
         if not self.elements:
             return

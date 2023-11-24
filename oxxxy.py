@@ -2875,8 +2875,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
                                     self._all_monitors_rect.intersected(self.capture_region_rect)
                 self.is_rect_being_redefined = False
             self.get_region_info() # здесь только для установки курсора
-        if Globals.DEBUG:
-            self.elementsUpdateFinalPicture()
+
         self.isPanningActivated = False
         self.update()
         self.update_tools_window()

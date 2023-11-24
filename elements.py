@@ -1699,14 +1699,6 @@ class ElementsMixin():
         painter.setRenderHint(QPainter.SmoothPixmapTransform, False)
 
     def elementsDrawFinalVersionDebug(self, painter):
-        if self.capture_region_rect and self.elements_final_output:
-
-            # draw final picture
-            p = self.elementsMapFromCanvasToViewport(self.capture_region_rect.topRight())
-            painter.setOpacity(0.6)
-            painter.drawPixmap(p, self.elements_final_output)
-            painter.setOpacity(1.0)
-            painter.resetTransform()
 
         # draw debug elements' list
         if self.elements:

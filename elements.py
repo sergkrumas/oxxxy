@@ -901,15 +901,16 @@ class ElementsMixin():
         return elements_under_mouse
 
     def elementsMousePressEventDefault(self, element, event):
+        event_pos = self.elementsMapFromViewportToCanvas(QPointF(event.pos()))
         if element.type == ToolID.line and event.modifiers() & Qt.ControlModifier:
             last_element = self.elementsGetLastElement1()
             if last_element and last_element.type == ToolID.line:
-                element.start_point = QPointF(last_element.end_point).toPoint()
+                element.start_point = QPointF(last_element.end_point)
             else:
-                element.start_point = event.pos()
+                element.start_point = event_pos
         else:
-            element.start_point = event.pos()
-        element.end_point = event.pos()
+            element.start_point = event_pos
+        element.end_point = event_pos
 
     def elementsIsSpecialCase(self, element):
         special_case = element is not None
@@ -927,6 +928,8 @@ class ElementsMixin():
 
     def elementsMousePressEvent(self, event):
         tool = self.current_tool
+
+        event_pos = self.elementsMapFromViewportToCanvas(QPointF(event.pos()))
 
         self.prev_elements_history_index = self.elements_history_index
         isLeftButton = event.buttons() == Qt.LeftButton
@@ -963,11 +966,11 @@ class ElementsMixin():
             if not element.zoom_second_input:
                 self.elementsMousePressEventDefault(element, event)
             elif not element.finished:
-                element.copy_pos = event.pos()
+                element.copy_pos = event_pos
         elif tool == ToolID.picture:
             element.pixmap = self.current_picture_pixmap
             element.angle = self.current_picture_angle
-            self.elementsSetPictureElementPoints(element, event.pos())
+            self.elementsSetPictureElementPoints(element, event_pos)
         elif tool in [ToolID.pen, ToolID.marker]:
             if event.modifiers() & Qt.ShiftModifier:
                 element.straight = True
@@ -975,7 +978,7 @@ class ElementsMixin():
             else:
                 element.straight = False
                 path = QPainterPath()
-                path.moveTo(event.pos())
+                path.moveTo(event_pos)
                 element.path = path
                 self.elementsMousePressEventDefault(element, event)
         elif tool == ToolID.line:
@@ -999,7 +1002,7 @@ class ElementsMixin():
                 ######################
                 # selection code!
                 ######################
-                elements = self.elementsGetElementsUnderMouse(event.pos())
+                elements = self.elementsGetElementsUnderMouse(event_pos)
                 if elements:
                     if self.selected_element in elements:
                         # циклический выбор перекрывадющих друг друга элементов
@@ -1111,6 +1114,8 @@ class ElementsMixin():
         self.input_POINT2 = self.capture_region_rect.bottomRight()
 
     def elementsMouseMoveEvent(self, event):
+        event_pos = self.elementsMapFromViewportToCanvas(QPointF(event.pos()))
+
         tool = self.current_tool
         isLeftButton = event.buttons() == Qt.LeftButton
         isMiddleButton = event.buttons() == Qt.MiddleButton
@@ -1126,27 +1131,27 @@ class ElementsMixin():
         if element is None:
             return
         if tool == ToolID.arrow:
-            element.end_point = event.pos()
+            element.end_point = event_pos
             if event.modifiers() & Qt.ShiftModifier:
                 element.end_point = elements45DegreeConstraint(element.start_point,
                                                                             element.end_point)
         elif tool in [ToolID.zoom_in_region, ToolID.copypaste]:
             if not element.zoom_second_input:
-                element.end_point = event.pos()
+                element.end_point = event_pos
             elif not element.finished:
-                element.copy_pos = event.pos()
+                element.copy_pos = event_pos
         elif tool == ToolID.picture:
             element.pixmap = self.current_picture_pixmap
             element.angle = self.current_picture_angle
-            self.elementsSetPictureElementPoints(element, event.pos())
+            self.elementsSetPictureElementPoints(element, event_pos)
         elif tool in [ToolID.pen, ToolID.marker]:
             if element.straight:
-                element.end_point = event.pos()
+                element.end_point = event_pos
             else:
-                element.path.lineTo(event.pos())
-                element.end_point = event.pos()
+                element.path.lineTo(event_pos)
+                element.end_point = event_pos
         elif tool == ToolID.line:
-            element.end_point = event.pos()
+            element.end_point = event_pos
             if event.modifiers() & Qt.ShiftModifier:
                 element.end_point = elements45DegreeConstraint(element.start_point,
                                                                             element.end_point)
@@ -1154,22 +1159,22 @@ class ElementsMixin():
             element.filled = bool(event.modifiers() & Qt.ControlModifier)
             element.equilateral = bool(event.modifiers() & Qt.ShiftModifier)
             if element.equilateral:
-                delta = element.start_point - event.pos()
+                delta = element.start_point - event_pos
                 delta = self.equilateral_delta(delta)
                 element.end_point = element.start_point - delta
             else:
-                element.end_point = event.pos()
+                element.end_point = event_pos
         elif tool == ToolID.text:
-            element.end_point = event.pos()
+            element.end_point = event_pos
             element.modify_end_point = False
         elif tool in [ToolID.blurring, ToolID.darkening]:
             element.equilateral = bool(event.modifiers() & Qt.ShiftModifier)
             if element.equilateral:
-                delta = element.start_point - event.pos()
+                delta = element.start_point - event_pos
                 delta = self.equilateral_delta(delta)
                 element.end_point = element.start_point - delta
             else:
-                element.end_point = event.pos()
+                element.end_point = event_pos
             if tool == ToolID.blurring:
                 pass
         elif tool == ToolID.transform:
@@ -1180,6 +1185,9 @@ class ElementsMixin():
         self.update()
 
     def elementsMouseReleaseEvent(self, event):
+
+        event_pos = self.elementsMapFromViewportToCanvas(QPointF(event.pos()))
+
         tool = self.current_tool
         if self.drag_global or self.drag_capture_zone:
             self.drag_capture_zone = False
@@ -1189,54 +1197,54 @@ class ElementsMixin():
         if element is None:
             return
         if tool == ToolID.arrow:
-            element.end_point = event.pos()
+            element.end_point = event_pos
             if event.modifiers() & Qt.ShiftModifier:
                 element.end_point = elements45DegreeConstraint(element.start_point,
                                                                             element.end_point)
         elif tool in [ToolID.zoom_in_region, ToolID.copypaste]:
             if not element.zoom_second_input:
-                # element.start_point = event.pos()
-                element.end_point = event.pos()
+                # element.start_point = event_pos
+                element.end_point = event_pos
                 element.zoom_second_input = True
             elif not element.finished:
-                element.copy_pos = event.pos()
+                element.copy_pos = event_pos
                 element.finished = True
         elif tool == ToolID.picture:
             element.pixmap = self.current_picture_pixmap
             element.angle = self.current_picture_angle
-            self.elementsSetPictureElementPoints(element, event.pos())
+            self.elementsSetPictureElementPoints(element, event_pos)
             self.elementsSetPixmapFromMagazin()
         elif tool in [ToolID.pen, ToolID.marker]:
             if element.straight:
-                element.end_point = event.pos()
+                element.end_point = event_pos
             else:
-                element.end_point = event.pos()
-                element.path.lineTo(event.pos())
+                element.end_point = event_pos
+                element.path.lineTo(event_pos)
         elif tool == ToolID.line:
-            element.end_point = event.pos()
+            element.end_point = event_pos
             if event.modifiers() & Qt.ShiftModifier:
                 element.end_point = elements45DegreeConstraint(element.start_point,
                                                                             element.end_point)
         # где-то здесь надо удалять элементы, если начальная и конечная точки совпадают
         elif tool in [ToolID.oval, ToolID.rect, ToolID.numbering, ToolID.special]:
             if element.equilateral:
-                delta = element.start_point - event.pos()
+                delta = element.start_point - event_pos
                 delta = self.equilateral_delta(delta)
                 element.end_point = element.start_point - delta
             else:
-                element.end_point = event.pos()
+                element.end_point = event_pos
         elif tool == ToolID.text:
-            element.end_point = event.pos()
+            element.end_point = event_pos
             element.modify_end_point = False
             self.elementsCreateTextbox(self, element)
         elif tool in [ToolID.blurring, ToolID.darkening]:
             element.equilateral = bool(event.modifiers() & Qt.ShiftModifier)
             if element.equilateral:
-                delta = element.start_point - event.pos()
+                delta = element.start_point - event_pos
                 delta = self.equilateral_delta(delta)
                 element.end_point = element.start_point - delta
             else:
-                element.end_point = event.pos()
+                element.end_point = event_pos
             if tool == ToolID.blurring:
                 element.finished = True
                 self.elementsSetBlurredPixmap(element)

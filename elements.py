@@ -1503,7 +1503,9 @@ class ElementsMixin():
             else:
                 self.draw_transformed_path(element, element.path, painter, final)
         elif el_type == ToolID.line:
-            painter.drawLine(element.start_point, element.end_point)
+            sp = self.elementsMapFromCanvasToViewport(element.start_point)
+            ep = self.elementsMapFromCanvasToViewport(element.end_point)
+            painter.drawLine(sp, ep)
         elif el_type == ToolID.special and not final:
             _pen = painter.pen()
             _brush = painter.brush()

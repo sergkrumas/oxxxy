@@ -145,6 +145,64 @@ class Element():
         self._selected = False
         self._touched = False
 
+    @property
+    def calc_area(self):
+        r = self.get_size_rect(scaled=True)
+        return abs(r.width() * r.height())
+
+    def calculate_absolute_position(self, canvas=None, rel_pos=None):
+        _scale_x = canvas.canvas_scale_x
+        _scale_y = canvas.canvas_scale_y
+        if rel_pos is None:
+            rel_pos = self.element_position
+        return QPointF(canvas.canvas_origin) + QPointF(rel_pos.x()*_scale_x, rel_pos.y()*_scale_y)
+
+    def aspect_ratio(self):
+        rect = self.get_size_rect(scaled=False)
+        return rect.width()/rect.height()
+
+    def get_size_rect(self, scaled=False):
+        if scaled:
+            scale_x = self.element_scale_x
+            scale_y = self.element_scale_y
+        else:
+            scale_x = 1.0
+            scale_y = 1.0
+        return QRectF(0, 0, self.element_width*scale_x, self.element_height*scale_y)
+
+    def get_selection_area(self, canvas=None, place_center_at_origin=True, apply_global_scale=True, apply_translation=True):
+        size_rect = self.get_size_rect()
+        if place_center_at_origin:
+            size_rect.moveCenter(QPointF(0, 0))
+        points = [
+            size_rect.topLeft(),
+            size_rect.topRight(),
+            size_rect.bottomRight(),
+            size_rect.bottomLeft(),
+        ]
+        polygon = QPolygonF(points)
+        transform = self.get_transform_obj(canvas=canvas, apply_global_scale=apply_global_scale, apply_translation=apply_translation)
+        return transform.map(polygon)
+
+    def get_transform_obj(self, canvas=None, apply_local_scale=True, apply_translation=True, apply_global_scale=True):
+        local_scaling = QTransform()
+        rotation = QTransform()
+        global_scaling = QTransform()
+        translation = QTransform()
+        if apply_local_scale:
+            local_scaling.scale(self.element_scale_x, self.element_scale_y)
+        rotation.rotate(self.element_rotation)
+        if apply_translation:
+            if apply_global_scale:
+                pos = self.calculate_absolute_position(canvas=canvas)
+                translation.translate(pos.x(), pos.y())
+            else:
+                translation.translate(self.element_position.x(), self.element_position.y())
+        if apply_global_scale:
+            global_scaling.scale(canvas.canvas_scale_x, canvas.canvas_scale_y)
+        transform = local_scaling * rotation * global_scaling * translation
+        return transform
+
 class ElementsMixin():
 
     def elementsUpdateUI(self):

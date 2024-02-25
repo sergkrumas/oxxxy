@@ -82,9 +82,9 @@ class ToolID():
 
 class Element():
 
-    def __init__(self, _type, elements_list):
+    def __init__(self, element_type, elements_list):
         self.textbox = None
-        self.type = _type
+        self.type = element_type
         self.finished = False
 
         self.copy_pos = None
@@ -124,6 +124,26 @@ class Element():
 
         self.opacity = 1.0
 
+        # element attributes
+        self.element_scale_x = 1.0
+        self.element_scale_y = 1.0
+        self.element_position = QPointF()
+        self.element_rotation = 0
+
+        self.__element_scale_x = None
+        self.__element_scale_y = None
+        self.__element_position = None
+        self.__element_rotation = None
+
+        self.__element_scale_x_init = None
+        self.__element_scale_y_init = None
+        self.__element_position_init = None
+
+        self.element_width = None
+        self.element_height = None
+
+        self._selected = False
+        self._touched = False
 
 class ElementsMixin():
 

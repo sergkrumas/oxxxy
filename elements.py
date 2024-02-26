@@ -276,18 +276,18 @@ class ElementsMixin():
         self.canvas_scale_x = _canvas_scale_x
         self.canvas_scale_y = _canvas_scale_y
 
-        # if self.selection_rect:
-        #     self.canvas_selection_callback(QApplication.queryKeyboardModifiers() == Qt.ShiftModifier)
-        # self.update_selection_bouding_box()
+        if self.selection_rect:
+            self.canvas_selection_callback(QApplication.queryKeyboardModifiers() == Qt.ShiftModifier)
+        self.update_selection_bouding_box()
 
-        # event_pos = self.mapped_cursor_pos()
-        # if self.scaling_ongoing:
-        #     self.canvas_START_selected_items_SCALING(None, viewport_zoom_changed=True)
-        #     self.canvas_DO_selected_items_SCALING(event_pos)
+        event_pos = self.mapped_cursor_pos()
+        if self.scaling_ongoing:
+            self.canvas_START_selected_elements_SCALING(None, viewport_zoom_changed=True)
+            self.canvas_DO_selected_elements_SCALING(event_pos)
 
-        # if self.rotation_ongoing:
-        #     self.canvas_START_selected_items_ROTATION(event_pos, viewport_zoom_changed=True)
-        #     self.canvas_DO_selected_items_ROTATION(event_pos)
+        if self.rotation_ongoing:
+            self.canvas_START_selected_elements_ROTATION(event_pos, viewport_zoom_changed=True)
+            self.canvas_DO_selected_elements_ROTATION(event_pos)
 
         self.update()
 
@@ -616,6 +616,33 @@ class ElementsMixin():
 
         self.elementsIsFinalDrawing = False
 
+        # для выделения элементов и виджета трансформации элементов
+        self.selection_color = QColor(18, 118, 127)
+        #
+        self.start_translation_pos = None
+        self.translation_ongoing = False
+        self.rotation_activation_areas = []
+        self.rotation_ongoing = False
+        self.scaling_ongoing = False
+        self.scaling_vector = None
+        self.proportional_scaling_vector = None
+        self.scaling_pivot_point = None
+        #
+        self.selection_rect = None
+        self.selection_start_point = None
+        self.selection_ongoing = False
+        self.selected_items = []
+        self.selection_bounding_box = None
+
+        self.transform_cancelled = False
+
+
+        self.canvas_selection_transform_box_opacity = 1.0
+        self.STNG_transform_widget_activation_area_size = 16.0
+
+        self.canvas_debug_transform_widget = False
+
+
     def elementsMapFromViewportToCanvas(self, viewport_pos):
         delta = QPointF(viewport_pos - self.canvas_origin)
         canvas_pos = QPointF(delta.x()/self.canvas_scale_x, delta.y()/self.canvas_scale_y)
@@ -694,6 +721,8 @@ class ElementsMixin():
             h = math.ceil(element.pixmap.height()*size)
             element.start_point = QPointF(pos)
             element.end_point = pos + QPointF(w, h)
+        element.element_width = element.pixmap.width()
+        element.element_height = element.pixmap.height()
         return build_valid_rect(element.start_point, element.end_point)
 
     def elementsPictureRect(self, center_point, size, pixmap, use_user_scale=True):
@@ -741,7 +770,6 @@ class ElementsMixin():
             tw = self.tools_window
             tw.on_parameters_changed()
             self.activateWindow()
-
 
     def elementsFramePictures(self, data):
         pictures = []
@@ -1013,6 +1041,87 @@ class ElementsMixin():
             else:
                 el.fresh = False
 
+    def update_selection_bouding_box(self):
+        self.selection_bounding_box = None
+        if len(self.selected_items) == 1:
+            self.selection_bounding_box = self.selected_items[0].get_selection_area(canvas=self)
+        elif len(self.selected_items) > 1:
+            bounding_box = QRectF()
+            for element in self.selected_items:
+                bounding_box = bounding_box.united(element.get_selection_area(canvas=self).boundingRect())
+            self.selection_bounding_box = QPolygonF([
+                bounding_box.topLeft(),
+                bounding_box.topRight(),
+                bounding_box.bottomRight(),
+                bounding_box.bottomLeft(),
+            ])
+
+    def any_element_area_under_mouse(self, add_selection):
+        self.prevent_item_deselection = False
+        elements = self.elementsHistoryFilter()
+
+        min_item = self.find_min_area_element(elements, self.mapped_cursor_pos())
+        # reversed для того, чтобы картинки на переднем плане чекались первыми
+        for element in reversed(elements):
+            element_selection_area = element.get_selection_area(canvas=self)
+            is_under_mouse = element_selection_area.containsPoint(self.mapped_cursor_pos(), Qt.WindingFill)
+
+            if is_under_mouse and not element._selected:
+                if not add_selection:
+                    for bi in elements:
+                        bi._selected = False
+
+                element._selected = True
+                # вытаскиваем айтем на передний план при отрисовке
+                # закоменчено, потому что это может навредить истории действий
+                # elements.remove(element)
+                # elements.append(element)
+                self.prevent_item_deselection = True
+                return True
+            if is_under_mouse and element._selected:
+                return True
+        return False
+
+    def find_min_area_element(self, elements, pos):
+        found_elements = self.find_all_elements_under_this_pos(elements, pos)
+        found_elements = list(sorted(found_elements, key=lambda x: x.calc_area))
+        if found_elements:
+            return found_elements[0]
+        return None
+
+    def find_all_elements_under_this_pos(self, elements, pos):
+        undermouse_elements = []
+        for element in elements:
+            element_selection_area = element.get_selection_area(canvas=self)
+            is_under_mouse = element_selection_area.containsPoint(pos, Qt.WindingFill)
+            if is_under_mouse:
+                undermouse_elements.append(element)
+        return undermouse_elements
+
+
+
+    def is_over_rotation_activation_area(self, position):
+        for index, raa in self.rotation_activation_areas:
+            if raa.containsPoint(position, Qt.WindingFill):
+                self.widget_active_point_index = index
+                return True
+        self.widget_active_point_index = None
+        return False
+
+    def is_over_scaling_activation_area(self, position):
+        if self.selection_bounding_box is not None:
+            enumerated = list(enumerate(self.selection_bounding_box))
+            enumerated.insert(0, enumerated.pop(2))
+            for index, point in enumerated:
+                diff = point - QPointF(position)
+                if QVector2D(diff).length() < self.STNG_transform_widget_activation_area_size:
+                    self.scaling_active_point_index = index
+                    self.widget_active_point_index = index
+                    return True
+        self.scaling_active_point_index = None
+        self.widget_active_point_index = None
+        return False
+
     def elementsMousePressEvent(self, event):
         tool = self.current_tool
 
@@ -1083,30 +1192,52 @@ class ElementsMixin():
             if tool == ToolID.blurring:
                 element.finished = False
         elif tool == ToolID.transform:
-            self.widget_activated = False
+
+
+            if self.is_over_scaling_activation_area(event.pos()):
+                self.canvas_START_selected_elements_SCALING(event)
+
+            elif self.is_over_rotation_activation_area(event.pos()):
+                self.canvas_START_selected_elements_ROTATION(event.pos())
+
+            elif self.any_element_area_under_mouse(event.modifiers() & Qt.ShiftModifier):
+                self.canvas_START_selected_elements_TRANSLATION(event.pos())
+                self.update_selection_bouding_box()
+
+            else:
+                self.selection_start_point = QPointF(event.pos())
+                self.selection_rect = None
+                self.selection_ongoing = True
+
+
+
+
             # здесь был код, который проверял, попала и позиция курсора в контрол поинт виджета
-            if not self.widget_activated:
-                ######################
-                # selection code!
-                ######################
-                elements = self.elementsGetElementsUnderMouse(event_pos)
-                if elements:
-                    if self.selected_element in elements:
-                        # циклический выбор перекрывадющих друг друга элементов
-                        # в позиции курсора мыши
-                        elements = itertools.cycle(elements)
-                        while next(elements) != self.selected_element:
-                            pass
-                        selected_element = next(elements)
-                    else:
-                        selected_element = elements[0]
-                    self.elementsSetSelected(selected_element)
-                else:
-                    self.elementsSetSelected(None)
-                self.elementsSelectedElementParamsToUI()
-                ########################
-                # end of selection code
-                ########################
+
+            # if not self.widget_activated:
+            #     ######################
+            #     # selection code!
+            #     ######################
+            #     elements = self.elementsGetElementsUnderMouse(event_pos)
+            #     if elements:
+            #         if self.selected_element in elements:
+            #             # циклический выбор перекрывадющих друг друга элементов
+            #             # в позиции курсора мыши
+            #             elements = itertools.cycle(elements)
+            #             while next(elements) != self.selected_element:
+            #                 pass
+            #             selected_element = next(elements)
+            #         else:
+            #             selected_element = elements[0]
+            #         self.elementsSetSelected(selected_element)
+            #     else:
+            #         self.elementsSetSelected(None)
+            #     self.elementsSelectedElementParamsToUI()
+            #     ########################
+            #     # end of selection code
+            #     ########################
+
+
         self.update()
 
     def equilateral_delta(self, delta):
@@ -1162,34 +1293,9 @@ class ElementsMixin():
         cursor_pos = self.mapFromGlobal(QCursor().pos())
         is_tool_transform = self.current_tool == ToolID.transform
         any_element_under_mouse = self.elementsGetElementsUnderMouse(cursor_pos)
-        if self.selected_element and self.transform_widget:
-            pos = self.mapFromGlobal(QCursor().pos())
-            cpum = self.transform_widget.control_point_under_mouse
-            data = cpum(pos, delta_info=True)
-            cur_point, center_point = data
-            if cur_point:
-                delta = cur_point.point - center_point.point
-                if cur_point.type == "edge":
-                    if delta.x() < 2 and delta.y() > 0:
-                        return QCursor(Qt.SizeVerCursor)
-                    if delta.x() < 2 and delta.y() < 0:
-                        return QCursor(Qt.SizeVerCursor)
-                    if delta.y() < 2 and delta.x() > 0:
-                        return QCursor(Qt.SizeHorCursor)
-                    if delta.y() < 2 and delta.x() < 0:
-                        return QCursor(Qt.SizeHorCursor)
-                if cur_point.type == "corner":
-                    if delta.y() > 0 and delta.x() > 0:
-                        return QCursor(Qt.SizeFDiagCursor)
-                    if delta.y() < 0 and delta.x() < 0:
-                        return QCursor(Qt.SizeFDiagCursor)
-                    if delta.y() > 0 and delta.x() < 0:
-                        return QCursor(Qt.SizeBDiagCursor)
-                    if delta.y() < 0 and delta.x() > 0:
-                        return QCursor(Qt.SizeBDiagCursor)
-                if cur_point.type == "center":
-                    return QCursor(Qt.SizeAllCursor)
-            return self.get_custom_cross_cursor()
+        if False:
+            pass
+            # здесь надо задавать курсор мыши для виджета трансформации
         elif is_tool_transform and any_element_under_mouse:
             return Qt.SizeAllCursor
         else:
@@ -1266,9 +1372,27 @@ class ElementsMixin():
             if tool == ToolID.blurring:
                 pass
         elif tool == ToolID.transform:
-            if self.transform_widget and self.widget_activated:
-                element = self.elementsCreateModificatedCopyOnNeed(self.selected_element,
-                                                                        keep_old_widget=True)
+            no_mod = event.modifiers() == Qt.NoModifier
+
+            if self.transform_cancelled:
+                pass
+
+            elif self.scaling_ongoing:
+                self.canvas_DO_selected_elements_SCALING(event.pos())
+
+            elif self.rotation_ongoing:
+                self.canvas_DO_selected_elements_ROTATION(event.pos())
+
+            elif no_mod and not self.selection_ongoing:
+                self.canvas_DO_selected_elements_TRANSLATION(event.pos())
+                self.update_selection_bouding_box()
+
+            elif self.selection_ongoing is not None and not self.translation_ongoing:
+                self.selection_end_point = QPointF(event.pos())
+                if self.selection_start_point:
+                    self.selection_rect = build_valid_rectF(self.selection_start_point, self.selection_end_point)
+                    self.canvas_selection_callback(event.modifiers() == Qt.ShiftModifier)
+
 
         self.update()
 
@@ -1277,9 +1401,8 @@ class ElementsMixin():
         event_pos = self.elementsMapFromViewportToCanvas(QPointF(event.pos()))
 
         tool = self.current_tool
-        if self.drag_global or self.drag_capture_zone:
+        if self.drag_capture_zone:
             self.drag_capture_zone = False
-            self.drag_global = False
             return
         element = self.elementsGetLastElement()
         if element is None:
@@ -1338,18 +1461,138 @@ class ElementsMixin():
                 element.finished = True
                 self.elementsSetBlurredPixmap(element)
         elif tool == ToolID.transform:
+
+
+
             if self.transform_widget:
                 self.transform_widget.retransform_end(event)
+
                 if self.selected_element.type == ToolID.blurring:
                     self.selected_element.finished = True
                     self.elementsSetBlurredPixmap(self.selected_element)
+
                 if self.selected_element.type == ToolID.text:
                     self.selected_element.modify_end_point = True
+
         if tool != ToolID.transform:
             self.elementsSetSelected(None)
+
+
+
+
+
+
         self.elementsAutoDeleteInvisibleElement(element)
         self.tools_window.forwards_backwards_update()
         self.update()
+
+
+
+
+
+    def canvas_selection_callback(self, add_to_selection):
+        if self.selection_rect is not None:
+            selection_rect_area = QPolygonF(self.selection_rect)
+            for element in self.elementsHistoryFilter():
+                element_selection_area = element.get_selection_area(board=self)
+                if element_selection_area.intersects(selection_rect_area):
+                    element._selected = True
+                else:
+                    if add_to_selection and element._selected:
+                        pass
+                    else:
+                        element._selected = False
+        else:
+            min_item = self.find_min_area_element(self.elementsHistoryFilter(), self.mapped_cursor_pos())
+            # reversed для того, чтобы картинки на переднем плане чекались первыми
+            for element in reversed(self.elementsHistoryFilter()):
+                item_selection_area = element.get_selection_area(board=self)
+                is_under_mouse = item_selection_area.containsPoint(self.mapped_cursor_pos(), Qt.WindingFill)
+                if add_to_selection and element._selected:
+                    # subtract item from selection!
+                    if is_under_mouse and not self.prevent_item_deselection:
+                        element._selected = False
+                else:
+                    if min_item is not element:
+                        element._selected = False
+                    else:
+                        element._selected = is_under_mouse
+        self.init_selection_bounding_box_widget(current_folder)
+
+    def init_selection_bounding_box_widget(self):
+        self.selected_items = []
+        for element in self.elementsHistoryFilter():
+            if element._selected:
+                self.selected_items.append(element)
+        self.update_selection_bouding_box()
+
+    def canvas_START_selected_elements_TRANSLATION(self, event_pos, viewport_zoom_changed=False):
+        self.start_translation_pos = self.elementsMapFromViewportToCanvas(event_pos)
+        if viewport_zoom_changed:
+            for element in self.elementsHistoryFilter():
+                element.element_position = element.__element_position
+
+        for element in self.elementsHistoryFilter():
+            element.__element_position = QPointF(element.element_position)
+            if not viewport_zoom_changed:
+                element.__element_position_init = QPointF(element.element_position)
+            element._children_items = []
+            # if element.type == BoardItem.types.ITEM_FRAME:
+            #     this_frame_area = element.calc_area
+            #     item_frame_area = element.get_selection_area(canvas=self)
+                # for el in self.elementsHistoryFilter():
+                #     el_area = el.get_selection_area(canvas=self)
+                #     center_point = el_area.boundingRect().center()
+                #     if item_frame_area.containsPoint(QPointF(center_point), Qt.WindingFill):
+                #         if el.type != BoardItem.types.ITEM_FRAME or (el.type == BoardItem.types.ITEM_FRAME and el.calc_area < this_frame_area):
+                #             board_item._children_items.append(el)
+
+    def canvas_DO_selected_elements_TRANSLATION(self, event_pos):
+        if self.start_translation_pos:
+            self.translation_ongoing = True
+            delta = QPointF(self.elementsMapFromViewportToCanvas(event_pos)) - self.start_translation_pos
+            for element in self.elementsHistoryFilter():
+                if element._selected:
+                    element.element_position = element.__element_position + delta
+                    # if element.type == BoardItem.types.ITEM_FRAME:
+                    #     for ch_bi in element._children_items:
+                    #         ch_bi.element_position = ch_bi.__element_position + delta
+            self.init_selection_bounding_box_widget()
+        else:
+            self.translation_ongoing = False
+
+    def canvas_FINISH_selected_elements_TRANSLATION(self, event, cancel=False):
+        self.start_translation_pos = None
+        for element in self.elementsHistoryFilter():
+            if cancel:
+                element.element_position = QPointF(element.__element_position_init)
+            else:
+                element.__element_position = None
+            element._children_items = []
+        self.translation_ongoing = False
+
+    def canvas_CANCEL_selected_elements_TRANSLATION(self):
+        if self.translation_ongoing:
+            self.canvas_FINISH_selected_elements_TRANSLATION(None, cancel=True)
+            self.update_selection_bouding_box()
+            self.transform_cancelled = True
+            print('cancel translation')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     def elementsAutoDeleteInvisibleElement(self, element):
         tool = self.current_tool
@@ -1577,6 +1820,79 @@ class ElementsMixin():
         pen.setJoinStyle(Qt.RoundJoin)
         return pen, color, size
 
+    def elementDrawSelectionMouseRect(self, painter):
+        if self.selection_rect is not None:
+            c = self.selection_color
+            painter.setPen(QPen(c))
+            c.setAlphaF(0.5)
+            brush = QBrush(c)
+            painter.setBrush(brush)
+            painter.drawRect(self.selection_rect)
+
+    def elementDrawSelectionTransformBox(self, painter):
+        self.rotation_activation_areas = []
+        if self.selection_bounding_box is not None:
+
+            painter.setOpacity(self.canvas_selection_transform_box_opacity)
+            pen = QPen(self.selection_color, 4)
+            painter.setPen(pen)
+            painter.setBrush(Qt.NoBrush)
+            painter.drawPolygon(self.selection_bounding_box)
+
+            default_pen = painter.pen()
+
+            # roration activation areas
+            painter.setPen(QPen(Qt.red))
+            for index, point in enumerate(self.selection_bounding_box):
+                points_count = self.selection_bounding_box.size()
+                prev_point_index = (index-1) % points_count
+                next_point_index = (index+1) % points_count
+                prev_point = self.selection_bounding_box[prev_point_index]
+                next_point = self.selection_bounding_box[next_point_index]
+
+                a = QVector2D(point - prev_point).normalized().toPointF()
+                b = QVector2D(point - next_point).normalized().toPointF()
+                a *= self.STNG_transform_widget_activation_area_size*2
+                b *= self.STNG_transform_widget_activation_area_size*2
+                points = [
+                    point,
+                    point + a,
+                    point + a + b,
+                    point + b,
+                ]
+                raa = QPolygonF(points)
+                if self.canvas_debug_transform_widget:
+                    painter.drawPolygon(raa)
+
+                self.rotation_activation_areas.append((index, raa))
+
+            # scale activation areas
+            default_pen.setWidthF(self.STNG_transform_widget_activation_area_size)
+            default_pen.setCapStyle(Qt.RoundCap)
+            painter.setPen(default_pen)
+
+            for index, point in enumerate(self.selection_bounding_box):
+                painter.drawPoint(point)
+
+            if self.canvas_debug_transform_widget and self.scaling_ongoing and self.scaling_pivot_point is not None:
+                pivot = self.scaling_pivot_point
+                x_axis = self.scaling_pivot_point_x_axis
+                y_axis = self.scaling_pivot_point_y_axis
+
+                painter.setPen(QPen(Qt.red, 4))
+                painter.drawLine(pivot, pivot+x_axis)
+                painter.setPen(QPen(Qt.green, 4))
+                painter.drawLine(pivot, pivot+y_axis)
+                if self.scaling_vector is not None:
+                    painter.setPen(QPen(Qt.yellow, 4))
+                    painter.drawLine(pivot, pivot + self.scaling_vector)
+
+                if self.proportional_scaling_vector is not None:
+                    painter.setPen(QPen(Qt.darkGray, 4))
+                    painter.drawLine(pivot, pivot + self.proportional_scaling_vector)
+
+            painter.setOpacity(1.0)
+
     def elementsDrawMainElement(self, painter, element, final):
         el_type = element.type
         pen, color, size = self.elementsGetPenFromElement(element)
@@ -1791,8 +2107,10 @@ class ElementsMixin():
             self.elementsDrawMainElement(painter, element, final)
 
         if not final:
-            # !!! здесь рисовался виджет
-            pass
+            # отрисовка виджетов
+            self.elementDrawSelectionMouseRect(painter)
+            self.elementDrawSelectionTransformBox(painter)
+
         if self.Globals.DEBUG and self.capture_region_rect and not final:
             painter.setPen(QPen(QColor(Qt.white)))
             text = f"{self.elements_history_index} :: {self.current_tool}"

@@ -124,7 +124,7 @@ class Element():
 
         self.opacity = 1.0
 
-        # element attributes
+        # element attributes for canvas
         self.element_scale_x = 1.0
         self.element_scale_y = 1.0
         self.element_position = QPointF()
@@ -144,6 +144,14 @@ class Element():
 
         self._selected = False
         self._touched = False
+
+    def calc_local_data(self):
+        self.element_position = (self.start_point + self.end_point)/2.0
+        self.local_start_point = self.start_point - self.element_position
+        self.local_end_point = self.end_point - self.element_position
+        diff = self.start_point - self.end_point
+        self.element_width = abs(diff.x())
+        self.element_height = abs(diff.y())
 
     @property
     def calc_area(self):
@@ -989,6 +997,7 @@ class ElementsMixin():
         else:
             element.start_point = event_pos
         element.end_point = event_pos
+        element.calc_local_data()
 
     def elementsIsSpecialCase(self, element):
         special_case = element is not None
@@ -1233,6 +1242,7 @@ class ElementsMixin():
             if event.modifiers() & Qt.ShiftModifier:
                 element.end_point = elements45DegreeConstraint(element.start_point,
                                                                             element.end_point)
+            element.calc_local_data()
         elif tool in [ToolID.oval, ToolID.rect, ToolID.numbering, ToolID.special]:
             element.filled = bool(event.modifiers() & Qt.ControlModifier)
             element.equilateral = bool(event.modifiers() & Qt.ShiftModifier)
@@ -1303,6 +1313,7 @@ class ElementsMixin():
             if event.modifiers() & Qt.ShiftModifier:
                 element.end_point = elements45DegreeConstraint(element.start_point,
                                                                             element.end_point)
+            element.calc_local_data()
         # где-то здесь надо удалять элементы, если начальная и конечная точки совпадают
         elif tool in [ToolID.oval, ToolID.rect, ToolID.numbering, ToolID.special]:
             if element.equilateral:
@@ -1581,9 +1592,19 @@ class ElementsMixin():
             else:
                 self.draw_transformed_path(element, element.path, painter, final)
         elif el_type == ToolID.line:
-            sp = self.elementsMapFromCanvasToViewport(element.start_point)
-            ep = self.elementsMapFromCanvasToViewport(element.end_point)
-            painter.drawLine(sp, ep)
+            if True:
+                # новая отрисовка с поддержкой перемещения, вращения и масштабирования элемента
+                sp = element.local_start_point
+                ep = element.local_end_point
+                transform = element.get_transform_obj(canvas=self)
+                painter.setTransform(transform)
+                painter.drawLine(sp, ep)
+                painter.resetTransform()
+            else:
+                # тестовая отрисовка с минимумом возможностей
+                sp = self.elementsMapFromCanvasToViewport(element.start_point)
+                ep = self.elementsMapFromCanvasToViewport(element.end_point)
+                painter.drawLine(sp, ep)
         elif el_type == ToolID.special and not final:
             _pen = painter.pen()
             _brush = painter.brush()

@@ -1361,20 +1361,54 @@ class ElementsMixin(ElementsTransformMixin):
                 self.elementsSetBlurredPixmap(element)
         elif tool == ToolID.transform:
 
+            ctrl = event.modifiers() & Qt.ControlModifier
+            shift = event.modifiers() & Qt.ShiftModifier
+            no_mod = event.modifiers() == Qt.NoModifier
+            alt = event.modifiers() & Qt.AltModifier
+
+            if self.transform_cancelled:
+                self.transform_cancelled = False
+                return
+
+            if event.button() == Qt.LeftButton:
+                self.start_translation_pos = None
+
+                if not alt and not self.translation_ongoing and not self.rotation_ongoing and not self.scaling_ongoing:
+                    self.canvas_selection_callback(event.modifiers() == Qt.ShiftModifier)
+                    # if self.selection_rect is not None:
+                    self.selection_start_point = None
+                    self.selection_end_point = None
+                    self.selection_rect = None
+                    self.selection_ongoing = False
+
+                if self.rotation_ongoing:
+                    self.canvas_FINISH_selected_elements_ROTATION(event)
+
+                if self.scaling_ongoing:
+                    self.canvas_FINISH_selected_elements_SCALING(event)
+
+                if self.translation_ongoing:
+                    self.canvas_FINISH_selected_elements_TRANSLATION(event)
+                    self.selection_start_point = None
+                    self.selection_end_point = None
+                    self.selection_rect = None
+                    self.selection_ongoing = False
 
 
-            if self.transform_widget:
-                self.transform_widget.retransform_end(event)
 
-                if self.selected_element.type == ToolID.blurring:
-                    self.selected_element.finished = True
-                    self.elementsSetBlurredPixmap(self.selected_element)
 
-                if self.selected_element.type == ToolID.text:
-                    self.selected_element.modify_end_point = True
+        #     if self.transform_widget:
+        #         self.transform_widget.retransform_end(event)
 
-        if tool != ToolID.transform:
-            self.elementsSetSelected(None)
+        #         if self.selected_element.type == ToolID.blurring:
+        #             self.selected_element.finished = True
+        #             self.elementsSetBlurredPixmap(self.selected_element)
+
+        #         if self.selected_element.type == ToolID.text:
+        #             self.selected_element.modify_end_point = True
+
+        # if tool != ToolID.transform:
+        #     self.elementsSetSelected(None)
 
 
 

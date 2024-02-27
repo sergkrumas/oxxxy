@@ -1421,14 +1421,11 @@ class ElementsMixin(ElementsTransformMixin):
                 orig_width//pixel_size,
                 orig_height//pixel_size).scaled(orig_width, orig_height)
         else:
-            blured = CustomPushButton.apply_blur_effect(None,
-                    element.pixmap, blured, blur_radius=blur_radius)
-            blured = CustomPushButton.apply_blur_effect(None,
-                    blured, blured, blur_radius=2)
-            blured = CustomPushButton.apply_blur_effect(None,
-                    blured, blured, blur_radius=blur_radius)
-            blured = CustomPushButton.apply_blur_effect(None,
-                    blured, blured, blur_radius=5)
+            apply_blur = CustomPushButton.apply_blur_effect
+            blured = apply_blur(None, element.pixmap, blured, blur_radius=blur_radius)
+            blured = apply_blur(None, blured, blured, blur_radius=2)
+            blured = apply_blur(None, blured, blured, blur_radius=blur_radius)
+            blured = apply_blur(None, blured, blured, blur_radius=5)
             element.pixmap = blured
 
     def elementsChangeTextbox(self, elem):

@@ -312,7 +312,6 @@ class ElementsTransformMixin():
 
     def canvas_FINISH_selected_elements_ROTATION(self, event, cancel=False):
         self.rotation_ongoing = False
-        cf = self.LibraryData().current_folder()
         if cancel:
             for element in self.selected_items:
                 element.element_rotation = element.__element_rotation_init

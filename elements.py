@@ -1897,6 +1897,8 @@ class ElementsMixin(ElementsTransformMixin):
         for element in all_the_rest:
             self.elementsDrawMainElement(painter, element, final)
 
+        self.elementsDrawSystemCursor(painter)
+
         if not final:
             # отрисовка виджетов
             self.elementDrawSelectionMouseRect(painter)
@@ -1914,6 +1916,11 @@ class ElementsMixin(ElementsTransformMixin):
         painter.setRenderHint(QPainter.HighQualityAntialiasing, False)
         painter.setRenderHint(QPainter.Antialiasing, False)
         painter.setRenderHint(QPainter.SmoothPixmapTransform, False)
+
+    def elementsDrawSystemCursor(self, painter):
+        if self.tools_window and self.tools_window.chb_draw_cursor.isChecked():
+            cursor_position = self.elementsMapFromCanvasToViewport(self.cursor_position)
+            painter.drawPixmap(cursor_position, self.cursor_pixmap)
 
     def elementsDrawFinalVersionDebug(self, painter):
 

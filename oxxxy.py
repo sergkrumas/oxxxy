@@ -1612,6 +1612,13 @@ class ToolsWindow(QWidget):
         if os.name == 'nt':
             checkboxes.addWidget(self.chb_add_meta)
 
+        self.chb_draw_cursor = CheckBoxCustom("Курсор")
+        self.chb_draw_cursor.setToolTip("<b>Отображать курсор на скриншоте</b>")
+        self.chb_draw_cursor.setStyleSheet(checkbox_style)
+        self.chb_draw_cursor.installEventFilter(self)
+        self.chb_draw_cursor.setChecked(tools_settings.get("draw_cursor", False))
+        checkboxes.addWidget(self.chb_draw_cursor)
+
         checkboxes.addWidget(self.opacity_slider)
 
         spacing = 2
@@ -1744,6 +1751,7 @@ class ToolsWindow(QWidget):
             "add_meta": self.chb_add_meta.isChecked(),
             "hex_mask": getattr(self.parent(), 'hex_mask', False),
             "savecaptureframe": self.chb_savecaptureframe.isChecked(),
+            "draw_cursor": self.chb_draw_cursor.isChecked(),
         })
         self.parent().update()
 
@@ -4401,6 +4409,11 @@ def invoke_screenshot_editor(request_type=None):
             # чтобы activateWindow точно сработал и взял фокус ввода
             QApplication.instance().processEvents()
             screenshot_editor.activateWindow()
+
+    ScreenshotWindow.cursor_position = QCursor().pos()
+    cursor_filepath = os.path.join(os.path.dirname(__file__), 'resources', 'cursor.png')
+    ScreenshotWindow.cursor_pixmap = QPixmap(cursor_filepath).scaled(25, 25, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+
 
     if request_type == RequestType.QuickFullscreen:
         ScreenshotWindow.save_screenshot(None, grabbed_image=screenshot_image, metadata=metadata)

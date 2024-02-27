@@ -3340,7 +3340,16 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         if key == Qt.Key_Escape:
             select_window = None
             show_quit_dialog = False
-            if self.tools_window:
+            if self.start_translation_pos or self.translation_ongoing:
+                self.canvas_CANCEL_selected_elements_TRANSLATION()
+                return
+            elif self.rotation_ongoing:
+                self.canvas_CANCEL_selected_elements_ROTATION()
+                return
+            elif self.scaling_ongoing:
+                self.canvas_CANCEL_selected_elements_SCALING()
+                return
+            elif self.tools_window:
                 select_window = self.tools_window.select_window
             if select_window and select_window.isVisible():
                 select_window.hide()

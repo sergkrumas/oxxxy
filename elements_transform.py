@@ -321,9 +321,10 @@ class ElementsTransformMixin():
 
     def canvas_CANCEL_selected_elements_ROTATION(self):
         if self.rotation_ongoing:
-            self.board_FINISH_selected_elements_ROTATION(None, cancel=True)
+            self.canvas_FINISH_selected_elements_ROTATION(None, cancel=True)
             self.update_selection_bouding_box()
             self.transform_cancelled = True
+            self.update()
             print('cancel rotation')
 
 
@@ -506,9 +507,10 @@ class ElementsTransformMixin():
 
     def canvas_CANCEL_selected_elements_SCALING(self):
         if self.scaling_ongoing:
-            self.board_FINISH_selected_elements_SCALING(None, cancel=True)
+            self.canvas_FINISH_selected_elements_SCALING(None, cancel=True)
             self.update_selection_bouding_box()
             self.transform_cancelled = True
+            self.update()
             print('cancel scaling')
 
 

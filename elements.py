@@ -1259,7 +1259,7 @@ class ElementsMixin(ElementsTransformMixin):
             elif self.rotation_ongoing:
                 self.canvas_DO_selected_elements_ROTATION(event.pos())
 
-            elif no_mod and not self.selection_ongoing:               
+            elif no_mod and not self.selection_ongoing:
                 self.canvas_DO_selected_elements_TRANSLATION(event.pos())
                 self.update_selection_bouding_box()
 

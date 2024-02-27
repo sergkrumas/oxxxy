@@ -184,7 +184,7 @@ class ElementsTransformMixin():
                     else:
                         element._selected = is_under_mouse
         self.init_selection_bounding_box_widget()
-        self.elementsSelectedElementParamsToUI()
+        self.elementsUpdatePanelUI()
 
     def init_selection_bounding_box_widget(self):
         self.selected_items = []

@@ -770,7 +770,7 @@ class ElementsMixin(ElementsTransformMixin):
                     do_not_resize=False)
                 pos += QPoint(element.pixmap.width(), 0)
                 # self.elementsSetSelected(element)
-                self.elementsSelectedElementParamsToUI()
+                self.elementsUpdatePanelUI()
 
         self.update()
 
@@ -864,7 +864,7 @@ class ElementsMixin(ElementsTransformMixin):
             copy_textbox.setText(copy_textbox_value)
             setattr(element, "textbox", copy_textbox)
 
-    def elementsSelectedElementParamsToUI(self):
+    def elementsUpdatePanelUI(self):
         if not self.selected_items:
             return
         self.elementsDeactivateTextElements()
@@ -891,7 +891,7 @@ class ElementsMixin(ElementsTransformMixin):
 
     def elementsOnTransformToolActivated(self):
         self.elementsSetSelected(self.elementsGetLastElement())
-        self.elementsSelectedElementParamsToUI()
+        self.elementsUpdatePanelUI()
         self.update()
         self.activateWindow() # чтобы фокус не соскакивал на панель иструментов
 
@@ -2515,7 +2515,7 @@ class ElementsMixin(ElementsTransformMixin):
                 pos = self.capture_region_rect.topLeft()
                 self.elementsSetPictureElementPoints(element, pos, pos_as_center=False)
                 self.elementsSetSelected(element)
-                self.elementsSelectedElementParamsToUI()
+                self.elementsUpdatePanelUI()
         else:
             print("image is broken")
 

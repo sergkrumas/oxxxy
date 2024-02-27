@@ -146,6 +146,9 @@ class Element():
         self._selected = False
         self._touched = False
 
+    def __repr__(self):
+        return f'{self.type} {hex(id(self))}'
+
     def calc_local_data(self):
         self.element_position = (self.start_point + self.end_point)/2.0
         self.local_start_point = self.start_point - self.element_position

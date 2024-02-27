@@ -142,6 +142,7 @@ class ElementsTransformMixin():
 
     def canvas_selection_callback(self, add_to_selection):
         if self.selection_rect is not None:
+            # выделение прямоугольником
             selection_rect_area = QPolygonF(self.selection_rect)
             for element in self.elementsHistoryFilter():
                 element_selection_area = element.get_selection_area(canvas=self)
@@ -153,13 +154,28 @@ class ElementsTransformMixin():
                     else:
                         element._selected = False
         else:
+            # выделение одинарным кликом
+
+            # elements = self.elementsGetElementsUnderMouse(event_pos)
+            # if elements:
+            #     if self.selected_element in elements:
+            #         # циклический выбор перекрывадющих друг друга элементов в позиции курсора мыши
+            #         elements = itertools.cycle(elements)
+            #         while next(elements) != self.selected_elements[0]:
+            #             pass
+            #         selected_element = next(elements)
+            #         selected_element._selected = is_under_mouse
+            #     else:
+            #         selected_element = elements[0]
+
+
             min_item = self.find_min_area_element(self.elementsHistoryFilter(), self.mapped_cursor_pos())
-            # reversed для того, чтобы картинки на переднем плане чекались первыми
+            # reversed для того, чтобы пометки на переднем плане чекались первыми
             for element in reversed(self.elementsHistoryFilter()):
                 item_selection_area = element.get_selection_area(canvas=self)
                 is_under_mouse = item_selection_area.containsPoint(self.mapped_cursor_pos(), Qt.WindingFill)
                 if add_to_selection and element._selected:
-                    # subtract item from selection!
+                    # subtract element from selection!
                     if is_under_mouse and not self.prevent_item_deselection:
                         element._selected = False
                 else:
@@ -168,6 +184,7 @@ class ElementsTransformMixin():
                     else:
                         element._selected = is_under_mouse
         self.init_selection_bounding_box_widget()
+        self.elementsSelectedElementParamsToUI()
 
     def init_selection_bounding_box_widget(self):
         self.selected_items = []

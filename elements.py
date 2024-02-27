@@ -865,19 +865,23 @@ class ElementsMixin(ElementsTransformMixin):
             setattr(element, "textbox", copy_textbox)
 
     def elementsSelectedElementParamsToUI(self):
-        if not self.selected_element:
+        if not self.selected_items:
             return
         self.elementsDeactivateTextElements()
-        element = self.selected_element
-        self.tools_window.color_slider.value = element.color_slider_value
-        self.tools_window.color_slider.palette_index = element.color_slider_palette_index
-        self.tools_window.size_slider.value = element.size
-        self.tools_window.opacity_slider.value = element.opacity
-        self.tools_window.chb_toolbool.setChecked(element.toolbool)
-        if element.type == ToolID.text:
-            self.elementsActivateTextElement(element)
-        self.tools_window.set_ui_on_toolchange(element_type=element.type)
-        self.tools_window.update()
+        if len(self.selected_items) > 1:
+            self.tools_window.set_ui_on_toolchange(hide=True)
+            self.tools_window.update()
+        else:
+            element = self.selected_items[0]
+            self.tools_window.color_slider.value = element.color_slider_value
+            self.tools_window.color_slider.palette_index = element.color_slider_palette_index
+            self.tools_window.size_slider.value = element.size
+            self.tools_window.opacity_slider.value = element.opacity
+            self.tools_window.chb_toolbool.setChecked(element.toolbool)
+            if element.type == ToolID.text:
+                self.elementsActivateTextElement(element)
+            self.tools_window.set_ui_on_toolchange(element_type=element.type)
+            self.tools_window.update()
         self.update()
 
     def elementsMakeSureTheresNoUnfinishedElement(self):
@@ -1092,7 +1096,6 @@ class ElementsMixin(ElementsTransformMixin):
                 element.finished = False
         elif tool == ToolID.transform:
 
-
             if self.is_over_scaling_activation_area(event.pos()):
                 self.canvas_START_selected_elements_SCALING(event)
 
@@ -1107,35 +1110,6 @@ class ElementsMixin(ElementsTransformMixin):
                 self.selection_start_point = QPointF(event.pos())
                 self.selection_rect = None
                 self.selection_ongoing = True
-
-
-
-
-            # здесь был код, который проверял, попала и позиция курсора в контрол поинт виджета
-
-            # if not self.widget_activated:
-            #     ######################
-            #     # selection code!
-            #     ######################
-            #     elements = self.elementsGetElementsUnderMouse(event_pos)
-            #     if elements:
-            #         if self.selected_element in elements:
-            #             # циклический выбор перекрывадющих друг друга элементов
-            #             # в позиции курсора мыши
-            #             elements = itertools.cycle(elements)
-            #             while next(elements) != self.selected_element:
-            #                 pass
-            #             selected_element = next(elements)
-            #         else:
-            #             selected_element = elements[0]
-            #         self.elementsSetSelected(selected_element)
-            #     else:
-            #         self.elementsSetSelected(None)
-            #     self.elementsSelectedElementParamsToUI()
-            #     ########################
-            #     # end of selection code
-            #     ########################
-
 
         self.update()
 

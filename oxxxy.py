@@ -1287,7 +1287,13 @@ class ToolsWindow(QWidget):
         else:
             self.chb_toolbool.setText("?")
 
-    def set_ui_on_toolchange(self, element_type=None):
+    def set_ui_on_toolchange(self, element_type=None, hide=False):
+        if hide:
+            self.chb_toolbool.setEnabled(False)
+            self.color_slider.setEnabled(False)
+            self.size_slider.setEnabled(False)
+            self.opacity_slider.setEnabled(False)
+            return
         _type = element_type or self.current_tool
         self.chb_toolbool.setEnabled(False)
         self.color_slider.setEnabled(True)

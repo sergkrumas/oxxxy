@@ -52,7 +52,7 @@ class ElementsTransformMixin():
         self.canvas_selection_transform_box_opacity = 1.0
         self.STNG_transform_widget_activation_area_size = 16.0
 
-        self.canvas_debug_transform_widget = False
+        self.canvas_debug_transform_widget = True
 
 
 
@@ -227,6 +227,105 @@ class ElementsTransformMixin():
             self.update_selection_bouding_box()
             self.transform_cancelled = True
             print('cancel translation')
+
+
+
+
+
+
+
+
+    def canvas_START_selected_elements_ROTATION(self, event_pos, viewport_zoom_changed=False):
+        self.rotation_ongoing = True
+        if viewport_zoom_changed:
+            for element in self.selected_items:
+                pass
+                # лучше закоментить этот код, так адекватнее и правильнее, как мне кажется
+                # if element.__element_rotation is not None:
+                #     element.element_rotation = element.__element_rotation
+                # if bi.type != BoardItem.types.ITEM_FRAME:
+                    # if bi.__item_position is not None:
+                    #     bi.item_position = bi.__item_position
+            self.update_selection_bouding_box()
+
+        self.__selection_bounding_box = QPolygonF(self.selection_bounding_box)
+        pivot = self.selection_bounding_box.boundingRect().center()
+        radius_vector = QPointF(event_pos) - pivot
+        self.rotation_start_angle_rad = math.atan2(radius_vector.y(), radius_vector.x())
+        for element in self.selected_items:
+            element.__element_rotation = element.element_rotation
+            element.__element_position = QPointF(element.element_position)
+
+            if not viewport_zoom_changed:
+                element.__element_rotation_init = element.element_rotation
+                element.__element_position_init = QPointF(element.element_position)
+
+    def step_rotation(self, rotation_value):
+        interval = 45.0
+        # формулу подбирал в графическом калькуляторе desmos.com/calculator
+        # value = math.floor((rotation_value-interval/2.0)/interval)*interval+interval
+        # ниже упрощённый вариант
+        value = (math.floor(rotation_value/interval-0.5)+1.0)*interval
+        return value
+
+    def canvas_DO_selected_elements_ROTATION(self, event_pos):
+        self.start_translation_pos = None
+
+        mutli_item_mode = len(self.selected_items) > 1
+        ctrl_mod = QApplication.queryKeyboardModifiers() & Qt.ControlModifier
+        pivot = self.selection_bounding_box.boundingRect().center()
+        radius_vector = QPointF(event_pos) - pivot
+        self.rotation_end_angle_rad = math.atan2(radius_vector.y(), radius_vector.x())
+        self.rotation_delta = self.rotation_end_angle_rad - self.rotation_start_angle_rad
+        rotation_delta_degrees = math.degrees(self.rotation_delta)
+        if mutli_item_mode and ctrl_mod:
+            rotation_delta_degrees = self.step_rotation(rotation_delta_degrees)
+        rotation = QTransform()
+        if ctrl_mod:
+            rotation.rotate(self.step_rotation(rotation_delta_degrees))
+        else:
+            rotation.rotate(rotation_delta_degrees)
+        for element in self.selected_items:
+            # rotation component
+            # if element.type == BoardItem.types.ITEM_FRAME:
+            #     continue
+            element.element_rotation = element.__element_rotation + rotation_delta_degrees
+            if not mutli_item_mode and ctrl_mod:
+                element.element_rotation = self.step_rotation(element.element_rotation)
+            # position component
+            pos = element.calculate_absolute_position(canvas=self, rel_pos=element.__element_position)
+            pos_radius_vector = pos - pivot
+            pos_radius_vector = rotation.map(pos_radius_vector)
+            new_absolute_position = pivot + pos_radius_vector
+            rel_pos_global_scaled = new_absolute_position - self.canvas_origin
+            new_item_position = QPointF(rel_pos_global_scaled.x()/self.canvas_scale_x, rel_pos_global_scaled.y()/self.canvas_scale_y)
+            element.element_position = new_item_position
+        # bounding box transformation
+        translate_to_coord_origin = QTransform()
+        translate_back_to_place = QTransform()
+        offset = - self.__selection_bounding_box.boundingRect().center()
+        translate_to_coord_origin.translate(offset.x(), offset.y())
+        offset = - offset
+        translate_back_to_place.translate(offset.x(), offset.y())
+        transform = translate_to_coord_origin * rotation * translate_back_to_place
+        self.selection_bounding_box = transform.map(self.__selection_bounding_box)
+
+    def canvas_FINISH_selected_elements_ROTATION(self, event, cancel=False):
+        self.rotation_ongoing = False
+        cf = self.LibraryData().current_folder()
+        if cancel:
+            for element in self.selected_items:
+                element.element_rotation = element.__element_rotation_init
+                element.element_position = QPointF(element.__element_position_init)
+        else:
+            self.init_selection_bounding_box_widget()
+
+    def canvas_CANCEL_selected_elements_ROTATION(self):
+        if self.rotation_ongoing:
+            self.board_FINISH_selected_elements_ROTATION(None, cancel=True)
+            self.update_selection_bouding_box()
+            self.transform_cancelled = True
+            print('cancel rotation')
 
 
 

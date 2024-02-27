@@ -1368,26 +1368,16 @@ class ElementsMixin(ElementsTransformMixin):
                     self.selection_rect = None
                     self.selection_ongoing = False
 
+                # TODO
+                # if self.selected_element.type == ToolID.blurring:
+                #     self.selected_element.finished = True
+                #     self.elementsSetBlurredPixmap(self.selected_element)
 
+                # if self.selected_element.type == ToolID.text:
+                #     self.selected_element.modify_end_point = True
 
-
-        #     if self.transform_widget:
-        #         self.transform_widget.retransform_end(event)
-
-        #         if self.selected_element.type == ToolID.blurring:
-        #             self.selected_element.finished = True
-        #             self.elementsSetBlurredPixmap(self.selected_element)
-
-        #         if self.selected_element.type == ToolID.text:
-        #             self.selected_element.modify_end_point = True
-
-        # if tool != ToolID.transform:
-        #     self.elementsSetSelected(None)
-
-
-
-
-
+        if tool != ToolID.transform:
+            self.elementsSetSelected(None)
 
         self.elementsAutoDeleteInvisibleElement(element)
         self.tools_window.forwards_backwards_update()
@@ -2015,7 +2005,7 @@ class ElementsMixin(ElementsTransformMixin):
 
 
 
-    def elementsCreateModificatedCopyOnNeed(self, element, force_new=False, keep_old_widget=False):
+    def elementsCreateModificatedCopyOnNeed(self, element, force_new=False):
         if element == self.elementsGetLastElement() and not force_new:
             # если элемент последний в списке элементов,
             # то его предыдущее состояние не сохраняется
@@ -2025,15 +2015,17 @@ class ElementsMixin(ElementsTransformMixin):
             self.elementsCopyElementData(new_element, element)
             # new_element.source_index = self.elements.index(element)
             new_element.source_index = element.unique_index
-            self.elementsSetSelected(new_element, keep_old_widget=keep_old_widget)
+            self.elementsSetSelected(new_element)
             return new_element
 
-
-    def elementsSetSelected(self, element, keep_old_widget=False):
-        """
-            Deprecated
-        """
-        pass
+    def elementsSetSelected(self, element):
+        if element is None:
+            for element in self.elementsHistoryFilter():
+                element._selected = False
+        else:
+            element._selected = True
+        self.init_selection_bounding_box_widget()
+        self.elementsUpdatePanelUI()
 
     def elementsParametersChanged(self):
         tw = self.tools_window

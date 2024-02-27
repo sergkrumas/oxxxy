@@ -169,7 +169,7 @@ class ElementsTransformMixin():
             #         selected_element = elements[0]
 
 
-            min_item = self.find_min_area_element(self.elementsHistoryFilter(), self.mapped_cursor_pos())
+            min_area_element = self.find_min_area_element(self.elementsHistoryFilter(), self.mapped_cursor_pos())
             # reversed для того, чтобы пометки на переднем плане чекались первыми
             for element in reversed(self.elementsHistoryFilter()):
                 item_selection_area = element.get_selection_area(canvas=self)
@@ -179,7 +179,7 @@ class ElementsTransformMixin():
                     if is_under_mouse and not self.prevent_item_deselection:
                         element._selected = False
                 else:
-                    if min_item is not element:
+                    if min_area_element is not element:
                         element._selected = False
                     else:
                         element._selected = is_under_mouse

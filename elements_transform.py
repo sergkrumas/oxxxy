@@ -167,7 +167,7 @@ class ElementsTransformMixin():
                         element._selected = False
                     else:
                         element._selected = is_under_mouse
-        self.init_selection_bounding_box_widget(current_folder)
+        self.init_selection_bounding_box_widget()
 
     def init_selection_bounding_box_widget(self):
         self.selected_items = []

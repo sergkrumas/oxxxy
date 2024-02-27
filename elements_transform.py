@@ -332,6 +332,193 @@ class ElementsTransformMixin():
 
 
 
+    def canvas_START_selected_elements_SCALING(self, event, viewport_zoom_changed=False):
+        self.scaling_ongoing = True
+
+        if viewport_zoom_changed:
+            for element in self.selected_items:
+                if element.__element_scale_x is not None:
+                    element.element_scale_x = element.__element_scale_x
+                if element.__element_scale_y is not None:
+                    element.element_scale_y = element.__element_scale_y
+                if element.__element_position is not None:
+                    element.element_position = element.__element_position
+
+            self.update_selection_bouding_box()
+
+        self.__selection_bounding_box = QPolygonF(self.selection_bounding_box)
+
+        bbw = self.selection_bounding_box.boundingRect().width()
+        bbh = self.selection_bounding_box.boundingRect().height()
+        self.selection_bounding_box_aspect_ratio = bbw/bbh
+        self.selection_bounding_box_center = self.selection_bounding_box.boundingRect().center()
+
+        points_count = self.selection_bounding_box.size()
+
+        # заранее высчитываем пивот и оси для модификатора Alt;
+        # для удобства вычислений оси заимствуем у нулевой точки и укорачиваем их в два раза
+        index = 0
+        pivot_point_index = (index+2) % points_count
+        prev_point_index = (pivot_point_index-1) % points_count
+        next_point_index = (pivot_point_index+1) % points_count
+        prev_point = self.selection_bounding_box[prev_point_index]
+        next_point = self.selection_bounding_box[next_point_index]
+        spp = QPointF(self.selection_bounding_box[pivot_point_index])
+
+        self.scaling_pivot_center_point = self.selection_bounding_box_center
+
+        __x_axis = QVector2D(next_point - spp).toPointF()
+        __y_axis = QVector2D(prev_point - spp).toPointF()
+
+        self.scaling_from_center_x_axis = __x_axis/2.0
+        self.scaling_from_center_y_axis = __y_axis/2.0
+
+        # высчитываем пивот и оси для обычного скейла относительно угла
+        index = self.scaling_active_point_index
+        pivot_point_index = (index+2) % points_count
+        prev_point_index = (pivot_point_index-1) % points_count
+        next_point_index = (pivot_point_index+1) % points_count
+        prev_point = self.selection_bounding_box[prev_point_index]
+        next_point = self.selection_bounding_box[next_point_index]
+        self.scaling_pivot_corner_point = QPointF(self.selection_bounding_box[pivot_point_index])
+
+        x_axis = QVector2D(next_point - self.scaling_pivot_corner_point).toPointF()
+        y_axis = QVector2D(prev_point - self.scaling_pivot_corner_point).toPointF()
+
+        if self.scaling_active_point_index % 2 == 1:
+            x_axis, y_axis = y_axis, x_axis
+
+        self.scaling_x_axis = x_axis
+        self.scaling_y_axis = y_axis
+
+        for element in self.selected_items:
+            element.__element_scale_x = element.element_scale_x
+            element.__element_scale_y = element.element_scale_y
+            element.__element_position = QPointF(element.element_position)
+            if not viewport_zoom_changed:
+                element.__element_scale_x_init = element.element_scale_x
+                element.__element_scale_y_init = element.element_scale_y
+                element.__element_position_init = QPointF(element.element_position)
+            position_vec = element.calculate_absolute_position(canvas=self) - self.scaling_pivot_corner_point
+            element.normalized_pos_x, element.normalized_pos_y = self.calculate_vector_projection_factors(x_axis, y_axis, position_vec)
+
+    def calculate_vector_projection_factors(self, x_axis, y_axis, vector):
+        x_axis = QVector2D(x_axis)
+        y_axis = QVector2D(y_axis)
+        x_axis_normalized = x_axis.normalized().toPointF()
+        y_axis_normalized = y_axis.normalized().toPointF()
+        x_axis_length = x_axis.length()
+        y_axis_length = y_axis.length()
+        x_factor = QPointF.dotProduct(x_axis_normalized, vector)/x_axis_length
+        y_factor = QPointF.dotProduct(y_axis_normalized, vector)/y_axis_length
+        return x_factor, y_factor
+
+    def canvas_DO_selected_elements_SCALING(self, event_pos):
+        self.start_translation_pos = None
+
+        mutli_item_mode = len(self.selected_items) > 1
+        alt_mod = QApplication.queryKeyboardModifiers() & Qt.AltModifier
+        shift_mod = QApplication.queryKeyboardModifiers() & Qt.ShiftModifier
+        center_is_pivot = alt_mod
+        proportional_scaling = mutli_item_mode or shift_mod
+
+        # отключаем модификатор alt для группы выделенных айтемов
+        center_is_pivot = center_is_pivot and not mutli_item_mode
+
+        if center_is_pivot:
+            pivot = self.scaling_pivot_center_point
+            scaling_x_axis = self.scaling_from_center_x_axis
+            scaling_y_axis = self.scaling_from_center_y_axis
+        else:
+            pivot = self.scaling_pivot_corner_point
+            scaling_x_axis = self.scaling_x_axis
+            scaling_y_axis = self.scaling_y_axis
+
+        # updating for draw functions
+        self.scaling_pivot_point = pivot
+        self.scaling_pivot_point_x_axis = scaling_x_axis
+        self.scaling_pivot_point_y_axis = scaling_y_axis
+
+        for element in self.selected_items:
+            __scaling_vector =  QVector2D(QPointF(event_pos) - pivot) # не вытаскивать вычисления вектора из цикла!
+            # принудительно задаётся минимальный скейл, значение в экранных координатах
+            # MIN_LENGTH = 100.0
+            # if __scaling_vector.length() < MIN_LENGTH:
+            #     __scaling_vector = __scaling_vector.normalized()*MIN_LENGTH
+            self.scaling_vector = scaling_vector = __scaling_vector.toPointF()
+
+            if proportional_scaling:
+                x_axis = QVector2D(scaling_x_axis).normalized()
+                y_axis = QVector2D(scaling_y_axis).normalized()
+                x_sign = math.copysign(1.0, QVector2D.dotProduct(x_axis, QVector2D(self.scaling_vector).normalized()))
+                y_sign = math.copysign(1.0, QVector2D.dotProduct(y_axis, QVector2D(self.scaling_vector).normalized()))
+                if mutli_item_mode:
+                    aspect_ratio = self.selection_bounding_box_aspect_ratio
+                else:
+                    aspect_ratio = element.aspect_ratio()
+                psv = x_sign*aspect_ratio*x_axis.toPointF() + y_sign*y_axis.toPointF()
+                self.proportional_scaling_vector = QVector2D(psv).normalized().toPointF()
+                factor = QPointF.dotProduct(self.proportional_scaling_vector, self.scaling_vector)
+                self.proportional_scaling_vector *= factor
+
+                self.scaling_vector = scaling_vector = self.proportional_scaling_vector
+
+            if center_is_pivot:
+                scaling_x_axis = - scaling_x_axis
+                scaling_y_axis = - scaling_y_axis
+
+            # scaling component
+            x_factor, y_factor = self.calculate_vector_projection_factors(scaling_x_axis, scaling_y_axis, scaling_vector)
+
+            element.element_scale_x = element.__element_scale_x * x_factor
+            element.element_scale_y = element.__element_scale_y * y_factor
+            if proportional_scaling and not mutli_element_mode and not center_is_pivot:
+                element.element_scale_x = math.copysign(1.0, element.element_scale_x)*abs(element.element_scale_y)
+
+            # position component
+            if center_is_pivot:
+                element.element_position = element.__element_position
+            else:
+                pos = element.calculate_absolute_position(canvas=self, rel_pos=element.__element_position)
+                scaling = QTransform()
+                # эти нормализованные координаты актуальны для пропорционального и не для пропорционального редактирования
+                scaling.scale(element.normalized_pos_x, element.normalized_pos_y)
+                mapped_scaling_vector = scaling.map(scaling_vector)
+                new_absolute_position = pivot + mapped_scaling_vector
+                rel_pos_global_scaled = new_absolute_position - self.canvas_origin
+                new_element_position = QPointF(rel_pos_global_scaled.x()/self.canvas_scale_x, rel_pos_global_scaled.y()/self.canvas_scale_y)
+                element.element_position = new_element_position
+
+        # bounding box update
+        self.update_selection_bouding_box()
+
+    def canvas_FINISH_selected_elements_SCALING(self, event, cancel=False):
+        self.scaling_ongoing = False
+        self.scaling_vector = None
+        self.proportional_scaling_vector = None
+        self.scaling_pivot_point = None
+        if cancel:
+            for elements in self.selected_items:
+                elements.element_scale_x = elements.__element_scale_x_init
+                elements.element_scale_y = elements.__element_scale_y_init
+                elements.element_position = QPointF(elements.__element_position_init)
+        else:
+            self.init_selection_bounding_box_widget()
+
+    def canvas_CANCEL_selected_elements_SCALING(self):
+        if self.scaling_ongoing:
+            self.board_FINISH_selected_elements_SCALING(None, cancel=True)
+            self.update_selection_bouding_box()
+            self.transform_cancelled = True
+            print('cancel scaling')
+
+
+
+
+
+
+
+
 # для запуска программы прямо из этого файла при разработке и отладке
 if __name__ == '__main__':
     import subprocess

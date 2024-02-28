@@ -3217,7 +3217,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             2: QCursor(Qt.SizeVerCursor),
             3: QCursor(Qt.SizeBDiagCursor),
             4: QCursor(Qt.SizeHorCursor),
-            5: self.elementsDefineCursorShape(),
+            5: self.elementsSetCursorShapeInsideCaptureZone(),
             # 5: QCursor(Qt.CrossCursor),
             6: QCursor(Qt.SizeHorCursor),
             7: QCursor(Qt.SizeBDiagCursor),
@@ -3226,7 +3226,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         }
 
         if not self.capture_region_rect:
-            self.setCursor(self.elementsDefineCursorShape())
+            self.setCursor(self.elementsSetCursorShapeInsideCaptureZone())
             return
 
         crr = self.elementsMapFromCanvasToViewportRectF(self.capture_region_rect)

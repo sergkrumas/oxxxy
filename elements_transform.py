@@ -57,6 +57,22 @@ class ElementsTransformMixin():
 
         self.canvas_debug_transform_widget = True
 
+        self.scale_rastr_source = None
+        self.rotate_rastr_source = None
+        self.load_svg_cursors()
+
+    def load_svg_cursors(self):
+        folder_path = os.path.dirname(__file__)
+        filepath_scale_svg = os.path.join(folder_path, "cursors", "scale.svg")
+        filepath_rotate_svg = os.path.join(folder_path, "cursors", "rotate.svg")
+
+        scale_rastr_source = QPixmap(filepath_scale_svg)
+        rotate_rastr_source = QPixmap(filepath_rotate_svg)
+
+        if not scale_rastr_source.isNull():
+            self.scale_rastr_source = scale_rastr_source
+        if not rotate_rastr_source.isNull():
+            self.rotate_rastr_source = rotate_rastr_source
 
 
     def update_selection_bouding_box(self):
@@ -115,8 +131,68 @@ class ElementsTransformMixin():
         self.widget_active_point_index = None
         return False
 
+    def widget_get_cursor_angle(self):
+        points_count = self.selection_bounding_box.size()
+        index = self.widget_active_point_index
+        pivot_point_index = (index+2) % points_count
+        prev_point_index = (pivot_point_index-1) % points_count
+        next_point_index = (pivot_point_index+1) % points_count
+        prev_point = self.selection_bounding_box[prev_point_index]
+        next_point = self.selection_bounding_box[next_point_index]
+        self.scaling_pivot_corner_point = QPointF(self.selection_bounding_box[pivot_point_index])
 
+        x_axis = QVector2D(next_point - self.scaling_pivot_corner_point).normalized().toPointF()
+        y_axis = QVector2D(prev_point - self.scaling_pivot_corner_point).normalized().toPointF()
 
+        __vector  = x_axis + y_axis
+        return math.degrees(math.atan2(__vector.y(), __vector.x()))
+
+    def get_widget_cursor(self, source_pixmap, angle):
+        pixmap = QPixmap(source_pixmap.size())
+        pixmap.fill(Qt.transparent)
+        painter = QPainter()
+        painter.begin(pixmap)
+        transform = QTransform()
+        transform1 = QTransform()
+        transform2 = QTransform()
+        transform3 = QTransform()
+        rect = QRectF(source_pixmap.rect())
+        center = rect.center()
+        transform1.translate(-center.x(), -center.y())
+        transform2.rotate(angle)
+        transform3.translate(center.x(), center.y())
+        transform = transform1 * transform2 * transform3
+        painter.setTransform(transform)
+        painter.drawPixmap(rect, source_pixmap, rect)
+        painter.end()
+        pixmap = pixmap.scaled(50, 50, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        return QCursor(pixmap)
+
+    def define_transform_tool_cursor(self):
+        if self.scaling_ongoing:
+            if self.scale_rastr_source is not None:
+                cursor = self.get_widget_cursor(self.scale_rastr_source, self.widget_get_cursor_angle())
+                return cursor
+            else:
+                return Qt.PointingHandCursor
+        elif self.rotation_ongoing:
+            if self.rotate_rastr_source is not None:
+                cursor = self.get_widget_cursor(self.rotate_rastr_source, self.widget_get_cursor_angle())
+                return cursor
+            else:
+                return Qt.OpenHandCursor
+        elif self.selection_bounding_box is not None:
+            if self.is_over_scaling_activation_area(self.mapped_cursor_pos()):
+                cursor = self.get_widget_cursor(self.scale_rastr_source, self.widget_get_cursor_angle())
+                return cursor
+
+            elif self.is_over_rotation_activation_area(self.mapped_cursor_pos()):
+                cursor = self.get_widget_cursor(self.rotate_rastr_source, self.widget_get_cursor_angle())
+                return cursor
+            else:
+                return Qt.ArrowCursor
+        else:
+            return Qt.ArrowCursor
 
     def any_element_area_under_mouse(self, add_selection):
         self.prevent_item_deselection = False

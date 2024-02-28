@@ -1173,15 +1173,11 @@ class ElementsMixin(ElementsTransformMixin):
             self.elementsSetSelected(element)
         self.update()
 
-    def elementsDefineCursorShape(self):
+    def elementsSetCursorShapeInsideCaptureZone(self):
         cursor_pos = self.mapFromGlobal(QCursor().pos())
         is_tool_transform = self.current_tool == ToolID.transform
-        any_element_under_mouse = self.elementsGetElementsUnderMouse(cursor_pos)
-        if False:
-            pass
-            # здесь надо задавать курсор мыши для виджета трансформации
-        elif is_tool_transform and any_element_under_mouse:
-            return Qt.SizeAllCursor
+        if is_tool_transform:
+            return self.define_transform_tool_cursor()
         else:
             return self.get_custom_cross_cursor()
 

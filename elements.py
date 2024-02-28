@@ -1826,7 +1826,8 @@ class ElementsMixin(ElementsTransformMixin):
         for element in all_the_rest:
             self.elementsDrawMainElement(painter, element, final)
 
-        self.elementsDrawSystemCursor(painter)
+        if not draw_background_only:
+            self.elementsDrawSystemCursor(painter)
 
         if not final:
             # отрисовка виджетов
@@ -1848,8 +1849,8 @@ class ElementsMixin(ElementsTransformMixin):
 
     def elementsDrawSystemCursor(self, painter):
         if self.tools_window and self.tools_window.chb_draw_cursor.isChecked():
-            cursor_position = self.elementsMapFromCanvasToViewport(self.cursor_position)
-            painter.drawPixmap(cursor_position, self.cursor_pixmap)
+            screenshot_cursor_position = self.elementsMapFromCanvasToViewport(self.screenshot_cursor_position)
+            painter.drawPixmap(screenshot_cursor_position, self.cursor_pixmap)
 
     def elementsDrawFinalVersionDebug(self, painter):
 

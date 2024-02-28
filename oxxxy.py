@@ -2563,7 +2563,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         if self.tools_settings.get("savecaptureframe", False):
             rect_params = self.tools_settings.get("capture_frame", None)
             if rect_params:
-                rect = QRect(*rect_params)
+                rect = QRectF(*rect_params)
                 self.input_POINT2 = rect.topLeft()
                 self.input_POINT1 = rect.bottomRight()
                 self.capture_region_rect = build_valid_rectF(self.input_POINT1,
@@ -4391,6 +4391,10 @@ def invoke_screenshot_editor(request_type=None):
     metadata = generate_metainfo()
     # started_time = time.time()
 
+    ScreenshotWindow.screenshot_cursor_position = QCursor().pos()
+    cursor_filepath = os.path.join(os.path.dirname(__file__), 'resources', 'cursor.png')
+    ScreenshotWindow.cursor_pixmap = QPixmap(cursor_filepath).scaled(25, 25, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+
     screenshot_image = make_screenshot_pyqt()
     if request_type == RequestType.Fragment:
         # print("^^^^^^", time.time() - started_time)
@@ -4436,9 +4440,6 @@ def invoke_screenshot_editor(request_type=None):
             QApplication.instance().processEvents()
             screenshot_editor.activateWindow()
 
-    ScreenshotWindow.cursor_position = QCursor().pos()
-    cursor_filepath = os.path.join(os.path.dirname(__file__), 'resources', 'cursor.png')
-    ScreenshotWindow.cursor_pixmap = QPixmap(cursor_filepath).scaled(25, 25, Qt.KeepAspectRatio, Qt.SmoothTransformation)
 
 
     if request_type == RequestType.QuickFullscreen:

@@ -635,7 +635,78 @@ class ElementsTransformMixin():
             print('cancel scaling')
 
 
+    def elementDrawSelectionMouseRect(self, painter):
+        if self.selection_rect is not None:
+            c = self.selection_color
+            painter.setPen(QPen(c))
+            c.setAlphaF(0.5)
+            brush = QBrush(c)
+            painter.setBrush(brush)
+            painter.drawRect(self.selection_rect)
 
+    def elementDrawSelectionTransformBox(self, painter):
+        self.rotation_activation_areas = []
+        if self.selection_bounding_box is not None:
+
+            painter.setOpacity(self.canvas_selection_transform_box_opacity)
+            pen = QPen(self.selection_color, 4)
+            painter.setPen(pen)
+            painter.setBrush(Qt.NoBrush)
+            painter.drawPolygon(self.selection_bounding_box)
+
+            default_pen = painter.pen()
+
+            # roration activation areas
+            painter.setPen(QPen(Qt.red))
+            for index, point in enumerate(self.selection_bounding_box):
+                points_count = self.selection_bounding_box.size()
+                prev_point_index = (index-1) % points_count
+                next_point_index = (index+1) % points_count
+                prev_point = self.selection_bounding_box[prev_point_index]
+                next_point = self.selection_bounding_box[next_point_index]
+
+                a = QVector2D(point - prev_point).normalized().toPointF()
+                b = QVector2D(point - next_point).normalized().toPointF()
+                a *= self.STNG_transform_widget_activation_area_size*2
+                b *= self.STNG_transform_widget_activation_area_size*2
+                points = [
+                    point,
+                    point + a,
+                    point + a + b,
+                    point + b,
+                ]
+                raa = QPolygonF(points)
+                if self.canvas_debug_transform_widget:
+                    painter.drawPolygon(raa)
+
+                self.rotation_activation_areas.append((index, raa))
+
+            # scale activation areas
+            default_pen.setWidthF(self.STNG_transform_widget_activation_area_size)
+            default_pen.setCapStyle(Qt.RoundCap)
+            painter.setPen(default_pen)
+
+            for index, point in enumerate(self.selection_bounding_box):
+                painter.drawPoint(point)
+
+            if self.canvas_debug_transform_widget and self.scaling_ongoing and self.scaling_pivot_point is not None:
+                pivot = self.scaling_pivot_point
+                x_axis = self.scaling_pivot_point_x_axis
+                y_axis = self.scaling_pivot_point_y_axis
+
+                painter.setPen(QPen(Qt.red, 4))
+                painter.drawLine(pivot, pivot+x_axis)
+                painter.setPen(QPen(Qt.green, 4))
+                painter.drawLine(pivot, pivot+y_axis)
+                if self.scaling_vector is not None:
+                    painter.setPen(QPen(Qt.yellow, 4))
+                    painter.drawLine(pivot, pivot + self.scaling_vector)
+
+                if self.proportional_scaling_vector is not None:
+                    painter.setPen(QPen(Qt.darkGray, 4))
+                    painter.drawLine(pivot, pivot + self.proportional_scaling_vector)
+
+            painter.setOpacity(1.0)
 
 
 

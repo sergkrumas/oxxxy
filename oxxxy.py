@@ -2967,6 +2967,11 @@ class ScreenshotWindow(QWidget, ElementsMixin):
 
     def toggle_show_background(self):
         self.show_background = not self.show_background
+        self.update()
+
+    def toggle_transform_widget_debug_mode(self):
+        self.canvas_debug_transform_widget = not self.canvas_debug_transform_widget
+        self.update()
 
     def contextMenuEvent(self, event):
         contextMenu = QMenu()
@@ -3091,6 +3096,10 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         toggle_close_on_done.setCheckable(True)
         toggle_close_on_done.setChecked(Globals.close_editor_on_done)
 
+        transform_widget_debug_mode = add_item("Показывать дебаг-отрисовку для виджета трансформации")
+        transform_widget_debug_mode.setCheckable(True)
+        transform_widget_debug_mode.setChecked(self.canvas_debug_transform_widget)
+
         contextMenu.addSeparator() ###############################################################
 
         minimize = add_item("Свернуть на панель задач")
@@ -3106,6 +3115,8 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             self.open_project()
         elif action == show_background:
             self.toggle_show_background()
+        elif action == transform_widget_debug_mode:
+            self.toggle_transform_widget_debug_mode()
         elif action == fit_images_to_size:
             self.elementsFitImagesToSize()
         elif action == render_elements_to_background:

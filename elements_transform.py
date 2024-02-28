@@ -55,7 +55,7 @@ class ElementsTransformMixin():
 
         self.prevent_item_deselection = False
 
-        self.canvas_debug_transform_widget = True
+        self.canvas_debug_transform_widget = False
 
         self.scale_rastr_source = None
         self.rotate_rastr_source = None

@@ -598,11 +598,11 @@ def draw_cyberpunk(painter, image_rect):
     w = image_rect.width()
     h = image_rect.height()
     # vertical
-    painter.drawLine(QPoint(int(w/3), 0)+offset, QPoint(int(w/3), h)+offset)
-    painter.drawLine(QPoint(int(w/3*2), 0)+offset, QPoint(int(w/3*2), h)+offset)
+    painter.drawLine(QPointF(w/3, 0)+offset, QPointF(w/3, h)+offset)
+    painter.drawLine(QPointF(w/3*2, 0)+offset, QPointF(w/3*2, h)+offset)
     # horizontal
-    painter.drawLine(QPoint(0, int(h/3))+offset, QPoint(w, int(h/3))+offset)
-    painter.drawLine(QPoint(0, int(h/3*2))+offset, QPoint(w, int(h/3*2))+offset)
+    painter.drawLine(QPointF(0, h/3)+offset, QPointF(w, h/3)+offset)
+    painter.drawLine(QPointF(0, h/3*2)+offset, QPointF(w, h/3*2)+offset)
 
 
 def elements45DegreeConstraint(pivot, point):

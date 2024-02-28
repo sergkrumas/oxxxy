@@ -61,6 +61,8 @@ class ElementsTransformMixin():
         self.rotate_rastr_source = None
         self.load_svg_cursors()
 
+        self.cyclic_select_activated = False
+
     def load_svg_cursors(self):
         folder_path = os.path.dirname(__file__)
         filepath_scale_svg = os.path.join(folder_path, "cursors", "scale.svg")
@@ -196,8 +198,8 @@ class ElementsTransformMixin():
 
     def any_element_area_under_mouse(self, add_selection):
         self.prevent_item_deselection = False
-        cyclic_select = QApplication.queryKeyboardModifiers() & Qt.ControlModifier
-        if cyclic_select:
+        self.cyclic_select_activated = QApplication.queryKeyboardModifiers() & Qt.ControlModifier
+        if self.cyclic_select_activated:
             return False
 
         elements = self.elementsFilterElementsForSelection()
@@ -233,9 +235,9 @@ class ElementsTransformMixin():
                         element._selected = False
         else:
             # выделение одинарным кликом
-            cyclic_select = QApplication.queryKeyboardModifiers() & Qt.ControlModifier
-            if cyclic_select:
+            if self.cyclic_select_activated:
                 self.cyclic_select()
+                self.cyclic_select_activated = False
             else:
                 min_area_element = self.find_min_area_element(elements, self.mapped_cursor_pos())
                 # reversed для того, чтобы пометки на переднем плане чекались первыми

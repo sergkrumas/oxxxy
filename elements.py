@@ -931,10 +931,18 @@ class ElementsMixin(ElementsTransformMixin):
         self.elements_history_index = len(self.elements)
         return element
 
+    def elementsFilterElementsForSelection(self):
+        # здесь в будущем надо будет прописывать три случая
+        return self.elementsAllVisibleElementsButBackground()
+
+    def elementsAllVisibleElementsButBackground(self):
+        visible_elements = self.elementsAllVisibleElements()
+        return [el for el in visible_elements if not el.background_image]
+
+    def elementsAllVisibleElements(self):
+        return self.elementsHistoryFilter()
+
     def elementsHistoryFilter(self, only_filter=False):
-        """
-                Выдаёт все видимые в данный момент пометки (элементы)
-        """
         # фильтрация по индексу
         elements = self.elements[:self.elements_history_index]
         if only_filter:

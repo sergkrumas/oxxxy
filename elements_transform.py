@@ -119,37 +119,34 @@ class ElementsTransformMixin():
 
 
     def any_element_area_under_mouse(self, add_selection):
-
+        self.prevent_item_deselection = False
         cyclic_select = QApplication.queryKeyboardModifiers() & Qt.ControlModifier
         if cyclic_select:
             return False
 
-        self.prevent_item_deselection = False
-        elements = self.elementsHistoryFilter()
-        sel_elements = [el for el in elements if el._selected]
-        if sel_elements:
-            return True
-        else:
-            # reversed для того, чтобы картинки на переднем плане чекались первыми
-            for element in reversed(elements):
-                element_selection_area = element.get_selection_area(canvas=self)
-                is_under_mouse = element_selection_area.containsPoint(self.mapped_cursor_pos(), Qt.WindingFill)
-                if is_under_mouse and not element._selected:
-                    if not add_selection:
-                        for el in elements:
-                            el._selected = False
-                    element._select = True
-                    self.prevent_item_deselection = True
-                    # self.init_selection_bounding_box_widget() # может пригодится для отладки
-                    return True
+        elements = self.elementsFilterElementsForSelection()
+        # reversed для того, чтобы пометки на переднем плане чекались первыми
+        for element in reversed(elements):
+            element_selection_area = element.get_selection_area(canvas=self)
+            is_under_mouse = element_selection_area.containsPoint(self.mapped_cursor_pos(), Qt.WindingFill)
+            if is_under_mouse and element._selected:
+                return True
+            if is_under_mouse and not element._selected:
+                if not add_selection:
+                    for el in elements:
+                        el._selected = False
+                element._selected = True
+                self.prevent_item_deselection = True
+                self.init_selection_bounding_box_widget() # может пригодится для отладки
+                return True
         return False
 
-
     def canvas_selection_callback(self, add_to_selection):
+        elements = self.elementsFilterElementsForSelection()
         if self.selection_rect is not None:
             # выделение прямоугольником
             selection_rect_area = QPolygonF(self.selection_rect)
-            for element in self.elementsHistoryFilter():
+            for element in elements:
                 element_selection_area = element.get_selection_area(canvas=self)
                 if element_selection_area.intersects(selection_rect_area):
                     element._selected = True
@@ -164,9 +161,9 @@ class ElementsTransformMixin():
             if cyclic_select:
                 self.cyclic_select()
             else:
-                min_area_element = self.find_min_area_element(self.elementsHistoryFilter(), self.mapped_cursor_pos())
+                min_area_element = self.find_min_area_element(elements, self.mapped_cursor_pos())
                 # reversed для того, чтобы пометки на переднем плане чекались первыми
-                for element in reversed(self.elementsHistoryFilter()):
+                for element in reversed(elements):
                     item_selection_area = element.get_selection_area(canvas=self)
                     is_under_mouse = item_selection_area.containsPoint(self.mapped_cursor_pos(), Qt.WindingFill)
                     if add_to_selection and element._selected:
@@ -184,7 +181,7 @@ class ElementsTransformMixin():
         self.elementsUpdatePanelUI()
 
     def cyclic_select(self):
-        elements = self.elementsHistoryFilter()
+        elements = self.elementsFilterElementsForSelection()
         undermouse_elements = []
         for element in elements:
             sa = element.get_selection_area(canvas=self)

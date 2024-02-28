@@ -2329,9 +2329,9 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         if shot == 2 and self.is_input_points_set():
             if tw and tw.chb_masked.isChecked():
                 imgsize = min(input_rect.width(), input_rect.height())
-                rect = QRect(
-                    input_rect.left() + int((input_rect.width() - imgsize) / 2),
-                    input_rect.top() + int((input_rect.height() - imgsize) / 2),
+                rect = QRectF(
+                    input_rect.left() + (input_rect.width() - imgsize) / 2,
+                    input_rect.top() + (input_rect.height() - imgsize) / 2,
                     imgsize,
                     imgsize,
                 )
@@ -2347,7 +2347,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
                 if self.hex_mask:
                     path.addPolygon(self.build_hex_polygon(input_rect))
                 else:
-                    path.addEllipse(QRectF(rect))
+                    path.addEllipse(rect)
 
                 painter.drawPath(path)
 

@@ -215,7 +215,7 @@ class ElementsTransformMixin():
                         el._selected = False
                 element._selected = True
                 self.prevent_item_deselection = True
-                self.init_selection_bounding_box_widget() # может пригодится для отладки
+                # self.init_selection_bounding_box_widget() # может пригодится для отладки
                 return True
         return False
 

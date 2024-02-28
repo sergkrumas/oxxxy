@@ -392,14 +392,14 @@ class ElementsTransformMixin():
     def canvas_DO_selected_elements_ROTATION(self, event_pos):
         self.start_translation_pos = None
 
-        mutli_item_mode = len(self.selected_items) > 1
+        multi_element_mode = len(self.selected_items) > 1
         ctrl_mod = QApplication.queryKeyboardModifiers() & Qt.ControlModifier
         pivot = self.selection_bounding_box.boundingRect().center()
         radius_vector = QPointF(event_pos) - pivot
         self.rotation_end_angle_rad = math.atan2(radius_vector.y(), radius_vector.x())
         self.rotation_delta = self.rotation_end_angle_rad - self.rotation_start_angle_rad
         rotation_delta_degrees = math.degrees(self.rotation_delta)
-        if mutli_item_mode and ctrl_mod:
+        if multi_element_mode and ctrl_mod:
             rotation_delta_degrees = self.step_rotation(rotation_delta_degrees)
         rotation = QTransform()
         if ctrl_mod:
@@ -411,7 +411,7 @@ class ElementsTransformMixin():
             # if element.type == BoardItem.types.ITEM_FRAME:
             #     continue
             element.element_rotation = element.__element_rotation + rotation_delta_degrees
-            if not mutli_item_mode and ctrl_mod:
+            if not multi_element_mode and ctrl_mod:
                 element.element_rotation = self.step_rotation(element.element_rotation)
             # position component
             pos = element.calculate_absolute_position(canvas=self, rel_pos=element.__element_position)
@@ -537,14 +537,14 @@ class ElementsTransformMixin():
     def canvas_DO_selected_elements_SCALING(self, event_pos):
         self.start_translation_pos = None
 
-        mutli_item_mode = len(self.selected_items) > 1
+        multi_element_mode = len(self.selected_items) > 1
         alt_mod = QApplication.queryKeyboardModifiers() & Qt.AltModifier
         shift_mod = QApplication.queryKeyboardModifiers() & Qt.ShiftModifier
         center_is_pivot = alt_mod
-        proportional_scaling = mutli_item_mode or shift_mod
+        proportional_scaling = multi_element_mode or shift_mod
 
         # отключаем модификатор alt для группы выделенных айтемов
-        center_is_pivot = center_is_pivot and not mutli_item_mode
+        center_is_pivot = center_is_pivot and not multi_element_mode
 
         if center_is_pivot:
             pivot = self.scaling_pivot_center_point
@@ -573,7 +573,7 @@ class ElementsTransformMixin():
                 y_axis = QVector2D(scaling_y_axis).normalized()
                 x_sign = math.copysign(1.0, QVector2D.dotProduct(x_axis, QVector2D(self.scaling_vector).normalized()))
                 y_sign = math.copysign(1.0, QVector2D.dotProduct(y_axis, QVector2D(self.scaling_vector).normalized()))
-                if mutli_item_mode:
+                if multi_element_mode:
                     aspect_ratio = self.selection_bounding_box_aspect_ratio
                 else:
                     aspect_ratio = element.aspect_ratio()
@@ -593,7 +593,7 @@ class ElementsTransformMixin():
 
             element.element_scale_x = element.__element_scale_x * x_factor
             element.element_scale_y = element.__element_scale_y * y_factor
-            if proportional_scaling and not mutli_element_mode and not center_is_pivot:
+            if proportional_scaling and not multi_element_mode and not center_is_pivot:
                 element.element_scale_x = math.copysign(1.0, element.element_scale_x)*abs(element.element_scale_y)
 
             # position component

@@ -163,6 +163,18 @@ class Element():
         self.element_width = bb.width()
         self.element_height = bb.height()
 
+    def recalc_input_data_default(self):
+        p = self.element_position
+        w = self.element_width
+        h = self.element_height
+        lsp = self.local_start_point
+        lep = self.local_end_point
+        scale_x = self.element_scale_x
+        scale_y = self.element_scale_y
+        self.start_point = p + QPointF(lsp.x()*scale_x, lsp.y()*scale_y)
+        self.end_point = p + QPointF(lep.x()*scale_x, lep.y()*scale_y)
+        self.calc_local_data_default()
+
     def calc_local_data(self):
         if self.type in [ToolID.line]:
             self.calc_local_data_default()
@@ -175,7 +187,7 @@ class Element():
             self.calc_local_data_default()
         elif self.type in [ToolID.oval, ToolID.rect, ToolID.numbering]:
             self.calc_local_data_default()
-        elif self.type in [ToolID.blurring, ToolID.darkening]:
+        elif self.type in [ToolID.blurring, ToolID.darkening, ToolID.special]:
             self.calc_local_data_default()
         else:
             raise Exception('new error')
@@ -1414,6 +1426,9 @@ class ElementsMixin(ElementsTransformMixin):
                         elif element.type == ToolID.text:
                             element.modify_end_point = True
 
+                        elif element.type == ToolID.special:
+                            element.recalc_input_data_default()
+
         if tool != ToolID.transform:
             self.elementsSetSelected(None)
 
@@ -1630,13 +1645,15 @@ class ElementsMixin(ElementsTransformMixin):
             painter.setBrush(Qt.NoBrush)
             cm = painter.compositionMode()
             painter.setCompositionMode(QPainter.RasterOp_NotDestination) #RasterOp_SourceXorDestination
-            rect = build_valid_rect(element.start_point, element.end_point)
+            rect = build_valid_rectF(element.local_start_point, element.local_end_point)
+            painter.setTransform(element.get_transform_obj(canvas=self))
             painter.drawRect(rect)
+            painter.resetTransform()
             painter.setCompositionMode(cm)
             painter.setPen(_pen)
             painter.setBrush(_brush)
         elif el_type in [ToolID.oval, ToolID.rect, ToolID.numbering]:
-            painter.setTransform(element.get_transform_obj(canvas=self))            
+            painter.setTransform(element.get_transform_obj(canvas=self))
             cur_brush = painter.brush()
             if not element.filled:
                 painter.setBrush(Qt.NoBrush)

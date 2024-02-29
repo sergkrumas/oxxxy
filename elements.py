@@ -173,6 +173,8 @@ class Element():
                 self.calc_local_data_path()
         elif self.type in [ToolID.arrow]:
             self.calc_local_data_default()
+        elif self.type in [ToolID.oval, ToolID.rect, ToolID.numbering]:
+            self.calc_local_data_default()
         else:
             raise Exception('new error')
 
@@ -1259,6 +1261,7 @@ class ElementsMixin(ElementsTransformMixin):
                 element.end_point = element.start_point - delta
             else:
                 element.end_point = event_pos
+            element.calc_local_data()
         elif tool == ToolID.text:
             element.end_point = event_pos
             element.modify_end_point = False
@@ -1348,6 +1351,7 @@ class ElementsMixin(ElementsTransformMixin):
                 element.end_point = element.start_point - delta
             else:
                 element.end_point = event_pos
+            element.calc_local_data()
         elif tool == ToolID.text:
             element.end_point = event_pos
             element.modify_end_point = False
@@ -1628,10 +1632,11 @@ class ElementsMixin(ElementsTransformMixin):
             painter.setPen(_pen)
             painter.setBrush(_brush)
         elif el_type in [ToolID.oval, ToolID.rect, ToolID.numbering]:
+            painter.setTransform(element.get_transform_obj(canvas=self))            
             cur_brush = painter.brush()
             if not element.filled:
                 painter.setBrush(Qt.NoBrush)
-            rect = build_valid_rect(element.start_point, element.end_point)
+            rect = build_valid_rect(element.local_start_point, element.local_end_point)
             if el_type == ToolID.oval:
                 painter.drawEllipse(rect)
             else:
@@ -1652,6 +1657,7 @@ class ElementsMixin(ElementsTransformMixin):
                 painter.setFont(font)
                 painter.drawText(end_point_rect.adjusted(-20, -20, 20, 20), Qt.AlignCenter,
                                                                         str(element.number))
+            painter.resetTransform()                
         elif el_type == ToolID.text:
             if element.pixmap:
                 pixmap = QPixmap(element.pixmap.size())

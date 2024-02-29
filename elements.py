@@ -1569,54 +1569,6 @@ class ElementsMixin(ElementsTransformMixin):
                 painter.setOpacity(1.0)
                 painter.setClipping(False)
 
-    def draw_transformed_path(self, element, path, painter, final):
-        if hasattr(element, "pApos"):
-            pApoint = element.pApos
-            pBPoint = element.pBpos
-            orig_bounding_rect = path.boundingRect()
-            current_bounding_rect = build_valid_rect(pApoint, pBPoint)
-            # вычисление скейла
-            delta1 = orig_bounding_rect.topLeft() - orig_bounding_rect.bottomRight()
-            delta2 = pApoint - pBPoint
-            try:
-                new_scale_x = delta1.x()/delta2.x()
-                new_scale_x = 1/new_scale_x
-            except ZeroDivisionError:
-                new_scale_x = 0.0
-            try:
-                new_scale_y = delta1.y()/delta2.y()
-                new_scale_y = 1/new_scale_y
-            except ZeroDivisionError:
-                new_scale_y = 0.0
-            # корректировка разных скейлов сдвигами по осям
-            new_pos = current_bounding_rect.topLeft()
-            if new_scale_x < .0:
-                new_pos.setX(new_pos.x()+current_bounding_rect.width())
-            if new_scale_y < .0:
-                new_pos.setY(new_pos.y()+current_bounding_rect.height())
-            # отрисовка пути
-            # помещаем верхнюю левую точку пути в ноль
-            to_zero = -orig_bounding_rect.topLeft()
-            if final:
-                path = QPainterPath(path)
-                path.translate(-self.get_capture_offset())
-            path = path.translated(to_zero.x(), to_zero.y())
-            # задаём трансформацию полотна
-            transform = QTransform()
-            transform.translate(new_pos.x(), new_pos.y())
-            transform.scale(new_scale_x, new_scale_y)
-            painter.setTransform(transform)
-            # рисуем путь в заданной трансформации
-            painter.drawPath(path)
-            # скидываем трансформацию
-            painter.resetTransform()
-        else:
-            path = element.path
-            if final:
-                path = QPainterPath(path)
-                path.translate(-self.get_capture_offset())
-            painter.drawPath(path)
-
     def elementsGetPenFromElement(self, element):
         color = element.color
         size = element.size

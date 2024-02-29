@@ -175,7 +175,7 @@ class Element():
             self.calc_local_data_default()
         elif self.type in [ToolID.oval, ToolID.rect, ToolID.numbering]:
             self.calc_local_data_default()
-        elif self.type in [ToolID.blurring]:
+        elif self.type in [ToolID.blurring, ToolID.darkening]:
             self.calc_local_data_default()
         else:
             raise Exception('new error')
@@ -1560,15 +1560,15 @@ class ElementsMixin(ElementsTransformMixin):
                 if element.type == ToolID.darkening:
                     at_least_one_exists = True
                     darkening_value = element.size
-                    r = build_valid_rect(element.start_point, element.end_point)
+                    element_area = element.get_selection_area(canvas=self)
                     piece = QPainterPath()
-                    piece.addRect(QRectF(r))
+                    piece.addPolygon(element_area)
                     darkening_zone = darkening_zone.united(piece)
             if at_least_one_exists:
                 painter.setClipping(True)
-                if offset:
-                    painter.translate(offset)
-                capture_rect = QRect(self.capture_region_rect)
+                # if offset:
+                #     painter.translate(offset)
+                capture_rect = QRectF(self.capture_region_rect)
                 capture_rect.setTopLeft(QPoint(0,0))
                 painter.setClipRect(QRectF(capture_rect))
                 painter.setOpacity(0.1+0.9*darkening_value)

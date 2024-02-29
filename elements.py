@@ -149,13 +149,30 @@ class Element():
     def __repr__(self):
         return f'{self.type} {hex(id(self))}'
 
-    def calc_local_data(self):
+    def calc_local_data_default(self):
         self.element_position = (self.start_point + self.end_point)/2.0
         self.local_start_point = self.start_point - self.element_position
         self.local_end_point = self.end_point - self.element_position
         diff = self.start_point - self.end_point
         self.element_width = abs(diff.x())
         self.element_height = abs(diff.y())
+
+    def calc_local_data_path(self):
+        bb = self.path.boundingRect()
+        self.element_position = bb.center()
+        self.element_width = bb.width()
+        self.element_height = bb.height()
+
+    def calc_local_data(self):
+        if self.type == ToolID.line:
+            self.calc_local_data_default()
+        elif self.type in [ToolID.pen, ToolID.marker]:
+            if self.straight:
+                self.calc_local_data_default()
+            else:
+                self.calc_local_data_path()
+        else:
+            raise Exception('new error')
 
     @property
     def calc_area(self):
@@ -1223,6 +1240,7 @@ class ElementsMixin(ElementsTransformMixin):
             else:
                 element.path.lineTo(event_pos)
                 element.end_point = event_pos
+            element.calc_local_data()                
         elif tool == ToolID.line:
             element.end_point = event_pos
             if event.modifiers() & Qt.ShiftModifier:
@@ -1311,6 +1329,7 @@ class ElementsMixin(ElementsTransformMixin):
             else:
                 element.end_point = event_pos
                 element.path.lineTo(event_pos)
+            element.calc_local_data()
         elif tool == ToolID.line:
             element.end_point = event_pos
             if event.modifiers() & Qt.ShiftModifier:
@@ -1622,25 +1641,23 @@ class ElementsMixin(ElementsTransformMixin):
             painter.setPen(Qt.NoPen)
             self.elementsDrawArrow(painter, element.start_point, element.end_point, size, True)
         elif el_type in [ToolID.pen, ToolID.marker]:
+            painter.setTransform(element.get_transform_obj(canvas=self))
             painter.setBrush(Qt.NoBrush)
             if element.straight:
-                painter.drawLine(element.start_point, element.end_point)
-            else:
-                self.draw_transformed_path(element, element.path, painter, final)
-        elif el_type == ToolID.line:
-            if True:
-                # новая отрисовка с поддержкой перемещения, вращения и масштабирования элемента
                 sp = element.local_start_point
                 ep = element.local_end_point
-                transform = element.get_transform_obj(canvas=self)
-                painter.setTransform(transform)
                 painter.drawLine(sp, ep)
-                painter.resetTransform()
             else:
-                # тестовая отрисовка с минимумом возможностей
-                sp = self.elementsMapFromCanvasToViewport(element.start_point)
-                ep = self.elementsMapFromCanvasToViewport(element.end_point)
-                painter.drawLine(sp, ep)
+                p = element.path
+                path = p.translated(-p.boundingRect().center())
+                painter.drawPath(path)
+            painter.resetTransform()
+        elif el_type == ToolID.line:
+            painter.setTransform(element.get_transform_obj(canvas=self))            
+            sp = element.local_start_point
+            ep = element.local_end_point
+            painter.drawLine(sp, ep)
+            painter.resetTransform()
         elif el_type == ToolID.special and not final:
             _pen = painter.pen()
             _brush = painter.brush()
@@ -1664,8 +1681,7 @@ class ElementsMixin(ElementsTransformMixin):
                 painter.drawRect(rect)
             if el_type == ToolID.numbering:
                 w = self.NUMBERING_WIDTH
-                end_point_rect = QRect(element.end_point - QPoint(int(w/2), int(w/2)),
-                                                                                QSize(w, w))
+                end_point_rect = QRect(element.end_point - QPoint(int(w/2), int(w/2)), QSize(w, w))
                 painter.setBrush(cur_brush)
                 painter.setPen(Qt.NoPen)
                 painter.drawEllipse(end_point_rect)

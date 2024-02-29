@@ -1643,7 +1643,7 @@ class ElementsMixin(ElementsTransformMixin):
                 painter.drawRect(rect)
             if el_type == ToolID.numbering:
                 w = self.NUMBERING_WIDTH
-                end_point_rect = QRect(element.end_point - QPoint(int(w/2), int(w/2)), QSize(w, w))
+                end_point_rect = QRectF(element.local_end_point - QPointF(int(w/2), int(w/2)), QSizeF(w, w))
                 painter.setBrush(cur_brush)
                 painter.setPen(Qt.NoPen)
                 painter.drawEllipse(end_point_rect)

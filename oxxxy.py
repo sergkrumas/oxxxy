@@ -37,9 +37,9 @@ from functools import partial
 
 from pyqtkeybind import keybinder
 
-from PyQt5.QtWidgets import (QSystemTrayIcon, QWidget, QMessageBox, QMenu, QGraphicsPixmapItem,
-    QGraphicsScene, QFileDialog, QHBoxLayout, QCheckBox, QVBoxLayout, QTextEdit, QGridLayout,
-    QPushButton, QGraphicsBlurEffect, QLabel, QApplication, QScrollArea, QDesktopWidget)
+from PyQt5.QtWidgets import (QSystemTrayIcon, QWidget, QMessageBox, QMenu, QFileDialog,
+    QHBoxLayout, QCheckBox, QVBoxLayout, QTextEdit, QGridLayout,
+    QPushButton, QLabel, QApplication, QScrollArea, QDesktopWidget)
 from PyQt5.QtCore import (QUrl, QMimeData, pyqtSignal, QPoint, QPointF, pyqtSlot, QRect, QEvent,
     QTimer, Qt, QSize, QRectF, QThread, QAbstractNativeEventFilter, QAbstractEventDispatcher,
     QFile, QDataStream, QIODevice)
@@ -54,7 +54,7 @@ from _utils import (convex_hull, check_scancode_for, SettingsJson,
      generate_metainfo, build_valid_rect, build_valid_rectF, dot, get_nearest_point_on_rect, get_creation_date,
      find_browser_exe_file, open_link_in_browser, open_in_google_chrome, save_meta_info,
      make_screenshot_pyqt, webRGBA, generate_gradient, draw_shadow, draw_cyberpunk,
-     get_bounding_points, load_svg, is_webp_file_animated)
+     get_bounding_points, load_svg, is_webp_file_animated, apply_blur_effect)
 
 from _sliders import (CustomSlider,)
 from on_windows_startup import is_app_in_startup, add_to_startup, remove_from_startup
@@ -627,7 +627,7 @@ class CustomPushButton(QPushButton):
 
             new_pixmap = QPixmap(self.rect().width(), self.rect().height())
             new_pixmap.fill(Qt.transparent)
-            pix = self.apply_blur_effect(not_blurred_pix, new_pixmap)
+            pix = apply_blur_effect(not_blurred_pix, new_pixmap)
 
             painter.drawPixmap(r, pix, r)
 
@@ -741,24 +741,6 @@ class CustomPushButton(QPushButton):
             set_font(painter, 1900, pixel_size=12)
             painter.drawText(QPoint(2, 25), "COPY")
             painter.drawText(QPoint(5, 36), "PASTE")
-
-    def apply_blur_effect(self, src_pix, pix, blur_radius=5):
-        effect = QGraphicsBlurEffect()
-        effect.setBlurRadius(blur_radius)
-        scene = QGraphicsScene()
-
-        item = QGraphicsPixmapItem()
-        item.setPixmap(src_pix)
-
-        item.setGraphicsEffect(effect)
-        scene.addItem(item)
-
-        p = QPainter(pix)
-        scene.render(p, QRectF(), QRectF(0, 0, src_pix.width(), src_pix.height()))
-        del p
-        del scene
-
-        return pix
 
 class PictureSelectButton(QPushButton):
     def __init__(self, picture_data, button_size, main_window, *args):

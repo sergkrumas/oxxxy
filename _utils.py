@@ -32,7 +32,8 @@ import webbrowser
 import psutil
 from PIL import Image, ImageGrab, PngImagePlugin
 
-from PyQt5.QtWidgets import (QWidget, QMessageBox, QDesktopWidget, QApplication)
+from PyQt5.QtWidgets import (QWidget, QMessageBox, QDesktopWidget, QApplication,
+    QGraphicsBlurEffect, QGraphicsPixmapItem, QGraphicsScene)
 from PyQt5.QtCore import (QRectF, QPoint, pyqtSignal, QSizeF, Qt, QPointF, QSize, QRect)
 from PyQt5.QtGui import (QPixmap, QBrush, QRegion, QImage, QRadialGradient, QColor,
                     QGuiApplication, QPen, QPainterPath, QPolygon, QLinearGradient, QPainter,
@@ -88,6 +89,8 @@ __all__ = (
 
     'load_image_respect_orientation',
     'is_webp_file_animated',
+
+    'apply_blur_effect',
 )
 
 # Python3 program to find convex hull of a set of points. Refer
@@ -741,3 +744,21 @@ def is_webp_file_animated(filepath):
             result = False
     file_h.close()
     return result
+
+def apply_blur_effect(src_pix, pix, blur_radius=5):
+    effect = QGraphicsBlurEffect()
+    effect.setBlurRadius(blur_radius)
+    scene = QGraphicsScene()
+
+    item = QGraphicsPixmapItem()
+    item.setPixmap(src_pix)
+
+    item.setGraphicsEffect(effect)
+    scene.addItem(item)
+
+    p = QPainter(pix)
+    scene.render(p, QRectF(), QRectF(0, 0, src_pix.width(), src_pix.height()))
+    del p
+    del scene
+
+    return pix

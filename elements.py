@@ -40,7 +40,7 @@ from _utils import (convex_hull, check_scancode_for, SettingsJson,
      generate_metainfo, build_valid_rect, build_valid_rectF, dot, get_nearest_point_on_rect, get_creation_date,
      find_browser_exe_file, open_link_in_browser, open_in_google_chrome, save_meta_info,
      make_screenshot_pyqt, webRGBA, generate_gradient, draw_shadow, draw_cyberpunk,
-     elements45DegreeConstraint, get_bounding_points, load_svg, is_webp_file_animated)
+     elements45DegreeConstraint, get_bounding_points, load_svg, is_webp_file_animated, apply_blur_effect)
 
 from elements_transform import ElementsTransformMixin
 
@@ -1453,11 +1453,10 @@ class ElementsMixin(ElementsTransformMixin):
                 orig_width//pixel_size,
                 orig_height//pixel_size).scaled(orig_width, orig_height)
         else:
-            apply_blur = CustomPushButton.apply_blur_effect
-            blured = apply_blur(None, element.pixmap, blured, blur_radius=blur_radius)
-            blured = apply_blur(None, blured, blured, blur_radius=2)
-            blured = apply_blur(None, blured, blured, blur_radius=blur_radius)
-            blured = apply_blur(None, blured, blured, blur_radius=5)
+            blured = apply_blur_effect(element.pixmap, blured, blur_radius=blur_radius)
+            blured = apply_blur_effect(blured, blured, blur_radius=2)
+            blured = apply_blur_effect(blured, blured, blur_radius=blur_radius)
+            blured = apply_blur_effect(blured, blured, blur_radius=5)
             element.pixmap = blured
 
     def elementsChangeTextbox(self, elem):

@@ -70,7 +70,7 @@ class ToolID():
     zoom_in_region = "zoom_in_region"
     copypaste = "copypaste"
 
-    special = "special"
+    multiframing = "multiframing"
     removing = "removing"
 
     DONE = "done"
@@ -187,7 +187,7 @@ class Element():
             self.calc_local_data_default()
         elif self.type in [ToolID.oval, ToolID.rect, ToolID.numbering]:
             self.calc_local_data_default()
-        elif self.type in [ToolID.blurring, ToolID.darkening, ToolID.special]:
+        elif self.type in [ToolID.blurring, ToolID.darkening, ToolID.multiframing]:
             self.calc_local_data_default()
         else:
             raise Exception('new error')
@@ -1128,7 +1128,7 @@ class ElementsMixin(ElementsTransformMixin):
                 self.elementsMousePressEventDefault(element, event)
         elif tool == ToolID.line:
             self.elementsMousePressEventDefault(element, event)
-        elif tool in [ToolID.oval, ToolID.rect, ToolID.numbering, ToolID.special]:
+        elif tool in [ToolID.oval, ToolID.rect, ToolID.numbering, ToolID.multiframing]:
             element.equilateral = bool(event.modifiers() & Qt.ShiftModifier)
             element.filled = bool(event.modifiers() & Qt.ControlModifier)
             self.elementsMousePressEventDefault(element, event)
@@ -1266,7 +1266,7 @@ class ElementsMixin(ElementsTransformMixin):
                 element.end_point = elements45DegreeConstraint(element.start_point,
                                                                             element.end_point)
             element.calc_local_data()
-        elif tool in [ToolID.oval, ToolID.rect, ToolID.numbering, ToolID.special]:
+        elif tool in [ToolID.oval, ToolID.rect, ToolID.numbering, ToolID.multiframing]:
             element.filled = bool(event.modifiers() & Qt.ControlModifier)
             element.equilateral = bool(event.modifiers() & Qt.ShiftModifier)
             if element.equilateral:
@@ -1359,7 +1359,7 @@ class ElementsMixin(ElementsTransformMixin):
                                                                             element.end_point)
             element.calc_local_data()
         # где-то здесь надо удалять элементы, если начальная и конечная точки совпадают
-        elif tool in [ToolID.oval, ToolID.rect, ToolID.numbering, ToolID.special]:
+        elif tool in [ToolID.oval, ToolID.rect, ToolID.numbering, ToolID.multiframing]:
             if element.equilateral:
                 delta = element.start_point - event_pos
                 delta = self.equilateral_delta(delta)
@@ -1426,7 +1426,7 @@ class ElementsMixin(ElementsTransformMixin):
                         elif element.type == ToolID.text:
                             element.modify_end_point = True
 
-                        elif element.type == ToolID.special:
+                        elif element.type == ToolID.multiframing:
                             element.recalc_input_data_default()
 
         if tool != ToolID.transform:
@@ -1638,7 +1638,7 @@ class ElementsMixin(ElementsTransformMixin):
             ep = element.local_end_point
             painter.drawLine(sp, ep)
             painter.resetTransform()
-        elif el_type == ToolID.special and not final:
+        elif el_type == ToolID.multiframing and not final:
             _pen = painter.pen()
             _brush = painter.brush()
             painter.setPen(QPen(QColor(255, 0, 0), 1))
@@ -1890,10 +1890,10 @@ class ElementsMixin(ElementsTransformMixin):
 
     def elementsUpdateFinalPicture(self):
         if self.capture_region_rect:
-            any_special_element = any(el.type == ToolID.special for el in self.elements)
+            any_special_element = any(el.type == ToolID.multiframing for el in self.elements)
             if any_special_element:
                 self.specials_case = True
-                specials = list((el for el in self.elementsHistoryFilter() if el.type == ToolID.special))
+                specials = list((el for el in self.elementsHistoryFilter() if el.type == ToolID.multiframing))
                 max_width = -1
                 total_height = 0
                 specials_rects = []
@@ -2124,7 +2124,7 @@ class ElementsMixin(ElementsTransformMixin):
     def elementsSetCaptureFromContent(self):
         points = []
         for element in self.elementsHistoryFilter():
-            if element.type in [ToolID.removing, ToolID.special]:
+            if element.type in [ToolID.removing, ToolID.multiframing]:
                 continue
             print("......")
             pen, _, _ = self.elementsGetPenFromElement(element)

@@ -1659,7 +1659,7 @@ class ToolsWindow(QWidget):
         return False
 
     def set_current_tool(self, tool_name):
-        if tool_name == ToolID.special:
+        if tool_name == ToolID.multiframing:
             # deactivate current tool
             for btn in self.tools_buttons:
                 if btn.property("tool_id") == self.current_tool:
@@ -3141,7 +3141,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             self.showMinimized()
         elif action == special_tool:
             if self.tools_window:
-                self.tools_window.set_current_tool(ToolID.special)
+                self.tools_window.set_current_tool(ToolID.multiframing)
         elif action == cancel:
             self.close_this(force_close=True)
         elif action == reshot:

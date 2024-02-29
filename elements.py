@@ -175,6 +175,8 @@ class Element():
             self.calc_local_data_default()
         elif self.type in [ToolID.oval, ToolID.rect, ToolID.numbering]:
             self.calc_local_data_default()
+        elif self.type in [ToolID.blurring]:
+            self.calc_local_data_default()
         else:
             raise Exception('new error')
 
@@ -1273,6 +1275,7 @@ class ElementsMixin(ElementsTransformMixin):
                 element.end_point = element.start_point - delta
             else:
                 element.end_point = event_pos
+            element.calc_local_data()
             if tool == ToolID.blurring:
                 pass
         elif tool == ToolID.transform:
@@ -1364,6 +1367,7 @@ class ElementsMixin(ElementsTransformMixin):
                 element.end_point = element.start_point - delta
             else:
                 element.end_point = event_pos
+            element.calc_local_data()
             if tool == ToolID.blurring:
                 element.finished = True
                 self.elementsSetBlurredPixmap(element)
@@ -1402,13 +1406,13 @@ class ElementsMixin(ElementsTransformMixin):
                     self.selection_rect = None
                     self.selection_ongoing = False
 
-                # TODO
-                # if self.selected_element.type == ToolID.blurring:
-                #     self.selected_element.finished = True
-                #     self.elementsSetBlurredPixmap(self.selected_element)
-
-                # if self.selected_element.type == ToolID.text:
-                #     self.selected_element.modify_end_point = True
+                if self.selected_items:
+                    for element in self.selected_items:
+                        if element.type == ToolID.blurring:
+                            element.finished = True
+                            self.elementsSetBlurredPixmap(element)
+                        elif element.type == ToolID.text:
+                            element.modify_end_point = True
 
         if tool != ToolID.transform:
             self.elementsSetSelected(None)
@@ -1430,12 +1434,13 @@ class ElementsMixin(ElementsTransformMixin):
         if not element.finished:
             return
         blur_radius = 30*element.size #30 is maximum
-        input_rect = build_valid_rect(element.start_point, element.end_point)
-        element.pixmap = QPixmap(input_rect.size())
+        input_rect = build_valid_rectF(element.local_start_point, element.local_end_point)
+        input_rect.moveCenter(element.element_position)
+        element.pixmap = QPixmap(input_rect.size().toSize())
         element.pixmap.fill(Qt.transparent)
         pr = QPainter()
         pr.begin(element.pixmap)
-        target_rect = QRect(QPoint(0, 0), input_rect.size())
+        target_rect = QRectF(QPointF(0, 0), input_rect.size())
         pr.drawImage(target_rect, self.source_pixels, input_rect)
         offset_ = input_rect.topLeft()
         offset_.setX(-offset_.x())
@@ -1443,7 +1448,7 @@ class ElementsMixin(ElementsTransformMixin):
         self.elementsDrawDarkening(pr, offset=offset_)
         pr.end()
         del pr
-        blured = QPixmap(input_rect.size())
+        blured = QPixmap(input_rect.size().toSize())
         blured.fill(Qt.transparent)
         if element.toolbool:
             pixel_size = int(element.size*60)+1
@@ -1702,19 +1707,21 @@ class ElementsMixin(ElementsTransformMixin):
                 painter.resetTransform()
 
         elif el_type in [ToolID.blurring, ToolID.darkening]:
-            rect = build_valid_rect(element.start_point, element.end_point)
+            painter.setTransform(element.get_transform_obj(canvas=self))
+            rect = build_valid_rect(element.local_start_point, element.local_end_point)
             painter.setBrush(Qt.NoBrush)
             painter.setPen(Qt.NoPen)
             if el_type == ToolID.blurring:
                 if not element.finished:
                     painter.setBrush(QBrush(QColor(150, 0, 0), Qt.DiagCrossPattern))
                 else:
-                    rect = build_valid_rect(element.start_point, element.end_point)
+                    rect = build_valid_rect(element.local_start_point, element.local_start_point)
                     painter.drawPixmap(rect.topLeft(), element.pixmap)
             elif el_type == ToolID.darkening:
                 # painter.setBrush(QBrush(QColor(150, 150, 0), Qt.BDiagPattern))
                 pass
             painter.drawRect(rect)
+            painter.resetTransform()            
         elif el_type == ToolID.picture:
             if element.background_image and not self.show_background:
                 pass

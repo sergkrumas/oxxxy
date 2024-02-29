@@ -1240,7 +1240,7 @@ class ElementsMixin(ElementsTransformMixin):
             else:
                 element.path.lineTo(event_pos)
                 element.end_point = event_pos
-            element.calc_local_data()                
+            element.calc_local_data()
         elif tool == ToolID.line:
             element.end_point = event_pos
             if event.modifiers() & Qt.ShiftModifier:
@@ -1605,7 +1605,7 @@ class ElementsMixin(ElementsTransformMixin):
                 painter.drawPath(path)
             painter.resetTransform()
         elif el_type == ToolID.line:
-            painter.setTransform(element.get_transform_obj(canvas=self))            
+            painter.setTransform(element.get_transform_obj(canvas=self))
             sp = element.local_start_point
             ep = element.local_end_point
             painter.drawLine(sp, ep)

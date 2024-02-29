@@ -164,13 +164,15 @@ class Element():
         self.element_height = bb.height()
 
     def calc_local_data(self):
-        if self.type == ToolID.line:
+        if self.type in [ToolID.line]:
             self.calc_local_data_default()
         elif self.type in [ToolID.pen, ToolID.marker]:
             if self.straight:
                 self.calc_local_data_default()
             else:
                 self.calc_local_data_path()
+        elif self.type in [ToolID.arrow]:
+            self.calc_local_data_default()
         else:
             raise Exception('new error')
 
@@ -1225,6 +1227,7 @@ class ElementsMixin(ElementsTransformMixin):
             if event.modifiers() & Qt.ShiftModifier:
                 element.end_point = elements45DegreeConstraint(element.start_point,
                                                                             element.end_point)
+            element.calc_local_data()
         elif tool in [ToolID.zoom_in_region, ToolID.copypaste]:
             if not element.zoom_second_input:
                 element.end_point = event_pos
@@ -1310,6 +1313,7 @@ class ElementsMixin(ElementsTransformMixin):
             if event.modifiers() & Qt.ShiftModifier:
                 element.end_point = elements45DegreeConstraint(element.start_point,
                                                                             element.end_point)
+            element.calc_local_data()
         elif tool in [ToolID.zoom_in_region, ToolID.copypaste]:
             if not element.zoom_second_input:
                 # element.start_point = event_pos
@@ -1590,15 +1594,16 @@ class ElementsMixin(ElementsTransformMixin):
         painter.setPen(pen)
         painter.setBrush(QBrush(color))
         if el_type == ToolID.arrow:
+            painter.setTransform(element.get_transform_obj(canvas=self))
             painter.setPen(Qt.NoPen)
-            self.elementsDrawArrow(painter, element.start_point, element.end_point, size, True)
+            self.elementsDrawArrow(painter, element.local_start_point, element.local_end_point, size, True)
+            painter.setPen(QPen(Qt.green, 5))
+            painter.resetTransform()
         elif el_type in [ToolID.pen, ToolID.marker]:
             painter.setTransform(element.get_transform_obj(canvas=self))
             painter.setBrush(Qt.NoBrush)
             if element.straight:
-                sp = element.local_start_point
-                ep = element.local_end_point
-                painter.drawLine(sp, ep)
+                painter.drawLine(element.local_start_point, element.local_end_point)
             else:
                 p = element.path
                 path = p.translated(-p.boundingRect().center())
@@ -1945,10 +1950,8 @@ class ElementsMixin(ElementsTransformMixin):
         self.activateWindow() # чтобы фокус не соскакивал на панель иструментов
 
     def elementsDrawArrow(self, painter, start_point, tip_point, size, sharp):
-        painter.translate(start_point)
         dist_delta = start_point - tip_point
         radians_angle = math.atan2(dist_delta.y(), dist_delta.x())
-        painter.rotate(180+180/3.14*radians_angle)
         arrow_length = QVector2D(dist_delta).length()
         tip = QPointF(arrow_length, 0)
         offset_x = 40
@@ -2035,8 +2038,12 @@ class ElementsMixin(ElementsTransformMixin):
                 path.lineTo(center_right)
                 path.lineTo(start_point_right)
                 path.lineTo(start_point_left)
+        transform = QTransform()
+        deg_angle = 180+180/3.14*radians_angle
+        transform.rotate(deg_angle)
+        path = path.translated(-path.boundingRect().center())
+        path = transform.map(path)
         painter.drawPath(path)
-        painter.resetTransform()
 
     def elementsHistoryForwards(self):
         self.elementsDeactivateTextElements()

@@ -1678,7 +1678,7 @@ class ElementsMixin(ElementsTransformMixin):
                 painter.setFont(font)
                 painter.drawText(end_point_rect.adjusted(-20, -20, 20, 20), Qt.AlignCenter,
                                                                         str(element.number))
-            painter.resetTransform()                
+            painter.resetTransform()
         elif el_type == ToolID.text:
             if element.pixmap:
                 pixmap = QPixmap(element.pixmap.size())
@@ -1738,7 +1738,7 @@ class ElementsMixin(ElementsTransformMixin):
                 # painter.setBrush(QBrush(QColor(150, 150, 0), Qt.BDiagPattern))
                 pass
             painter.drawRect(rect)
-            painter.resetTransform()            
+            painter.resetTransform()
         elif el_type == ToolID.picture:
             if element.background_image and not self.show_background:
                 pass

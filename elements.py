@@ -644,6 +644,9 @@ class ElementsMixin(ElementsTransformMixin):
 
         self.elements_final_output = None
 
+        # хоть эти три атрибута и начинаются со слова "canvas",
+        # но здесь они на самом деле значат "viewport",
+        # потому что управляют лишь отображением холста на экране
         self.canvas_origin = QPointF(0, 0)
         self.canvas_scale_x = 1.0
         self.canvas_scale_y = 1.0

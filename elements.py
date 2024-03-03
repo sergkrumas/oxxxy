@@ -465,9 +465,6 @@ class ElementsMixin(ElementsTransformMixin):
                 elif isinstance(attr_value, (bool, int, float, str, tuple, list)):
                     attr_data = attr_value
 
-                elif isinstance(attr_value, ElementSizeMode):
-                    attr_data = int(attr_value)
-
                 elif isinstance(attr_value, QPainterPath):
                     filename = f"path_{attr_name}_{n:04}.data"
                     filepath = os.path.join(folder_path, filename)
@@ -631,9 +628,6 @@ class ElementsMixin(ElementsTransformMixin):
 
                 elif attr_type in ['bool', 'int', 'float', 'str', 'tuple', 'list']:
                     attr_value = attr_data
-
-                elif attr_type in ['ElementSizeMode']:
-                    attr_value = ElementSizeMode(attr_data)
 
                 elif attr_type in ['QPainterPath']:
                     filepath = os.path.join(folder_path, attr_data)

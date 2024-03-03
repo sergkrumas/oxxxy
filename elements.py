@@ -1241,15 +1241,12 @@ class ElementsMixin(ElementsTransformMixin):
             delta = QPoint(value, 0)
         elif key == Qt.Key_Left:
             delta = QPoint(-value, 0)
-        element = None or self.selected_element
-        if element:
+        for element in self.selected_items:
             element = self.elementsCreateModificatedCopyOnNeed(element)
-            if hasattr(element, "path"):
-                element.path.translate(QPointF(delta))
-            if hasattr(element, "start_point"):
-                element.start_point += delta
-            if hasattr(element, "end_point"):
-                element.end_point += delta
+            if hasattr(element, 'element_position'):
+                element.element_position += delta
+            else:
+                raise Exception('Unsupported type:', element.type)
             self.elementsSetSelected(element)
         self.update()
 

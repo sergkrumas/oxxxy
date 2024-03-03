@@ -188,7 +188,7 @@ class Element():
         elif self.type in [ToolID.blurring, ToolID.darkening, ToolID.multiframing]:
             self.calc_local_data_default()
         else:
-            raise Exception('new error')
+            raise Exception('calc_local_data', self.type)
 
     @property
     def calc_area(self):
@@ -962,6 +962,8 @@ class ElementsMixin(ElementsTransformMixin):
     def elementsCreateNewSlot(self, comment):
         hs = ElementsHistorySlot(comment)
         self.history_slots.append(hs)
+        self.elements_history_index += 1
+        print('new slot created, index', self.elements_history_index)
         return hs
 
     def elementsAppendElementToHS(self, element, hs):
@@ -969,7 +971,7 @@ class ElementsMixin(ElementsTransformMixin):
         element.hs = hs
 
     def elementsGetLastHS(self):
-        return self.history_slots[-1]
+        return self.elementsHistoryFilterSlots()[-1]
 
     def elementsCreateNew(self, element_type, start_drawing=False, create_new_slot=True, comment=None):
         self.elementsDeactivateTextElements()
@@ -978,6 +980,7 @@ class ElementsMixin(ElementsTransformMixin):
         if create_new_slot:
             if comment is None:
                 comment = element_type
+            self.history_slots = self.elementsHistoryFilterSlots()
             hs = self.elementsCreateNewSlot(comment)
         else:
             hs = self.elementsGetLastHS()
@@ -1005,11 +1008,14 @@ class ElementsMixin(ElementsTransformMixin):
     def elementsAllVisibleElements(self):
         return self.elementsHistoryFilter()
 
+    def elementsHistoryFilterSlots(self):
+        # all visible slots
+        return self.history_slots[:self.elements_history_index]
+
     def elementsHistoryFilter(self, only_filter=False):
         # фильтрация по индексу
-        visible_slots = self.history_slots[:self.elements_history_index]
         visible_elements = []
-        for hs in self.history_slots:
+        for hs in self.elementsHistoryFilterSlots():
             visible_elements.extend(hs.elements)
 
         if only_filter:

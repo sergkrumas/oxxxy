@@ -738,8 +738,9 @@ class ElementsMixin(ElementsTransformMixin):
             se.pixmap = se.backup_pixmap
             se.backup_pixmap = None
         se.frame_info = frame_info
-        pos = (se.start_point + se.end_point)/2
-        self.elementsSetPictureElementPoints(se, pos)
+        se.calc_local_data()
+        se.element_scale_y = 1.0
+        se.element_scale_y = 1.0
         self.elementsSetSelected(se)
 
     def elementsSetPixmapFromMagazin(self):

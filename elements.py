@@ -145,7 +145,8 @@ class Element():
         self._touched = False
 
     def __repr__(self):
-        return f'{self.type} {hex(id(self))}'
+        # return f'{self.type} {hex(id(self))}'
+        return f'{self.unique_index} {self.type}'
 
     def calc_local_data_default(self):
         self.element_position = (self.start_point + self.end_point)/2.0
@@ -1933,17 +1934,43 @@ class ElementsMixin(ElementsTransformMixin):
             info_rect = build_valid_rectF(pos, self.rect().topRight())
             painter.fillRect(info_rect, QColor(0, 0, 0, 180))
             info_rect.moveBottomLeft(QPointF(10, -10) + info_rect.bottomLeft())
-            for index, hs in reversed(list(enumerate(self.history_slots))):
+
+            visible_elements = self.elementsHistoryFilter()
+
+            vertical_offset = 0
+
+            for index, hs in list(enumerate(self.history_slots)):
+                painter.save()
                 painter.setPen(Qt.white)
-                info_text = f'[{index}] {hs.comment}'
+                slot_info_text = f'[slot {index}] {hs.comment}'
                 font = painter.font()
+                pixel_height = 25
                 font.setPixelSize(20)
                 painter.setFont(font)
-                pos = info_rect.bottomLeft() + QPointF(0, -index*(25*2)-25)
-                painter.drawText(pos, info_text)
+                vertical_offset += (len(hs.elements) + 1)
+                pos = info_rect.bottomLeft() + QPointF(0, -vertical_offset*pixel_height)
+                painter.drawText(pos, slot_info_text)
                 info_text = f'{hs.elements}'
-                pos = info_rect.bottomLeft() + QPointF(20, -index*25*2)
-                painter.drawText(pos, info_text)
+                for i, elem in enumerate(hs.elements):
+
+                    painter.setPen(Qt.white)
+                    if elem not in visible_elements:
+                        painter.setPen(QPen(QColor(255, 100, 100)))
+                        font.setStrikeOut(True)
+                    else:
+                        painter.setPen(QPen(Qt.white))
+                        font.setStrikeOut(False)
+                    painter.setFont(font)                        
+                    if self.selected_items and elem in self.selected_items:
+                        painter.setPen(QPen(Qt.green))
+                    if hasattr(elem, "source_index"):
+                        info_text += f"[{elem.unique_index}] {elem.type} from [{elem.source_index}]"
+                    else:
+                        info_text += f"[{elem.unique_index}] {elem.type}"
+
+                    pos = info_rect.bottomLeft() + QPointF(20, -vertical_offset*pixel_height + pixel_height*(i+1))
+                    painter.drawText(pos, info_text)
+                painter.restore()
 
     def elementsUpdateFinalPicture(self):
         if self.capture_region_rect:

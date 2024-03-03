@@ -2443,6 +2443,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         }
         """
 
+        # для поддержки миксинов
         self.PictureInfo = PictureInfo
 
         self.input_POINT1 = None

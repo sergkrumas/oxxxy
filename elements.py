@@ -103,10 +103,10 @@ class Element():
                 n += 1
         self.number = n
 
-        if hasattr(type(self), "_counter"):
-            type(self)._counter += 1
+        if hasattr(Element, "_counter"):
+            Element._counter += 1
         else:
-            type(self)._counter = 0
+            Element._counter = 0
         self.unique_index = type(self)._counter
 
         self.fresh = True

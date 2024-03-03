@@ -252,6 +252,35 @@ class Element():
 
 class ElementsMixin(ElementsTransformMixin):
 
+    def elementsInit(self):
+        self.current_tool = ToolID.none
+        self.drag_capture_zone = False
+        self.ocp = self.mapFromGlobal(QCursor().pos())
+        self.current_capture_zone_center = QPoint(0, 0)
+
+        self.elements = []
+        self.elements_history_index = 0
+        self.elementsSetSelected(None)
+
+        self.elements_final_output = None
+
+        # хоть эти три атрибута и начинаются со слова "canvas",
+        # но здесь они на самом деле значат "viewport",
+        # потому что управляют лишь отображением холста на экране
+        self.canvas_origin = QPointF(0, 0)
+        self.canvas_scale_x = 1.0
+        self.canvas_scale_y = 1.0
+
+        self.drag_global = False
+        self.current_canvas_origin = QPoint(0, 0)
+
+        self.NUMBERING_WIDTH = 25
+
+        self.elementsIsFinalDrawing = False
+
+        # для выделения элементов и виджета трансформации элементов
+        self.elementsInitTransform()
+
     def elementsUpdateUI(self):
         self.update()
         if self.tools_window:
@@ -631,35 +660,6 @@ class ElementsMixin(ElementsTransformMixin):
         self.update()
 
         self.show_notify_dialog("Файл загружен")
-
-    def elementsInit(self):
-        self.current_tool = ToolID.none
-        self.drag_capture_zone = False
-        self.ocp = self.mapFromGlobal(QCursor().pos())
-        self.current_capture_zone_center = QPoint(0, 0)
-
-        self.elements = []
-        self.elements_history_index = 0
-        self.elementsSetSelected(None)
-
-        self.elements_final_output = None
-
-        # хоть эти три атрибута и начинаются со слова "canvas",
-        # но здесь они на самом деле значат "viewport",
-        # потому что управляют лишь отображением холста на экране
-        self.canvas_origin = QPointF(0, 0)
-        self.canvas_scale_x = 1.0
-        self.canvas_scale_y = 1.0
-
-        self.drag_global = False
-        self.current_canvas_origin = QPoint(0, 0)
-
-        self.NUMBERING_WIDTH = 25
-
-        self.elementsIsFinalDrawing = False
-
-        # для выделения элементов и виджета трансформации элементов
-        self.elementsInitTransform()
 
     def elementsMapFromViewportToCanvas(self, viewport_pos):
         delta = QPointF(viewport_pos - self.canvas_origin)

@@ -896,7 +896,7 @@ class ElementsMixin(ElementsTransformMixin):
         copy_textbox = None
         copy_textbox_value = None
         for attr_name, attr_value in attributes:
-            if attr_name == "unique_index":
+            if attr_name in ["unique_index", "hs", "hs_index"]:
                 continue
             type_class = type(attr_value)
             # if type_class is type(None):

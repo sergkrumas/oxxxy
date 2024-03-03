@@ -2512,7 +2512,6 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         # self.drag_capture_zone = False
         # self.ocp = QCursor().pos()
         # self.elements = []
-        # self.elements_history_index = -1
         # self.elements_final_output = None
         self.widget_activated = False
         self.selected_element = None

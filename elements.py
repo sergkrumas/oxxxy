@@ -119,8 +119,6 @@ class Element():
 
         self.size_mode = ElementSizeMode.User
 
-        self.history_group_id = None
-
         self.size = 1.0
 
         self.opacity = 1.0
@@ -266,10 +264,9 @@ class ElementsMixin(ElementsTransformMixin):
         self.current_capture_zone_center = QPoint(0, 0)
 
         self.elements = []
+        self.history_slots = []
         self.elements_history_index = 0
         self.elementsSetSelected(None)
-
-        self.history_slots = []
 
         self.elements_final_output = None
 
@@ -992,7 +989,7 @@ class ElementsMixin(ElementsTransformMixin):
         self.elementsAppendElementToHS(element, hs)
         self.elementsSetElementParameters(element)
         # обновление индекса после создания элемента
-        self.elements_history_index = len(self.elements)
+        self.elements_history_index = len(self.history_slots)
         return element
 
     def elementsFilterElementsForSelection(self):
@@ -1008,17 +1005,21 @@ class ElementsMixin(ElementsTransformMixin):
 
     def elementsHistoryFilter(self, only_filter=False):
         # фильтрация по индексу
-        elements = self.elements[:self.elements_history_index]
+        visible_slots = self.history_slots[:self.elements_history_index]
+        visible_elements = []
+        for hs in self.history_slots:
+            visible_elements.extend(hs.elements)
+
         if only_filter:
-            return elements
+            return visible_elements
         # не показываем удалённые элементы
-        # или элементы, что были скопированы для внесения изменений
+        # или элементы, что были скопированы для внесения изменений в уже существующие
         remove_indexes = []
-        for el in elements:
+        for el in visible_elements:
             if hasattr(el, "source_index"):
                 remove_indexes.append(el.source_index)
         non_deleted_elements = []
-        for index, el in enumerate(elements):
+        for index, el in enumerate(visible_elements):
             # if index not in remove_indexes:
             if el.unique_index not in remove_indexes:
                 non_deleted_elements.append(el)
@@ -1906,12 +1907,11 @@ class ElementsMixin(ElementsTransformMixin):
                     font.setStrikeOut(False)
                 if self.selected_element and self.selected_element == element:
                     painter.setPen(QPen(Qt.green))
-                gi = element.history_group_id
                 if hasattr(element, "source_index"):
                     el = element
-                    info_text += f"[{el.unique_index}] {el.type} from [{el.source_index}] {{{gi}}}"
+                    info_text += f"[{el.unique_index}] {el.type} from [{el.source_index}]"
                 else:
-                    info_text += f"[{element.unique_index}] {element.type} {{{gi}}}"
+                    info_text += f"[{element.unique_index}] {element.type}"
                 font.setWeight(1900)
                 font.setPixelSize(20)
                 painter.setFont(font)
@@ -2125,50 +2125,20 @@ class ElementsMixin(ElementsTransformMixin):
 
     def elementsHistoryForwards(self):
         self.elementsDeactivateTextElements()
-        if self.elements_history_index < len(self.elements):
-            els = self.elementsHistoryFilter()
-            if els:
-                el = els[-1]
-                prev = None
-                for e in self.elements:
-                    if prev == el:
-                        el = e
-                        break
-                    prev = e
-            if els and el.history_group_id is not None:
-                # for group of elements
-                group_id = el.history_group_id
-                count = len([el for el in self.elements if el.history_group_id == group_id])
-                self.elements_history_index += count
-            else:
-                # default
-                self.elements_history_index += 1
+        if self.elements_history_index < len(self.history_slots):
+            self.elements_history_index += 1
         self.elementsSetSelected(None)
 
     def elementsHistoryBackwards(self):
         self.elementsDeactivateTextElements()
         if self.elements_history_index > 0:
-            els = self.elementsHistoryFilter()
-            el = els[-1]
-            if el.history_group_id is not None:
-                # for group of elements
-                group_id = el.history_group_id
-                count = len([el for el in self.elements if el.history_group_id == group_id])
-                self.elements_history_index -= count
-            else:
-                # default
-                self.elements_history_index -= 1
+            self.elements_history_index -= 1
         self.elementsSetSelected(None)
 
     def elementsUpdateHistoryButtonsStatus(self):
-        # print(self.elements_history_index, len(self.elements))
-        f = self.elements_history_index < len(self.elements)
+        f = self.elements_history_index < len(self.history_slots)
         b = self.elements_history_index > 0
         return f, b
-
-    def elements_get_history_group_id(self):
-        self.history_group_counter += 1
-        return self.history_group_counter
 
     def elementsSetCaptureFromContent(self):
         points = []

@@ -2574,8 +2574,8 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         element.pixmap = background_pixmap
         element.angle = 0
         element.background_image = True
-        pos = QPointF(background_pixmap.width()/2, background_pixmap.height()/2)
-        r = self.elementsSetPictureElementPoints(element, pos, pos_as_center=True)
+        element.calc_local_data()
+        element.element_position = QPointF(background_pixmap.width()/2, background_pixmap.height()/2)
 
     def request_editor_mode(self, paths_or_pixmaps):
         pixmaps = []

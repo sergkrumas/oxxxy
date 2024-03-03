@@ -162,6 +162,10 @@ class Element():
         self.element_width = bb.width()
         self.element_height = bb.height()
 
+    def calc_local_data_picture(self):
+        self.element_width = self.pixmap.width()
+        self.element_height = self.pixmap.height()
+
     def recalc_input_data_default(self):
         p = self.element_position
         w = self.element_width
@@ -188,6 +192,8 @@ class Element():
             self.calc_local_data_default()
         elif self.type in [ToolID.blurring, ToolID.darkening, ToolID.multiframing]:
             self.calc_local_data_default()
+        elif self.type in [ToolID.picture]:
+            self.calc_local_data_picture()
         else:
             raise Exception('calc_local_data', self.type)
 
@@ -730,16 +736,8 @@ class ElementsMixin(ElementsTransformMixin):
             self.elementsChangeTextbox(element)
         if element.type == ToolID.blurring:
             self.elementsSetBlurredPixmap(element)
-        # только для инструмента transform, ибо иначе на практике не очень удобно
-        if tw and element.type == ToolID.picture and tw.current_tool == ToolID.transform:
-            if hasattr(element, "pixmap"):
-                r_first = build_valid_rect(element.start_point, element.end_point)
-                self.elementsSetPictureElementPoints(element, r_first.center())
-                # этим вызовом обновляем виджет
-                self.elementsSetSelected(element)
 
-    def elementsSetPictureElementPoints(self, element, pos, pos_as_center=True,
-                                                                            do_not_resize=True):
+    def elementsSetPictureElementPoints(self, element, pos, pos_as_center=True, do_not_resize=True):
         is_user_mode = element.size_mode == ElementSizeMode.User
         size = element.size
         if pos_as_center:
@@ -1006,7 +1004,8 @@ class ElementsMixin(ElementsTransformMixin):
 
     def elementsFilterElementsForSelection(self):
         # здесь в будущем надо будет прописывать три случая
-        return self.elementsAllVisibleElementsButBackground()
+        # return self.elementsAllVisibleElementsButBackground()
+        return self.elementsAllVisibleElements()
 
     def elementsAllVisibleElementsButBackground(self):
         visible_elements = self.elementsAllVisibleElements()
@@ -1789,19 +1788,15 @@ class ElementsMixin(ElementsTransformMixin):
             else:
                 current_opacity = painter.opacity()
                 picture_opacity = current_opacity*element.opacity
-                # print(picture_opacity)
+                painter.setTransform(element.get_transform_obj(canvas=self))
                 painter.setOpacity(min(1.0, picture_opacity))
                 pixmap = element.pixmap
-                r = build_valid_rectF(element.start_point, element.end_point)
-                r = self.elementsMapFromCanvasToViewportRectF(r)
+                r = element.get_size_rect()
+                r.moveCenter(QPointF(0, 0))
                 s = QRectF(QPointF(0,0), QSizeF(pixmap.size()))
-                # painter.translate(r.center())
-                # rotation = element.angle
-                # painter.rotate(rotation)
-                # r = QRect(int(-r.width()/2), int(-r.height()/2), r.width(), r.height())
                 painter.drawPixmap(r, pixmap, s)
-                # painter.resetTransform()
                 painter.setOpacity(current_opacity)
+                painter.resetTransform()
         elif el_type == ToolID.removing:
             if self.Globals.CRASH_SIMULATOR:
                 1 / 0

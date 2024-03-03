@@ -63,7 +63,7 @@ from elements import ElementsMixin, ToolID
 class Globals():
     DEBUG = True
     DEBUG_SETTINGS_WINDOW = False
-    DEBUG_ELEMENTS = False
+    DEBUG_ELEMENTS = True
     DEBUG_ELEMENTS_PICTURE_FRAMING = True
     DEBUG_ELEMENTS_COLLAGE = False
     CRASH_SIMULATOR = False
@@ -2635,12 +2635,11 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             pixmap = QPixmap(filepath)
             element = self.elementsCreateNew(ToolID.picture)
             element.pixmap = pixmap
-            element.angle = 0
-            element.size = 1.0
-            pos = self.input_POINT2
-            self.elementsSetPictureElementPoints(element, pos, pos_as_center=False)
+            element.calc_local_data()
+            element.element_position = self.input_POINT2
+            element.element_position += QPointF(pixmap.width()/2, pixmap.height()/2)
             self.elementsSetSelected(element)
-            self.elementsSelectedElementParamsToUI()
+            self.elementsUpdatePanelUI()
         self.update()
 
     def show_view_window(self, get_pixmap_callback_func, _type="final", data=None):

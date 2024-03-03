@@ -1354,6 +1354,8 @@ class ElementsMixin(ElementsTransformMixin):
                     self.selection_rect = build_valid_rectF(self.selection_start_point, self.selection_end_point)
                     self.canvas_selection_callback(event.modifiers() == Qt.ShiftModifier)
 
+            # for element in self.selected_items:
+            #     element = self.elementsCreateModificatedCopyOnNeed(element)
 
         self.update()
 

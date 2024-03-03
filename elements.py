@@ -737,32 +737,6 @@ class ElementsMixin(ElementsTransformMixin):
         if element.type == ToolID.blurring:
             self.elementsSetBlurredPixmap(element)
 
-    def elementsSetPictureElementPoints(self, element, pos, pos_as_center=True, do_not_resize=True):
-        is_user_mode = element.size_mode == ElementSizeMode.User
-        size = element.size
-        if pos_as_center:
-            r = self.elementsPictureRect(pos, size, element.pixmap, use_user_scale=is_user_mode)
-            element.start_point = r.topLeft()
-            element.end_point = r.bottomRight()
-        else:
-            if do_not_resize and is_user_mode:
-                size += self.Globals.ELEMENT_SIZE_RANGE_OFFSET
-            w = math.ceil(element.pixmap.width()*size)
-            h = math.ceil(element.pixmap.height()*size)
-            element.start_point = QPointF(pos)
-            element.end_point = pos + QPointF(w, h)
-        element.element_width = element.pixmap.width()
-        element.element_height = element.pixmap.height()
-        return build_valid_rect(element.start_point, element.end_point)
-
-    def elementsPictureRect(self, center_point, size, pixmap, use_user_scale=True):
-        s = size
-        if use_user_scale:
-            s += self.Globals.ELEMENT_SIZE_RANGE_OFFSET
-        r = QRectF(0, 0, math.ceil(pixmap.width()*s), math.ceil(pixmap.height()*s))
-        r.moveCenter(center_point)
-        return r
-
     def elementsFramePicture(self, frame_rect=None, frame_info=None, pixmap=None):
         se = self.selected_element
         if frame_rect:

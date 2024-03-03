@@ -41,8 +41,8 @@ from PyQt5.QtWidgets import (QSystemTrayIcon, QWidget, QMessageBox, QMenu, QFile
     QHBoxLayout, QCheckBox, QVBoxLayout, QTextEdit, QGridLayout,
     QPushButton, QLabel, QApplication, QScrollArea, QDesktopWidget)
 from PyQt5.QtCore import (QUrl, QMimeData, pyqtSignal, QPoint, QPointF, pyqtSlot, QRect, QEvent,
-    QTimer, Qt, QSize, QRectF, QThread, QAbstractNativeEventFilter, QAbstractEventDispatcher,
-    QFile, QDataStream, QIODevice)
+    QTimer, Qt, QSize, QSizeF, QRectF, QThread, QAbstractNativeEventFilter,
+    QAbstractEventDispatcher, QFile, QDataStream, QIODevice)
 from PyQt5.QtGui import (QPainterPath, QColor, QKeyEvent, QMouseEvent, QBrush, QPixmap,
     QPaintEvent, QPainter, QWindow, QPolygon, QImage, QTransform, QPen, QLinearGradient,
     QIcon, QFont, QCursor, QPolygonF, QVector2D)
@@ -2003,10 +2003,10 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             self.tools_window.size_slider.value,
             self.current_picture_pixmap,
         )
-        s = QRect(QPoint(0,0), pixmap.size())
+        s = QRectF(QPoint(0,0), QSizeF(pixmap.size()))
         painter.translate(r.center())
         painter.rotate(rotation)
-        r = QRect(int(-r.width()/2), int(-r.height()/2), r.width(), r.height())
+        r = QRectF(int(-r.width()/2), int(-r.height()/2), r.width(), r.height())
         painter.drawPixmap(r, pixmap, s)
         painter.resetTransform()
         painter.setOpacity(1.0)
@@ -2442,6 +2442,8 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         QMenu::item:checked {
         }
         """
+
+        self.PictureInfo = PictureInfo
 
         self.input_POINT1 = None
         self.input_POINT2 = None

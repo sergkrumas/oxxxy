@@ -783,8 +783,8 @@ class ElementsMixin(ElementsTransformMixin):
 
     def elementsSetPixmapFromMagazin(self):
         if not self.Globals.dasPictureMagazin and \
-                                        self.current_picture_id in [PictureInfo.TYPE_FROM_MAGAZIN]:
-            self.current_picture_id = PictureInfo.TYPE_FROM_FILE
+                                        self.current_picture_id in [self.PictureInfo.TYPE_FROM_MAGAZIN]:
+            self.current_picture_id = self.PictureInfo.TYPE_FROM_FILE
             self.current_picture_pixmap = None
             self.current_picture_angle = 0
 
@@ -794,7 +794,7 @@ class ElementsMixin(ElementsTransformMixin):
             capture_height = max(self.capture_region_rect.height(), 100)
             if pixmap.height() > capture_height:
                 pixmap = pixmap.scaledToHeight(capture_height, Qt.SmoothTransformation)
-            self.current_picture_id = PictureInfo.TYPE_FROM_MAGAZIN
+            self.current_picture_id = self.PictureInfo.TYPE_FROM_MAGAZIN
             self.current_picture_pixmap = pixmap
             self.current_picture_angle = 0
             tw = self.tools_window
@@ -1004,8 +1004,8 @@ class ElementsMixin(ElementsTransformMixin):
 
     def elementsFilterElementsForSelection(self):
         # здесь в будущем надо будет прописывать три случая
-        # return self.elementsAllVisibleElementsButBackground()
-        return self.elementsAllVisibleElements()
+        return self.elementsAllVisibleElementsButBackground()
+        # return self.elementsAllVisibleElements()
 
     def elementsAllVisibleElementsButBackground(self):
         visible_elements = self.elementsAllVisibleElements()
@@ -1158,8 +1158,9 @@ class ElementsMixin(ElementsTransformMixin):
                 element.copy_pos = event_pos
         elif tool == ToolID.picture:
             element.pixmap = self.current_picture_pixmap
-            element.angle = self.current_picture_angle
-            self.elementsSetPictureElementPoints(element, event_pos)
+            element.element_rotation = self.current_picture_angle
+            element.element_position = event_pos
+            element.calc_local_data()
         elif tool in [ToolID.pen, ToolID.marker]:
             if event.modifiers() & Qt.ShiftModifier:
                 element.straight = True
@@ -1292,8 +1293,8 @@ class ElementsMixin(ElementsTransformMixin):
                 element.copy_pos = event_pos
         elif tool == ToolID.picture:
             element.pixmap = self.current_picture_pixmap
-            element.angle = self.current_picture_angle
-            self.elementsSetPictureElementPoints(element, event_pos)
+            element.element_rotation = self.current_picture_angle
+            element.element_position = event_pos
         elif tool in [ToolID.pen, ToolID.marker]:
             if element.straight:
                 element.end_point = event_pos
@@ -1385,8 +1386,8 @@ class ElementsMixin(ElementsTransformMixin):
                 element.finished = True
         elif tool == ToolID.picture:
             element.pixmap = self.current_picture_pixmap
-            element.angle = self.current_picture_angle
-            self.elementsSetPictureElementPoints(element, event_pos)
+            element.element_rotation = self.current_picture_angle
+            element.element_position = event_pos
             self.elementsSetPixmapFromMagazin()
         elif tool in [ToolID.pen, ToolID.marker]:
             if element.straight:
@@ -2456,7 +2457,7 @@ class ElementsMixin(ElementsTransformMixin):
                 capture_height = max(self.capture_region_rect.height(), 100)
                 if pixmap.height() > capture_height:
                     pixmap = pixmap.scaledToHeight(capture_height, Qt.SmoothTransformation)
-                self.current_picture_id = PictureInfo.TYPE_FROM_FILE
+                self.current_picture_id = self.PictureInfo.TYPE_FROM_FILE
                 self.current_picture_pixmap = pixmap
                 self.current_picture_angle = 0
                 tools_window = self.tools_window

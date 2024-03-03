@@ -1890,38 +1890,6 @@ class ElementsMixin(ElementsTransformMixin):
             painter.drawPixmap(screenshot_cursor_position, self.cursor_pixmap)
 
     def elementsDrawDebugInfo(self, painter):
-        # draw debug elements' list
-        if self.elements:
-            if self.capture_region_rect:
-                pos = self.elementsMapFromCanvasToViewport(self.capture_region_rect.bottomLeft())
-            else:
-                pos = self.mapFromGlobal(QCursor().pos())
-            all_elements = self.elements
-            visible_elements = self.elementsHistoryFilter()
-            info_rect = QRectF(QPointF(0, 0), pos-QPointF(10, 10))
-            painter.fillRect(QRectF(QPointF(0, 0), pos), QColor(0, 0, 0, 180))
-
-            for index, element in reversed(list(enumerate(all_elements))):
-                painter.setPen(QPen(Qt.white))
-                info_text = ""
-                font = painter.font()
-                if element not in visible_elements:
-                    painter.setPen(QPen(QColor(255, 100, 100)))
-                    font.setStrikeOut(True)
-                else:
-                    font.setStrikeOut(False)
-                if self.selected_element and self.selected_element == element:
-                    painter.setPen(QPen(Qt.green))
-                if hasattr(element, "source_index"):
-                    el = element
-                    info_text += f"[{el.unique_index}] {el.type} from [{el.source_index}]"
-                else:
-                    info_text += f"[{element.unique_index}] {element.type}"
-                font.setWeight(1900)
-                font.setPixelSize(20)
-                painter.setFont(font)
-                painter.drawText(info_rect.bottomRight() + QPoint(-250, -index*25), info_text)
-
         if self.elements:
             if self.capture_region_rect:
                 pos = self.elementsMapFromCanvasToViewport(self.capture_region_rect.bottomRight())
@@ -1957,7 +1925,7 @@ class ElementsMixin(ElementsTransformMixin):
                     else:
                         painter.setPen(QPen(Qt.white))
                         font.setStrikeOut(False)
-                    painter.setFont(font)                        
+                    painter.setFont(font)
                     if self.selected_items and elem in self.selected_items:
                         painter.setPen(QPen(Qt.green))
                     if hasattr(elem, "source_index"):

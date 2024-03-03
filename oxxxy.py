@@ -2495,7 +2495,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         self.show_help_hint = False
         # для рисования элементов на скриншоте
         self.elementsInit()
-        self.create_background_pictures()
+        self.elementsCreateBackgroundPictures()
 
         self.setWindowTitle(f"Oxxxy Screenshoter {Globals.VERSION_INFO} {Globals.AUTHOR_INFO}")
 
@@ -2567,9 +2567,9 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         self.update_tools_window()
         self.update()
 
-    def create_background_pictures(self):
+    def elementsCreateBackgroundPictures(self):
         background_pixmap = QPixmap.fromImage(self.source_pixels)
-        element = self.elementsCreateNew(ToolID.picture)
+        element = self.elementsCreateNew(ToolID.picture, comment='background')
         element.size = 0.5
         element.pixmap = background_pixmap
         element.angle = 0

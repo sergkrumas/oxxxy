@@ -971,12 +971,14 @@ class ElementsMixin(ElementsTransformMixin):
     def elementsGetLastHS(self):
         return self.history_slots[-1]
 
-    def elementsCreateNew(self, element_type, start_drawing=False, create_new_slot=True):
+    def elementsCreateNew(self, element_type, start_drawing=False, create_new_slot=True, comment=None):
         self.elementsDeactivateTextElements()
         # срезание отменённой (невидимой) части истории
         # перед созданием элемента
         if create_new_slot:
-            hs = self.elementsCreateNewSlot(element_type)
+            if comment is None:
+                comment = element_type
+            hs = self.elementsCreateNewSlot(comment)
         else:
             hs = self.elementsGetLastHS()
         case1 = element_type == ToolID.removing

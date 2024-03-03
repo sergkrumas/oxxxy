@@ -2582,7 +2582,6 @@ class ScreenshotWindow(QWidget, ElementsMixin):
 
     def request_editor_mode(self, paths_or_pixmaps):
         pixmaps = []
-        pos = QPoint(0, 0)
         self.input_POINT2 = QPoint(0, 0)
         self.input_POINT1 = self.frameGeometry().bottomRight()
         self.user_input_started = False
@@ -2594,6 +2593,8 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         tw.initialization = True
         tw.set_current_tool(ToolID.picture)
         points = []
+        elementTopLeft = QPointF(0, 0)
+        elementBottomRight = QPointF(0, 0)
         for path_or_pix in paths_or_pixmaps:
             if isinstance(path_or_pix, QPixmap):
                 pixmap = path_or_pix
@@ -2601,20 +2602,19 @@ class ScreenshotWindow(QWidget, ElementsMixin):
                 pixmap = QPixmap(path_or_pix)
             if pixmap.width() != 0:
                 element = self.elementsCreateNew(ToolID.picture)
-                element.size = 1.0
                 element.pixmap = pixmap
-                element.angle = 0
-                r = self.elementsSetPictureElementPoints(element, pos, pos_as_center=False)
-                pos += QPoint(r.width(), 0)
+                elementBottomRight = elementTopLeft + QPointF(pixmap.width(), pixmap.height())
+                element.element_position = (elementTopLeft + elementBottomRight) / 2.0
+                element.calc_local_data()
+                elementTopLeft += QPointF(pixmap.width(), 0)
                 pixmaps.append(pixmap)
-                points.append(element.start_point)
-                points.append(element.end_point)
         if pixmaps:
-            self.input_POINT2, self.input_POINT1 = get_bounding_points(points)
+            self.input_POINT2, self.input_POINT1 = get_bounding_points([QPointF(0, 0), elementBottomRight])
         else:
             self.input_POINT2 = QPoint(0, 0)
             self.input_POINT1 = self.frameGeometry().bottomRight()
         self.capture_region_rect = build_valid_rectF(self.input_POINT1, self.input_POINT2)
+        print(self.capture_region_rect, self.input_POINT1, self.input_POINT2)
         tw.set_current_tool(ToolID.transform)
         tw.forwards_backwards_update()
         self.update_tools_window()
@@ -2727,7 +2727,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         self.autopos_tools_window()
 
     def autopos_tools_window(self):
-        if self.tools_window:
+        if self.tools_window and self.capture_region_rect:
             capture_region_rect = self.elementsMapFromCanvasToViewportRectF(self.capture_region_rect)
             self.tools_window.do_autopositioning(capture_region_rect)
 

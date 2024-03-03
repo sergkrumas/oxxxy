@@ -104,8 +104,6 @@ class Element():
 
         self.backup_pixmap = None
 
-        self.choose_default_subelement = True # for copypaste and zoom_in_region
-
         self.frame_info = None
 
         self.opacity = 1.0
@@ -1024,16 +1022,7 @@ class ElementsMixin(ElementsTransformMixin):
                         QSize(w, w)).contains(cursor_pos)
                 is_mouse_over = is_mouse_over1 or is_mouse_over2
             elif el.type in [ToolID.zoom_in_region, ToolID.copypaste]:
-                is_mouse_over1 = build_valid_rect(el.start_point, el.end_point).contains(cursor_pos)
-                is_mouse_over2 = False
-                if is_mouse_over1:
-                    el.choose_default_subelement = True
-                elif el.copy_pos:
-                    sub_element_rect = self.elementsBuildSubelementRect(el, el.copy_pos)
-                    is_mouse_over2 = sub_element_rect.contains(cursor_pos)
-                    if is_mouse_over2:
-                        el.choose_default_subelement = False
-                is_mouse_over = is_mouse_over1 or is_mouse_over2
+                is_mouse_over = build_valid_rect(el.start_point, el.end_point).contains(cursor_pos)
             else:
                 is_mouse_over = build_valid_rect(el.start_point, el.end_point).contains(cursor_pos)
             if is_mouse_over:

@@ -44,13 +44,6 @@ from _utils import (convex_hull, check_scancode_for, SettingsJson,
 
 from elements_transform import ElementsTransformMixin
 
-class ElementSizeMode(Enum):
-    User = 0
-    Special = 0
-
-    def __int__(self):
-        return self.value
-
 
 class ToolID():
     none = "none"
@@ -91,8 +84,6 @@ class Element():
         self.copy_pos = None
         self.zoom_second_input = False
 
-        self.rotation = 0
-
         self.background_image = False
 
         elements_list.append(self)
@@ -116,10 +107,6 @@ class Element():
         self.choose_default_subelement = True # for copypaste and zoom_in_region
 
         self.frame_info = None
-
-        self.size_mode = ElementSizeMode.User
-
-        self.size = 1.0
 
         self.opacity = 1.0
 

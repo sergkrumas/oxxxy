@@ -857,20 +857,17 @@ class ElementsMixin(ElementsTransformMixin):
         self.update()
 
     def elementsRemoveElement(self):
-        if not self.elements:
+        if not self.elementsHistoryFilterSlots():
             return
-        try:
-            candidat = self.selected_element or self.elementsHistoryFilter()[-1]
-            if candidat not in self.elementsHistoryFilter(): # for selected_element
-                candidat = None
-        except Exception:
-            candidat = None
-        if (not candidat) or candidat.type == ToolID.removing:
-            return
-        element = self.elementsCreateNew(ToolID.removing)
-        # element.source_index = self.elements.index(candidat)
-        element.source_index = candidat.unique_index
-        self.elementsSetSelected(None)
+        create_new_slot = True
+        if self.selected_items:
+            for candidat in self.selected_items:
+                if candidat.type == ToolID.removing:
+                    continue
+                element = self.elementsCreateNew(ToolID.removing, create_new_slot=create_new_slot)
+                create_new_slot = False # first candidat creates new history slot for all candidates
+                element.source_index = candidat.unique_index
+            self.elementsSetSelected(None)
         self.update()
 
     def elementsGetLastElement(self):
@@ -964,7 +961,6 @@ class ElementsMixin(ElementsTransformMixin):
         hs = ElementsHistorySlot(comment)
         self.history_slots.append(hs)
         self.elements_history_index += 1
-        print('new slot created, index', self.elements_history_index)
         return hs
 
     def elementsAppendElementToHS(self, element, hs):
@@ -1953,6 +1949,7 @@ class ElementsMixin(ElementsTransformMixin):
                 info_text = f'{hs.elements}'
                 for i, elem in enumerate(hs.elements):
 
+                    info_text = ""
                     painter.setPen(Qt.white)
                     if elem not in visible_elements:
                         painter.setPen(QPen(QColor(255, 100, 100)))

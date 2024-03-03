@@ -232,3 +232,4 @@
       - избавился от вызова elementsSetPictureElementPoints в методе обрезки картинки
       - избавился от вызова elementsSetPictureElementPoints в методе обрезки серии картинок
       - избавился от вызова elementsSetPictureElementPoints в методе вставки картинки из буфера обмена
+      - избавился от вызова elementsSetPictureElementPoints в методе подгонки серии картинок под одну

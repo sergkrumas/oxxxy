@@ -2444,6 +2444,8 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         # для поддержки миксинов
         self.PictureInfo = PictureInfo
 
+        self.cancel_context_menu = False
+
         self.input_POINT1 = None
         self.input_POINT2 = None
         self.capture_region_rect = None
@@ -2935,8 +2937,13 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         alt = event.modifiers() & Qt.AltModifier
         no_mod = event.modifiers() == Qt.NoModifier
 
+        stamp_size_change_activated = event.buttons() == Qt.RightButton and self.current_tool == ToolID.picture
+
         if ctrl:
             self.change_magnifier_size(delta_value)
+        elif stamp_size_change_activated:
+            self.current_picture_angle += delta_value/10
+            self.cancel_context_menu = True
         else:
             self.elementsDoScaleCanvas(scroll_value, ctrl, shift, no_mod)
             self.autopos_tools_window()
@@ -2957,6 +2964,10 @@ class ScreenshotWindow(QWidget, ElementsMixin):
     def contextMenuEvent(self, event):
         contextMenu = QMenu()
         contextMenu.setStyleSheet(self.context_menu_stylesheet)
+
+        if self.cancel_context_menu:
+            self.cancel_context_menu = False
+            return
 
         bitmap_cancel = QPixmap(50, 50)
         bitmap_cancel.fill(Qt.transparent)

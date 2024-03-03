@@ -2311,7 +2311,6 @@ class ElementsMixin(ElementsTransformMixin):
 
         cmp_func = lambda x: QRect(x.start_point, x.end_point).center().x()
         elements = list(sorted(elements, key=cmp_func))
-        points = []
 
         if action == None:
             pass
@@ -2324,30 +2323,29 @@ class ElementsMixin(ElementsTransformMixin):
 
             pos = QPoint(0, 0)
 
-            group_id = self.elements_get_history_group_id()
             for source_element in elements:
                 element = self.elementsCreateModificatedCopyOnNeed(source_element, force_new=True)
 
                 if action == horizontal:
-                    element.size = max_height / element.pixmap.height()
+                    scale = max_height / element.pixmap.height()
                 elif action == vertical:
-                    element.size = max_width / element.pixmap.width()
-                element.size_mode = ElementSizeMode.Special
+                    scale = max_width / element.pixmap.width()
 
-                r = self.elementsSetPictureElementPoints(element, pos, pos_as_center=False,
-                                do_not_resize=False)
+                element.element_scale_x = scale
+                element.element_scale_y = scale
+
+                element.calc_local_data()
+                ws = element.pixmap.width() * scale
+                hs = element.pixmap.height() * scale
+                element.element_position = pos + QPointF(ws, hs)/2
 
                 if action == horizontal:
-                    pos += QPoint(r.width(), 0)
+                    pos += QPoint(ws, 0)
                 elif action == vertical:
-                    pos += QPoint(0, r.height())
-
-                element.history_group_id = group_id
-
-                points.append(element.start_point)
-                points.append(element.end_point)
+                    pos += QPoint(0, wh)
 
             # обновление области захвата
+            # !!! TODO тут лучше взять у каждого элемента его границы и взять от них bounding_box
             self.input_POINT2, self.input_POINT1 = get_bounding_points(points)
             self.capture_region_rect = self._build_valid_rect(self.input_POINT1, self.input_POINT2)
 

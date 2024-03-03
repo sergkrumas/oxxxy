@@ -1281,7 +1281,7 @@ class ToolsWindow(QWidget):
         self.color_slider.setEnabled(True)
         self.size_slider.setEnabled(True)
         self.opacity_slider.setEnabled(False)
-        if _type in [ToolID.blurring, ToolID.darkening, ToolID.picture]:
+        if _type in [ToolID.blurring, ToolID.darkening]:
             self.color_slider.setEnabled(False)
             if _type in [ToolID.blurring]:
                 self.chb_toolbool.setEnabled(True)
@@ -1293,6 +1293,7 @@ class ToolsWindow(QWidget):
             self.chb_toolbool.setEnabled(False)
         if _type in [ToolID.transform, ToolID.picture]:
             self.opacity_slider.setEnabled(True)
+            self.size_slider.setEnabled(False)
         self.change_ui_text(_type)
         self.parent().update()
 
@@ -1311,7 +1312,6 @@ class ToolsWindow(QWidget):
             }
         elif self.current_tool == ToolID.picture:
             data =  {
-                "size_slider_value": self.size_slider.value,
                 "picture_id": self.parent().current_picture_id,
                 "picture_angle": self.parent().current_picture_angle,
                 "opacity_slider_value": self.opacity_slider.value,

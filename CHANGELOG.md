@@ -234,3 +234,4 @@
       - избавился от вызова elementsSetPictureElementPoints в методе вставки картинки из буфера обмена
       - избавился от вызова elementsSetPictureElementPoints в методе подгонки серии картинок под одну
       - избавился от вызова elementsSetPictureElementPoints в методе автоколлажа
+      - избавился от вызова elementsPictureRect, определение которой ранее удалил

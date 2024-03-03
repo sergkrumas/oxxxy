@@ -1998,11 +1998,9 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         pixmap = self.current_picture_pixmap
         rotation = self.current_picture_angle
         painter.setOpacity(0.5)
-        r = self.elementsPictureRect(
-            cursor_pos,
-            self.tools_window.size_slider.value,
-            self.current_picture_pixmap,
-        )
+        size = 1.0 or self.tools_window.size_slider.value
+        r = QRectF(0, 0, pixmap.width()*size, pixmap.height()*size)
+        r.moveCenter(cursor_pos)
         s = QRectF(QPoint(0,0), QSizeF(pixmap.size()))
         painter.translate(r.center())
         painter.rotate(rotation)

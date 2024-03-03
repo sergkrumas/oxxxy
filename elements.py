@@ -107,7 +107,7 @@ class Element():
             Element._counter += 1
         else:
             Element._counter = 0
-        self.unique_index = type(self)._counter
+        self.unique_index = Element._counter
 
         self.fresh = True
 
@@ -250,11 +250,18 @@ class Element():
         return transform
 
 class ElementsHistorySlot():
-    __slots__ = ['elements', 'comment']
+
+    __slots__ = ['elements', 'comment', 'unique_index']
+
     def __init__(self, comment):
         super().__init__()
         self.elements = list()
         self.comment = comment
+        if hasattr(ElementsHistorySlot, "_counter"):
+            ElementsHistorySlot._counter += 1
+        else:
+            ElementsHistorySlot._counter = 0
+        self.unique_index = ElementsHistorySlot._counter
 
 class ElementsMixin(ElementsTransformMixin):
 
@@ -965,7 +972,10 @@ class ElementsMixin(ElementsTransformMixin):
 
     def elementsAppendElementToHS(self, element, hs):
         hs.elements.append(element)
+        # для редактора
         element.hs = hs
+        # для сохранения в файл
+        element.hs_index = hs.unique_index
 
     def elementsGetLastHS(self):
         return self.elementsHistoryFilterSlots()[-1]

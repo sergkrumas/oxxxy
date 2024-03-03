@@ -779,6 +779,7 @@ class ElementsMixin(ElementsTransformMixin):
                 element = self.elementsCreateNew(ToolID.picture)
                 element.pixmap = picture
                 element.element_position = pos + QPointF(picture.width()/2, picture.height()/2)
+                element.calc_local_data()
                 pos += QPoint(element.pixmap.width(), 0)
                 self.elementsUpdatePanelUI()
 
@@ -2423,9 +2424,9 @@ class ElementsMixin(ElementsTransformMixin):
             else:
                 element = self.elementsCreateNew(ToolID.picture)
                 element.pixmap = pixmap
-                element.angle = 0
                 pos = self.capture_region_rect.topLeft()
-                self.elementsSetPictureElementPoints(element, pos, pos_as_center=False)
+                eleemnt.element_position = pos + QPointF(pixmap.width()/2, pixmap.height()/2)
+                element.calc_local_data()
                 self.elementsSetSelected(element)
                 self.elementsUpdatePanelUI()
         else:

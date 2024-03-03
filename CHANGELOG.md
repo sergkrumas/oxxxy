@@ -231,3 +231,4 @@
       - восстановлена работа режима отладки пометок с заданной рамкой захвата (избавился от вызова удалённого метода elementsSetPictureElementPoints)
       - избавился от вызова elementsSetPictureElementPoints в методе обрезки картинки
       - избавился от вызова elementsSetPictureElementPoints в методе обрезки серии картинок
+      - избавился от вызова elementsSetPictureElementPoints в методе вставки картинки из буфера обмена

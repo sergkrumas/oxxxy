@@ -1752,8 +1752,7 @@ class ElementsMixin(ElementsTransformMixin):
                 painter.setPen(QPen(element.color, 1))
             if el_type == ToolID.copypaste:
                 painter.setPen(QPen(Qt.red, 1, Qt.DashLine))
-            if el_type == ToolID.zoom_in_region or \
-                            (el_type == ToolID.copypaste and not final):
+            if el_type == ToolID.zoom_in_region or (el_type == ToolID.copypaste and not final):
                 painter.drawRect(input_rect)
             if element.zoom_second_input or element.finished:
                 if element.toolbool and el_type == ToolID.zoom_in_region:

@@ -1961,7 +1961,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
 
         if Globals.DEBUG:
             self.draw_analyse_corners(painter)
-            self.elementsDrawFinalVersionDebug(painter)
+            self.elementsDrawDebugInfo(painter)
             self.draw_canvas_origin(painter)
 
         painter.end()

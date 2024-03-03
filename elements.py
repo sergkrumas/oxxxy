@@ -250,6 +250,13 @@ class Element():
         transform = local_scaling * rotation * global_scaling * translation
         return transform
 
+class ElementsHistorySlot():
+    __slots__ = ['elements', 'comment']
+    def __init__(self, comment):
+        super().__init__()
+        self.elements = list()
+        self.comment = comment
+
 class ElementsMixin(ElementsTransformMixin):
 
     def elementsInit(self):
@@ -261,6 +268,8 @@ class ElementsMixin(ElementsTransformMixin):
         self.elements = []
         self.elements_history_index = 0
         self.elementsSetSelected(None)
+
+        self.history_slots = []
 
         self.elements_final_output = None
 
@@ -953,10 +962,26 @@ class ElementsMixin(ElementsTransformMixin):
                 element.textbox.hide()
                 element.textbox.setParent(None)
 
-    def elementsCreateNew(self, element_type, start_drawing=False):
+    def elementsCreateNewSlot(self, comment):
+        hs = ElementsHistorySlot(comment)
+        self.history_slots.append(hs)
+        return hs
+
+    def elementsAppendElementToHS(self, element, hs):
+        hs.elements.append(element)
+        element.hs = hs
+
+    def elementsGetLastHS(self):
+        return self.history_slots[-1]
+
+    def elementsCreateNew(self, element_type, start_drawing=False, create_new_slot=True):
         self.elementsDeactivateTextElements()
         # срезание отменённой (невидимой) части истории
         # перед созданием элемента
+        if create_new_slot:
+            hs = self.elementsCreateNewSlot(element_type)
+        else:
+            hs = self.elementsGetLastHS()
         case1 = element_type == ToolID.removing
         case2 = element_type == ToolID.TEMPORARY_TYPE_NOT_DEFINED
         case3 = start_drawing
@@ -964,6 +989,7 @@ class ElementsMixin(ElementsTransformMixin):
         self.elements = self.elementsHistoryFilter(only_filter=is_removing)
         # создание элемента
         element = Element(element_type, self.elements)
+        self.elementsAppendElementToHS(element, hs)
         self.elementsSetElementParameters(element)
         # обновление индекса после создания элемента
         self.elements_history_index = len(self.elements)
@@ -1857,8 +1883,7 @@ class ElementsMixin(ElementsTransformMixin):
             screenshot_cursor_position = self.elementsMapFromCanvasToViewport(self.screenshot_cursor_position)
             painter.drawPixmap(screenshot_cursor_position, self.cursor_pixmap)
 
-    def elementsDrawFinalVersionDebug(self, painter):
-
+    def elementsDrawDebugInfo(self, painter):
         # draw debug elements' list
         if self.elements:
             if self.capture_region_rect:
@@ -1869,6 +1894,7 @@ class ElementsMixin(ElementsTransformMixin):
             visible_elements = self.elementsHistoryFilter()
             info_rect = QRectF(QPointF(0, 0), pos-QPointF(10, 10))
             painter.fillRect(QRectF(QPointF(0, 0), pos), QColor(0, 0, 0, 180))
+
             for index, element in reversed(list(enumerate(all_elements))):
                 painter.setPen(QPen(Qt.white))
                 info_text = ""
@@ -1890,6 +1916,26 @@ class ElementsMixin(ElementsTransformMixin):
                 font.setPixelSize(20)
                 painter.setFont(font)
                 painter.drawText(info_rect.bottomRight() + QPoint(-250, -index*25), info_text)
+
+        if self.elements:
+            if self.capture_region_rect:
+                pos = self.elementsMapFromCanvasToViewport(self.capture_region_rect.bottomRight())
+            else:
+                pos = self.mapFromGlobal(QCursor().pos())
+            info_rect = build_valid_rectF(pos, self.rect().topRight())
+            painter.fillRect(info_rect, QColor(0, 0, 0, 180))
+            info_rect.moveBottomLeft(QPointF(10, -10) + info_rect.bottomLeft())
+            for index, hs in reversed(list(enumerate(self.history_slots))):
+                painter.setPen(Qt.white)
+                info_text = f'[{index}] {hs.comment}'
+                font = painter.font()
+                font.setPixelSize(20)
+                painter.setFont(font)
+                pos = info_rect.bottomLeft() + QPointF(0, -index*(25*2)-25)
+                painter.drawText(pos, info_text)
+                info_text = f'{hs.elements}'
+                pos = info_rect.bottomLeft() + QPointF(20, -index*25*2)
+                painter.drawText(pos, info_text)
 
     def elementsUpdateFinalPicture(self):
         if self.capture_region_rect:

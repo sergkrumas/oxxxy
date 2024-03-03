@@ -778,13 +778,8 @@ class ElementsMixin(ElementsTransformMixin):
             for picture in pictures:
                 element = self.elementsCreateNew(ToolID.picture)
                 element.pixmap = picture
-                element.size = 1.0
-                # element.size_mode = ElementSizeMode.Special
-                element.angle = 0
-                self.elementsSetPictureElementPoints(element, QPoint(pos), pos_as_center=False,
-                    do_not_resize=False)
+                element.element_position = pos + QPointF(picture.width()/2, picture.height()/2)
                 pos += QPoint(element.pixmap.width(), 0)
-                # self.elementsSetSelected(element)
                 self.elementsUpdatePanelUI()
 
         self.update()

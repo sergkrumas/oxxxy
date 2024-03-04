@@ -1859,7 +1859,6 @@ class ElementsMixin(ElementsTransformMixin):
                 vertical_offset += (len(hs.elements) + 1)
                 pos = info_rect.bottomLeft() + QPointF(0, -vertical_offset*pixel_height)
                 painter.drawText(pos, slot_info_text)
-                info_text = f'{hs.elements}'
                 for i, elem in enumerate(hs.elements):
 
                     info_text = ""
@@ -1878,8 +1877,22 @@ class ElementsMixin(ElementsTransformMixin):
                     else:
                         info_text += f"[{elem.unique_index}] {elem.type}"
 
-                    pos = info_rect.bottomLeft() + QPointF(20, -vertical_offset*pixel_height + pixel_height*(i+1))
+                    y = -vertical_offset*pixel_height + pixel_height*(i+1)
+                    pos = info_rect.bottomLeft() + QPointF(100, y)
+                    color_rect_pos = info_rect.bottomLeft() + QPointF(20, y+3)
+                    size_pos = info_rect.bottomLeft() + QPointF(40, y)
+                    painter.save()
+                    painter.setPen(QPen(Qt.gray, 2))
+                    painter.drawText(size_pos, f'{elem.size:.03}')
+                    painter.restore()
                     painter.drawText(pos, info_text)
+                    painter.save()
+                    painter.setPen(QPen(Qt.black, 2))
+                    painter.setBrush(elem.color)
+                    color_rect = QRectF(0, 0, 20, 20)
+                    color_rect.moveBottomLeft(color_rect_pos)
+                    painter.drawRect(color_rect)
+                    painter.restore()
                 painter.restore()
 
     def elementsUpdateFinalPicture(self):

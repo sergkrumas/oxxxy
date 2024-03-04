@@ -40,7 +40,7 @@ from _utils import (convex_hull, check_scancode_for, SettingsJson,
      generate_metainfo, build_valid_rect, build_valid_rectF, dot, get_nearest_point_on_rect, get_creation_date,
      find_browser_exe_file, open_link_in_browser, open_in_google_chrome, save_meta_info,
      make_screenshot_pyqt, webRGBA, generate_gradient, draw_shadow, draw_cyberpunk,
-     elements45DegreeConstraint, get_bounding_points, load_svg, is_webp_file_animated, apply_blur_effect)
+     constraint45Degree, get_bounding_points, load_svg, is_webp_file_animated, apply_blur_effect)
 
 from elements_transform import ElementsTransformMixin
 
@@ -1224,8 +1224,7 @@ class ElementsMixin(ElementsTransformMixin):
         if tool == ToolID.arrow:
             element.end_point = event_pos
             if event.modifiers() & Qt.ShiftModifier:
-                element.end_point = elements45DegreeConstraint(element.start_point,
-                                                                            element.end_point)
+                element.end_point = constraint45Degree(element.start_point, element.end_point)
             element.calc_local_data()
         elif tool in [ToolID.zoom_in_region, ToolID.copypaste]:
             if not element.zoom_second_input:
@@ -1246,8 +1245,7 @@ class ElementsMixin(ElementsTransformMixin):
         elif tool == ToolID.line:
             element.end_point = event_pos
             if event.modifiers() & Qt.ShiftModifier:
-                element.end_point = elements45DegreeConstraint(element.start_point,
-                                                                            element.end_point)
+                element.end_point = constraint45Degree(element.start_point, element.end_point)
             element.calc_local_data()
         elif tool in [ToolID.oval, ToolID.rect, ToolID.numbering, ToolID.multiframing]:
             element.filled = bool(event.modifiers() & Qt.ControlModifier)
@@ -1314,8 +1312,7 @@ class ElementsMixin(ElementsTransformMixin):
         if tool == ToolID.arrow:
             element.end_point = event_pos
             if event.modifiers() & Qt.ShiftModifier:
-                element.end_point = elements45DegreeConstraint(element.start_point,
-                                                                            element.end_point)
+                element.end_point = constraint45Degree(element.start_point, element.end_point)
             element.calc_local_data()
         elif tool in [ToolID.zoom_in_region, ToolID.copypaste]:
             if not element.zoom_second_input:
@@ -1340,8 +1337,7 @@ class ElementsMixin(ElementsTransformMixin):
         elif tool == ToolID.line:
             element.end_point = event_pos
             if event.modifiers() & Qt.ShiftModifier:
-                element.end_point = elements45DegreeConstraint(element.start_point,
-                                                                            element.end_point)
+                element.end_point = constraint45Degree(element.start_point, element.end_point)
             element.calc_local_data()
         # где-то здесь надо удалять элементы, если начальная и конечная точки совпадают
         elif tool in [ToolID.oval, ToolID.rect, ToolID.numbering, ToolID.multiframing]:

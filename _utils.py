@@ -78,7 +78,7 @@ __all__ = (
     'generate_gradient',
     'draw_shadow',
     'draw_cyberpunk',
-    'elements45DegreeConstraint',
+    'constraint45Degree',
 
     # for image_viewer_lite.py
     'fit_rect_into_rect',
@@ -608,7 +608,7 @@ def draw_cyberpunk(painter, image_rect):
     painter.drawLine(QPointF(0, h/3*2)+offset, QPointF(w, h/3*2)+offset)
 
 
-def elements45DegreeConstraint(pivot, point):
+def constraint45Degree(pivot, point):
     sqrt_2 = math.sqrt(2)
     sqrt_2 *= 0.5 # обязательно, иначе диагональные направления не будут срабатывать
     directions = [

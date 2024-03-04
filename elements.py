@@ -1982,8 +1982,6 @@ class ElementsMixin(ElementsTransformMixin):
             if case1 or case2:
                 element = self.elementsCreateModificatedCopyOnNeed(element)
                 self.elementsSetElementParameters(element)
-            if self.Globals.DEBUG:
-                self.elementsUpdateFinalPicture()
         self.update()
         self.activateWindow() # чтобы фокус не соскакивал на панель иструментов
 

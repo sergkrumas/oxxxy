@@ -1784,7 +1784,7 @@ class ElementsMixin(ElementsTransformMixin):
                 else:
                     # get_capture_offset вычитался во время вызова build_valid_rect,
                     # а здесь прибавляется для того, чтобы всё работало как надо
-                    input_rect.moveCenter(input_rect.center() + self.get_capture_offset())
+                    input_rect.moveCenter(input_rect.center())
                 painter.drawImage(final_version_rect, source_pixels, input_rect)
                 if el_type == ToolID.zoom_in_region:
                     painter.drawRect(final_version_rect)

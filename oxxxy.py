@@ -1654,6 +1654,8 @@ class ToolsWindow(QWidget):
         # print(event.__class__.__name__, obj.__class__.__name__)
         parent = self.parent()
         blocking = parent.elementsIsSpecialCase(parent.elementsGetLastElement())
+        # блокировка событий для кнопок панели управления,
+        # если не завершён процесс нанесения меток
         if obj.parent() == self and blocking and not isinstance(event, (QPaintEvent, QKeyEvent)):
             return True
         return False

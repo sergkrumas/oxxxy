@@ -72,10 +72,6 @@ class ToolID():
     DRAG = "drag"
     TEMPORARY_TYPE_NOT_DEFINED = "TEMPORARY_TYPE_NOT_DEFINED"
 
-class ElementSubtype():
-    capture = "capture"
-    output = "output"
-
 class Element():
 
     def __init__(self, element_type, elements_list):

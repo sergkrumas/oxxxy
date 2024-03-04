@@ -72,7 +72,9 @@ class ToolID():
     DRAG = "drag"
     TEMPORARY_TYPE_NOT_DEFINED = "TEMPORARY_TYPE_NOT_DEFINED"
 
-
+class ElementSubtype():
+    capture = "capture"
+    output = "output"
 
 class Element():
 
@@ -179,6 +181,8 @@ class Element():
             self.calc_local_data_default()
         elif self.type in [ToolID.picture]:
             self.calc_local_data_picture()
+        elif self.type in [ToolID.zoom_in_region, ToolID.copypaste]:
+            self.calc_local_data_default()
         else:
             raise Exception('calc_local_data', self.type)
 
@@ -1000,7 +1004,7 @@ class ElementsMixin(ElementsTransformMixin):
         return non_deleted_elements
 
     def elementsBuildSubelementRect(self, element, copy_pos):
-        _rect = build_valid_rect(element.start_point, element.end_point)
+        _rect = build_valid_rectF(element.start_point, element.end_point)
         if element.type == ToolID.zoom_in_region:
             factor = 1.0 + element.size*4.0
             _rect.setWidth(int(_rect.width()*factor))
@@ -1749,7 +1753,7 @@ class ElementsMixin(ElementsTransformMixin):
             if self.Globals.CRASH_SIMULATOR:
                 1 / 0
         elif el_type in [ToolID.zoom_in_region, ToolID.copypaste]:
-            input_rect = build_valid_rect(element.start_point, element.end_point)
+            input_rect = build_valid_rectF(element.start_point, element.end_point)
             curpos = QCursor().pos()
             final_pos = element.copy_pos if element.finished else self.mapFromGlobal(curpos)
             final_version_rect = self.elementsBuildSubelementRect(element, final_pos)

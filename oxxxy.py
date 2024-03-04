@@ -2570,16 +2570,6 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         self.update_tools_window()
         self.update()
 
-    def elementsCreateBackgroundPictures(self):
-        background_pixmap = QPixmap.fromImage(self.source_pixels)
-        element = self.elementsCreateNew(ToolID.picture, comment='background')
-        element.size = 0.5
-        element.pixmap = background_pixmap
-        element.angle = 0
-        element.background_image = True
-        element.calc_local_data()
-        element.element_position = QPointF(background_pixmap.width()/2, background_pixmap.height()/2)
-
     def request_editor_mode(self, paths_or_pixmaps):
         pixmaps = []
         self.input_POINT2 = QPoint(0, 0)

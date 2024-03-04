@@ -905,9 +905,10 @@ class ElementsMixin(ElementsTransformMixin):
         self.update()
 
     def elementsMakeSureTheresNoUnfinishedElement(self):
-        el = self.elementsGetLastElement()
-        if el and el.type in [ToolID.zoom_in_region, ToolID.copypaste] and not el.finished:
-            self.elements.remove(el)
+        hs = self.elementsGetLastHS()
+        if hs and hs.comment in [ToolID.zoom_in_region, ToolID.copypaste] and len(hs.elements) == 1:
+            self.elements_history_index -= 1
+            self.history_slots = self.elementsHistoryFilterSlots()
 
     def elementsOnTransformToolActivated(self):
         self.elementsSetSelected(self.elementsGetLastElement())
@@ -1013,15 +1014,6 @@ class ElementsMixin(ElementsTransformMixin):
                 non_deleted_elements.append(el)
         return non_deleted_elements
 
-    def elementsBuildSubelementRect(self, element, copy_pos):
-        _rect = build_valid_rectF(element.start_point, element.end_point)
-        if element.type == ToolID.zoom_in_region:
-            factor = 1.0 + element.size*4.0
-            _rect.setWidth(int(_rect.width()*factor))
-            _rect.setHeight(int(_rect.height()*factor))
-        _rect.moveCenter(copy_pos)
-        return _rect
-
     def elementsGetElementsUnderMouse(self, cursor_pos):
         elements_under_mouse = []
         for el in self.elementsHistoryFilter():
@@ -1070,6 +1062,8 @@ class ElementsMixin(ElementsTransformMixin):
         special_case = element is not None
         hs = self.elementsGetLastHS()
         special_case = special_case and hs and hs.comment in [ToolID.zoom_in_region, ToolID.copypaste]
+        # даём возможность создать другой слот
+        special_case = special_case and hs and not len(hs.elements) == 2
         return special_case
 
     def elementsFreshAttributeHandler(self, el):
@@ -1094,11 +1088,13 @@ class ElementsMixin(ElementsTransformMixin):
         else:
             raise Exception("unsupported branch!")
 
-    def elementsAdvancedInputMoveEvent(self, event, event_pos, element):
+    def elementsAdvancedInputMoveEvent(self, event, event_pos, element, finish=False):
         els_count = len(element.hs.elements)
         if els_count == 1:
             element.end_point = event_pos
-            element.calc_local_data()            
+            element.calc_local_data()
+            if finish:
+                element.finished = True
         elif els_count == 2:
             element.element_position = event_pos
         else:
@@ -1357,7 +1353,7 @@ class ElementsMixin(ElementsTransformMixin):
                 element.end_point = constraint45Degree(element.start_point, element.end_point)
             element.calc_local_data()
         elif tool in [ToolID.zoom_in_region, ToolID.copypaste]:
-            self.elementsAdvancedInputMoveEvent(event, event_pos, element)
+            self.elementsAdvancedInputMoveEvent(event, event_pos, element, finish=True)
         elif tool == ToolID.picture:
             element.pixmap = self.current_picture_pixmap
             element.element_rotation = self.current_picture_angle
@@ -1792,10 +1788,23 @@ class ElementsMixin(ElementsTransformMixin):
                 painter.setBrush(Qt.NoBrush)
                 painter.drawRect(el_rect)
 
-                curpos = QCursor().pos()
-                final_pos = element.element_position if s_element is None else self.mapFromGlobal(curpos)
-                el_rect = self.elementsBuildSubelementRect(element, final_pos)
-                painter.drawRect(el_rect)
+                if f_element.finished:
+                    curpos = self.elementsMapFromViewportToCanvas(QCursor().pos())
+                    if s_element is None:
+                        final_pos = curpos
+                        size = f_element.size
+                    else:
+                        final_pos = s_element.element_position
+                        size = s_element.size
+                    factor = 1.0 + size*4.0
+
+                    el_rect = QRectF(0, 0,
+                        f_element.element_width * factor,
+                        f_element.element_height * factor,
+                    )
+                    el_rect.moveCenter(final_pos)
+
+                    painter.drawRect(el_rect)
 
 
 

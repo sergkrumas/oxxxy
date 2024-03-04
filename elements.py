@@ -1947,14 +1947,6 @@ class ElementsMixin(ElementsTransformMixin):
                 self.canvas_scale_y = self._canvas_scale_y
                 painter.end()
 
-
-    def get_capture_offset(self):
-        capture_offset = self.capture_region_rect.topLeft()
-        capture_offset -= self.canvas_origin.toPoint()
-        return capture_offset
-
-
-
     def elementsCreateModificatedCopyOnNeed(self, element, force_new=False):
         if element == self.elementsGetLastElement() and not force_new:
             # если элемент последний в списке элементов,

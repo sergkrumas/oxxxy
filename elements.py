@@ -143,6 +143,10 @@ class Element():
         self.element_width = abs(diff.x())
         self.element_height = abs(diff.y())
 
+    def calc_local_data_finish(self, first_element):
+        self.element_width = first_element.element_width
+        self.element_height = first_element.element_height
+
     def calc_local_data_path(self):
         bb = self.path.boundingRect()
         self.element_position = bb.center()
@@ -942,7 +946,11 @@ class ElementsMixin(ElementsTransformMixin):
         element.hs_index = hs.unique_index
 
     def elementsGetLastHS(self):
-        return self.elementsHistoryFilterSlots()[-1]
+        slots = self.elementsHistoryFilterSlots()
+        if slots:
+            return slots[-1]
+        else:
+            return None
 
     def elementsCreateNew(self, element_type, start_drawing=False, create_new_slot=True, comment=None):
         self.elementsDeactivateTextElements()
@@ -1060,8 +1068,8 @@ class ElementsMixin(ElementsTransformMixin):
 
     def elementsIsSpecialCase(self, element):
         special_case = element is not None
-        special_case = special_case and element.type in [ToolID.zoom_in_region, ToolID.copypaste]
-        special_case = special_case and not element.finished
+        hs = self.elementsGetLastHS()
+        special_case = special_case and hs and hs.comment in [ToolID.zoom_in_region, ToolID.copypaste]
         return special_case
 
     def elementsFreshAttributeHandler(self, el):
@@ -1071,6 +1079,30 @@ class ElementsMixin(ElementsTransformMixin):
                     el.fresh = False
             else:
                 el.fresh = False
+
+    def elementsAdvancedInputPressEvent(self, event, event_pos, element):
+        els_count = len(element.hs.elements)
+        if els_count == 1:
+            self.elementsMousePressEventDefault(element, event)
+            element.calc_local_data()
+            element.second = False
+        elif els_count == 2:
+            element.element_position = event_pos
+            first_element = element.hs.elements[0]
+            element.calc_local_data_finish(first_element)
+            element.second = True
+        else:
+            raise Exception("unsupported branch!")
+
+    def elementsAdvancedInputMoveEvent(self, event, event_pos, element):
+        els_count = len(element.hs.elements)
+        if els_count == 1:
+            element.end_point = event_pos
+            element.calc_local_data()            
+        elif els_count == 2:
+            element.element_position = event_pos
+        else:
+            raise Exception("unsupported branch!")
 
     def elementsMousePressEvent(self, event):
         tool = self.current_tool
@@ -1098,10 +1130,10 @@ class ElementsMixin(ElementsTransformMixin):
         el = self.elementsGetLastElement()
         self.elementsFreshAttributeHandler(el)
         if self.current_tool == ToolID.transform:
-            element = None # код выбора элемента ниже
+            element = None
         elif self.elementsIsSpecialCase(el):
             # zoom_in_region and copypaste case, when it needs more additional clicks
-            element = el
+            element = self.elementsCreateNew(self.current_tool, start_drawing=True, create_new_slot=False)
         else:
             # default case
             element = self.elementsCreateNew(self.current_tool, start_drawing=True)
@@ -1109,10 +1141,7 @@ class ElementsMixin(ElementsTransformMixin):
         if tool == ToolID.arrow:
             self.elementsMousePressEventDefault(element, event)
         elif tool in [ToolID.zoom_in_region, ToolID.copypaste]:
-            if not element.zoom_second_input:
-                self.elementsMousePressEventDefault(element, event)
-            elif not element.finished:
-                element.copy_pos = event_pos
+            self.elementsAdvancedInputPressEvent(event, event_pos, element)
         elif tool == ToolID.picture:
             element.pixmap = self.current_picture_pixmap
             element.element_rotation = self.current_picture_angle
@@ -1243,10 +1272,7 @@ class ElementsMixin(ElementsTransformMixin):
                 element.end_point = constraint45Degree(element.start_point, element.end_point)
             element.calc_local_data()
         elif tool in [ToolID.zoom_in_region, ToolID.copypaste]:
-            if not element.zoom_second_input:
-                element.end_point = event_pos
-            elif not element.finished:
-                element.copy_pos = event_pos
+            self.elementsAdvancedInputMoveEvent(event, event_pos, element)
         elif tool == ToolID.picture:
             element.pixmap = self.current_picture_pixmap
             element.element_rotation = self.current_picture_angle
@@ -1331,13 +1357,7 @@ class ElementsMixin(ElementsTransformMixin):
                 element.end_point = constraint45Degree(element.start_point, element.end_point)
             element.calc_local_data()
         elif tool in [ToolID.zoom_in_region, ToolID.copypaste]:
-            if not element.zoom_second_input:
-                # element.start_point = event_pos
-                element.end_point = event_pos
-                element.zoom_second_input = True
-            elif not element.finished:
-                element.copy_pos = event_pos
-                element.finished = True
+            self.elementsAdvancedInputMoveEvent(event, event_pos, element)
         elif tool == ToolID.picture:
             element.pixmap = self.current_picture_pixmap
             element.element_rotation = self.current_picture_angle
@@ -1755,41 +1775,65 @@ class ElementsMixin(ElementsTransformMixin):
             if self.Globals.CRASH_SIMULATOR:
                 1 / 0
         elif el_type in [ToolID.zoom_in_region, ToolID.copypaste]:
-            input_rect = build_valid_rectF(element.start_point, element.end_point)
-            curpos = QCursor().pos()
-            final_pos = element.copy_pos if element.finished else self.mapFromGlobal(curpos)
-            final_version_rect = self.elementsBuildSubelementRect(element, final_pos)
-            painter.setBrush(Qt.NoBrush)
-            if el_type == ToolID.zoom_in_region:
-                painter.setPen(QPen(element.color, 1))
-            if el_type == ToolID.copypaste:
-                painter.setPen(QPen(Qt.red, 1, Qt.DashLine))
-            if el_type == ToolID.zoom_in_region or (el_type == ToolID.copypaste and not final):
-                painter.drawRect(input_rect)
-            if element.zoom_second_input or element.finished:
-                if element.toolbool and el_type == ToolID.zoom_in_region:
-                    points = []
-                    attrs_names = ["topLeft", "topRight", "bottomLeft", "bottomRight"]
-                    for corner_attr_name in attrs_names:
-                        p1 = getattr(input_rect, corner_attr_name)()
-                        p2 = getattr(final_version_rect, corner_attr_name)()
-                        points.append(p1)
-                        points.append(p2)
-                    coords = convex_hull(points)
-                    for n, coord in enumerate(coords[:-1]):
-                        painter.drawLine(coord, coords[n+1])
-                source_pixels = self.source_pixels
-                # с прямоугольником производятся корректировки, чтобы последствия перемещения
-                # рамки захвата и перемещения окна не сказывались на копируемой области
-                if not final:
-                    input_rect.moveCenter(input_rect.center() - self.canvas_origin)
+
+            if element.second:
+                return
+            else:
+                f_element = element
+
+                slot_elements = element.hs
+                if len(slot_elements.elements) > 1:
+                    s_element = slot_elements.elements[1]
                 else:
-                    # get_capture_offset вычитался во время вызова build_valid_rect,
-                    # а здесь прибавляется для того, чтобы всё работало как надо
-                    input_rect.moveCenter(input_rect.center())
-                painter.drawImage(final_version_rect, source_pixels, input_rect)
-                if el_type == ToolID.zoom_in_region:
-                    painter.drawRect(final_version_rect)
+                    s_element = None
+
+                el_rect = build_valid_rectF(f_element.start_point, f_element.end_point)
+                painter.setPen(QPen(element.color, 1))
+                painter.setBrush(Qt.NoBrush)
+                painter.drawRect(el_rect)
+
+                curpos = QCursor().pos()
+                final_pos = element.element_position if s_element is None else self.mapFromGlobal(curpos)
+                el_rect = self.elementsBuildSubelementRect(element, final_pos)
+                painter.drawRect(el_rect)
+
+
+
+            # input_rect = build_valid_rectF(element.start_point, element.end_point)
+            # curpos = QCursor().pos()
+            # final_pos = element.copy_pos if element.finished else self.mapFromGlobal(curpos)
+            # final_version_rect = self.elementsBuildSubelementRect(element, final_pos)
+            # painter.setBrush(Qt.NoBrush)
+            # if el_type == ToolID.zoom_in_region:
+            #     painter.setPen(QPen(element.color, 1))
+            # if el_type == ToolID.copypaste:
+            #     painter.setPen(QPen(Qt.red, 1, Qt.DashLine))
+            # if el_type == ToolID.zoom_in_region or (el_type == ToolID.copypaste and not final):
+            #     painter.drawRect(input_rect)
+            # if element.zoom_second_input or element.finished:
+            #     if element.toolbool and el_type == ToolID.zoom_in_region:
+            #         points = []
+            #         attrs_names = ["topLeft", "topRight", "bottomLeft", "bottomRight"]
+            #         for corner_attr_name in attrs_names:
+            #             p1 = getattr(input_rect, corner_attr_name)()
+            #             p2 = getattr(final_version_rect, corner_attr_name)()
+            #             points.append(p1)
+            #             points.append(p2)
+            #         coords = convex_hull(points)
+            #         for n, coord in enumerate(coords[:-1]):
+            #             painter.drawLine(coord, coords[n+1])
+            #     source_pixels = self.source_pixels
+            #     # с прямоугольником производятся корректировки, чтобы последствия перемещения
+            #     # рамки захвата и перемещения окна не сказывались на копируемой области
+            #     if not final:
+            #         input_rect.moveCenter(input_rect.center() - self.canvas_origin)
+            #     else:
+            #         # get_capture_offset вычитался во время вызова build_valid_rect,
+            #         # а здесь прибавляется для того, чтобы всё работало как надо
+            #         input_rect.moveCenter(input_rect.center())
+            #     painter.drawImage(final_version_rect, source_pixels, input_rect)
+            #     if el_type == ToolID.zoom_in_region:
+            #         painter.drawRect(final_version_rect)
 
     def elementsDrawMain(self, painter, final=False, draw_background_only=False):
         painter.setRenderHint(QPainter.HighQualityAntialiasing, True)

@@ -287,6 +287,8 @@ class ElementsMixin(ElementsTransformMixin):
 
         self.elementsIsFinalDrawing = False
 
+        self.active_element = None
+
         # для выделения элементов и виджета трансформации элементов
         self.elementsInitTransform()
 
@@ -812,8 +814,8 @@ class ElementsMixin(ElementsTransformMixin):
         if not self.elements:
             return
         try:
-            candidat = self.selected_element or self.elementsHistoryFilter()[-1]
-            if candidat not in self.elementsHistoryFilter(): # for selected_element
+            candidat = self.active_element or self.elementsHistoryFilter()[-1]
+            if candidat not in self.elementsHistoryFilter(): # element should be visible at the moment
                 candidat = None
         except Exception:
             candidat = None

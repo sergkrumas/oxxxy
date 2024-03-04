@@ -1441,7 +1441,7 @@ class ToolsWindow(QWidget):
         """
 
         editor_buttons_data = [
-            [ToolID.transform, "Перемещение\nи трасформация", "Активируется через <b>Пробел</b>"],
+            [ToolID.transform, "Выделение\nи трасформации", "Активируется через <b>Пробел</b>"],
 
             [ToolID.pen, "Карандаш", "<b>+Shift</b> ➜ Рисует прямую"],
             [ToolID.marker, "Маркер", "<b>+Shift</b> ➜ Рисует прямую"],

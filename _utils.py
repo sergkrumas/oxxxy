@@ -768,10 +768,12 @@ def apply_blur_effect(src_pix, pix, blur_radius=5):
 def capture_rotated_rect_from_pixmap(pixmap, capture_pos, capture_rotation,
                                                                 capture_width, capture_height):
 
-    # при плавном изменении угла от 0 до 360 заметно подёргивание картинки.
-    # можно избавиться от этого, избавившись от отрисовки во вспомогательном pixmap,
-    # потому что размеры этого pixmap выражены всегда целыми числами.
+    # При плавном изменении угла от 0 до 360 заметно подёргивание картинки.
+    # можно избавиться от этого, избавившись от отрисовки во вспомогательном middle_pixmap,
+    # потому что размеры этого middle_pixmap выражены всегда целыми числами.
     # Но мне анимация здесь ни к чему, поэтому оставлю как есть.
+    # Избавится от вспомогательного middle_pixmap можно
+    # если повернуть pixmap на угол относительно capture pos
 
     orig_capture_height = capture_height
     orig_capture_width = capture_width

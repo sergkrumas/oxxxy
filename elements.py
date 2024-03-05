@@ -37,7 +37,8 @@ from PyQt5.QtGui import (QPainterPath, QColor, QKeyEvent, QMouseEvent, QBrush, Q
     QIcon, QFont, QCursor, QPolygonF, QVector2D)
 
 from _utils import (convex_hull, check_scancode_for, SettingsJson,
-     generate_metainfo, build_valid_rect, build_valid_rectF, dot, get_nearest_point_on_rect, get_creation_date,
+     generate_metainfo, build_valid_rect, build_valid_rectF, dot, get_nearest_point_on_rect,
+     get_creation_date, capture_rotated_rect_from_pixmap,
      find_browser_exe_file, open_link_in_browser, open_in_google_chrome, save_meta_info,
      make_screenshot_pyqt, webRGBA, generate_gradient, draw_shadow, draw_cyberpunk,
      constraint45Degree, get_bounding_points, load_svg, is_webp_file_animated, apply_blur_effect)
@@ -1458,20 +1459,38 @@ class ElementsMixin(ElementsTransformMixin):
         if not element.finished:
             return
         blur_radius = 30*element.size #30 is maximum
+
         input_rect = build_valid_rectF(element.local_start_point, element.local_end_point)
         input_rect.moveCenter(element.element_position)
-        element.pixmap = QPixmap(input_rect.size().toSize())
-        element.pixmap.fill(Qt.transparent)
-        pr = QPainter()
-        pr.begin(element.pixmap)
-        target_rect = QRectF(QPointF(0, 0), input_rect.size())
-        pr.drawImage(target_rect, self.source_pixels, input_rect)
-        offset_ = input_rect.topLeft()
-        offset_.setX(-offset_.x())
-        offset_.setY(-offset_.y())
-        self.elementsDrawDarkening(pr, offset=offset_)
-        pr.end()
-        del pr
+
+        # element.pixmap = QPixmap(input_rect.size().toSize())
+        # element.pixmap.fill(Qt.transparent)
+        # код для учёта затемнения
+        # pr = QPainter()
+        # pr.begin(element.pixmap)
+        # target_rect = QRectF(QPointF(0, 0), input_rect.size())
+        # pr.drawImage(target_rect, self.source_pixels, input_rect)
+        # offset_ = input_rect.topLeft()
+        # offset_.setX(-offset_.x())
+        # offset_.setY(-offset_.y())
+        # self.elementsDrawDarkening(pr, offset=offset_)
+        # pr.end()
+        # del pr
+
+        er = element.get_size_rect(scaled=True)
+        er.moveCenter(element.element_position)
+
+        capture_pos = element.element_position
+        capture_width = er.width()
+        capture_height = er.height()
+        capture_rotation = element.element_rotation
+        pixmap = QPixmap.fromImage(self.source_pixels)
+        element.pixmap = capture_rotated_rect_from_pixmap(pixmap,
+            capture_pos,
+            capture_rotation,
+            capture_width,
+            capture_height
+        )
         blured = QPixmap(input_rect.size().toSize())
         blured.fill(Qt.transparent)
         if element.toolbool:
@@ -1734,15 +1753,14 @@ class ElementsMixin(ElementsTransformMixin):
 
         elif el_type in [ToolID.blurring, ToolID.darkening]:
             painter.setTransform(element.get_transform_obj(canvas=self))
-            rect = build_valid_rect(element.local_start_point, element.local_end_point)
+            rect = build_valid_rectF(element.local_start_point, element.local_end_point)
             painter.setBrush(Qt.NoBrush)
             painter.setPen(Qt.NoPen)
             if el_type == ToolID.blurring:
                 if not element.finished:
                     painter.setBrush(QBrush(QColor(150, 0, 0), Qt.DiagCrossPattern))
                 else:
-                    rect = build_valid_rect(element.local_start_point, element.local_start_point)
-                    painter.drawPixmap(rect.topLeft(), element.pixmap)
+                    painter.drawPixmap(rect, element.pixmap, QRectF(element.pixmap.rect()))
             elif el_type == ToolID.darkening:
                 # painter.setBrush(QBrush(QColor(150, 150, 0), Qt.BDiagPattern))
                 pass
@@ -1787,10 +1805,12 @@ class ElementsMixin(ElementsTransformMixin):
                         final_pos = curpos
                         size = f_element.size
                         toolbool = f_element.toolbool
+                        color = f_element.color
                     else:
                         final_pos = s_element.element_position
                         size = s_element.size
                         toolbool = s_element.toolbool
+                        color = s_element.color
                     if el_type == ToolID.zoom_in_region:
                         factor = 1.0 + size*4.0
                     elif el_type == ToolID.copypaste:
@@ -1805,7 +1825,7 @@ class ElementsMixin(ElementsTransformMixin):
 
                 painter.setBrush(Qt.NoBrush)
                 if el_type == ToolID.zoom_in_region:
-                    painter.setPen(QPen(element.color, 1))
+                    painter.setPen(QPen(color, 1))
                 if el_type == ToolID.copypaste:
                     painter.setPen(QPen(Qt.red, 1, Qt.DashLine))
                 if el_type == ToolID.zoom_in_region or (el_type == ToolID.copypaste and not final):

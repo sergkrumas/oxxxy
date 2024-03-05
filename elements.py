@@ -732,6 +732,9 @@ class ElementsMixin(ElementsTransformMixin):
             self.elementsChangeTextbox(element)
         if element.type == ToolID.blurring:
             self.elementsSetBlurredPixmap(element)
+        if element.type in [ToolID.copypaste, ToolID.zoom_in_region]:
+            if hasattr(element, 'second') and not element.second:
+                self.elementsSetCopiedPixmap(element)
 
     def elementsFramePicture(self, frame_rect=None, frame_info=None, pixmap=None):
         se = self.selected_element
@@ -1092,6 +1095,7 @@ class ElementsMixin(ElementsTransformMixin):
             element.calc_local_data()
             if finish:
                 element.finished = True
+                self.elementsSetCopiedPixmap(element)
         elif els_count == 2:
             element.element_position = event_pos
         else:
@@ -1433,6 +1437,9 @@ class ElementsMixin(ElementsTransformMixin):
                         if element.type == ToolID.blurring:
                             element.finished = True
                             self.elementsSetBlurredPixmap(element)
+                        elif element.type in [ToolID.zoom_in_region, ToolID.copypaste]:
+                            if not element.second:
+                                self.elementsSetCopiedPixmap(element)                                
                         elif element.type == ToolID.text:
                             element.modify_end_point = True
 
@@ -1454,6 +1461,23 @@ class ElementsMixin(ElementsTransformMixin):
                 if self.tools_window:
                     self.elements_history_index = self.prev_elements_history_index
                     # print('correcting after autodelete')
+
+    def elementsSetCopiedPixmap(self, element):
+        if element.second:
+            return
+        er = element.get_size_rect(scaled=True)
+        er.moveCenter(element.element_position)
+        capture_pos = element.element_position
+        capture_width = er.width()
+        capture_height = er.height()
+        capture_rotation = element.element_rotation
+        pixmap = QPixmap.fromImage(self.source_pixels)
+        element.pixmap = capture_rotated_rect_from_pixmap(pixmap,
+            capture_pos,
+            capture_rotation,
+            capture_width,
+            capture_height
+        )
 
     def elementsSetBlurredPixmap(self, element):
         if not element.finished:
@@ -1786,67 +1810,92 @@ class ElementsMixin(ElementsTransformMixin):
                 1 / 0
         elif el_type in [ToolID.zoom_in_region, ToolID.copypaste]:
 
-            if element.second:
-                return
+            painter.setBrush(Qt.NoBrush)
+
+            slot_elements = element.hs.elements
+            f_element = slot_elements[0]
+
+            if len(slot_elements) > 1:
+                s_element = slot_elements[1]
             else:
-                f_element = element
+                s_element = None
 
-                slot_elements = element.hs
-                if len(slot_elements.elements) > 1:
-                    s_element = slot_elements.elements[1]
+            if f_element.finished:
+                if s_element is None:
+                    output_pos = self.elementsMapFromViewportToCanvas(QCursor().pos())
+                    size = f_element.size
+                    toolbool = f_element.toolbool
+                    color = f_element.color
                 else:
-                    s_element = None
-
-                input_rect = build_valid_rectF(f_element.start_point, f_element.end_point)
-
-                if f_element.finished:
-                    curpos = self.elementsMapFromViewportToCanvas(QCursor().pos())
-                    if s_element is None:
-                        final_pos = curpos
-                        size = f_element.size
-                        toolbool = f_element.toolbool
-                        color = f_element.color
-                    else:
-                        final_pos = s_element.element_position
-                        size = s_element.size
-                        toolbool = s_element.toolbool
-                        color = s_element.color
-                    if el_type == ToolID.zoom_in_region:
-                        factor = 1.0 + size*4.0
-                    elif el_type == ToolID.copypaste:
-                        factor = 1.0
-
-                    final_version_rect = QRectF(0, 0,
-                        f_element.element_width * factor,
-                        f_element.element_height * factor,
-                    )
-                    final_version_rect.moveCenter(final_pos)
-
-
-                painter.setBrush(Qt.NoBrush)
+                    output_pos = s_element.element_position
+                    size = s_element.size
+                    toolbool = s_element.toolbool
+                    color = s_element.color
                 if el_type == ToolID.zoom_in_region:
-                    painter.setPen(QPen(color, 1))
-                if el_type == ToolID.copypaste:
-                    painter.setPen(QPen(Qt.red, 1, Qt.DashLine))
-                if el_type == ToolID.zoom_in_region or (el_type == ToolID.copypaste and not final):
-                    painter.drawRect(input_rect)
+                    factor = 1.0 + size*4.0
+                elif el_type == ToolID.copypaste:
+                    factor = 1.0
 
-                if f_element.finished:
-                    if toolbool and el_type == ToolID.zoom_in_region:
-                        points = []
-                        attrs_names = ["topLeft", "topRight", "bottomLeft", "bottomRight"]
-                        for corner_attr_name in attrs_names:
-                            p1 = getattr(input_rect, corner_attr_name)()
-                            p2 = getattr(final_version_rect, corner_attr_name)()
-                            points.append(p1)
-                            points.append(p2)
-                        coords = convex_hull(points)
+            if el_type == ToolID.zoom_in_region:
+                painter.setPen(QPen(color, 1))
+            if el_type == ToolID.copypaste:
+                painter.setPen(QPen(Qt.red, 1, Qt.DashLine))
+
+            painter.setTransform(element.get_transform_obj(canvas=self))
+            # отрисовка второй пометки
+            # special_case - когда вторая пометка ещё не введена,
+            # надо рисовать её образ центированный по кусроску мыши
+            special_case = (not element.second and f_element.finished and s_element is None)
+            if element.second or special_case:
+
+                capture_rect = build_valid_rectF(
+                    f_element.local_start_point,
+                    f_element.local_end_point
+                )
+                capture_rect.moveCenter(f_element.element_position)
+                output_rect = element.get_size_rect(scaled=False)
+                if s_element is None:
+                    pos = output_pos - f_element.element_position
+                else:
+                    pos = output_pos - s_element.element_position
+                output_rect.moveCenter(pos)
+
+
+                painter.drawPixmap(output_rect, f_element.pixmap, QRectF(f_element.pixmap.rect()))
+
+                if toolbool and el_type == ToolID.zoom_in_region:
+                    points = []
+
+
+                    points.append(-f_element.element_position + pos)
+                    points.append(-f_element.element_position + QPointF(100, 100) + pos)
+
+                    poly = QPolygonF(output_rect)
+
+                    ps = [poly[i] for i in range(poly.size())]
+
+                    for pos in ps:
+                        points.append(pos)
+
+                    coords = convex_hull(points)
+                    if coords is not None and len(coords) > 1:
                         for n, coord in enumerate(coords[:-1]):
                             painter.drawLine(coord, coords[n+1])
-                    source_pixels = self.source_pixels
-                    painter.drawImage(final_version_rect, source_pixels, input_rect)
-                    if el_type == ToolID.zoom_in_region:
-                        painter.drawRect(final_version_rect)
+
+                    painter.drawLine(QPointF(0, 0), QPointF(100, 0))
+
+                if el_type == ToolID.zoom_in_region:
+                    painter.drawRect(output_rect)
+
+            # отрисовка первой пометки
+            if not element.second:
+                if el_type == ToolID.zoom_in_region or (el_type == ToolID.copypaste and not final):
+                    capture_rect = build_valid_rectF(
+                        f_element.local_start_point,
+                        f_element.local_end_point
+                    )
+                    painter.drawRect(capture_rect)
+            painter.resetTransform()                    
 
     def elementsDrawMain(self, painter, final=False, draw_background_only=False):
         painter.setRenderHint(QPainter.HighQualityAntialiasing, True)

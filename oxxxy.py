@@ -3155,6 +3155,9 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             for element in self.elements:
                 if element.type in [ToolID.blurring]:
                     self.elementsSetBlurredPixmap(element)
+                if element.type in [ToolID.copypaste, ToolID.zoom_in_region]:
+                    if not element.second:
+                        self.elementsSetCopiedPixmap(element)
             self.show()
             if self.tools_window:
                 self.tools_window.show()

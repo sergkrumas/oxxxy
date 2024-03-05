@@ -773,7 +773,7 @@ def capture_rotated_rect_from_pixmap(pixmap, capture_pos, capture_rotation,
     # потому что размеры этого middle_pixmap выражены всегда целыми числами.
     # Но мне анимация здесь ни к чему, поэтому оставлю как есть.
     # Избавится от вспомогательного middle_pixmap можно
-    # если повернуть pixmap на угол относительно capture pos
+    # если повернуть pixmap на угол относительно capture_pos
 
     orig_capture_height = capture_height
     orig_capture_width = capture_width

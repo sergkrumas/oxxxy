@@ -1873,78 +1873,42 @@ class ElementsMixin(ElementsTransformMixin):
                     font.setPixelSize(35)
                     painter.setFont(font)
 
-                    f_canvas_transform = f_element.get_transform_obj(
-                        canvas=self,
-                        apply_local_scale=True,
-                        apply_translation=True,
-                        apply_global_scale=False
-                    )
+                    kwargs = {
+                        "canvas":self,
+                        "apply_local_scale":True,
+                        "apply_translation":True,
+                        "apply_global_scale":False
+                    }
+                    f_canvas_transform = f_element.get_transform_obj(**kwargs)
                     if s_element:
-                        s_canvas_transform = s_element.get_transform_obj(
-                            canvas=self,
-                            apply_local_scale=True,
-                            apply_translation=True,
-                            apply_global_scale=False
-                        )
+                        s_canvas_transform = s_element.get_transform_obj(**kwargs)
 
 
-                        painter.save()
-                        painter.setPen(QPen(Qt.red, 10))
                         size_rect = f_element.get_size_rect(scaled=False)
                         size_rect.moveCenter(QPointF(0, 0))
-                        sr1 = [
-                            size_rect.topLeft(),
-                            size_rect.topRight(),
-                            size_rect.bottomRight(),
-                            size_rect.bottomLeft()
-                        ]
+                        sr1 = self.elementsGetRectCorners(size_rect)
                         for p in sr1:
-                            # from local to world
+                            # from f_elemnt local to world
                             p = f_canvas_transform.map(p)
-                            # from world to local
-                            p = (s_canvas_transform.inverted())[0].map(p)
+                            # from world to s_element local
+                            t = s_canvas_transform.inverted()
+                            if not t[1]:
+                                raise Exception('inverted matrix doesn\'t exist!')
+                            s_canvas_transform_inverted = t[0]
+                            p = s_canvas_transform_inverted.map(p)
                             all_points.append(p)
-
 
                         size_rect_local = s_element.get_size_rect(scaled=False)
                         size_rect_local.moveCenter(QPointF(0, 0))
-                        sr2 = [
-                            size_rect_local.topLeft(),
-                            size_rect_local.topRight(),
-                            size_rect_local.bottomRight(),
-                            size_rect_local.bottomLeft()
-                        ]
+                        sr2 = self.elementsGetRectCorners(size_rect_local)
                         for p in sr2:
                             all_points.append(p)
 
-                        for n, coord in enumerate(all_points):
-                            painter.setPen(QPen(Qt.yellow, 20))
-                            painter.drawPoint(p)
-
-                            painter.setPen(QPen(Qt.red, 10))
-                            painter.drawText(coord,  f'{n}')
-                        print(len(all_points), len(sr1), len(sr2))
-
-                        painter.restore()
-
-
-
                     coords = convex_hull(all_points)
                     if coords is not None and len(coords) > 1:
-                        # v = QVector2D(coords[0] - coords[-1])
-                        # if v.length() > 5.0:
-                        #     painter.setPen(QPen(Qt.green, 10))
-                        # else:
-                        #     painter.setPen(QPen(Qt.red, 10))
                         coords.append(coords[0])
-
                         for n, coord in enumerate(coords[:-1]):
-                            painter.setPen(QPen(Qt.green, 10))
                             painter.drawLine(coord, coords[n+1])
-
-
-
-
 
             # отрисовка первой пометки
             if not element.second:
@@ -1955,6 +1919,14 @@ class ElementsMixin(ElementsTransformMixin):
                     )
                     painter.drawRect(capture_rect)
             painter.resetTransform()
+
+    def elementsGetRectCorners(self, rect):
+        return [
+            rect.topLeft(),
+            rect.topRight(),
+            rect.bottomRight(),
+            rect.bottomLeft()
+        ]
 
     def elementsDrawMain(self, painter, final=False, draw_background_only=False):
         painter.setRenderHint(QPainter.HighQualityAntialiasing, True)

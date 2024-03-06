@@ -294,7 +294,7 @@ class ElementsMixin(ElementsTransformMixin):
 
         self.elementsIsFinalDrawing = False
 
-        self.active_element = None
+        self.active_element = None #active element is the last selected element
 
         self.__te = Element(ToolID.zoom_in_region, [])
 
@@ -745,23 +745,23 @@ class ElementsMixin(ElementsTransformMixin):
                 self.elementsSetCopiedPixmap(element)
 
     def elementsFramePicture(self, frame_rect=None, frame_info=None, pixmap=None):
-        se = self.selected_element
+        ae = self.active_element
         if frame_rect:
-            if se.backup_pixmap is None:
-                se.backup_pixmap = se.pixmap
+            if ae.backup_pixmap is None:
+                ae.backup_pixmap = ae.pixmap
             if pixmap is not None:
-                se.pixmap = pixmap.copy(frame_rect)
+                ae.pixmap = pixmap.copy(frame_rect)
             else:
-                se.pixmap = se.backup_pixmap.copy(frame_rect)
+                ae.pixmap = ae.backup_pixmap.copy(frame_rect)
         else:
             # reset
-            se.pixmap = se.backup_pixmap
-            se.backup_pixmap = None
-        se.frame_info = frame_info
-        se.calc_local_data()
-        se.element_scale_y = 1.0
-        se.element_scale_y = 1.0
-        self.elementsSetSelected(se)
+            ae.pixmap = ae.backup_pixmap
+            ae.backup_pixmap = None
+        ae.frame_info = frame_info
+        ae.calc_local_data()
+        ae.element_scale_y = 1.0
+        ae.element_scale_y = 1.0
+        self.elementsSetSelected(ae)
 
     def elementsSetPixmapFromMagazin(self):
         if not self.Globals.dasPictureMagazin and \
@@ -1091,6 +1091,8 @@ class ElementsMixin(ElementsTransformMixin):
 
     def elementsMousePressEvent(self, event):
         tool = self.current_tool
+
+        self.active_element = None
 
         event_pos = self.elementsMapFromViewportToCanvas(QPointF(event.pos()))
 
@@ -1754,7 +1756,7 @@ class ElementsMixin(ElementsTransformMixin):
                 image_rect = QRectF(-image_rect.width()/2, -image_rect.height()/2,
                         image_rect.width(), image_rect.height()).toRect()
                 painter.rotate(element.rotation)
-                editing = not final and (element is self.selected_element or \
+                editing = not final and (element is self.active_element or \
                                     (element.textbox is not None and element.textbox.isVisible()))
                 if editing:
                     painter.setOpacity(0.5)
@@ -1869,7 +1871,7 @@ class ElementsMixin(ElementsTransformMixin):
                         size_rect.moveCenter(QPointF(0, 0))
                         sr1_points = self.elementsGetRectCorners(size_rect)
                         for p in sr1_points:
-                            # from f_element local to canvas world 
+                            # from f_element local to canvas world
                             p = f_canvas_transform.map(p)
                             # from canvas world to s_element local
                             t = s_canvas_transform.inverted()
@@ -2116,17 +2118,19 @@ class ElementsMixin(ElementsTransformMixin):
 
     def elementsSetSelected(self, element):
         if element is None:
+            self.active_element = None
             for element in self.elementsHistoryFilter():
                 element._selected = False
         else:
             element._selected = True
+            self.active_element = element
         self.init_selection_bounding_box_widget()
         self.elementsUpdatePanelUI()
 
     def elementsParametersChanged(self):
         tw = self.tools_window
         if tw:
-            element = self.selected_element or self.elementsGetLastElement()
+            element = self.active_element or self.elementsGetLastElement()
             case1 = element and element.type == self.tools_window.current_tool and element.fresh
             case2 = element and tw.current_tool == ToolID.transform
             if case1 or case2:
@@ -2397,13 +2401,13 @@ class ElementsMixin(ElementsTransformMixin):
             pass
         elif elements:
             if action == to_width:
-                if self.selected_element:
-                    fit_width = self.selected_element.pixmap.width()
+                if self.active_element:
+                    fit_width = self.active_element.pixmap.width()
                 else:
                     fit_width = max(el.pixmap.width() for el in elements)
             elif action == to_height:
-                if self.selected_element:
-                    fit_height = self.selected_element.pixmap.height()
+                if self.active_element:
+                    fit_height = self.active_element.pixmap.height()
                 else:
                     fit_height = max(el.pixmap.height() for el in elements)
 

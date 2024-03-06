@@ -2887,8 +2887,8 @@ class ScreenshotWindow(QWidget, ElementsMixin):
 
     def change_tools_params(self, delta_value, modifiers):
         tools_window = self.tools_window
-        if self.selected_element and tools_window.current_tool == ToolID.transform and \
-                not self.selected_element in self.elementsGetElementsUnderMouse(event.pos()):
+        if self.active_element and tools_window.current_tool == ToolID.transform and \
+                not self.active_element in self.elementsGetElementsUnderMouse(event.pos()):
             return
         delta_value = delta_value / 24000.0
         if self.tools_window:
@@ -3035,7 +3035,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
 
         reset_image_frame = None
         set_image_frame = None
-        sel_elem = self.selected_element
+        sel_elem = self.active_element
         if sel_elem and sel_elem.type == ToolID.picture:
             if sel_elem.backup_pixmap is not None:
                 reset_image_frame = add_item("Отменить обрезку выделенного изображения")

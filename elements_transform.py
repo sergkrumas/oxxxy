@@ -208,12 +208,14 @@ class ElementsTransformMixin():
             element_selection_area = element.get_selection_area(canvas=self)
             is_under_mouse = element_selection_area.containsPoint(self.mapped_cursor_pos(), Qt.WindingFill)
             if is_under_mouse and element._selected:
+                self.active_element = element
                 return True
             if is_under_mouse and not element._selected:
                 if not add_selection:
                     for el in elements:
                         el._selected = False
                 element._selected = True
+                self.active_element = element
                 self.prevent_item_deselection = True
                 # self.init_selection_bounding_box_widget() # может пригодится для отладки
                 return True
@@ -222,7 +224,7 @@ class ElementsTransformMixin():
     def canvas_selection_callback(self, add_to_selection):
         elements = self.elementsFilterElementsForSelection()
         if self.selection_rect is not None:
-            # выделение прямоугольником
+            # выделение через рамку выделения
             selection_rect_area = QPolygonF(self.selection_rect)
             for element in elements:
                 element_selection_area = element.get_selection_area(canvas=self)
@@ -234,7 +236,7 @@ class ElementsTransformMixin():
                     else:
                         element._selected = False
         else:
-            # выделение одинарным кликом
+            # выделение кликом без рамки выделения
             if self.cyclic_select_activated:
                 self.cyclic_select()
                 self.cyclic_select_activated = False
@@ -248,11 +250,15 @@ class ElementsTransformMixin():
                         # subtract element from selection!
                         if is_under_mouse and not self.prevent_item_deselection:
                             element._selected = False
+                            self.active_element = None
                     else:
                         if min_area_element is not element:
                             element._selected = False
+                            self.active_element = None
                         else:
                             element._selected = is_under_mouse
+                            if is_under_mouse:
+                                self.active_element = element
 
 
         self.init_selection_bounding_box_widget()

@@ -1831,12 +1831,10 @@ class ElementsMixin(ElementsTransformMixin):
             if f_element.finished:
                 if s_element is None:
                     output_pos = self.elementsMapFromViewportToCanvas(QCursor().pos())
-                    size = f_element.size
                     toolbool = f_element.toolbool
                     color = f_element.color
                 else:
                     output_pos = s_element.element_position
-                    size = s_element.size
                     toolbool = s_element.toolbool
                     color = s_element.color
 

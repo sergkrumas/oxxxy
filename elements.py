@@ -1027,29 +1027,9 @@ class ElementsMixin(ElementsTransformMixin):
         for el in self.elementsHistoryFilter():
             if el.type in [ToolID.removing,]:
                 continue
-            if hasattr(el, "path"):
-                is_mouse_over = el.path.boundingRect().contains(cursor_pos)
-            elif hasattr(el, "selection_path"):
-                is_mouse_over = el.selection_path.contains(cursor_pos)
-            elif el.type == ToolID.text:
-                p = el.end_point - QPoint(0, el.pixmap.height())
-                text_bounding_rect = QRect(p, QSize(el.pixmap.width(), el.pixmap.height()))
-                is_mouse_over1 = text_bounding_rect.contains(cursor_pos)
-                is_mouse_over2 = build_valid_rect(el.start_point, el.end_point).contains(cursor_pos)
-                is_mouse_over = is_mouse_over1 or is_mouse_over2
-            elif el.type == ToolID.picture:
-                is_mouse_over = build_valid_rect(el.start_point, el.end_point).contains(cursor_pos)
-            elif el.type == ToolID.numbering:
-                is_mouse_over1 = build_valid_rect(el.start_point, el.end_point).contains(cursor_pos)
-                w = self.NUMBERING_WIDTH
-                is_mouse_over2 = QRect(el.end_point - QPoint(int(w/2), int(w/2)),
-                        QSize(w, w)).contains(cursor_pos)
-                is_mouse_over = is_mouse_over1 or is_mouse_over2
-            elif el.type in [ToolID.zoom_in_region, ToolID.copypaste]:
-                is_mouse_over = build_valid_rect(el.start_point, el.end_point).contains(cursor_pos)
-            else:
-                is_mouse_over = build_valid_rect(el.start_point, el.end_point).contains(cursor_pos)
-            if is_mouse_over:
+            element_selection_area = el.get_selection_area(canvas=self)
+            is_under_mouse = element_selection_area.containsPoint(cursor_pos, Qt.WindingFill)
+            if is_under_mouse:
                 elements_under_mouse.append(el)
         return elements_under_mouse
 

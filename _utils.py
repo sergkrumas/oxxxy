@@ -28,6 +28,7 @@ import ctypes
 import math
 import json
 import webbrowser
+import random
 
 import psutil
 from PIL import Image, ImageGrab, PngImagePlugin
@@ -107,9 +108,6 @@ def ch_left_index(points):
         elif points[i].x() == points[minn].x():
             if points[i].y() > points[minn].y():
                 minn = i
-            # это не работает для моего случая, поэтому изменено на нижний вариант
-            # if points[i].y() < points[minn].y():
-            #     minn = i
     return minn
 
 def ch_orientation(p, q, r):
@@ -145,7 +143,11 @@ def convex_hull(points):
 
     p = l
     q = 0
+
+    length = len(points)
+    loops = 0
     while True:
+        loops += 1
 
         # add current point to result
         hull.append(p)
@@ -173,6 +175,11 @@ def convex_hull(points):
         # while we don't come to first point
         if p == l:
             break
+        # этого предохранителя не было, но я решил его вставить на всякий случай
+        if loops > length*2:
+            # print('!break from convex_hull')
+            break
+
 
     return [points[each] for each in hull]
 

@@ -1863,13 +1863,15 @@ class ElementsMixin(ElementsTransformMixin):
 
                 painter.drawPixmap(output_rect, f_element.pixmap, QRectF(f_element.pixmap.rect()))
 
+                if el_type == ToolID.zoom_in_region:
+                    painter.drawRect(output_rect)
+
                 if toolbool and el_type == ToolID.zoom_in_region:
-                    points = []
+                    all_points = []
 
-
-                    points.append(-f_element.element_position + pos)
-                    points.append(-f_element.element_position + QPointF(100, 100) + pos)
-
+                    font = painter.font()
+                    font.setPixelSize(35)
+                    painter.setFont(font)
 
                     f_canvas_transform = f_element.get_transform_obj(
                         canvas=self,
@@ -1885,43 +1887,64 @@ class ElementsMixin(ElementsTransformMixin):
                             apply_global_scale=False
                         )
 
-                        s = []
+
                         painter.save()
                         painter.setPen(QPen(Qt.red, 10))
                         size_rect = f_element.get_size_rect(scaled=False)
                         size_rect.moveCenter(QPointF(0, 0))
-                        for p in QPolygonF(size_rect):
+                        sr1 = [
+                            size_rect.topLeft(),
+                            size_rect.topRight(),
+                            size_rect.bottomRight(),
+                            size_rect.bottomLeft()
+                        ]
+                        for p in sr1:
                             # from local to world
                             p = f_canvas_transform.map(p)
                             # from world to local
                             p = (s_canvas_transform.inverted())[0].map(p)
-                            s.append(p)
+                            all_points.append(p)
 
 
                         size_rect_local = s_element.get_size_rect(scaled=False)
                         size_rect_local.moveCenter(QPointF(0, 0))
-                        for p in QPolygonF(size_rect_local):
-                            s.append(p)
+                        sr2 = [
+                            size_rect_local.topLeft(),
+                            size_rect_local.topRight(),
+                            size_rect_local.bottomRight(),
+                            size_rect_local.bottomLeft()
+                        ]
+                        for p in sr2:
+                            all_points.append(p)
 
-                        for p in s:
+                        for n, coord in enumerate(all_points):
+                            painter.setPen(QPen(Qt.yellow, 20))
                             painter.drawPoint(p)
+
+                            painter.setPen(QPen(Qt.red, 10))
+                            painter.drawText(coord,  f'{n}')
+                        print(len(all_points), len(sr1), len(sr2))
+
                         painter.restore()
 
-                        # print(s)
-                        points = s
 
-                    # for pos in QPolygonF(output_rect):
-                    #     points.append(pos)
 
-                    coords = convex_hull(points)
+                    coords = convex_hull(all_points)
                     if coords is not None and len(coords) > 1:
+                        # v = QVector2D(coords[0] - coords[-1])
+                        # if v.length() > 5.0:
+                        #     painter.setPen(QPen(Qt.green, 10))
+                        # else:
+                        #     painter.setPen(QPen(Qt.red, 10))
+                        coords.append(coords[0])
+
                         for n, coord in enumerate(coords[:-1]):
+                            painter.setPen(QPen(Qt.green, 10))
                             painter.drawLine(coord, coords[n+1])
 
-                    # painter.drawLine(QPointF(0, 0), QPointF(100, 0))
 
-                if el_type == ToolID.zoom_in_region:
-                    painter.drawRect(output_rect)
+
+
 
             # отрисовка первой пометки
             if not element.second:

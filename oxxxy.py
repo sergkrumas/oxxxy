@@ -2518,9 +2518,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         # self.ocp = QCursor().pos()
         # self.elements = []
         # self.elements_final_output = None
-        self.widget_activated = False
-        self.selected_element = None
-        self.transform_widget = None
+
         self.dialog = None
 
         self.dark_pictures = True

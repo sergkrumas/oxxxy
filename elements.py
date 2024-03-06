@@ -2390,11 +2390,11 @@ class ElementsMixin(ElementsTransformMixin):
 
             if points:
                 content_rect = build_valid_rectF(*get_bounding_points(points))
-                new_width = max(self.source_pixels.width(), content_rect.width())
-                new_height = max(self.source_pixels.height(), content_rect.height())
             else:
-                new_width = self.source_pixels.width()
-                new_height = self.source_pixels.height()
+                content_rect = QRectF()
+            new_width = max(self.source_pixels.width(), content_rect.width())
+            new_height = max(self.source_pixels.height(), content_rect.height())
+
 
         # рендер картинки
         if action == action_crop:

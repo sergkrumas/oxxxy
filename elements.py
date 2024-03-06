@@ -46,6 +46,8 @@ from _utils import (convex_hull, check_scancode_for, SettingsJson,
 from elements_transform import ElementsTransformMixin
 
 
+ZOOM_IN_REGION_DAFULT_SCALE = 1.5
+
 class ToolID():
     none = "none"
 
@@ -143,6 +145,10 @@ class Element():
     def calc_local_data_finish(self, first_element):
         self.element_width = first_element.element_width
         self.element_height = first_element.element_height
+        # с предувеличением
+        if self.type in [ToolID.zoom_in_region]:
+            self.element_scale_y = ZOOM_IN_REGION_DAFULT_SCALE
+            self.element_scale_x = ZOOM_IN_REGION_DAFULT_SCALE
 
     def calc_local_data_path(self):
         bb = self.path.boundingRect()
@@ -289,6 +295,8 @@ class ElementsMixin(ElementsTransformMixin):
         self.elementsIsFinalDrawing = False
 
         self.active_element = None
+
+        self.__te = Element(ToolID.zoom_in_region, [])
 
         # для выделения элементов и виджета трансформации элементов
         self.elementsInitTransform()
@@ -1831,10 +1839,6 @@ class ElementsMixin(ElementsTransformMixin):
                     size = s_element.size
                     toolbool = s_element.toolbool
                     color = s_element.color
-                if el_type == ToolID.zoom_in_region:
-                    factor = 1.0 + size*4.0
-                elif el_type == ToolID.copypaste:
-                    factor = 1.0
 
             if el_type == ToolID.zoom_in_region:
                 painter.setPen(QPen(color, 1))
@@ -1847,15 +1851,12 @@ class ElementsMixin(ElementsTransformMixin):
             # надо рисовать её образ центированный по кусроску мыши
             special_case = (not element.second and f_element.finished and s_element is None)
             if element.second or special_case:
-
-                capture_rect = build_valid_rectF(
-                    f_element.local_start_point,
-                    f_element.local_end_point
-                )
-                capture_rect.moveCenter(f_element.element_position)
+                
                 output_rect = element.get_size_rect(scaled=False)
                 if s_element is None:
                     pos = output_pos - f_element.element_position
+                    s = ZOOM_IN_REGION_DAFULT_SCALE
+                    output_rect = QRectF(0, 0, output_rect.width()*s, output_rect.height()*s)
                 else:
                     pos = output_pos - s_element.element_position
                 output_rect.moveCenter(pos)
@@ -1864,6 +1865,7 @@ class ElementsMixin(ElementsTransformMixin):
                 painter.drawPixmap(output_rect, f_element.pixmap, QRectF(f_element.pixmap.rect()))
 
                 if el_type == ToolID.zoom_in_region:
+                        
                     painter.drawRect(output_rect)
 
                 if toolbool and el_type == ToolID.zoom_in_region:
@@ -1880,15 +1882,15 @@ class ElementsMixin(ElementsTransformMixin):
                         "apply_global_scale":False
                     }
                     f_canvas_transform = f_element.get_transform_obj(**kwargs)
-                    if s_element:
+                    if s_element is not None:
                         s_canvas_transform = s_element.get_transform_obj(**kwargs)
-
+                        size_rect_local = s_element.get_size_rect(scaled=False)
 
                         size_rect = f_element.get_size_rect(scaled=False)
                         size_rect.moveCenter(QPointF(0, 0))
                         sr1 = self.elementsGetRectCorners(size_rect)
                         for p in sr1:
-                            # from f_elemnt local to world
+                            # from f_element local to world
                             p = f_canvas_transform.map(p)
                             # from world to s_element local
                             t = s_canvas_transform.inverted()
@@ -1898,11 +1900,39 @@ class ElementsMixin(ElementsTransformMixin):
                             p = s_canvas_transform_inverted.map(p)
                             all_points.append(p)
 
-                        size_rect_local = s_element.get_size_rect(scaled=False)
+
                         size_rect_local.moveCenter(QPointF(0, 0))
                         sr2 = self.elementsGetRectCorners(size_rect_local)
                         for p in sr2:
                             all_points.append(p)
+
+                    else:
+
+                        self.__te.element_position = output_pos
+                        self.__te.calc_local_data_finish(f_element)
+
+                        s_canvas_transform = self.__te.get_transform_obj(**kwargs)
+                        size_rect_non_local = self.__te.get_size_rect(scaled=False)
+    
+                        # так как образ отрисовывается во фрейме первого элемента,
+                        # то памить придётся уже sr2, а не sr1
+                        size_rect = f_element.get_size_rect(scaled=False)
+                        size_rect.moveCenter(QPointF(0, 0))
+                        sr1 = self.elementsGetRectCorners(size_rect)
+                        for p in sr1:
+                            all_points.append(p)    
+
+                        size_rect_non_local.moveCenter(QPointF(0, 0))
+                        sr2 = self.elementsGetRectCorners(size_rect_non_local)
+                        for p in sr2:
+                            p = s_canvas_transform.map(p)
+                            t = f_canvas_transform.inverted()
+                            if not t[1]:
+                                raise Exception('inverted matrix doesn\'t exist!')
+                            f_canvas_transform_inverted = t[0]
+                            p = f_canvas_transform_inverted.map(p)
+                            all_points.append(p)
+
 
                     coords = convex_hull(all_points)
                     if coords is not None and len(coords) > 1:

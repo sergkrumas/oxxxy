@@ -2086,7 +2086,7 @@ class ElementsMixin(ElementsTransformMixin):
                     painter.restore()
                 painter.restore()
 
-    def elementsUpdateFinalPicture(self):
+    def elementsUpdateFinalPicture(self, capture_region_rect=None):
         if self.capture_region_rect:
             any_special_element = any(el.type == ToolID.multiframing for el in self.elements)
             if any_special_element:
@@ -2115,15 +2115,18 @@ class ElementsMixin(ElementsTransformMixin):
                     cur_pos += QPoint(0, el.height)
                 painter.end()
             else:
+                if capture_region_rect is None:
+                    capture_region_rect = self.capture_region_rect
+
                 self.specials_case = False
-                self.elements_final_output = QPixmap(self.capture_region_rect.size().toSize())
+                self.elements_final_output = QPixmap(capture_region_rect.size().toSize())
                 self.elements_final_output.fill(Qt.transparent)
                 painter = QPainter()
                 painter.begin(self.elements_final_output)
                 self._canvas_origin = QPointF(self.canvas_origin)
                 self._canvas_scale_x = self.canvas_scale_x
                 self._canvas_scale_y = self.canvas_scale_y
-                self.canvas_origin = -self.capture_region_rect.topLeft()
+                self.canvas_origin = -capture_region_rect.topLeft()
                 self.canvas_scale_x = 1.0
                 self.canvas_scale_y = 1.0
                 self.elementsDrawMain(painter, final=True)
@@ -2364,50 +2367,42 @@ class ElementsMixin(ElementsTransformMixin):
         pos = self.mapFromGlobal(QCursor().pos())
         action = subMenu.exec_(pos)
 
-        # render capture zone
-        self.elementsUpdateFinalPicture()
-        pix = self.elements_final_output.copy(self.capture_region_rect)
-
-        # draw capture zone to background image
         image = None
         if action == None:
             return
+        elif action == action_keep:
+            pass
         elif action == action_extend:
             points = []
             for element in self.elementsHistoryFilter():
-                if element.type != ToolID.picture:
-                    continue
-                points.append(element.start_point)
-                points.append(element.end_point)
+
+                sel_area = element.get_selection_area(canvas=self,
+                    place_center_at_origin=False,
+                    apply_global_scale=False,
+                    apply_translation=True
+                )
+                br = sel_area.boundingRect()
+
+                points.append(br.topLeft())
+                points.append(br.bottomRight())
+
 
             if points:
-                content_rect = self._build_valid_rect(*get_bounding_points(points))
-                new_width = max(self.source_pixels.width(), content_rect.width())
-                new_height = max(self.source_pixels.height(), content_rect.height())
+                content_rect = build_valid_rectF(*get_bounding_points(points))
 
-                image = QImage(new_width, new_height, QImage.Format_ARGB32)
-                image.fill(Qt.transparent)
-                p = QPainter()
-                p.begin(image)
-                p.drawImage(self.source_pixels.rect(), self.source_pixels,
-                            self.source_pixels.rect())
-                p.end()
+        if action == action_keep:
+            self.elementsUpdateFinalPicture()
+        elif action == action_extend:
+            self.elementsUpdateFinalPicture(
+                    capture_region_rect=QRectF(0, 0, content_rect.width(), content_rect.height()))
 
-        if image is None:
-            image = QImage(self.source_pixels)
-
-        painter = QPainter()
-        painter.begin(image)
-        dest_rect = QRect(pix.rect())
-        dest_rect.moveTopLeft(self.capture_region_rect.topLeft())
-        painter.drawPixmap(dest_rect, pix, pix.rect())
-        painter.end()
-        self.source_pixels = image
+        self.source_pixels = self.elements_final_output.toImage()
 
         # cleaning
         self.elementsSetSelected(None)
-        self.elements.clear()
-        self.elements_history_index = 0
+        # self.elements.clear()
+        self.elementsCreateBackgroundPictures(update=True)
+        self.elements_history_index = 1
         self.elementsUpdateHistoryButtonsStatus()
         self.update_tools_window()
         self.update()

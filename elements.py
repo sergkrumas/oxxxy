@@ -2559,7 +2559,7 @@ class ElementsMixin(ElementsTransformMixin):
             if self.tools_window.current_tool == ToolID.picture:
                 capture_height = max(self.capture_region_rect.height(), 100)
                 if pixmap.height() > capture_height:
-                    pixmap = pixmap.scaledToHeight(capture_height, Qt.SmoothTransformation)
+                    pixmap = pixmap.scaledToHeight(int(capture_height), Qt.SmoothTransformation)
                 self.current_picture_id = self.PictureInfo.TYPE_FROM_FILE
                 self.current_picture_pixmap = pixmap
                 self.current_picture_angle = 0
@@ -2567,10 +2567,11 @@ class ElementsMixin(ElementsTransformMixin):
                 tools_window.on_parameters_changed()
                 self.activateWindow()
             else:
+                self.elementsSetSelected(None)
                 element = self.elementsCreateNew(ToolID.picture)
                 element.pixmap = pixmap
                 pos = self.capture_region_rect.topLeft()
-                eleemnt.element_position = pos + QPointF(pixmap.width()/2, pixmap.height()/2)
+                element.element_position = pos + QPointF(pixmap.width()/2, pixmap.height()/2)
                 element.calc_local_data()
                 self.elementsSetSelected(element)
                 self.elementsUpdatePanelUI()

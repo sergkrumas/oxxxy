@@ -161,18 +161,6 @@ class Element():
         self.element_width = self.pixmap.width()
         self.element_height = self.pixmap.height()
 
-    def recalc_input_data_default(self):
-        p = self.element_position
-        w = self.element_width
-        h = self.element_height
-        lsp = self.local_start_point
-        lep = self.local_end_point
-        scale_x = self.element_scale_x
-        scale_y = self.element_scale_y
-        self.start_point = p + QPointF(lsp.x()*scale_x, lsp.y()*scale_y)
-        self.end_point = p + QPointF(lep.x()*scale_x, lep.y()*scale_y)
-        self.calc_local_data_default()
-
     def calc_local_data(self):
         if self.type in [ToolID.line]:
             self.calc_local_data_default()
@@ -218,6 +206,18 @@ class Element():
             scale_x = 1.0
             scale_y = 1.0
         return QRectF(0, 0, self.element_width*scale_x, self.element_height*scale_y)
+
+    def get_canvas_space_selection_area(self, canvas=None):
+        return self.get_selection_area(canvas=canvas,
+                                    place_center_at_origin=False,
+                                    apply_global_scale=False,
+                                    apply_translation=True
+        )
+
+    def get_canvas_space_selection_rect_with_no_rotation(self):
+        er = self.get_size_rect(scaled=True)
+        er.moveCenter(self.element_position)
+        return er
 
     def get_selection_area(self, canvas=None, place_center_at_origin=True, apply_global_scale=True, apply_translation=True):
         size_rect = self.get_size_rect()
@@ -1462,9 +1462,6 @@ class ElementsMixin(ElementsTransformMixin):
                         elif element.type == ToolID.text:
                             element.modify_end_point = True
 
-                        elif element.type == ToolID.multiframing:
-                            element.recalc_input_data_default()
-
         if tool != ToolID.transform:
             self.elementsSetSelected(None)
 
@@ -1709,20 +1706,19 @@ class ElementsMixin(ElementsTransformMixin):
             ep = element.local_end_point
             painter.drawLine(sp, ep)
             painter.resetTransform()
-        elif el_type == ToolID.multiframing and not final:
-            _pen = painter.pen()
-            _brush = painter.brush()
-            painter.setPen(QPen(QColor(255, 0, 0), 1))
-            painter.setBrush(Qt.NoBrush)
-            cm = painter.compositionMode()
-            painter.setCompositionMode(QPainter.RasterOp_NotDestination) #RasterOp_SourceXorDestination
-            rect = build_valid_rectF(element.local_start_point, element.local_end_point)
-            painter.setTransform(element.get_transform_obj(canvas=self))
-            painter.drawRect(rect)
-            painter.resetTransform()
-            painter.setCompositionMode(cm)
-            painter.setPen(_pen)
-            painter.setBrush(_brush)
+        elif el_type in [ToolID.multiframing]:
+            if not final:
+                painter.save()
+                painter.setPen(QPen(QColor(255, 0, 0), 1))
+                painter.setBrush(Qt.NoBrush)
+                rect = build_valid_rectF(element.local_start_point, element.local_end_point)
+                painter.setTransform(element.get_transform_obj(canvas=self))
+                cm = painter.compositionMode()
+                painter.setCompositionMode(QPainter.RasterOp_NotDestination) #RasterOp_SourceXorDestination
+                painter.drawRect(rect)
+                painter.setCompositionMode(cm)
+                painter.resetTransform()
+                painter.restore()
         elif el_type in [ToolID.oval, ToolID.rect, ToolID.numbering]:
             painter.setTransform(element.get_transform_obj(canvas=self))
             cur_brush = painter.brush()
@@ -2088,37 +2084,47 @@ class ElementsMixin(ElementsTransformMixin):
 
     def elementsUpdateFinalPicture(self, capture_region_rect=None):
         if self.capture_region_rect:
-            any_special_element = any(el.type == ToolID.multiframing for el in self.elementsHistoryFilter())
-            if any_special_element:
-                self.specials_case = True
-                specials = list((el for el in self.elementsHistoryFilter() if el.type == ToolID.multiframing))
+            specials = [el for el in self.elementsHistoryFilter() if el.type == ToolID.multiframing]
+            any_multiframing_element = any(specials)
+            if any_multiframing_element:
                 max_width = -1
                 total_height = 0
                 specials_rects = []
-                for el in specials:
-                    el.bounding_rect = build_valid_rect(el.start_point, el.end_point)
+                source_pixmap = QPixmap.fromImage(self.source_pixels)
+                for number, el in enumerate(specials):
+                    br = el.get_canvas_space_selection_rect_with_no_rotation()
+                    capture_pos = el.element_position
+                    el.bounding_rect = br
+                    capture_pos = el.element_position
+                    capture_rotation = el.element_rotation
+                    capture_width = br.width()
+                    capture_height = br.height()
+                    el.pixmap = capture_rotated_rect_from_pixmap(source_pixmap, capture_pos,
+                        capture_rotation, capture_width, capture_height)
                 for el in specials:
                     max_width = max(max_width, el.bounding_rect.width())
                 for el in specials:
                     br = el.bounding_rect
-                    el.height = int(max_width/br.width()*br.height())
+                    el.height = max_width/br.width()*br.height()
                     total_height += el.height
-                _rect = QRect(QPoint(0, 0), QSize(max_width, total_height))
-                self.elements_final_output = QPixmap(_rect.size())
+                max_width = int(max_width)
+                total_height = int(total_height)
+                self.elements_final_output = QPixmap(QSize(max_width, total_height))
                 painter = QPainter()
                 painter.begin(self.elements_final_output)
-                cur_pos = QPoint(0, 0)
+                cur_pos = QPointF(0, 0)
                 for el in specials:
-                    br = el.bounding_rect
-                    dst_rect = QRect(cur_pos, QSize(max_width, el.height))
-                    painter.drawImage(dst_rect, self.source_pixels, br)
-                    cur_pos += QPoint(0, el.height)
+                    dst_rect = QRectF(cur_pos, QSizeF(max_width, el.height))
+                    painter.drawPixmap(dst_rect, el.pixmap, QRectF(el.pixmap.rect()))
+                    cur_pos += QPointF(0, el.height)
+                for el in specials:
+                    del el.bounding_rect
+                    del el.pixmap
                 painter.end()
             else:
                 if capture_region_rect is None:
                     capture_region_rect = self.capture_region_rect
 
-                self.specials_case = False
                 self.elements_final_output = QPixmap(capture_region_rect.size().toSize())
                 self.elements_final_output.fill(Qt.transparent)
                 painter = QPainter()
@@ -2378,11 +2384,7 @@ class ElementsMixin(ElementsTransformMixin):
         elif action == action_extend:
             points = []
             for element in self.elementsHistoryFilter():
-                sel_area = element.get_selection_area(canvas=self,
-                    place_center_at_origin=False,
-                    apply_global_scale=False,
-                    apply_translation=True
-                )
+                sel_area = element.get_canvas_space_selection_area()
                 br = sel_area.boundingRect()
 
                 points.append(br.topLeft())

@@ -1851,7 +1851,7 @@ class ElementsMixin(ElementsTransformMixin):
             # надо рисовать её образ центированный по кусроску мыши
             special_case = (not element.second and f_element.finished and s_element is None)
             if element.second or special_case:
-                
+
                 output_rect = element.get_size_rect(scaled=False)
                 if s_element is None:
                     pos = output_pos - f_element.element_position
@@ -1865,7 +1865,7 @@ class ElementsMixin(ElementsTransformMixin):
                 painter.drawPixmap(output_rect, f_element.pixmap, QRectF(f_element.pixmap.rect()))
 
                 if el_type == ToolID.zoom_in_region:
-                        
+
                     painter.drawRect(output_rect)
 
                 if toolbool and el_type == ToolID.zoom_in_region:
@@ -1913,14 +1913,14 @@ class ElementsMixin(ElementsTransformMixin):
 
                         s_canvas_transform = self.__te.get_transform_obj(**kwargs)
                         size_rect_non_local = self.__te.get_size_rect(scaled=False)
-    
+
                         # так как образ отрисовывается во фрейме первого элемента,
                         # то памить придётся уже sr2, а не sr1
                         size_rect = f_element.get_size_rect(scaled=False)
                         size_rect.moveCenter(QPointF(0, 0))
                         sr1 = self.elementsGetRectCorners(size_rect)
                         for p in sr1:
-                            all_points.append(p)    
+                            all_points.append(p)
 
                         size_rect_non_local.moveCenter(QPointF(0, 0))
                         sr2 = self.elementsGetRectCorners(size_rect_non_local)

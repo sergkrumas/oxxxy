@@ -63,7 +63,7 @@ from elements import ElementsMixin, ToolID
 class Globals():
     DEBUG = True
     DEBUG_SETTINGS_WINDOW = False
-    DEBUG_ELEMENTS = False
+    DEBUG_ELEMENTS = True
     DEBUG_ELEMENTS_PICTURE_FRAMING = True
     DEBUG_ELEMENTS_COLLAGE = False
     CRASH_SIMULATOR = False

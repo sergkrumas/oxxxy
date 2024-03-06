@@ -2392,10 +2392,11 @@ class ElementsMixin(ElementsTransformMixin):
                 content_rect = build_valid_rectF(*get_bounding_points(points))
                 new_width = max(self.source_pixels.width(), content_rect.width())
                 new_height = max(self.source_pixels.height(), content_rect.height())
+            else:
+                new_width = self.source_pixels.width()
+                new_height = self.source_pixels.height()
 
-
-
-
+        # рендер картинки
         if action == action_crop:
             self.elementsUpdateFinalPicture()
         elif action == action_keep:
@@ -2406,7 +2407,9 @@ class ElementsMixin(ElementsTransformMixin):
             self.elementsUpdateFinalPicture(
                     capture_region_rect=QRectF(0, 0, new_width, new_height))
 
+        # задаём 
         self.source_pixels = self.elements_final_output.toImage()
+        self.elementsCreateBackgroundPictures(update=True)
 
         # обновляем рамку, если по ней производилась обрезка
         if action == action_crop:
@@ -2418,9 +2421,7 @@ class ElementsMixin(ElementsTransformMixin):
         # cleaning
         self.elementsSetSelected(None)
 
-        self.elementsCreateBackgroundPictures(update=True)
         self.elements_history_index = 1 # 1, а не 0, потому что оставляем слот с фоном
-
         if self.tools_window:
             self.tools_window.forwards_backwards_update()
 

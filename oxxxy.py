@@ -3150,13 +3150,8 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             if self.tools_window:
                 self.tools_window.hide()
             self.source_pixels = make_screenshot_pyqt()
-            # updating source-dependent elements
-            for element in self.elements:
-                if element.type in [ToolID.blurring]:
-                    self.elementsSetBlurredPixmap(element)
-                if element.type in [ToolID.copypaste, ToolID.zoom_in_region]:
-                    if not element.second:
-                        self.elementsSetCopiedPixmap(element)
+            self.elementsCreateBackgroundPictures(update=True)
+            self.elementsUpdateAfterReshot()
             self.show()
             if self.tools_window:
                 self.tools_window.show()

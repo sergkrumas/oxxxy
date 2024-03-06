@@ -63,6 +63,7 @@ class ToolID():
     blurring = "blurring"
     darkening = "darkening"
     picture = "picture"
+    background_picture = 'background'
     zoom_in_region = "zoom_in_region"
     copypaste = "copypaste"
 
@@ -301,12 +302,33 @@ class ElementsMixin(ElementsTransformMixin):
         # для выделения элементов и виджета трансформации элементов
         self.elementsInitTransform()
 
-    def elementsCreateBackgroundPictures(self):
+    def elementsFindBackgroundSlot(self):
+        for slot in self.elementsHistoryFilterSlots():
+            if slot.comment == ToolID.background_picture:
+                return slot
+        return None 
+
+    def elementsCreateBackgroundPictures(self, update=False):
         background_pixmap = QPixmap.fromImage(self.source_pixels)
-        element = self.elementsCreateNew(ToolID.picture, comment='background')
-        element.size = 0.5
+        background_history_slot = self.elementsFindBackgroundSlot()
+        if update and background_history_slot is not None:
+            unique_index = None
+            els = background_history_slot.elements
+            if els and els[-1]:
+                unique_index =  els[-1].unique_index
+
+            element = self.elementsCreateNew(ToolID.picture,
+                comment=ToolID.background_picture,
+                create_new_slot=False,
+                history_slot=background_history_slot,
+            )
+            if unique_index is not None:
+                # задавая source_index мы удаляем из фильтра прошлое изображение,
+                # но оно остаётся в слоте
+                element.source_index = unique_index
+        else:
+            element = self.elementsCreateNew(ToolID.picture, comment=ToolID.background_picture)
         element.pixmap = background_pixmap
-        element.angle = 0
         element.background_image = True
         element.calc_local_data()
         element.element_position = QPointF(background_pixmap.width()/2, background_pixmap.height()/2)
@@ -961,7 +983,8 @@ class ElementsMixin(ElementsTransformMixin):
         else:
             return None
 
-    def elementsCreateNew(self, element_type, start_drawing=False, create_new_slot=True, comment=None):
+    def elementsCreateNew(self, element_type, start_drawing=False,
+                                        create_new_slot=True, comment=None, history_slot=None):
         self.elementsDeactivateTextElements()
         # срезание отменённой (невидимой) части истории
         # перед созданием элемента
@@ -971,7 +994,10 @@ class ElementsMixin(ElementsTransformMixin):
             self.history_slots = self.elementsHistoryFilterSlots()
             hs = self.elementsCreateNewSlot(comment)
         else:
-            hs = self.elementsGetLastHS()
+            if history_slot is None:
+                hs = self.elementsGetLastHS()
+            else:
+                hs = history_slot
         case1 = element_type == ToolID.removing
         case2 = element_type == ToolID.TEMPORARY_TYPE_NOT_DEFINED
         case3 = start_drawing
@@ -2553,6 +2579,15 @@ class ElementsMixin(ElementsTransformMixin):
         elif mdata and mdata.hasImage():
             pixmap = QPixmap().fromImage(mdata.imageData())
         return pixmap
+
+    def elementsUpdateAfterReshot(self):
+        # updating dependent elements
+        for element in self.elements:
+            if element.type in [ToolID.blurring]:
+                self.elementsSetBlurredPixmap(element)
+            if element.type in [ToolID.copypaste, ToolID.zoom_in_region]:
+                if not element.second:
+                    self.elementsSetCopiedPixmap(element)        
 
     def elementsPasteImageToImageToolOrImageElement(self, pixmap):
         if pixmap and not pixmap.isNull():

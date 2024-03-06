@@ -2809,6 +2809,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             delta = QPoint(event.pos() - self.ocp)
             self.canvas_origin = self.start_canvas_origin + delta
             self.autopos_tools_window()
+            self.update_selection_bouding_box()
 
         if event.buttons() == Qt.LeftButton and not self.is_rect_being_redefined:
             self.setCursor(self.get_custom_cross_cursor())

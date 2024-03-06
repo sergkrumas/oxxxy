@@ -2088,7 +2088,7 @@ class ElementsMixin(ElementsTransformMixin):
 
     def elementsUpdateFinalPicture(self, capture_region_rect=None):
         if self.capture_region_rect:
-            any_special_element = any(el.type == ToolID.multiframing for el in self.elements)
+            any_special_element = any(el.type == ToolID.multiframing for el in self.elementsHistoryFilter())
             if any_special_element:
                 self.specials_case = True
                 specials = list((el for el in self.elementsHistoryFilter() if el.type == ToolID.multiframing))

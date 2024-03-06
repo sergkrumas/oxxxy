@@ -2363,19 +2363,21 @@ class ElementsMixin(ElementsTransformMixin):
         subMenu.setStyleSheet(self.context_menu_stylesheet)
         action_extend = subMenu.addAction("Расширить картинку-фон, если контент будет превосходить её размеры")
         action_keep = subMenu.addAction("Оставить размеры картинки-фона как есть")
+        action_crop = subMenu.addAction("Обрезать по рамке захвата")
+        action_cancel = subMenu.addAction("Отмена")
 
         pos = self.mapFromGlobal(QCursor().pos())
         action = subMenu.exec_(pos)
 
-        image = None
-        if action == None:
+        if action == None or action == action_cancel:
             return
         elif action == action_keep:
+            pass
+        elif action == action_crop:
             pass
         elif action == action_extend:
             points = []
             for element in self.elementsHistoryFilter():
-
                 sel_area = element.get_selection_area(canvas=self,
                     place_center_at_origin=False,
                     apply_global_scale=False,
@@ -2386,24 +2388,42 @@ class ElementsMixin(ElementsTransformMixin):
                 points.append(br.topLeft())
                 points.append(br.bottomRight())
 
-
             if points:
                 content_rect = build_valid_rectF(*get_bounding_points(points))
+                new_width = max(self.source_pixels.width(), content_rect.width())
+                new_height = max(self.source_pixels.height(), content_rect.height())
 
-        if action == action_keep:
+
+
+
+        if action == action_crop:
             self.elementsUpdateFinalPicture()
+        elif action == action_keep:
+            hs = self.history_slots[0]
+            r = QRectF(QPointF(0, 0), QSizeF(hs.elements[0].pixmap.size()))
+            self.elementsUpdateFinalPicture(capture_region_rect=r)
         elif action == action_extend:
             self.elementsUpdateFinalPicture(
-                    capture_region_rect=QRectF(0, 0, content_rect.width(), content_rect.height()))
+                    capture_region_rect=QRectF(0, 0, new_width, new_height))
 
         self.source_pixels = self.elements_final_output.toImage()
 
+        # обновляем рамку, если по ней производилась обрезка
+        if action == action_crop:
+            w = self.capture_region_rect.width()
+            h = self.capture_region_rect.height()
+            self.input_POINT2, self.input_POINT1 = get_bounding_points([QPointF(0, 0), QPointF(w, h)])
+            self.capture_region_rect = self._build_valid_rect(self.input_POINT1, self.input_POINT2)
+
         # cleaning
         self.elementsSetSelected(None)
-        # self.elements.clear()
+
         self.elementsCreateBackgroundPictures(update=True)
-        self.elements_history_index = 1
-        self.elementsUpdateHistoryButtonsStatus()
+        self.elements_history_index = 1 # 1, а не 0, потому что оставляем слот с фоном
+
+        if self.tools_window:
+            self.tools_window.forwards_backwards_update()
+
         self.update_tools_window()
         self.update()
 

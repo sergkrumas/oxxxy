@@ -1886,11 +1886,11 @@ class ElementsMixin(ElementsTransformMixin):
 
                         size_rect = f_element.get_size_rect(scaled=False)
                         size_rect.moveCenter(QPointF(0, 0))
-                        sr1 = self.elementsGetRectCorners(size_rect)
-                        for p in sr1:
-                            # from f_element local to world
+                        sr1_points = self.elementsGetRectCorners(size_rect)
+                        for p in sr1_points:
+                            # from f_element local to canvas world 
                             p = f_canvas_transform.map(p)
-                            # from world to s_element local
+                            # from canvas world to s_element local
                             t = s_canvas_transform.inverted()
                             if not t[1]:
                                 raise Exception('inverted matrix doesn\'t exist!')
@@ -1900,8 +1900,8 @@ class ElementsMixin(ElementsTransformMixin):
 
 
                         size_rect_local.moveCenter(QPointF(0, 0))
-                        sr2 = self.elementsGetRectCorners(size_rect_local)
-                        for p in sr2:
+                        sr2_points = self.elementsGetRectCorners(size_rect_local)
+                        for p in sr2_points:
                             all_points.append(p)
 
                     else:
@@ -1913,16 +1913,16 @@ class ElementsMixin(ElementsTransformMixin):
                         size_rect_non_local = self.__te.get_size_rect(scaled=False)
 
                         # так как образ отрисовывается во фрейме первого элемента,
-                        # то памить придётся уже sr2, а не sr1
+                        # то мапить придётся уже sr2, а не sr1
                         size_rect = f_element.get_size_rect(scaled=False)
                         size_rect.moveCenter(QPointF(0, 0))
-                        sr1 = self.elementsGetRectCorners(size_rect)
-                        for p in sr1:
+                        sr1_points = self.elementsGetRectCorners(size_rect)
+                        for p in sr1_points:
                             all_points.append(p)
 
                         size_rect_non_local.moveCenter(QPointF(0, 0))
-                        sr2 = self.elementsGetRectCorners(size_rect_non_local)
-                        for p in sr2:
+                        sr2_points = self.elementsGetRectCorners(size_rect_non_local)
+                        for p in sr2_points:
                             p = s_canvas_transform.map(p)
                             t = f_canvas_transform.inverted()
                             if not t[1]:

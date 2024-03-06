@@ -268,6 +268,8 @@ class ElementsHistorySlot():
 
 class ElementsMixin(ElementsTransformMixin):
 
+    ToolID = ToolID
+
     def elementsInit(self):
         self.current_tool = ToolID.none
         self.drag_capture_zone = False
@@ -306,7 +308,7 @@ class ElementsMixin(ElementsTransformMixin):
         for slot in self.elementsHistoryFilterSlots():
             if slot.comment == ToolID.background_picture:
                 return slot
-        return None 
+        return None
 
     def elementsCreateBackgroundPictures(self, update=False):
         background_pixmap = QPixmap.fromImage(self.source_pixels)
@@ -869,6 +871,7 @@ class ElementsMixin(ElementsTransformMixin):
             for candidat in self.selected_items:
                 if candidat.type == ToolID.removing:
                     continue
+                candidat.selected = False
                 element = self.elementsCreateNew(ToolID.removing, create_new_slot=create_new_slot)
                 create_new_slot = False # first candidat creates new history slot for all candidates
                 element.source_index = candidat.unique_index
@@ -2587,7 +2590,7 @@ class ElementsMixin(ElementsTransformMixin):
                 self.elementsSetBlurredPixmap(element)
             if element.type in [ToolID.copypaste, ToolID.zoom_in_region]:
                 if not element.second:
-                    self.elementsSetCopiedPixmap(element)        
+                    self.elementsSetCopiedPixmap(element)
 
     def elementsPasteImageToImageToolOrImageElement(self, pixmap):
         if pixmap and not pixmap.isNull():

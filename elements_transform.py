@@ -103,6 +103,8 @@ class ElementsTransformMixin():
     def find_all_elements_under_this_pos(self, elements, pos):
         undermouse_elements = []
         for element in elements:
+            if element.type in [self.ToolID.removing]:
+                continue
             element_selection_area = element.get_selection_area(canvas=self)
             is_under_mouse = element_selection_area.containsPoint(pos, Qt.WindingFill)
             if is_under_mouse:
@@ -205,6 +207,8 @@ class ElementsTransformMixin():
         elements = self.elementsFilterElementsForSelection()
         # reversed для того, чтобы пометки на переднем плане чекались первыми
         for element in reversed(elements):
+            if element.type in [self.ToolID.removing]:
+                continue
             element_selection_area = element.get_selection_area(canvas=self)
             is_under_mouse = element_selection_area.containsPoint(self.mapped_cursor_pos(), Qt.WindingFill)
             if is_under_mouse and element._selected:
@@ -227,6 +231,8 @@ class ElementsTransformMixin():
             # выделение через рамку выделения
             selection_rect_area = QPolygonF(self.selection_rect)
             for element in elements:
+                if element.type in [self.ToolID.removing]:
+                    continue
                 element_selection_area = element.get_selection_area(canvas=self)
                 if element_selection_area.intersects(selection_rect_area):
                     element._selected = True
@@ -244,6 +250,8 @@ class ElementsTransformMixin():
                 min_area_element = self.find_min_area_element(elements, self.mapped_cursor_pos())
                 # reversed для того, чтобы пометки на переднем плане чекались первыми
                 for element in reversed(elements):
+                    if element.type in [self.ToolID.removing]:
+                        continue
                     item_selection_area = element.get_selection_area(canvas=self)
                     is_under_mouse = item_selection_area.containsPoint(self.mapped_cursor_pos(), Qt.WindingFill)
                     if add_to_selection and element._selected:
@@ -296,7 +304,7 @@ class ElementsTransformMixin():
     def init_selection_bounding_box_widget(self):
         self.selected_items = []
         for element in self.elementsHistoryFilter():
-            if element._selected:
+            if element._selected and element.type not in [self.ToolID.removing]:
                 self.selected_items.append(element)
         self.update_selection_bouding_box()
 

@@ -1853,8 +1853,9 @@ class ElementsMixin(ElementsTransformMixin):
                 output_rect = element.get_size_rect(scaled=False)
                 if s_element is None:
                     pos = output_pos - f_element.element_position
-                    s = ZOOM_IN_REGION_DAFULT_SCALE
-                    output_rect = QRectF(0, 0, output_rect.width()*s, output_rect.height()*s)
+                    if el_type in [ToolID.zoom_in_region]:
+                        s = ZOOM_IN_REGION_DAFULT_SCALE
+                        output_rect = QRectF(0, 0, output_rect.width()*s, output_rect.height()*s)
                 else:
                     pos = output_pos - s_element.element_position
                 output_rect.moveCenter(pos)

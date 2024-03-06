@@ -105,10 +105,11 @@ def ch_left_index(points):
         if points[i].x() < points[minn].x():
             minn = i
         elif points[i].x() == points[minn].x():
-            # if points[i].y > points[minn].y:
-            # это не работает для моего случая, поэтому изменено на нижний вариант
-            if points[i].y() < points[minn].y():
+            if points[i].y() > points[minn].y():
                 minn = i
+            # это не работает для моего случая, поэтому изменено на нижний вариант
+            # if points[i].y() < points[minn].y():
+            #     minn = i
     return minn
 
 def ch_orientation(p, q, r):

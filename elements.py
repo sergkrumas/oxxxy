@@ -1439,7 +1439,7 @@ class ElementsMixin(ElementsTransformMixin):
                             self.elementsSetBlurredPixmap(element)
                         elif element.type in [ToolID.zoom_in_region, ToolID.copypaste]:
                             if not element.second:
-                                self.elementsSetCopiedPixmap(element)                                
+                                self.elementsSetCopiedPixmap(element)
                         elif element.type == ToolID.text:
                             element.modify_end_point = True
 
@@ -1870,19 +1870,55 @@ class ElementsMixin(ElementsTransformMixin):
                     points.append(-f_element.element_position + pos)
                     points.append(-f_element.element_position + QPointF(100, 100) + pos)
 
-                    poly = QPolygonF(output_rect)
 
-                    ps = [poly[i] for i in range(poly.size())]
+                    f_canvas_transform = f_element.get_transform_obj(
+                        canvas=self,
+                        apply_local_scale=True,
+                        apply_translation=True,
+                        apply_global_scale=False
+                    )
+                    if s_element:
+                        s_canvas_transform = s_element.get_transform_obj(
+                            canvas=self,
+                            apply_local_scale=True,
+                            apply_translation=True,
+                            apply_global_scale=False
+                        )
 
-                    for pos in ps:
-                        points.append(pos)
+                        s = []
+                        painter.save()
+                        painter.setPen(QPen(Qt.red, 10))
+                        size_rect = f_element.get_size_rect(scaled=False)
+                        size_rect.moveCenter(QPointF(0, 0))
+                        for p in QPolygonF(size_rect):
+                            # from local to world
+                            p = f_canvas_transform.map(p)
+                            # from world to local
+                            p = (s_canvas_transform.inverted())[0].map(p)
+                            s.append(p)
+
+
+                        size_rect_local = s_element.get_size_rect(scaled=False)
+                        size_rect_local.moveCenter(QPointF(0, 0))
+                        for p in QPolygonF(size_rect_local):
+                            s.append(p)
+
+                        for p in s:
+                            painter.drawPoint(p)
+                        painter.restore()
+
+                        # print(s)
+                        points = s
+
+                    # for pos in QPolygonF(output_rect):
+                    #     points.append(pos)
 
                     coords = convex_hull(points)
                     if coords is not None and len(coords) > 1:
                         for n, coord in enumerate(coords[:-1]):
                             painter.drawLine(coord, coords[n+1])
 
-                    painter.drawLine(QPointF(0, 0), QPointF(100, 0))
+                    # painter.drawLine(QPointF(0, 0), QPointF(100, 0))
 
                 if el_type == ToolID.zoom_in_region:
                     painter.drawRect(output_rect)
@@ -1895,7 +1931,7 @@ class ElementsMixin(ElementsTransformMixin):
                         f_element.local_end_point
                     )
                     painter.drawRect(capture_rect)
-            painter.resetTransform()                    
+            painter.resetTransform()
 
     def elementsDrawMain(self, painter, final=False, draw_background_only=False):
         painter.setRenderHint(QPainter.HighQualityAntialiasing, True)

@@ -2427,8 +2427,8 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         self.context_menu_stylesheet = """
         QMenu{
             padding: 0px;
-            font-size: 18px;
-            font-weight: bold;
+            font-size: 16px;
+            font-weight: normal;
             font-family: 'Consolas';
         }
         QMenu::item {
@@ -2444,6 +2444,20 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             color: rgb(50, 50, 50);
             border-left: 2px dashed #303940;
         }
+        QMenu::item:checked {
+            font-weight: bold;
+            color: white;
+        }
+        QMenu::item:checked:selected {
+            font-weight: bold;
+            color: rgb(50, 50, 50);
+        }        
+        QMenu::item:disabled {
+            background-color: #303940;
+            color: gray;
+            text-decoration: underline;
+            border-left: 2px dashed #303940;
+        }        
         QMenu::separator {
             height: 1px;
             background: gray;

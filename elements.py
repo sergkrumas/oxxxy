@@ -2411,7 +2411,7 @@ class ElementsMixin(ElementsTransformMixin):
             self.elementsUpdateFinalPicture(
                     capture_region_rect=QRectF(0, 0, new_width, new_height))
 
-        # задаём 
+        # заменяем картинку
         self.source_pixels = self.elements_final_output.toImage()
         self.elementsCreateBackgroundPictures(update=True)
 
@@ -2517,7 +2517,7 @@ class ElementsMixin(ElementsTransformMixin):
             points = []
 
             m = Element.get_canvas_space_selection_area
-            br_getter = lambda el: m(el, None).boundingRect() 
+            br_getter = lambda el: m(el, None).boundingRect()
 
             if action == horizontal:
                 max_height = max(br_getter(el).height() for el in elements )

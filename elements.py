@@ -207,9 +207,11 @@ class Element():
             scale_y = 1.0
         return QRectF(0, 0, self.element_width*scale_x, self.element_height*scale_y)
 
-    def get_canvas_space_selection_area(self, canvas=None):
+    def get_canvas_space_selection_area(self, canvas):
         return self.get_selection_area(canvas=canvas,
-                                    place_center_at_origin=False,
+                                    # здесь обязательно надо ставить объект в origin,
+                                    # иначе трансформации неправильно сработают
+                                    place_center_at_origin=True,
                                     apply_global_scale=False,
                                     apply_translation=True
         )
@@ -2384,7 +2386,7 @@ class ElementsMixin(ElementsTransformMixin):
         elif action == action_extend:
             points = []
             for element in self.elementsHistoryFilter():
-                sel_area = element.get_canvas_space_selection_area()
+                sel_area = element.get_canvas_space_selection_area(self)
                 br = sel_area.boundingRect()
 
                 points.append(br.topLeft())
@@ -2496,54 +2498,66 @@ class ElementsMixin(ElementsTransformMixin):
         subMenu.setStyleSheet(self.context_menu_stylesheet)
         horizontal = subMenu.addAction("По горизонтали")
         vertical = subMenu.addAction("По вертикали")
-        # pos = self.mapToGlobal(event.pos())
-        pos = QCursor().pos()
-        action = subMenu.exec_(pos)
+        action = subMenu.exec_(QCursor().pos())
 
         elements = []
         for element in self.elementsHistoryFilter():
             if element.type == ToolID.picture:
+             # and not element.hs.comment == 'background':
                 elements.append(element)
 
-        cmp_func = lambda x: QRect(x.start_point, x.end_point).center().x()
+        m = Element.get_canvas_space_selection_rect_with_no_rotation
+        cmp_func = lambda e: m(e).center().x()
         elements = list(sorted(elements, key=cmp_func))
 
         if action == None:
             pass
         elif elements:
 
-            if action == horizontal:
-                max_height = max(el.pixmap.height() for el in elements)
-            elif action == vertical:
-                max_width = max(el.pixmap.width() for el in elements)
+            points = []
 
-            pos = QPoint(0, 0)
+            m = Element.get_canvas_space_selection_area
+            br_getter = lambda el: m(el, None).boundingRect() 
+
+            if action == horizontal:
+                max_height = max(br_getter(el).height() for el in elements )
+            elif action == vertical:
+                max_width = max(br_getter(el).width() for el in elements )
+
+            pos = QPointF(0, 0)
+
 
             for source_element in elements:
+
                 element = self.elementsCreateModificatedCopyOnNeed(source_element, force_new=True)
 
+                start_br = element.get_canvas_space_selection_area(None).boundingRect()
+
                 if action == horizontal:
-                    scale = max_height / element.pixmap.height()
+                    scale = max_height / start_br.height()
                 elif action == vertical:
-                    scale = max_width / element.pixmap.width()
+                    scale = max_width / start_br.width()
 
                 element.element_scale_x = scale
                 element.element_scale_y = scale
 
-                element.calc_local_data()
-                ws = element.pixmap.width() * scale
-                hs = element.pixmap.height() * scale
-                element.element_position = pos + QPointF(ws, hs)/2
+                br = element.get_canvas_space_selection_area(None).boundingRect()
 
+                element.element_position = QPointF(pos) + QPointF(br.width()/2, br.height()/2)
                 if action == horizontal:
-                    pos += QPoint(ws, 0)
+                    pos += QPointF(br.width(), 0)
                 elif action == vertical:
-                    pos += QPoint(0, wh)
+                    pos += QPointF(0, br.height())
+
+                br = element.get_canvas_space_selection_area(None).boundingRect()
+
+                points.append(br.topLeft())
+                points.append(br.bottomRight())
 
             # обновление области захвата
-            # !!! TODO тут лучше взять у каждого элемента его границы и взять от них bounding_box
             self.input_POINT2, self.input_POINT1 = get_bounding_points(points)
-            self.capture_region_rect = self._build_valid_rect(self.input_POINT1, self.input_POINT2)
+            self.capture_region_rect = build_valid_rectF(self.input_POINT1, self.input_POINT2)
+            print('capture region', self.capture_region_rect)
 
             self.elementsSetSelected(None)
             self.update_tools_window()

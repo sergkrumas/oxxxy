@@ -76,6 +76,11 @@ class ToolID():
     DRAG = "drag"
     TEMPORARY_TYPE_NOT_DEFINED = "TEMPORARY_TYPE_NOT_DEFINED"
 
+class SelectionFilter():
+    all = "all"
+    content_only = "content_only"
+    background_only = "background_only"
+
 class Element():
 
     def __init__(self, element_type, elements_list):
@@ -304,6 +309,9 @@ class ElementsMixin(ElementsTransformMixin):
         self.active_element = None #active element is the last selected element
 
         self.__te = Element(ToolID.zoom_in_region, [])
+
+        self.SelectionFilter = SelectionFilter
+        self.selection_filter = self.SelectionFilter.content_only
 
         # для выделения элементов и виджета трансформации элементов
         self.elementsInitTransform()
@@ -1022,13 +1030,25 @@ class ElementsMixin(ElementsTransformMixin):
         return element
 
     def elementsFilterElementsForSelection(self):
-        # здесь в будущем надо будет прописывать три случая
-        return self.elementsAllVisibleElementsButBackground()
-        # return self.elementsAllVisibleElements()
+        if self.selection_filter == self.SelectionFilter.all:
+            return self.elementsAllVisibleElements()
+
+        elif self.selection_filter == self.SelectionFilter.content_only:
+            return self.elementsAllVisibleElementsButBackground()
+
+        elif self.selection_filter == self.SelectionFilter.background_only:
+            return self.elementsAllBackgroundElements()
+
+    def elementsSelectionFilterChangedCallback(self):
+        self.elementsSetSelected(None)
 
     def elementsAllVisibleElementsButBackground(self):
         visible_elements = self.elementsAllVisibleElements()
         return [el for el in visible_elements if not el.background_image]
+
+    def elementsAllBackgroundElements(self):
+        visible_elements = self.elementsAllVisibleElements()
+        return [el for el in visible_elements if el.background_image]
 
     def elementsAllVisibleElements(self):
         return self.elementsHistoryFilter()
@@ -2300,10 +2320,8 @@ class ElementsMixin(ElementsTransformMixin):
 
     def elementsSetCaptureFromContent(self):
         points = []
-        for element in self.elementsHistoryFilter():
+        for element in self.elementsFilterElementsForSelection():
             if element.type in [ToolID.removing, ToolID.multiframing]:
-                continue
-            if element.hs.comment == ToolID.background_picture:
                 continue
             pen, _, _ = self.elementsGetPenFromElement(element)
             width = pen.width()
@@ -2471,9 +2489,8 @@ class ElementsMixin(ElementsTransformMixin):
 
     def elementsPicturesFilter(self):
         elements = []
-        for element in self.elementsHistoryFilter():
+        for element in self.elementsFilterElementsForSelection():
             if element.type == ToolID.picture:
-                if not element.hs.comment == ToolID.background_picture:
                     elements.append(element)
         return elements
 

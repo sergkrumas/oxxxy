@@ -1506,6 +1506,8 @@ class ToolsWindow(QWidget):
             button.clicked.connect(self.set_tool_data)
             if ID == ToolID.picture:
                 button.right_clicked.connect(self.show_picture_menu)
+            if ID == ToolID.transform:
+                button.right_clicked.connect(self.parent().show_selection_filter_menu)
             tools.addWidget(button)
             tools.addSpacing(5)
 
@@ -2726,6 +2728,43 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         if self.tools_window and self.capture_region_rect:
             capture_region_rect = self.elementsMapFromCanvasToViewportRectF(self.capture_region_rect)
             self.tools_window.do_autopositioning(capture_region_rect)
+
+    def show_selection_filter_menu(self):
+        menu = QMenu()
+        menu.setStyleSheet(self.context_menu_stylesheet)
+        def add_item(*args):
+            action = menu.addAction(*args)
+            action.setCheckable(True)
+            return action
+
+        title = menu.addAction('Доступность к выделению')
+        title.setEnabled(False)
+
+        _all = add_item("И пометки, и фон")
+        _content_only = add_item("Только пометки")
+        _background_only = add_item("Только фон")
+
+        _all.setChecked(False)
+        _content_only.setChecked(False)
+        _background_only.setChecked(False)
+        if self.selection_filter == self.SelectionFilter.all:
+            _all.setChecked(True)
+        elif self.selection_filter == self.SelectionFilter.content_only:
+            _content_only.setChecked(True)
+        elif self.selection_filter == self.SelectionFilter.background_only:
+            _background_only.setChecked(True)
+
+        action = menu.exec_(QCursor().pos())
+        if action == None:
+            return
+        elif action == _all:
+            self.selection_filter = self.SelectionFilter.all
+        elif action == _content_only:
+            self.selection_filter = self.SelectionFilter.content_only
+        elif action == _background_only:
+            self.selection_filter = self.SelectionFilter.background_only
+        self.elementsSelectionFilterChangedCallback()
+
 
     def update_saved_capture(self):
         ts = self.tools_settings

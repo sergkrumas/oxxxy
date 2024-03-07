@@ -2441,10 +2441,7 @@ class ElementsMixin(ElementsTransformMixin):
         pos = self.mapFromGlobal(QCursor().pos())
         action = subMenu.exec_(pos)
 
-        elements = []
-        for element in self.elementsHistoryFilter():
-            if element.type == ToolID.picture:
-                elements.append(element)
+        elements = self.elementsPicturesFilter()
 
         if action == None:
             pass
@@ -2493,6 +2490,65 @@ class ElementsMixin(ElementsTransformMixin):
 
         self.update()
 
+    def elementsArrangePictures(self, elements, target_width, target_height):
+
+        points = []
+
+        pos = QPointF(0, 0)
+
+        for source_element in elements:
+
+            element = self.elementsCreateModificatedCopyOnNeed(source_element, force_new=True)
+
+            start_br = element.get_canvas_space_selection_area(None).boundingRect()
+
+            if target_height is not None:
+                scale = target_height / start_br.height()
+
+            if target_width is not None:
+                scale = target_width / start_br.width()
+
+            element.element_scale_x = scale
+            element.element_scale_y = scale
+
+            br = element.get_canvas_space_selection_area(None).boundingRect()
+
+            element.element_position = QPointF(pos) + QPointF(br.width()/2, br.height()/2)
+            if target_height is not None:
+                pos += QPointF(br.width(), 0)
+
+            if target_width is not None:
+                pos += QPointF(0, br.height())
+
+            br = element.get_canvas_space_selection_area(None).boundingRect()
+
+            points.append(br.topLeft())
+            points.append(br.bottomRight())
+
+        # обновление области захвата
+        self.input_POINT2, self.input_POINT1 = get_bounding_points(points)
+        self.capture_region_rect = build_valid_rectF(self.input_POINT1, self.input_POINT2)
+        # print('capture region', self.capture_region_rect)
+
+        self.elementsSetSelected(None)
+        tw = self.tools_window
+        if tw:
+            tw.forwards_backwards_update()
+        self.update_tools_window()
+
+    def elementsPicturesFilter(self):
+        elements = []
+        for element in self.elementsHistoryFilter():
+            if element.type == ToolID.picture:
+                # if not element.hs.comment == ToolID.background_picture:
+                    elements.append(element)
+        return elements
+
+    def elementsSortPicturesByXPosition(self, elements):
+        m = Element.get_canvas_space_selection_rect_with_no_rotation
+        cmp_func = lambda e: m(e).center().x() 
+        return list(sorted(elements, key=cmp_func))
+
     def elementsAutoCollagePictures(self):
         subMenu = QMenu()
         subMenu.setStyleSheet(self.context_menu_stylesheet)
@@ -2500,67 +2556,26 @@ class ElementsMixin(ElementsTransformMixin):
         vertical = subMenu.addAction("По вертикали")
         action = subMenu.exec_(QCursor().pos())
 
-        elements = []
-        for element in self.elementsHistoryFilter():
-            if element.type == ToolID.picture:
-             # and not element.hs.comment == 'background':
-                elements.append(element)
-
-        m = Element.get_canvas_space_selection_rect_with_no_rotation
-        cmp_func = lambda e: m(e).center().x()
-        elements = list(sorted(elements, key=cmp_func))
+        elements = self.elementsSortPicturesByXPosition(self.elementsPicturesFilter())
 
         if action == None:
             pass
         elif elements:
 
-            points = []
-
             m = Element.get_canvas_space_selection_area
             br_getter = lambda el: m(el, None).boundingRect()
 
             if action == horizontal:
-                max_height = max(br_getter(el).height() for el in elements )
-            elif action == vertical:
-                max_width = max(br_getter(el).width() for el in elements )
+                max_height = max(br_getter(el).height() for el in elements)
+            else:
+                max_height = None
 
-            pos = QPointF(0, 0)
+            if action == vertical:
+                max_width = max(br_getter(el).width() for el in elements)
+            else:
+                max_width = None
 
-
-            for source_element in elements:
-
-                element = self.elementsCreateModificatedCopyOnNeed(source_element, force_new=True)
-
-                start_br = element.get_canvas_space_selection_area(None).boundingRect()
-
-                if action == horizontal:
-                    scale = max_height / start_br.height()
-                elif action == vertical:
-                    scale = max_width / start_br.width()
-
-                element.element_scale_x = scale
-                element.element_scale_y = scale
-
-                br = element.get_canvas_space_selection_area(None).boundingRect()
-
-                element.element_position = QPointF(pos) + QPointF(br.width()/2, br.height()/2)
-                if action == horizontal:
-                    pos += QPointF(br.width(), 0)
-                elif action == vertical:
-                    pos += QPointF(0, br.height())
-
-                br = element.get_canvas_space_selection_area(None).boundingRect()
-
-                points.append(br.topLeft())
-                points.append(br.bottomRight())
-
-            # обновление области захвата
-            self.input_POINT2, self.input_POINT1 = get_bounding_points(points)
-            self.capture_region_rect = build_valid_rectF(self.input_POINT1, self.input_POINT2)
-            print('capture region', self.capture_region_rect)
-
-            self.elementsSetSelected(None)
-            self.update_tools_window()
+            self.elementsArrangePictures(elements, max_width, max_height)
 
         self.update()
 

@@ -2208,7 +2208,8 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         if case2 or case1:
             painter.setPen(text_pen)
             text_pos = input_rect.bottomRight() + QPoint(10, -10)
-            painter.drawText(text_pos, "%dx%d" % (input_rect.width(), input_rect.height()))
+            input_r = build_valid_rectF(self.input_POINT1, self.input_POINT2)
+            painter.drawText(text_pos, "%dx%d" % (input_r.width(), input_r.height()))
 
     def build_hex_polygon(self, outer_rect):
         x = (3**0.5 / 2)

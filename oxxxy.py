@@ -1999,7 +1999,9 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             # для случая, когда рамка захвата обнулена из контекстного меню
             # и активирован этот тулз
             return
-        if not self.capture_region_rect.contains(cursor_pos):
+        crr_canvas = self.capture_region_rect
+        crr_viewport = self.elementsMapFromCanvasToViewportRectF(crr_canvas)
+        if not crr_viewport.contains(cursor_pos):
             return
         pixmap = self.current_picture_pixmap
         rotation = self.current_picture_angle

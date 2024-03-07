@@ -31,7 +31,7 @@ from PyQt5.QtWidgets import (QSystemTrayIcon, QWidget, QMessageBox, QMenu, QGrap
     QPushButton, QGraphicsBlurEffect, QLabel, QApplication, QScrollArea, QDesktopWidget)
 from PyQt5.QtCore import (QUrl, QMimeData, pyqtSignal, QPoint, QPointF, pyqtSlot, QRect, QEvent,
     QTimer, Qt, QSize, QSizeF, QRectF, QThread, QAbstractNativeEventFilter, QAbstractEventDispatcher,
-    QFile, QDataStream, QIODevice)
+    QFile, QDataStream, QIODevice, QMarginsF)
 from PyQt5.QtGui import (QPainterPath, QColor, QKeyEvent, QMouseEvent, QBrush, QPixmap,
     QPaintEvent, QPainter, QWindow, QPolygon, QImage, QTransform, QPen, QLinearGradient,
     QIcon, QFont, QCursor, QPolygonF, QVector2D)
@@ -2297,73 +2297,21 @@ class ElementsMixin(ElementsTransformMixin):
         for element in self.elementsHistoryFilter():
             if element.type in [ToolID.removing, ToolID.multiframing]:
                 continue
-            print("......")
+            if element.hs.comment == ToolID.background_picture:
+                continue
             pen, _, _ = self.elementsGetPenFromElement(element)
             width = pen.width()
-            # width //= 2
-            sizeOffsetVec = QPoint(width, width)
-            generalOffset = QPoint(10, 10)
-            if element.type in [ToolID.pen, ToolID.marker]:
-                if element.straight:
-                    r = build_valid_rect(element.start_point, element.end_point)
-                    points.append(r.topLeft()-sizeOffsetVec)
-                    points.append(r.bottomRight()+sizeOffsetVec)
-                else:
-                    r = element.path.boundingRect().toRect()
-                    points.append(r.topLeft()-sizeOffsetVec)
-                    points.append(r.bottomRight()+sizeOffsetVec)
-            elif element.type == ToolID.line:
-                r = build_valid_rect(element.start_point, element.end_point)
-                points.append(r.topLeft()-sizeOffsetVec)
-                points.append(r.bottomRight()+sizeOffsetVec)
-            elif element.type == ToolID.arrow:
-                r = build_valid_rect(element.start_point, element.end_point)
-                points.append(r.topLeft()-generalOffset)
-                points.append(r.bottomRight()+generalOffset)
-            elif element.type in [ToolID.oval, ToolID.rect, ToolID.numbering]:
-                r = build_valid_rect(element.start_point, element.end_point)
-                points.append(r.topLeft()-sizeOffsetVec)
-                points.append(r.bottomRight()+sizeOffsetVec)
-            elif element.type in [ToolID.blurring, ToolID.darkening]:
-                r = build_valid_rect(element.start_point, element.end_point)
-                points.append(r.topLeft()-generalOffset)
-                points.append(r.bottomRight()+generalOffset)
-            elif element.type == ToolID.text:
-                if element.start_point != element.end_point:
-                    if element.modify_end_point:
-                        modified_end_point = get_nearest_point_on_rect(
-                            QRect(pos, QSize(element.pixmap.width(), element.pixmap.height())),
-                            element.start_point
-                        )
-                    else:
-                        modified_end_point = element.end_point
-                    points.append(modified_end_point)
-                    points.append(element.start_point)
-                if element.pixmap:
-                    pos = element.end_point - QPoint(0, element.pixmap.height())
-                    image_rect = QRect(pos, element.pixmap.size())
-                    points.append(image_rect.topLeft()-generalOffset)
-                    points.append(image_rect.bottomRight()+generalOffset)
-            elif element.type == ToolID.picture:
-                r = build_valid_rect(element.start_point, element.end_point)
-                points.append(r.topLeft()-generalOffset)
-                points.append(r.bottomRight()+generalOffset)
-            elif element.type in [ToolID.zoom_in_region, ToolID.copypaste]:
-
-                input_rect = build_valid_rect(element.start_point, element.end_point)
-                final_pos = element.copy_pos
-                final_version_rect = self.elementsBuildSubelementRect(element, final_pos)
-                input_rect.moveCenter(input_rect.center() - self.canvas_origin)
-
-                points.append(input_rect.topLeft()-generalOffset)
-                points.append(input_rect.bottomRight()+generalOffset)
-                points.append(final_version_rect.topLeft()-generalOffset)
-                points.append(final_version_rect.bottomRight()+generalOffset)
+            br = element.get_canvas_space_selection_area(None).boundingRect()
+            offset = width
+            ms = QMarginsF(offset, offset, offset, offset)
+            br = br.marginsAdded(ms)
+            points.append(br.topLeft())
+            points.append(br.bottomRight())
 
         if points:
             # обновление области захвата
             self.input_POINT2, self.input_POINT1 = get_bounding_points(points)
-            self.capture_region_rect = self._build_valid_rect(self.input_POINT1, self.input_POINT2)
+            self.capture_region_rect = build_valid_rectF(self.input_POINT1, self.input_POINT2)
 
     def elementsDoRenderToBackground(self):
 
@@ -2519,7 +2467,7 @@ class ElementsMixin(ElementsTransformMixin):
         elements = []
         for element in self.elementsHistoryFilter():
             if element.type == ToolID.picture:
-                # if not element.hs.comment == ToolID.background_picture:
+                if not element.hs.comment == ToolID.background_picture:
                     elements.append(element)
         return elements
 

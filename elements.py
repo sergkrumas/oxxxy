@@ -2496,7 +2496,7 @@ class ElementsMixin(ElementsTransformMixin):
 
     def elementsSortPicturesByXPosition(self, elements):
         m = Element.get_canvas_space_selection_rect_with_no_rotation
-        cmp_func = lambda e: m(e).center().x() 
+        cmp_func = lambda e: m(e).center().x()
         return list(sorted(elements, key=cmp_func))
 
     def elementsAutoCollagePictures(self):

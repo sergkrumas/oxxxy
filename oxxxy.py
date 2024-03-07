@@ -2452,13 +2452,13 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         QMenu::item:checked:selected {
             font-weight: bold;
             color: rgb(50, 50, 50);
-        }        
+        }
         QMenu::item:disabled {
             background-color: #303940;
             color: gray;
             text-decoration: underline;
             border-left: 2px dashed #303940;
-        }        
+        }
         QMenu::separator {
             height: 1px;
             background: gray;

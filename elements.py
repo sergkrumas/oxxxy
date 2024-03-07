@@ -179,6 +179,8 @@ class Element():
             self.calc_local_data_picture()
         elif self.type in [ToolID.zoom_in_region, ToolID.copypaste]:
             self.calc_local_data_default()
+        elif self.type in [ToolID.text]:
+            self.calc_local_data_default()
         else:
             raise Exception('calc_local_data', self.type)
 
@@ -1595,7 +1597,7 @@ class ElementsMixin(ElementsTransformMixin):
         new_height = size.height()+elem.margin_value*2
         tb.setFixedHeight(int(new_height))
         # correcting width
-        max_width_limit = max(20, self.capture_region_rect.right() - elem.end_point.x())
+        max_width_limit = int(max(20, self.capture_region_rect.right() - elem.end_point.x()))
         H, W = 100, max_width_limit+10
         pixmap = QPixmap(H, W)
         r = QRect(0, 0, H, W)
@@ -1611,7 +1613,8 @@ class ElementsMixin(ElementsTransformMixin):
         del pixmap
         new_width = min(max_width_limit, brect.width()+elem.margin_value*2+font_pixel_size*1.5)
         tb.setFixedWidth(int(new_width))
-        tb.move(elem.end_point-QPoint(0, int(new_height)))
+        ___p = elem.end_point-QPointF(0, new_height)
+        tb.move(___p.toPoint())
         # making screenshot
         r = tb.rect()
         cw = tb.cursorWidth()
@@ -1630,7 +1633,7 @@ class ElementsMixin(ElementsTransformMixin):
     def elementsTextBoxInit(self, textbox, parent, elem):
         textbox.setParent(parent)
         elem.textbox = textbox
-        textbox.move(elem.end_point)
+        textbox.move(elem.end_point.toPoint())
         self.elementsChangeTextbox(elem)
         textbox.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         textbox.show()
@@ -1760,8 +1763,8 @@ class ElementsMixin(ElementsTransformMixin):
                 p.setClipping(True)
                 path = QPainterPath()
                 pos = element.end_point - QPoint(0, element.pixmap.height())
-                text_rect = QRect(pos, element.pixmap.size())
-                text_rect = QRect(QPoint(0, 0), element.pixmap.size())
+                # text_rect = QRectF(pos, element.pixmap.size())
+                text_rect = QRectF(QPointF(0, 0), QSizeF(element.pixmap.size()))
                 path.addRoundedRect(QRectF(text_rect), element.margin_value,
                         element.margin_value)
                 p.setClipPath(path)
@@ -1781,11 +1784,11 @@ class ElementsMixin(ElementsTransformMixin):
                 self.elementsDrawArrow(painter, modified_end_point, element.start_point,
                                                                                 size, False)
             if element.pixmap:
-                image_rect = QRect(pos, pixmap.size())
+                image_rect = QRectF(pos, QSizeF(pixmap.size()))
                 painter.translate(image_rect.center())
                 image_rect = QRectF(-image_rect.width()/2, -image_rect.height()/2,
                         image_rect.width(), image_rect.height()).toRect()
-                painter.rotate(element.rotation)
+                painter.rotate(element.element_rotation)
                 editing = not final and (element is self.active_element or \
                                     (element.textbox is not None and element.textbox.isVisible()))
                 if editing:

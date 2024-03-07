@@ -2438,55 +2438,34 @@ class ElementsMixin(ElementsTransformMixin):
         to_width = subMenu.addAction("По ширине")
         to_height = subMenu.addAction("По высоте")
 
-        pos = self.mapFromGlobal(QCursor().pos())
-        action = subMenu.exec_(pos)
+        action = subMenu.exec_(QCursor().pos())
 
-        elements = self.elementsPicturesFilter()
+        elements = self.elementsSortPicturesByXPosition(self.elementsPicturesFilter())
 
         if action == None:
             pass
         elif elements:
+
+            m = Element.get_canvas_space_selection_area
+            br_getter = lambda el: m(el, None).boundingRect()
+
+            if action == to_height:
+                if self.active_element:
+                    fit_height = br_getter(self.active_element).height()
+                else:
+                    fit_height = max(br_getter(el).height() for el in elements)
+            else:
+                fit_height = None
+
             if action == to_width:
                 if self.active_element:
-                    fit_width = self.active_element.pixmap.width()
+                    fit_width = br_getter(self.active_element).width()
                 else:
-                    fit_width = max(el.pixmap.width() for el in elements)
-            elif action == to_height:
-                if self.active_element:
-                    fit_height = self.active_element.pixmap.height()
-                else:
-                    fit_height = max(el.pixmap.height() for el in elements)
+                    fit_width = max(br_getter(el).width() for el in elements)
+            else:
+                fit_width = None
 
-            pos = QPoint(0, 0)
-
-            for n, source_element in enumerate(elements):
-                element = self.elementsCreateModificatedCopyOnNeed(source_element, force_new=True)
-
-                if action == to_width:
-                    scale = fit_width / element.pixmap.width()
-                elif action == to_height:
-                    scale = fit_height / element.pixmap.height()
-                element.element_scale_x = scale
-                element.element_scale_y = scale
-
-                r = self.elementsSetPictureElementPoints(element, pos, pos_as_center=False)
-
-                element.calc_local_data()
-                ws = element.pixmap.width() * scale
-                hs = element.pixmap.height() * scale
-                element.element_position = pos + QPointF(ws, hs)/2
-
-                if action == to_width:
-                    pos += QPoint(0, n*20)
-                elif action == to_height:
-                    pos += QPoint(n*20, 0)
-
-            # обновление области захвата
-            self.input_POINT2, self.input_POINT1 = get_bounding_points([QPointF(0, 0), ])
-            self.capture_region_rect = self._build_valid_rect(self.input_POINT1, self.input_POINT2)
-
-            self.elementsSetSelected(None)
-            self.update_tools_window()
+            self.elementsArrangePictures(elements, fit_width, fit_height)
 
         self.update()
 

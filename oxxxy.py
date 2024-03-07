@@ -1995,6 +1995,10 @@ class ScreenshotWindow(QWidget, ElementsMixin):
     def draw_picture_tool(self, painter, cursor_pos):
         if self.current_tool != ToolID.picture or not self.current_picture_pixmap:
             return
+        if self.capture_region_rect is None:
+            # для случая, когда рамка захвата обнулена из контекстного меню
+            # и активирован этот тулз
+            return
         if not self.capture_region_rect.contains(cursor_pos):
             return
         pixmap = self.current_picture_pixmap

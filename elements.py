@@ -741,6 +741,9 @@ class ElementsMixin(ElementsTransformMixin):
 
         tw = self.tools_window
         if tw:
+            # надо выставить обязательно
+            # чтобы, например, инструмент Картинка не крашил приложение
+            tw.set_current_tool(ToolID.none)
             tw.close()
             self.tools_window = None
         self.update()

@@ -209,8 +209,8 @@ class Element():
             scale_y = 1.0
         return QRectF(0, 0, self.element_width*scale_x, self.element_height*scale_y)
 
-    def get_canvas_space_selection_area(self, canvas):
-        return self.get_selection_area(canvas=canvas,
+    def get_canvas_space_selection_area(self):
+        return self.get_selection_area(canvas=None,
                                     # здесь обязательно надо ставить объект в origin,
                                     # иначе трансформации неправильно сработают
                                     place_center_at_origin=True,
@@ -1505,40 +1505,38 @@ class ElementsMixin(ElementsTransformMixin):
     def elementsSetBlurredPixmap(self, element):
         if not element.finished:
             return
-        blur_radius = 30*element.size #30 is maximum
 
-        input_rect = build_valid_rectF(element.local_start_point, element.local_end_point)
-        input_rect.moveCenter(element.element_position)
+        element_area = element.get_canvas_space_selection_area()
+        eabr = element_area.boundingRect()
+        canvas_source_rect = build_valid_rectF(QPointF(0, 0), eabr.bottomRight())
 
-        # element.pixmap = QPixmap(input_rect.size().toSize())
-        # element.pixmap.fill(Qt.transparent)
-        # код для учёта затемнения
-        # pr = QPainter()
-        # pr.begin(element.pixmap)
-        # target_rect = QRectF(QPointF(0, 0), input_rect.size())
-        # pr.drawImage(target_rect, self.source_pixels, input_rect)
-        # offset_ = input_rect.topLeft()
-        # offset_.setX(-offset_.x())
-        # offset_.setY(-offset_.y())
-        # self.elementsDrawDarkening(pr, offset=offset_)
-        # pr.end()
-        # del pr
+        # код для учёта затемнения в фоне
+        cropped_source_pixels = QPixmap(canvas_source_rect.size().toSize())
+        cropped_source_pixels.fill(Qt.transparent)
+        pr = QPainter()
+        pr.begin(cropped_source_pixels)
+        target_rect = canvas_source_rect
+        source_rect = canvas_source_rect
+        pr.drawImage(target_rect, self.source_pixels, source_rect)
+        self.elementsDrawDarkening(pr, prepare_pixmap=True)
+        pr.end()
+        del pr
 
         er = element.get_size_rect(scaled=True)
         er.moveCenter(element.element_position)
-
         capture_pos = element.element_position
         capture_width = er.width()
         capture_height = er.height()
         capture_rotation = element.element_rotation
-        pixmap = QPixmap.fromImage(self.source_pixels)
-        element.pixmap = capture_rotated_rect_from_pixmap(pixmap,
+        # source_pixmap = QPixmap.fromImage(self.source_pixels)
+        source_pixmap = cropped_source_pixels
+        element.pixmap = capture_rotated_rect_from_pixmap(source_pixmap,
             capture_pos,
             capture_rotation,
             capture_width,
             capture_height
         )
-        blured = QPixmap(input_rect.size().toSize())
+        blured = QPixmap(er.size().toSize())
         blured.fill(Qt.transparent)
         if element.toolbool:
             pixel_size = int(element.size*60)+1
@@ -1548,6 +1546,7 @@ class ElementsMixin(ElementsTransformMixin):
                 orig_width//pixel_size,
                 orig_height//pixel_size).scaled(orig_width, orig_height)
         else:
+            blur_radius = 30*element.size #30 is maximum
             blured = apply_blur_effect(element.pixmap, blured, blur_radius=blur_radius)
             blured = apply_blur_effect(blured, blured, blur_radius=2)
             blured = apply_blur_effect(blured, blured, blur_radius=blur_radius)
@@ -1641,7 +1640,7 @@ class ElementsMixin(ElementsTransformMixin):
         textbox.textChanged.connect(lambda x=elem: self.elementsOnTextChanged(x))
         textbox.setFocus()
 
-    def elementsDrawDarkening(self, painter, offset=None):
+    def elementsDrawDarkening(self, painter, prepare_pixmap=False):
         if self.capture_region_rect:
             darkening_value = 0.0
             darkening_zone = QPainterPath()
@@ -1651,14 +1650,15 @@ class ElementsMixin(ElementsTransformMixin):
                 if element.type == ToolID.darkening:
                     at_least_one_exists = True
                     darkening_value = element.size
-                    element_area = element.get_selection_area(canvas=self)
+                    if prepare_pixmap:
+                        element_area = element.get_canvas_space_selection_area()
+                    else:
+                        element_area = element.get_selection_area(canvas=self)
                     piece = QPainterPath()
                     piece.addPolygon(element_area)
                     darkening_zone = darkening_zone.united(piece)
             if at_least_one_exists:
                 painter.setClipping(True)
-                # if offset:
-                #     painter.translate(offset)
                 capture_rect = QRectF(self.capture_region_rect)
                 capture_rect.setTopLeft(QPoint(0,0))
                 painter.setClipRect(QRectF(capture_rect))
@@ -2307,7 +2307,7 @@ class ElementsMixin(ElementsTransformMixin):
                 continue
             pen, _, _ = self.elementsGetPenFromElement(element)
             width = pen.width()
-            br = element.get_canvas_space_selection_area(None).boundingRect()
+            br = element.get_canvas_space_selection_area().boundingRect()
             offset = width
             ms = QMarginsF(offset, offset, offset, offset)
             br = br.marginsAdded(ms)
@@ -2340,7 +2340,7 @@ class ElementsMixin(ElementsTransformMixin):
         elif action == action_extend:
             points = []
             for element in self.elementsHistoryFilter():
-                sel_area = element.get_canvas_space_selection_area(self)
+                sel_area = element.get_canvas_space_selection_area()
                 br = sel_area.boundingRect()
 
                 points.append(br.topLeft())
@@ -2401,7 +2401,7 @@ class ElementsMixin(ElementsTransformMixin):
         elif elements:
 
             m = Element.get_canvas_space_selection_area
-            br_getter = lambda el: m(el, None).boundingRect()
+            br_getter = lambda el: m(el).boundingRect()
 
             if action == to_height:
                 if self.active_element:
@@ -2433,7 +2433,7 @@ class ElementsMixin(ElementsTransformMixin):
 
             element = self.elementsCreateModificatedCopyOnNeed(source_element, force_new=True)
 
-            start_br = element.get_canvas_space_selection_area(None).boundingRect()
+            start_br = element.get_canvas_space_selection_area().boundingRect()
 
             if target_height is not None:
                 scale = target_height / start_br.height()
@@ -2444,7 +2444,7 @@ class ElementsMixin(ElementsTransformMixin):
             element.element_scale_x = scale
             element.element_scale_y = scale
 
-            br = element.get_canvas_space_selection_area(None).boundingRect()
+            br = element.get_canvas_space_selection_area().boundingRect()
 
             element.element_position = QPointF(pos) + QPointF(br.width()/2, br.height()/2)
             if target_height is not None:
@@ -2453,7 +2453,7 @@ class ElementsMixin(ElementsTransformMixin):
             if target_width is not None:
                 pos += QPointF(0, br.height())
 
-            br = element.get_canvas_space_selection_area(None).boundingRect()
+            br = element.get_canvas_space_selection_area().boundingRect()
 
             points.append(br.topLeft())
             points.append(br.bottomRight())
@@ -2496,7 +2496,7 @@ class ElementsMixin(ElementsTransformMixin):
         elif elements:
 
             m = Element.get_canvas_space_selection_area
-            br_getter = lambda el: m(el, None).boundingRect()
+            br_getter = lambda el: m(el).boundingRect()
 
             if action == horizontal:
                 max_height = max(br_getter(el).height() for el in elements)

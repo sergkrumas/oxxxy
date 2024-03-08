@@ -1509,7 +1509,7 @@ class ToolsWindow(QWidget):
             if ID == ToolID.picture:
                 button.right_clicked.connect(self.show_picture_menu)
             if ID == ToolID.transform:
-                button.right_clicked.connect(self.parent().show_selection_filter_menu)
+                button.right_clicked.connect(self.parent().selection_filter_menu)
             tools.addWidget(button)
             tools.addSpacing(5)
 
@@ -2765,16 +2765,22 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             capture_region_rect = self.elementsMapFromCanvasToViewportRectF(self.capture_region_rect)
             self.tools_window.do_autopositioning(capture_region_rect)
 
-    def show_selection_filter_menu(self):
-        menu = QMenu()
+    def selection_filter_menu(self, main_menu=None):
+        if main_menu is not None:
+            menu = QMenu(main_menu)
+        else:
+            menu = QMenu()
+        title = 'Доступные к выделению'
+        menu.setTitle(title)
         menu.setStyleSheet(self.context_menu_stylesheet)
         def add_item(*args):
             action = menu.addAction(*args)
             action.setCheckable(True)
             return action
 
-        title = menu.addAction('Доступные к выделению')
-        title.setEnabled(False)
+        if not main_menu:
+            title = menu.addAction(title)
+            title.setEnabled(False)
 
         _all = add_item("И пометки, и фон")
         _content_only = add_item("Только пометки")
@@ -2784,28 +2790,39 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         for a in (_all, _content_only, _background_only):
             a.setActionGroup(ag)
 
-
         _all.setChecked(False)
         _content_only.setChecked(False)
         _background_only.setChecked(False)
         if self.selection_filter == self.SelectionFilter.all:
             _all.setChecked(True)
+            _all.setProperty('callback', lambda: setattr(self, 'selection_filter', self.SelectionFilter.all))
         elif self.selection_filter == self.SelectionFilter.content_only:
             _content_only.setChecked(True)
+            _content_only.setProperty('callback', lambda: setattr(self, 'selection_filter', self.SelectionFilter.content_only))
         elif self.selection_filter == self.SelectionFilter.background_only:
             _background_only.setChecked(True)
+            _background_only.setProperty('callback', lambda: setattr(self, 'selection_filter', self.SelectionFilter.background_only))
+
+        def click_handler(a):
+            if a == None:
+                return True
+            else:
+                if a.parent() == menu:
+                    if a == _all:
+                        self.selection_filter = self.SelectionFilter.all
+                    elif a == _content_only:
+                        self.selection_filter = self.SelectionFilter.content_only
+                    elif a == _background_only:
+                        self.selection_filter = self.SelectionFilter.background_only
+                    self.elementsSelectionFilterChangedCallback()
+                    return True
+            return False
+
+        if main_menu:
+            return menu, click_handler
 
         action = menu.exec_(QCursor().pos())
-        if action == None:
-            return
-        elif action == _all:
-            self.selection_filter = self.SelectionFilter.all
-        elif action == _content_only:
-            self.selection_filter = self.SelectionFilter.content_only
-        elif action == _background_only:
-            self.selection_filter = self.SelectionFilter.background_only
-        self.elementsSelectionFilterChangedCallback()
-
+        click_handler(action)
 
     def update_saved_capture(self):
         ts = self.tools_settings
@@ -3156,6 +3173,12 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         reset_pan = add_item("Сбросить только смещение")
         reset_zoom = add_item("Сбросить только зум")
 
+        contextMenu.addSeparator()
+
+        sub_menu, sub_menu_handler = self.selection_filter_menu(main_menu=contextMenu)
+        sub_menu.setTitle(sub_menu.title())
+        contextMenu.addMenu(sub_menu)
+
         contextMenu.addSeparator() ###############################################################
 
         save_project = add_item("Сохранить проект")
@@ -3200,6 +3223,8 @@ class ScreenshotWindow(QWidget, ElementsMixin):
 
         action = contextMenu.exec_(self.mapToGlobal(event.pos()))
         if action == None:
+            pass
+        elif sub_menu_handler(action):
             pass
         elif action == save_project:
             self.save_project()

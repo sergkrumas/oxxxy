@@ -955,9 +955,12 @@ class ElementsMixin(ElementsTransformMixin):
         if hs and hs.content_type in [ToolID.zoom_in_region, ToolID.copypaste] and len(hs.elements) == 1:
             self.elements_history_index -= 1
             self.history_slots = self.elementsHistoryFilterSlots()
+            self.elements = self.elementsHistoryFilter()
 
     def elementsOnTransformToolActivated(self):
-        self.elementsSetSelected(self.elementsGetLastElement())
+        elements = self.elementsFilterElementsForSelection()
+        if elements:
+            self.elementsSetSelected(elements[-1])
         self.elementsUpdatePanelUI()
         self.update()
         self.activateWindow() # чтобы фокус не соскакивал на панель иструментов
@@ -1402,8 +1405,8 @@ class ElementsMixin(ElementsTransformMixin):
                     self.selection_rect = build_valid_rectF(self.selection_start_point, self.selection_end_point)
                     self.canvas_selection_callback(event.modifiers() == Qt.ShiftModifier)
 
-            # for element in self.selected_items:
-            #     element = self.elementsCreateModificatedCopyOnNeed(element)
+            for element in self.selected_items:
+                element = self.elementsCreateModificatedCopyOnNeed(element)
 
         self.update()
 

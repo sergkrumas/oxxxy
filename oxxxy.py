@@ -4220,12 +4220,16 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
     def contextMenuEvent(self, event):
         menu = QMenu()
         restart_app = menu.addAction('Перезапустить приложение')
+        menu.addSeparator()
+        crash_app = menu.addAction('Крашнуть приложение')
         action = menu.exec_(QCursor().pos())
         if action is None:
             pass
         elif action == restart_app:
             _restart_app()
             self.app_quit()
+        elif action == crash_app:
+            result = 1/0
 
     def open_settings_window(self):
         SettingsWindow().place_window()
@@ -4637,11 +4641,11 @@ def invoke_screenshot_editor(request_type=None):
             app = QApplication.instance()
             app.exit()
 
-def show_crash_log():
+def show_crash_log(alert=True):
     path = get_crashlog_filepath()
     if os.path.exists(path):
         open_link_in_browser(path)
-    else:
+    elif alert:
         QMessageBox.critical(None, "Сообщение",
                 "Файла не нашлось, видимо программа ещё не крашилась.")
 
@@ -4763,6 +4767,7 @@ def _main():
 
     if Globals.AFTERCRASH:
         filepath = get_crashlog_filepath()
+        show_crash_log(alert=False)
         msg0 = f"Информация сохранена в файл\n\t{filepath}"
         msg = f"Скриншотер Oxxxy упал.\n{msg0}\n\nПерезапустить Oxxxy?"
         ret = QMessageBox.question(None, 'Сбой',

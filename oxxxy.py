@@ -2223,18 +2223,12 @@ class ScreenshotWindow(QWidget, ElementsMixin):
     def build_hex_polygon(self, outer_rect):
         x = (3**0.5 / 2)
         size = min(outer_rect.width(), outer_rect.height())
-        # hexaPoints = [QPoint(int(size/4),0),
-        #                 QPoint(int(size/4 + size/2),0),
-        #                 QPoint(size, int(size*0.5*x)),
-        #                 QPoint(int(size/4 + size/2),int(size*x)),
-        #                 QPoint(int(size/4),int(size*x)),
-        #                 QPoint(0,int(size*0.5*x))]
-        hexaPointsF = [QPointF(int(size/4),0),
-                        QPointF(int(size/4 + size/2),0),
-                        QPointF(size,int(size*0.5*x)),
-                        QPointF(int(size/4 + size/2),int(size*x)),
-                        QPointF(int(size/4),int(size*x)),
-                        QPointF(0,int(size*0.5*x))]
+        hexaPointsF = [QPointF(size/4, 0.0),
+                        QPointF(size/4 + size/2, 0.0),
+                        QPointF(size, size*0.5*x),
+                        QPointF(size/4 + size/2, size*x),
+                        QPointF(size/4, size*x),
+                        QPointF(0.0, size*0.5*x)]
         hexaPointsF = [QPointF(p.y(), p.x()) for p in hexaPointsF]
         max_x = max([p.x() for p in hexaPointsF])
         hexaPointsF = [QPointF(p.x()+(size-max_x)/2, p.y()) for p in hexaPointsF]

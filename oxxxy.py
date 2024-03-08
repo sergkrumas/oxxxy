@@ -104,6 +104,24 @@ class Globals():
 
     background_threads = []
 
+    @staticmethod
+    def get_checkerboard_brush():
+        pixmap = QPixmap(40, 40)
+        pixmap.fill(Qt.transparent)
+        painter_ = QPainter()
+        painter_.begin(pixmap)
+        painter_.setOpacity(0.3)
+        painter_.fillRect(QRect(0, 0, 40, 40), QBrush(Qt.black))
+        painter_.setPen(Qt.NoPen)
+        painter_.setBrush(QBrush(Qt.black))
+        painter_.drawRect(QRect(0, 0, 20, 20))
+        painter_.drawRect(QRect(20, 20, 20, 20))
+        painter_.end()
+        brush = QBrush()
+        brush.setTexture(pixmap)
+        return brush
+
+
 def get_screenshot_filepath(params):
     return os.path.join(Globals.SCREENSHOT_FOLDER_PATH, f"{params}.png")
 
@@ -2558,31 +2576,13 @@ class ScreenshotWindow(QWidget, ElementsMixin):
 
         self.hex_mask = False
 
-        #pylint
-        # self.drag_capture_zone = False
-        # self.ocp = QCursor().pos()
-        # self.elements = []
-        # self.elements_final_output = None
-
         self.dialog = None
 
         self.dark_pictures = True
 
         self.uncapture_mode_label_tstamp = time.time()
 
-        pixmap = QPixmap(40, 40)
-        pixmap.fill(Qt.transparent)
-        painter_ = QPainter()
-        painter_.begin(pixmap)
-        painter_.setOpacity(0.3)
-        painter_.fillRect(QRect(0, 0, 40, 40), QBrush(Qt.black))
-        painter_.setPen(Qt.NoPen)
-        painter_.setBrush(QBrush(Qt.black))
-        painter_.drawRect(QRect(0, 0, 20, 20))
-        painter_.drawRect(QRect(20, 20, 20, 20))
-        painter_.end()
-        self.checkerboard_brush = QBrush()
-        self.checkerboard_brush.setTexture(pixmap)
+        self.checkerboard_brush = Globals.get_checkerboard_brush()
 
         self.extended_editor_mode = True
         self.view_window = None

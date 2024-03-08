@@ -39,7 +39,7 @@ from pyqtkeybind import keybinder
 
 from PyQt5.QtWidgets import (QSystemTrayIcon, QWidget, QMessageBox, QMenu, QFileDialog,
     QHBoxLayout, QCheckBox, QVBoxLayout, QTextEdit, QGridLayout,
-    QPushButton, QLabel, QApplication, QScrollArea, QDesktopWidget)
+    QPushButton, QLabel, QApplication, QScrollArea, QDesktopWidget, QActionGroup)
 from PyQt5.QtCore import (QUrl, QMimeData, pyqtSignal, QPoint, QPointF, pyqtSlot, QRect, QEvent,
     QTimer, Qt, QSize, QSizeF, QRectF, QThread, QAbstractNativeEventFilter,
     QAbstractEventDispatcher, QFile, QDataStream, QIODevice)
@@ -2448,8 +2448,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         }
         QMenu::item:disabled {
             background-color: #303940;
-            color: gray;
-            text-decoration: underline;
+            color: white;
             border-left: 2px dashed #303940;
         }
         QMenu::separator {
@@ -2458,6 +2457,33 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         }
         QMenu::item:checked {
         }
+        QMenu::indicator {
+            left: 6px;
+        }
+        QMenu::indicator:non-exclusive:unchecked {
+            image: url(resources/unchecked.png);
+        }
+        QMenu::indicator:non-exclusive:unchecked:selected {
+            image: url(resources/unchecked.png);
+        }
+        QMenu::indicator:non-exclusive:checked {
+            image: url(resources/checked.png);
+        }
+        QMenu::indicator:non-exclusive:checked:selected {
+            image: url(resources/checked_selected.png);
+        }
+        QMenu::indicator:exclusive:unchecked {
+            image: url(resources/rb_unchecked.png);
+        }
+        QMenu::indicator:exclusive:unchecked:selected {
+            image: url(resources/rb_unchecked.png);
+        }
+        QMenu::indicator:exclusive:checked {
+            image: url(resources/checked.png);
+        }
+        QMenu::indicator:exclusive:checked:selected {
+            image: url(resources/checked_selected.png);
+        }        
         """
 
         # для поддержки миксинов
@@ -2753,6 +2779,11 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         _all = add_item("И пометки, и фон")
         _content_only = add_item("Только пометки")
         _background_only = add_item("Только фон")
+
+        ag = QActionGroup(menu)
+        for a in (_all, _content_only, _background_only):
+            a.setActionGroup(ag)
+
 
         _all.setChecked(False)
         _content_only.setChecked(False)

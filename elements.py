@@ -1029,6 +1029,32 @@ class ElementsMixin(ElementsTransformMixin):
         self.elements_history_index = len(self.history_slots)
         return element
 
+    def elementsSetSelected(self, element):
+        if element is None:
+            self.active_element = None
+            for element in self.elementsHistoryFilter():
+                element._selected = False
+        else:
+            element._selected = True
+            self.active_element = element
+        self.init_selection_bounding_box_widget()
+        self.elementsUpdatePanelUI()
+        self.update()
+
+    def elementsSelectDeselectAll(self):
+        any_selected = any(el._selected for el in self.elements)
+        if any_selected:
+            # delesect all
+            for el in self.elements:
+                el._selected = False
+        else:
+            # select all that allowed to select
+            for el in self.elementsFilterElementsForSelection():
+                el._selected = True
+        self.init_selection_bounding_box_widget()
+        self.elementsUpdatePanelUI()
+        self.update()
+
     def elementsFilterElementsForSelection(self):
         if self.selection_filter == self.SelectionFilter.all:
             return self.elementsAllVisibleElements()
@@ -2181,17 +2207,6 @@ class ElementsMixin(ElementsTransformMixin):
             new_element.source_index = element.unique_index
             self.elementsSetSelected(new_element)
             return new_element
-
-    def elementsSetSelected(self, element):
-        if element is None:
-            self.active_element = None
-            for element in self.elementsHistoryFilter():
-                element._selected = False
-        else:
-            element._selected = True
-            self.active_element = element
-        self.init_selection_bounding_box_widget()
-        self.elementsUpdatePanelUI()
 
     def elementsParametersChanged(self):
         tw = self.tools_window

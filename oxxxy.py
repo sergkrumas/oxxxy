@@ -2483,7 +2483,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         }
         QMenu::indicator:exclusive:checked:selected {
             image: url(resources/checked_selected.png);
-        }        
+        }
         """
 
         # для поддержки миксинов

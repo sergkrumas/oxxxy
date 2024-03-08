@@ -651,7 +651,7 @@ class ElementsTransformMixin():
             print('cancel scaling')
 
 
-    def elementDrawSelectionMouseRect(self, painter):
+    def elementsDrawSelectionMouseRect(self, painter):
         if self.selection_rect is not None:
             c = self.selection_color
             painter.setPen(QPen(c))
@@ -660,7 +660,18 @@ class ElementsTransformMixin():
             painter.setBrush(brush)
             painter.drawRect(self.selection_rect)
 
-    def elementDrawSelectionTransformBox(self, painter):
+    def elementsDrawSelectedElementsDottedOutlines(self, painter):
+        painter.save()
+        painter.setBrush(Qt.NoBrush)
+        pen = QPen(Qt.white, 1, Qt.DashLine)
+        painter.setPen(pen)
+        painter.setCompositionMode(QPainter.RasterOp_NotDestination) #RasterOp_SourceXorDestination
+        for element in self.selected_items:
+            sa = element.get_selection_area(self)
+            painter.drawPolygon(sa)
+        painter.restore()
+
+    def elementsDrawSelectionTransformBox(self, painter):
         self.rotation_activation_areas = []
         if self.selection_bounding_box is not None:
 

@@ -2052,8 +2052,9 @@ class ElementsMixin(ElementsTransformMixin):
 
         if not final:
             # отрисовка виджетов
-            self.elementDrawSelectionMouseRect(painter)
-            self.elementDrawSelectionTransformBox(painter)
+            self.elementsDrawSelectionMouseRect(painter)
+            self.elementsDrawSelectionTransformBox(painter)
+            self.elementsDrawSelectedElementsDottedOutlines(painter)
 
         if self.Globals.DEBUG and self.capture_region_rect and not final:
             painter.setPen(QPen(QColor(Qt.white)))

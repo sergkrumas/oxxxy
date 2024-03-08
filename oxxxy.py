@@ -3571,7 +3571,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             else:
                 self.elementsFitSelectedItemsOnScreen()
 
-    def get_center_position(self):
+    def get_center_position_and_screen_rect(self):
         if False:
             # не подходит в системе с двумя пониторами,
             # потому что центрируется в середине пространства, формируемоего двумя мониторами
@@ -3583,7 +3583,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             desktop = QDesktopWidget()
             screen = desktop.screenNumber(QCursor().pos())
             screen_rect = desktop.screenGeometry(screen=screen)
-            return screen_rect.center()
+            return screen_rect.center(), screen_rect
 
 class StylizedUIBase():
 

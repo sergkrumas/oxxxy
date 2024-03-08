@@ -2669,7 +2669,7 @@ class ElementsMixin(ElementsTransformMixin):
             content_pos = mapped_capture_center - self.canvas_origin
         else:
             content_pos = QPointF(element.element_position.x()*canvas_scale_x, element.element_position.y()*canvas_scale_y)
-        viewport_center_pos = self.get_center_position()
+        viewport_center_pos, window_rect = self.get_center_position_and_screen_rect()
 
         self.canvas_origin = - content_pos + viewport_center_pos
 
@@ -2679,7 +2679,8 @@ class ElementsMixin(ElementsTransformMixin):
             content_rect = mapped_capture
         else:
             content_rect = element.get_selection_area(canvas=self, place_center_at_origin=False).boundingRect().toRect()
-        fitted_rect = fit_rect_into_rect(content_rect, self.rect(), float_mode=True)
+
+        fitted_rect = fit_rect_into_rect(content_rect, window_rect, float_mode=True)
         self.elementsDoScaleCanvas(0, False, False, False,
             pivot=viewport_center_pos,
             factor_x=fitted_rect.width()/content_rect.width(),

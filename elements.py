@@ -2074,6 +2074,15 @@ class ElementsMixin(ElementsTransformMixin):
             screenshot_cursor_position = self.elementsMapFromCanvasToViewport(self.screenshot_cursor_position)
             painter.drawPixmap(screenshot_cursor_position, self.cursor_pixmap)
 
+    def elementsResetPanZoom(self):
+        self.canvas_origin = QPointF(0, 0)
+        self.canvas_scale_x = 1.0
+        self.canvas_scale_y = 1.0
+        self.update_selection_bouding_box()
+        self.update()
+        if self.tools_window:
+            self.tools_window.update()
+
     def elementsDrawDebugInfo(self, painter):
         if self.elements:
             if self.capture_region_rect:

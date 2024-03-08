@@ -63,7 +63,7 @@ from elements import ElementsMixin, ToolID
 class Globals():
     DEBUG = True
     DEBUG_SETTINGS_WINDOW = False
-    DEBUG_ELEMENTS = True
+    DEBUG_ELEMENTS = False
     DEBUG_ELEMENTS_PICTURE_FRAMING = True
     DEBUG_ELEMENTS_COLLAGE = False
     CRASH_SIMULATOR = False
@@ -2616,7 +2616,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         self.update_tools_window()
         self.update()
 
-    def request_editor_mode(self, paths_or_pixmaps):
+    def request_images_editor_mode(self, paths_or_pixmaps):
         pixmaps = []
         self.input_POINT2 = QPoint(0, 0)
         self.input_POINT1 = self.frameGeometry().bottomRight()
@@ -4128,7 +4128,7 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
             open_recent_screenshot_btn = QPushButton("Показать\nпоследний")
             open_recent_screenshot_btn.clicked.connect(self.open_recent_screenshot)
 
-            editor_compile_btn = QPushButton('Коллаж')
+            image_editor_btn = QPushButton('Редактор коллажей')
 
             open_settings_btn = QPushButton("Настройки")
 
@@ -4172,14 +4172,14 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
             # self.layout.addWidget(screenshot_remake_btn)
             self.layout.addLayout(self.second_row)
             self.layout.addSpacing(10)
-            self.layout.addWidget(editor_compile_btn)
+            self.layout.addWidget(image_editor_btn)
             self.layout.addSpacing(20)
             self.layout.addLayout(self.thrid_row)
             self.layout.addLayout(self.bottom_row)
             self.layout.addSpacing(10)
 
             open_history_btn.clicked.connect(self.open_folder)
-            editor_compile_btn.clicked.connect(self.start_editor_in_compile_mode)
+            image_editor_btn.clicked.connect(self.start_editor_in_compile_mode)
             screenshot_fragment_btn.clicked.connect(self.start_screenshot_editor_fragment)
             screenshot_fullscreens_btn.clicked.connect(self.start_screenshot_editor_fullscreen)
             open_settings_btn.clicked.connect(self.open_settings_window)
@@ -4189,7 +4189,7 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
                 screenshot_fragment_btn,
                 screenshot_fullscreens_btn,
                 # screenshot_remake_btn,
-                editor_compile_btn,
+                image_editor_btn,
                 open_history_btn,
                 open_recent_screenshot_btn,
                 open_settings_btn,
@@ -4583,7 +4583,7 @@ def invoke_screenshot_editor(request_type=None):
                 path = ""
             filepaths = get_filepaths_dialog(path=path)
             screenshot_editor = ScreenshotWindow(screenshot_image, metadata)
-            screenshot_editor.request_editor_mode(filepaths)
+            screenshot_editor.request_images_editor_mode(filepaths)
             screenshot_editor.show()
         else:
             screenshot_editor = ScreenshotWindow(screenshot_image, metadata)
@@ -4608,7 +4608,7 @@ def invoke_screenshot_editor(request_type=None):
         filepaths = get_filepaths_dialog(path=path)
         if filepaths:
             screenshot_editor = ScreenshotWindow(screenshot_image, metadata)
-            screenshot_editor.request_editor_mode(filepaths)
+            screenshot_editor.request_images_editor_mode(filepaths)
             screenshot_editor.show()
             # чтобы activateWindow точно сработал и взял фокус ввода
             QApplication.instance().processEvents()

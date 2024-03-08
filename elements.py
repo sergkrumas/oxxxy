@@ -360,7 +360,7 @@ class ElementsMixin(ElementsTransformMixin):
 
     def elementsFinishSaveToMemoryMode(self):
         self.Globals.save_to_memory_mode = False
-        self.request_editor_mode(self.Globals.images_in_memory)
+        self.request_images_editor_mode(self.Globals.images_in_memory)
         self.Globals.images_in_memory.clear()
         self.elementsUpdateUI()
 

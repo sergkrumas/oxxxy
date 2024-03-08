@@ -2196,6 +2196,23 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         color_rect = QRect(focus_rect.bottomLeft()+QPoint(0, -5), QSize(focus_rect.width(), 6))
         painter.fillRect(color_rect, self.color_at_pixel)
 
+        # draw copied color values
+        painter.save()
+        max_width = 0
+        data = list(enumerate(reversed(self.colors_values_copied)))
+        for n, (color, color_represenation) in data:
+            max_width = max(max_width, painter.boundingRect(QRect(), Qt.AlignLeft, color_represenation).width())
+        for n, (color, color_represenation) in data:            
+            pos = _cursor_pos + QPointF(-max_width, 25*(n+1))
+            painter.drawText(pos, color_represenation)
+        for n, (color, color_represenation) in data:
+            pos = _cursor_pos + QPointF(-max_width-10, 25*(n+1))
+            rect = build_valid_rectF(pos, pos+QPointF(-10, -10))
+            painter.setPen(QPen(Qt.black, 1))
+            painter.setBrush(QBrush(color))
+            painter.drawRect(rect)
+        painter.restore()
+
     def draw_hint(self, painter, cursor_pos, text_white_pen):
         if not self.is_point_set(self.input_POINT1):
             lines = (
@@ -2557,7 +2574,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         # лупа задания области захвата
         self.magnifier_size = 100
         self.color_at_pixel = QColor(Qt.black)
-        self.colors_reprs = []
+        self.colors_values_copied = []
         # помощь F1
         self.show_help_hint = False
 
@@ -3513,8 +3530,10 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             _b = color.blue()
             _rgb = f"rgb({_r}, {_g}, {_b})"
             color_repr = f"{_hex} {_rgb}"
-            self.colors_reprs.append(color_repr)
-            self.set_clipboard("\n".join(self.colors_reprs))
+            self.colors_values_copied.append((color, color_repr))
+            color_reprs = [t[1] for t in self.colors_values_copied]
+            self.set_clipboard("\n".join(color_reprs))
+            self.update()
         if check_scancode_for(event, "Z"):
             mods = event.modifiers()
             ctrl = mods & Qt.ControlModifier

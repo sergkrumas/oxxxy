@@ -295,7 +295,7 @@ class ElementsMixin(ElementsTransformMixin):
         self.capture_region_widget_enabled = True
         self.show_background = True
         self.dark_pictures = True
-        
+
 
         # хоть эти три атрибута и начинаются со слова "canvas",
         # но здесь они на самом деле значат "viewport",

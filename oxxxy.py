@@ -2202,7 +2202,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         data = list(enumerate(reversed(self.colors_values_copied)))
         for n, (color, color_represenation) in data:
             max_width = max(max_width, painter.boundingRect(QRect(), Qt.AlignLeft, color_represenation).width())
-        for n, (color, color_represenation) in data:            
+        for n, (color, color_represenation) in data:
             pos = _cursor_pos + QPointF(-max_width, 25*(n+1))
             painter.drawText(pos, color_represenation)
         for n, (color, color_represenation) in data:
@@ -4694,7 +4694,7 @@ def read_settings_file():
     SettingsJson().init(Globals)
     SJ = SettingsJson()
     Globals.ENABLE_FLAT_EDITOR_UI = SJ.get_data("ENABLE_FLAT_EDITOR_UI")
-    Globals.ENABLE_CBOR2 = SJ.get_data("ENABLE_CBOR2", Globals.ENABLE_CBOR2)    
+    Globals.ENABLE_CBOR2 = SJ.get_data("ENABLE_CBOR2", Globals.ENABLE_CBOR2)
     SJ.set_reading_file_on_getting_value(False)
     Globals.USE_COLOR_PALETTE = SJ.get_data("USE_COLOR_PALETTE")
 

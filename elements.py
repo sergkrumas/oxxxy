@@ -2078,6 +2078,7 @@ class ElementsMixin(ElementsTransformMixin):
             else:
                 pos = self.mapFromGlobal(QCursor().pos())
             info_rect = build_valid_rectF(pos, self.rect().topRight())
+            info_rect.setWidth(800)
             painter.fillRect(info_rect, QColor(0, 0, 0, 180))
             info_rect.moveBottomLeft(QPointF(10, -10) + info_rect.bottomLeft())
 

@@ -3189,12 +3189,12 @@ class ScreenshotWindow(QWidget, ElementsMixin):
 
         contextMenu.addSeparator()
 
-        start_save_to_memory_mode = add_item("Сохранить скриншот в память")
+        start_save_to_memory_mode = add_item("Сохранить результат в память")
         start_save_to_memory_mode.setCheckable(True)
         start_save_to_memory_mode.setChecked(Globals.save_to_memory_mode)
 
         if Globals.images_in_memory:
-            finish_save_to_memory_mode = add_item("Достать все скриншоты из памяти")
+            finish_save_to_memory_mode = add_item("Разложить на холсте все готовые изображения из памяти")
         else:
             finish_save_to_memory_mode = None
 

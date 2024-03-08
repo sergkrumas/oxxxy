@@ -304,8 +304,6 @@ class ElementsMixin(ElementsTransformMixin):
 
         self.NUMBERING_WIDTH = 25
 
-        self.elementsIsFinalDrawing = False
-
         self.active_element = None #active element is the last selected element
 
         self.__te = Element(ToolID.zoom_in_region, [])
@@ -2023,7 +2021,6 @@ class ElementsMixin(ElementsTransformMixin):
         old_brush = painter.brush()
         old_pen = painter.pen()
         # draw elements
-        self.elementsIsFinalDrawing = final
         if not self.dark_pictures:
             self.elementsDrawDarkening(painter)
 
@@ -2062,7 +2059,7 @@ class ElementsMixin(ElementsTransformMixin):
             self.elementsDrawDarkening(painter)
         painter.setBrush(old_brush)
         painter.setPen(old_pen)
-        self.elementsIsFinalDrawing = False
+
         painter.setRenderHint(QPainter.HighQualityAntialiasing, False)
         painter.setRenderHint(QPainter.Antialiasing, False)
         painter.setRenderHint(QPainter.SmoothPixmapTransform, False)

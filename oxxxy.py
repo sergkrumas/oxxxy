@@ -3074,6 +3074,10 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         self.canvas_debug_transform_widget = not self.canvas_debug_transform_widget
         self.update()
 
+    def toggle_debug_mode(self):
+        Globals.DEBUG = not Globals.DEBUG
+        self.update()
+
     def contextMenuEvent(self, event):
         contextMenu = QMenu()
         contextMenu.setStyleSheet(self.context_menu_stylesheet)
@@ -3222,6 +3226,10 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         transform_widget_debug_mode.setCheckable(True)
         transform_widget_debug_mode.setChecked(self.canvas_debug_transform_widget)
 
+        toggle_debug_mode = add_item("DEBUG")
+        toggle_debug_mode.setCheckable(True)
+        toggle_debug_mode.setChecked(Globals.DEBUG)
+
         contextMenu.addSeparator() ###############################################################
 
         minimize = add_item("Свернуть на панель задач")
@@ -3235,6 +3243,8 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             pass
         elif action == save_project:
             self.save_project()
+        elif action == toggle_debug_mode:
+            self.toggle_debug_mode()
         elif action == reset_panzoom:
             self.elementsResetPanZoom()
         elif action == reset_pan:

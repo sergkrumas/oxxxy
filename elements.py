@@ -2077,18 +2077,58 @@ class ElementsMixin(ElementsTransformMixin):
     def elementsDrawDebugInfo(self, painter):
         if self.elements:
             if self.capture_region_rect:
-                pos = self.elementsMapFromCanvasToViewport(self.capture_region_rect.bottomRight())
+                pos_right = self.elementsMapFromCanvasToViewport(self.capture_region_rect.bottomRight())
+                pos_left = self.elementsMapFromCanvasToViewport(self.capture_region_rect.bottomLeft())
             else:
-                pos = self.mapFromGlobal(QCursor().pos())
-            info_rect = build_valid_rectF(pos, self.rect().topRight())
+                pos_right = pos_left = self.mapFromGlobal(QCursor().pos())
+            visible_elements = self.elementsHistoryFilter()
+
+            def build_info_text(elem):
+                info_text = ""
+                if hasattr(elem, "source_index"):
+                    info_text += f"[{elem.unique_index}] {elem.type} from [{elem.source_index}]"
+                else:
+                    info_text += f"[{elem.unique_index}] {elem.type}"
+                if hasattr(elem, 'toolbool'):
+                    info_text += f" {elem.toolbool}"
+                return info_text
+
+            # левая сторона
+            painter.save()
+            info_rect = build_valid_rectF(pos_left, self.rect().topLeft())
+            info_rect.setWidth(300)
+            info_rect.moveBottomRight(pos_left)
+            painter.fillRect(info_rect, QColor(0, 0, 0, 180))
+            font = painter.font()
+            pixel_height = 25
+            font.setPixelSize(20)
+            max_width = 0
+
+            pos_left += QPointF(-10, -10)
+            for element in self.elements:
+                element.debug_text = build_info_text(element)
+                max_width = max(max_width, painter.boundingRect(QRect(), Qt.AlignLeft, element.debug_text).width())
+
+            for n, element in enumerate(self.elements):
+                font = painter.font()                
+                if element not in visible_elements:
+                    painter.setPen(QPen(QColor(255, 100, 100)))
+                    font.setStrikeOut(True)
+                else:
+                    painter.setPen(QPen(Qt.white))
+                    font.setStrikeOut(False)
+                painter.setFont(font)
+                p = pos_left + QPointF(-max_width, -pixel_height*n)
+                painter.drawText(p, element.debug_text)
+            painter.restore()
+
+
+            # правая сторона
+            info_rect = build_valid_rectF(pos_right, self.rect().topRight())
             info_rect.setWidth(800)
             painter.fillRect(info_rect, QColor(0, 0, 0, 180))
             info_rect.moveBottomLeft(QPointF(10, -10) + info_rect.bottomLeft())
-
-            visible_elements = self.elementsHistoryFilter()
-
             vertical_offset = 0
-
             for index, hs in list(enumerate(self.history_slots)):
                 painter.save()
                 painter.setPen(Qt.white)
@@ -2098,11 +2138,10 @@ class ElementsMixin(ElementsTransformMixin):
                 font.setPixelSize(20)
                 painter.setFont(font)
                 vertical_offset += (len(hs.elements) + 1)
-                pos = info_rect.bottomLeft() + QPointF(0, -vertical_offset*pixel_height)
-                painter.drawText(pos, slot_info_text)
+                pos_right = info_rect.bottomLeft() + QPointF(0, -vertical_offset*pixel_height)
+                painter.drawText(pos_right, slot_info_text)
                 for i, elem in enumerate(hs.elements):
 
-                    info_text = ""
                     painter.setPen(Qt.white)
                     if elem not in visible_elements:
                         painter.setPen(QPen(QColor(255, 100, 100)))
@@ -2113,22 +2152,18 @@ class ElementsMixin(ElementsTransformMixin):
                     painter.setFont(font)
                     if self.selected_items and elem in self.selected_items:
                         painter.setPen(QPen(Qt.green))
-                    if hasattr(elem, "source_index"):
-                        info_text += f"[{elem.unique_index}] {elem.type} from [{elem.source_index}]"
-                    else:
-                        info_text += f"[{elem.unique_index}] {elem.type}"
-                    if hasattr(elem, 'toolbool'):
-                        info_text += f" {elem.toolbool}"
+
+                    info_text = build_info_text(elem)
 
                     y = -vertical_offset*pixel_height + pixel_height*(i+1)
-                    pos = info_rect.bottomLeft() + QPointF(100, y)
+                    pos_right = info_rect.bottomLeft() + QPointF(100, y)
                     color_rect_pos = info_rect.bottomLeft() + QPointF(20, y+3)
                     size_pos = info_rect.bottomLeft() + QPointF(40, y)
                     painter.save()
                     painter.setPen(QPen(Qt.gray, 2))
                     painter.drawText(size_pos, f'{elem.size:.03}')
                     painter.restore()
-                    painter.drawText(pos, info_text)
+                    painter.drawText(pos_right, info_text)
                     painter.save()
                     painter.setPen(QPen(Qt.black, 2))
                     painter.setBrush(elem.color)

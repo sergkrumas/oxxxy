@@ -63,7 +63,7 @@ from elements import ElementsMixin, ToolID
 class Globals():
     DEBUG = True
     DEBUG_SETTINGS_WINDOW = False
-    DEBUG_ELEMENTS = True
+    DEBUG_ELEMENTS = False
     DEBUG_ELEMENTS_PICTURE_FRAMING = True
     DEBUG_ELEMENTS_COLLAGE = False
     CRASH_SIMULATOR = False
@@ -2274,22 +2274,24 @@ class ScreenshotWindow(QWidget, ElementsMixin):
                 # painter.drawImage(self_rect, self.source_pixels)
                 self.elementsDrawMain(painter, final=False, draw_background_only=True)
         elif step == 2:
-            painter.setClipping(True)
-            path = QPainterPath()
-            path.addRect(QRectF(self.rect()))
-            path.addRect(QRectF(input_rect))
-            painter.setClipPath(path)
-            if opacity_type == LayerOpacity.FullTransparent: # full transparent
-                pass
-            elif opacity_type == LayerOpacity.HalfTransparent: # ghost
-                painter.fillRect(self_rect, QColor(0, 0, 0, 100))
-                painter.setOpacity(0.6)
-                self.elementsDrawMain(painter, final=False, draw_background_only=True)
-                # painter.drawImage(self_rect, self.source_pixels)
-                painter.setOpacity(1.0)
-            elif opacity_type == LayerOpacity.Opaque: # stay still
-                painter.fillRect(self_rect, QColor(0, 0, 0, 100))
-            painter.setClipping(False)
+
+            if self.capture_region_widget_enabled:
+                painter.setClipping(True)
+                path = QPainterPath()
+                path.addRect(QRectF(self.rect()))
+                path.addRect(QRectF(input_rect))
+                painter.setClipPath(path)
+                if opacity_type == LayerOpacity.FullTransparent: # full transparent
+                    pass
+                elif opacity_type == LayerOpacity.HalfTransparent: # ghost
+                    painter.fillRect(self_rect, QColor(0, 0, 0, 100))
+                    painter.setOpacity(0.6)
+                    self.elementsDrawMain(painter, final=False, draw_background_only=True)
+                    # painter.drawImage(self_rect, self.source_pixels)
+                    painter.setOpacity(1.0)
+                elif opacity_type == LayerOpacity.Opaque: # stay still
+                    painter.fillRect(self_rect, QColor(0, 0, 0, 100))
+                painter.setClipping(False)
         # if self.undermouse_region_rect:
         #   pen = painter.pen()
         #   brush = painter.brush()
@@ -2461,7 +2463,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         QMenu::item:unchecked:selected{
             color: rgb(50, 50, 50);
             background-color: rgb(253, 203, 54);
-        } 
+        }
         QMenu::item:disabled {
             background-color: #303940;
             color: gray;
@@ -2494,6 +2496,8 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         self.region_num = 0
 
         self.start_cursor_position = QPointF(0, 0)
+
+        self.capture_region_widget_enabled = True
 
         self.show_background = True
 
@@ -2813,6 +2817,11 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             if select_window and select_window.isVisible():
                 select_window.hide()
 
+        drawing_outside_capture_widget_allowed = \
+                        not self.drag_inside_capture_zone \
+                        and self.capture_region_rect \
+                        and not self.capture_region_widget_enabled
+
         if event.buttons() == Qt.NoButton:
             # определяем только тут, иначе при быстрых перемещениях мышки при зажатой кнопке мыши
             # возможна потеря удержания - как будто бы если кнопка мыши была отпущена
@@ -2840,7 +2849,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
                     self.update_saved_capture()
 
             elif self.undermouse_region_info and not self.drag_inside_capture_zone \
-                                                                        and not self.isPanningActivated:
+                        and not self.isPanningActivated and self.capture_region_widget_enabled:
                 # для изменения области захвата после первичного задания
                 self.is_rect_being_redefined = True
                 delta = self.elementsMapFromViewportToCanvas(QPointF(event.pos())) - self.start_cursor_position
@@ -2868,7 +2877,8 @@ class ScreenshotWindow(QWidget, ElementsMixin):
 
                 self.update_saved_capture()
 
-            elif self.drag_inside_capture_zone and self.capture_region_rect:
+            elif (self.drag_inside_capture_zone and self.capture_region_rect) or \
+                                                    drawing_outside_capture_widget_allowed:
                 # для добавления элементов поверх скриншота
                 self.elementsMouseMoveEvent(event)
 
@@ -2894,6 +2904,9 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             self.ocp = event.pos()
             return
 
+        starting_drawing_outside_allowed = self.capture_region_rect \
+                                                and not self.capture_region_widget_enabled
+
         if event.button() == Qt.LeftButton:
             self.start_cursor_position = self.elementsMapFromViewportToCanvas(QPointF(event.pos()))
             self.capture_redefine_start_value = None
@@ -2904,6 +2917,8 @@ class ScreenshotWindow(QWidget, ElementsMixin):
                     self.elementsMousePressEvent(event)
             else:
                 self.drag_inside_capture_zone = False
+                if starting_drawing_outside_allowed:
+                    self.elementsMousePressEvent(event)
         if event.button() == Qt.MidButton and self.tools_window:
             self.tools_window.size_slider.value = 0.5
             self.tools_window.on_parameters_changed()
@@ -3137,6 +3152,10 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         else:
             finish_save_to_memory_mode = None
 
+        enable_capture_widget = add_item("Виджет области захвата")
+        enable_capture_widget.setCheckable(True)
+        enable_capture_widget.setChecked(self.capture_region_widget_enabled)
+
         show_background = add_item("Фон")
         show_background.setCheckable(True)
         show_background.setChecked(self.show_background)
@@ -3164,6 +3183,8 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             pass
         elif action == save_project:
             self.save_project()
+        elif action == enable_capture_widget:
+            self.capture_region_widget_enabled = not self.capture_region_widget_enabled
         elif action == open_project:
             self.open_project()
         elif action == show_background:
@@ -3252,6 +3273,14 @@ class ScreenshotWindow(QWidget, ElementsMixin):
 
     def define_regions_rects_and_set_cursor(self, write_data=True):
 
+        if not self.capture_region_widget_enabled:
+            self.setCursor(self.elementsSetCursorShapeInsideCaptureZone())
+            return
+
+        if not self.capture_region_rect:
+            self.setCursor(self.elementsSetCursorShapeInsideCaptureZone())
+            return
+
         # --------------------------------- #
         # 1         |2          |3          #
         #           |           |           #
@@ -3286,10 +3315,6 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             8: QCursor(Qt.SizeVerCursor),
             9: QCursor(Qt.SizeFDiagCursor)
         }
-
-        if not self.capture_region_rect:
-            self.setCursor(self.elementsSetCursorShapeInsideCaptureZone())
-            return
 
         crr = self.elementsMapFromCanvasToViewportRectF(self.capture_region_rect)
         amr = self._all_monitors_rect

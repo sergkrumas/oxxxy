@@ -1953,11 +1953,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         _input_rect = self.build_input_rectF(self.elementsMapFromViewportToCanvas(cursor_pos))
         input_rect = self.elementsMapFromCanvasToViewportRectF(_input_rect)
 
-        if self.extended_editor_mode:
-            old_brush = painter.brush()
-            painter.setBrush(self.checkerboard_brush)
-            painter.drawRect(self.rect())
-            painter.setBrush(old_brush)
+        self.draw_checkerboard(painter)
 
         self.draw_uncaptured_zones(painter, self.uncapture_draw_type, input_rect, step=1)
 
@@ -1991,8 +1987,14 @@ class ScreenshotWindow(QWidget, ElementsMixin):
 
         painter.end()
 
+    def draw_checkerboard(self, painter):
+        old_brush = painter.brush()
+        painter.setBrush(self.checkerboard_brush)
+        painter.drawRect(self.rect())
+        painter.setBrush(old_brush)
+
     def draw_canvas_origin(self, painter):
-        pen = QPen(Qt.red, 30)
+        pen = QPen(Qt.magenta, 4)
         painter.setPen(pen)
         painter.drawPoint(self.canvas_origin)
 
@@ -2363,7 +2365,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             draw_cyberpunk(painter, capture_region_rect)
 
     def draw_vertical_horizontal_lines(self, painter, cursor_pos):
-        if self.extended_editor_mode:
+        if True:
             line_pen = QPen(QColor(127, 127, 127, 172), 2, Qt.DashLine)
             old_comp_mode = painter.compositionMode()
             painter.setCompositionMode(QPainter.RasterOp_SourceXorDestination)
@@ -2395,7 +2397,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             pos_y = cursor_pos.y()
             painter.drawLine(pos_x, 0, pos_x, self.height())
             painter.drawLine(0, pos_y, self.width(), pos_y)
-        if self.extended_editor_mode:
+        if True:
             painter.setCompositionMode(old_comp_mode)
 
     def draw_analyse_corners(self, painter):
@@ -2584,7 +2586,6 @@ class ScreenshotWindow(QWidget, ElementsMixin):
 
         self.checkerboard_brush = Globals.get_checkerboard_brush()
 
-        self.extended_editor_mode = True
         self.view_window = None
         self.history_group_counter = 0
 
@@ -2974,11 +2975,6 @@ class ScreenshotWindow(QWidget, ElementsMixin):
                     return
                 self.is_rect_defined = True
                 self.capture_region_rect = build_valid_rectF(self.input_POINT1, self.input_POINT2)
-                if not self.extended_editor_mode:
-                    # специальное ограничение, чтобы область захвата не съехала с экранной области
-                    # и тем самым в скриншот не попала чернота
-                    self.capture_region_rect = \
-                                    self._all_monitors_rect.intersected(self.capture_region_rect)
                 self.is_rect_being_redefined = False
             self.get_region_info() # здесь только для установки курсора
 

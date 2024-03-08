@@ -299,8 +299,6 @@ class ElementsMixin(ElementsTransformMixin):
         self.canvas_scale_x = 1.0
         self.canvas_scale_y = 1.0
 
-        self.drag_global = False
-
         self.NUMBERING_WIDTH = 25
 
         self.active_element = None #active element is the last selected element

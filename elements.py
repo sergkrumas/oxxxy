@@ -2202,10 +2202,11 @@ class ElementsMixin(ElementsTransformMixin):
             # если элемент последний в списке элементов,
             # то его предыдущее состояние не сохраняется
             return element
+        elif element.hs.content_type in (ToolID.zoom_in_region, ToolID.copypaste):
+            return element
         else:
             new_element = self.elementsCreateNew(ToolID.TEMPORARY_TYPE_NOT_DEFINED)
             self.elementsCopyElementData(new_element, element)
-            # new_element.source_index = self.elements.index(element)
             new_element.source_index = element.unique_index
             self.elementsSetSelected(new_element)
             return new_element

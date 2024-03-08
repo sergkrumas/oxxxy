@@ -2407,7 +2407,6 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         self.setMouseTracking(True)
 
         self.source_pixels = screenshot_image
-        self.source_pixels_backup = None
         self.metadata = metadata
 
         self.context_menu_stylesheet = """

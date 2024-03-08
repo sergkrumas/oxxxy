@@ -2554,7 +2554,6 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         # Этого хочется избежать - именно для исправления
         # такого ненужного поведения и нужна эта переменная
         self.drag_inside_capture_zone = False
-        self.isPanningActivated = False
         # задаём курсор
         self.setCursor(self.get_custom_cross_cursor())
         # лупа
@@ -2879,7 +2878,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
                     self.update_saved_capture()
 
             elif self.undermouse_region_info and not self.drag_inside_capture_zone \
-                        and not self.isPanningActivated and self.capture_region_widget_enabled:
+                                                         and self.capture_region_widget_enabled:
                 # для изменения области захвата после первичного задания
                 self.is_rect_being_redefined = True
                 delta = self.elementsMapFromViewportToCanvas(QPointF(event.pos())) - self.start_cursor_position
@@ -2977,7 +2976,6 @@ class ScreenshotWindow(QWidget, ElementsMixin):
                 self.is_rect_being_redefined = False
             self.get_region_info() # здесь только для установки курсора
 
-        self.isPanningActivated = False
         self.update()
         self.update_tools_window()
         super().mouseReleaseEvent(event)

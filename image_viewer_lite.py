@@ -156,6 +156,21 @@ class ViewerWindow(QWidget):
 
         self.transformed_frames_for_animated = dict()
 
+    def show_image_default(self, pixmap):
+        self.viewer_reset(simple=True)
+        self.pixmap = pixmap
+        self.tranformations_allowed = True
+        self.get_rotated_pixmap()
+        self.restore_image_transformations()
+        if self.frame_info:
+            # чтобы можно было редактировать уже заданные рамки
+            frame_rect = self.get_frame_rect_to_draw()
+            self.INPUT_POINT1 = frame_rect.topLeft()
+            self.INPUT_POINT2 = frame_rect.bottomRight()
+            self.capture_region_rect = build_valid_rect(self.INPUT_POINT1, self.INPUT_POINT2)
+            self.is_rect_defined = True
+        self.update()
+
     def no_frame_info(self):
         self.INPUT_POINT1 = self.INPUT_POINT2 = None
         self.input_rect = None
@@ -402,14 +417,6 @@ class ViewerWindow(QWidget):
             self.pixmap = pixmap
             self.tranformations_allowed = True
             self.image_filepath = filepath
-
-    def show_image_default(self, pixmap):
-        self.viewer_reset(simple=True)
-        self.pixmap = pixmap
-        self.tranformations_allowed = True
-        self.get_rotated_pixmap()
-        self.restore_image_transformations()
-        self.update()
 
     def show_image(self, filepath):
         self.viewer_reset(simple=True)

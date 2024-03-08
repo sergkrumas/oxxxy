@@ -1065,7 +1065,7 @@ class ViewerWindow(QWidget):
         if (before_scale < 1.0 and new_scale > 1.0) or (before_scale > 1.0 and new_scale < 1.0):
             factor = 1.0/scale
             # print("scale is clamped to 100%")
- 
+
         if new_scale > self.UPPER_SCALE_LIMIT:
             factor = self.UPPER_SCALE_LIMIT/scale
 
@@ -1955,7 +1955,7 @@ class ViewerWindow(QWidget):
                 QPointF(w/2-3, w/2) + QPointF(10, 0),
                 QPointF(w/2-3, w/2) + QPointF(0, 10),
             ]
-            points = [pf + QPointF(but.x, but.y) for pf in points]            
+            points = [pf + QPointF(but.x, but.y) for pf in points]
             pen = painter.pen()
             pen.setWidth(6)
             pen.setCapStyle(Qt.RoundCap)

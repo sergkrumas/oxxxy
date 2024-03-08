@@ -80,6 +80,7 @@ class Globals():
 
     # saved settings
     ENABLE_FLAT_EDITOR_UI = False
+    ENABLE_CBOR2 = True
     BLOCK_KEYSEQ_HANDLING_AFTER_FIRST_CALL = True
     SCREENSHOT_FOLDER_PATH = ""
     USE_PRINT_KEY = True
@@ -3964,6 +3965,18 @@ class SettingsWindow(QWidget, StylizedUIBase):
         layout_5.setAlignment(Qt.AlignCenter)
         layout_5.addWidget(chbx_5)
 
+        label_6 = QLabel("<b>➜ ФОРМАТ СОХРАНЕНИЯ ПРОЕКТОВ</b>")
+        label_6.setStyleSheet(self.info_label_style_settings)
+        chbx_6 = QCheckBox("CBOR2 вместо JSON")
+        chbx_6.setStyleSheet(self.settings_checkbox)
+        use_cbor2 = SettingsJson().get_data("ENABLE_CBOR2")
+        chbx_6.setChecked(bool(use_cbor2))
+        chbx_6.stateChanged.connect(lambda: self.handle_cbor2_chbx(chbx_6))
+        layout_6 = QVBoxLayout()
+        layout_6.setAlignment(Qt.AlignCenter)
+        layout_6.addWidget(chbx_6)
+
+
         # заголовок
         self.layout.addSpacing(self.PARTITION_SPACING)
         self.layout.addWidget(self.label, Qt.AlignLeft)
@@ -3994,6 +4007,12 @@ class SettingsWindow(QWidget, StylizedUIBase):
         self.layout.addLayout(layout_5)
         self.layout.addSpacing(self.PARTITION_SPACING)
 
+        # использование cbor
+        self.layout.addWidget(label_6)
+        self.layout.addLayout(layout_6)
+        self.layout.addSpacing(self.PARTITION_SPACING)
+
+
         self.setLayout(self.layout)
         self.setMouseTracking(True)
 
@@ -4012,6 +4031,10 @@ class SettingsWindow(QWidget, StylizedUIBase):
     def handle_ui_style_chbx(self, sender):
         SettingsJson().set_data("ENABLE_FLAT_EDITOR_UI", sender.isChecked())
         Globals.ENABLE_FLAT_EDITOR_UI = sender.isChecked()
+
+    def handle_cbor2_chbx(self, sender):
+        SettingsJson().set_data("ENABLE_CBOR2", sender.isChecked())
+        Globals.ENABLE_CBOR2 = sender.isChecked()
 
     def handle_windows_startup_chbx(self, sender):
         if sender.isChecked():
@@ -4666,6 +4689,7 @@ def read_settings_file():
     SettingsJson().init(Globals)
     SJ = SettingsJson()
     Globals.ENABLE_FLAT_EDITOR_UI = SJ.get_data("ENABLE_FLAT_EDITOR_UI")
+    Globals.ENABLE_CBOR2 = SJ.get_data("ENABLE_CBOR2", Globals.ENABLE_CBOR2)    
     SJ.set_reading_file_on_getting_value(False)
     Globals.USE_COLOR_PALETTE = SJ.get_data("USE_COLOR_PALETTE")
 

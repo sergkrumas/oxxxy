@@ -3566,7 +3566,10 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         if check_scancode_for(event, "A") and event.modifiers() & Qt.ControlModifier:
             self.elementsSelectDeselectAll()
         if check_scancode_for(event, "F"):
-            self.elementsFitSelectedItemsOnScreen()
+            if event.modifiers() & Qt.ControlModifier:
+                self.elementsFitCaptureZoneOnScreen()
+            else:
+                self.elementsFitSelectedItemsOnScreen()
 
     def get_center_position(self):
         if False:
@@ -3579,7 +3582,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         else:
             desktop = QDesktopWidget()
             screen = desktop.screenNumber(QCursor().pos())
-            screen_rect = desktop.screenGeometry(screen=screen)            
+            screen_rect = desktop.screenGeometry(screen=screen)
             return screen_rect.center()
 
 class StylizedUIBase():

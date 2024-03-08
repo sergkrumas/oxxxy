@@ -2657,14 +2657,17 @@ class ElementsMixin(ElementsTransformMixin):
             self.tools_window.update()
 
 
-    def elementsFitContentOnScreen(self, element=None, use_selection=False):
+    def elementsFitContentOnScreen(self, element=None, use_selection=False, use_capture_region=False):
         canvas_scale_x = self.canvas_scale_x
         canvas_scale_y = self.canvas_scale_y
 
         if use_selection:
             content_pos = self.selection_bounding_box.boundingRect().center() - self.canvas_origin
+        elif use_capture_region:
+            mapped_capture = self.elementsMapFromCanvasToViewportRectF(self.capture_region_rect)
+            mapped_capture_center = mapped_capture.center()
+            content_pos = mapped_capture_center - self.canvas_origin
         else:
-
             content_pos = QPointF(element.element_position.x()*canvas_scale_x, element.element_position.y()*canvas_scale_y)
         viewport_center_pos = self.get_center_position()
 
@@ -2672,9 +2675,11 @@ class ElementsMixin(ElementsTransformMixin):
 
         if use_selection:
             content_rect = self.selection_bounding_box.boundingRect().toRect()
+        elif use_capture_region:
+            content_rect = mapped_capture
         else:
             content_rect = element.get_selection_area(canvas=self, place_center_at_origin=False).boundingRect().toRect()
-        fitted_rect = fit_rect_into_rect(content_rect, self.rect())
+        fitted_rect = fit_rect_into_rect(content_rect, self.rect(), float_mode=True)
         self.elementsDoScaleCanvas(0, False, False, False,
             pivot=viewport_center_pos,
             factor_x=fitted_rect.width()/content_rect.width(),
@@ -2690,6 +2695,10 @@ class ElementsMixin(ElementsTransformMixin):
     def elementsFitSelectedItemsOnScreen(self):
         if self.selected_items:
             self.elementsFitContentOnScreen(use_selection=True)
+
+    def elementsFitCaptureZoneOnScreen(self):
+        if self.capture_region_rect:
+            self.elementsFitContentOnScreen(use_capture_region=True)
 
 
 

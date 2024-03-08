@@ -3154,6 +3154,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
 
         reset_panzoom = add_item("Сбросить смещение и зум")
         reset_pan = add_item("Сбросить только смещение")
+        reset_zoom = add_item("Сбросить только зум")
 
         contextMenu.addSeparator() ###############################################################
 
@@ -3206,6 +3207,8 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             self.elementsResetPanZoom()
         elif action == reset_pan:
             self.elementsResetPanZoom(reset_zoom=False)
+        elif action == reset_zoom:
+            self.elementsResetPanZoom(reset_pan=False)
         elif action == enable_capture_widget:
             self.capture_region_widget_enabled = not self.capture_region_widget_enabled
         elif action == open_project:

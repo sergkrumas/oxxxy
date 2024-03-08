@@ -2110,7 +2110,7 @@ class ElementsMixin(ElementsTransformMixin):
                 max_width = max(max_width, painter.boundingRect(QRect(), Qt.AlignLeft, element.debug_text).width())
 
             for n, element in enumerate(self.elements):
-                font = painter.font()                
+                font = painter.font()
                 if element not in visible_elements:
                     painter.setPen(QPen(QColor(255, 100, 100)))
                     font.setStrikeOut(True)

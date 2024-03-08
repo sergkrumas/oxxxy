@@ -498,7 +498,6 @@ class ElementsMixin(ElementsTransformMixin):
 
         # сохранение индексов для истории действий
         data.update({'elements_history_index':     self.elements_history_index                  })
-        data.update({'history_group_counter':      self.history_group_counter                   })
 
 
         # сохранение сдвига холста
@@ -663,7 +662,6 @@ class ElementsMixin(ElementsTransformMixin):
 
         # загрузка индексов для истории действий
         self.elements_history_index = data.get('elements_history_index', 0)
-        self.history_group_counter = data.get('history_group_counter', 0)
 
 
         # сохранение сдвига холста

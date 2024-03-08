@@ -2587,7 +2587,6 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         self.checkerboard_brush = Globals.get_checkerboard_brush()
 
         self.view_window = None
-        self.history_group_counter = 0
 
     def set_saved_capture_frame(self):
         if self.tools_settings.get("savecaptureframe", False):

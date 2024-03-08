@@ -300,7 +300,6 @@ class ElementsMixin(ElementsTransformMixin):
         self.canvas_scale_y = 1.0
 
         self.drag_global = False
-        self.current_canvas_origin = QPoint(0, 0)
 
         self.NUMBERING_WIDTH = 25
 

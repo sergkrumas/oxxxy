@@ -2773,7 +2773,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             action.setCheckable(True)
             return action
 
-        title = menu.addAction('Доступность к выделению')
+        title = menu.addAction('Доступные к выделению')
         title.setEnabled(False)
 
         _all = add_item("И пометки, и фон")

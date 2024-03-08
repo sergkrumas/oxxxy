@@ -2448,11 +2448,20 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         QMenu::item:checked {
             font-weight: bold;
             color: white;
+            background: #304550;
         }
-        QMenu::item:checked:selected {
+        QMenu::item:unchecked {
+            background: #304550;
+        }
+        QMenu::item:checked:selected{
             font-weight: bold;
             color: rgb(50, 50, 50);
+            background-color: rgb(253, 203, 54);
         }
+        QMenu::item:unchecked:selected{
+            color: rgb(50, 50, 50);
+            background-color: rgb(253, 203, 54);
+        } 
         QMenu::item:disabled {
             background-color: #303940;
             color: gray;

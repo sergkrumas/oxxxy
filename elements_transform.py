@@ -50,8 +50,6 @@ class ElementsTransformMixin():
 
         self.transform_cancelled = False
 
-        self._plan_selected_element = None
-
         self.canvas_selection_transform_box_opacity = 1.0
         self.STNG_transform_widget_activation_area_size = 16.0
 

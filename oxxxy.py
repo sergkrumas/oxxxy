@@ -3149,7 +3149,12 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         get_toolwindow_in_view = add_item("Подтянуть панель инструментов")
         autocapturezone = add_item("Задать область захвата")
         reset_capture = add_item("Сбросить область захвата")
+
+        contextMenu.addSeparator()
+
         reset_panzoom = add_item("Сбросить смещение и зум")
+        reset_pan = add_item("Сбросить только смещение")
+
         contextMenu.addSeparator() ###############################################################
 
         save_project = add_item("Сохранить проект")
@@ -3199,6 +3204,8 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             self.save_project()
         elif action == reset_panzoom:
             self.elementsResetPanZoom()
+        elif action == reset_pan:
+            self.elementsResetPanZoom(reset_zoom=False)
         elif action == enable_capture_widget:
             self.capture_region_widget_enabled = not self.capture_region_widget_enabled
         elif action == open_project:

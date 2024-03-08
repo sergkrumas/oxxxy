@@ -1812,7 +1812,7 @@ class ToolsWindow(QWidget):
         self.parent().reserved_corner_2_space = reserved_corner_2_space
         self.parent().reserved_corner_3_space = reserved_corner_3_space
         self.parent().reserved_corner_4_space = reserved_corner_4_space
-        self.parent().tools_space = self.frameGeometry()
+        self.parent().debug_tools_space = self.frameGeometry()
         # проверка на то, влезает ли окно в определяемую область или нет
         def check_rect(rect):
             # Проверять нужно именно так, иначе в результате проверки на вхождение всех точек
@@ -2411,23 +2411,22 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             if self.reserved_corner_2_space is not None:
                 painter.setBrush(QBrush(Qt.yellow, Qt.DiagCrossPattern))
                 painter.drawRect(self.reserved_corner_2_space.adjusted(10, 10, -10, -10))
-            if self.tools_space is not None:
+            if self.debug_tools_space is not None:
                 painter.setBrush(QBrush(Qt.blue, Qt.DiagCrossPattern))
-                painter.drawRect(self.tools_space.adjusted(10, 10, -10, -10))
+                painter.drawRect(self.debug_tools_space.adjusted(10, 10, -10, -10))
 
     def __init__(self, screenshot_image, metadata, parent=None):
         super().__init__()
         self.Globals = Globals
         self.SettingsWindow = SettingsWindow
         self.NotifyDialog = NotifyDialog
+        # для поддержки миксинов
+        self.PictureInfo = PictureInfo
 
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
         self.set_size_and_position()
 
-        self.setMouseTracking(True)
-
-        self.source_pixels = screenshot_image
-        self.metadata = metadata
+        self.setWindowTitle(f"Oxxxy Screenshoter {Globals.VERSION_INFO} {Globals.AUTHOR_INFO}")
 
         self.context_menu_stylesheet = """
         QMenu{
@@ -2506,10 +2505,10 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         }
         """
 
-        # для поддержки миксинов
-        self.PictureInfo = PictureInfo
 
-        self.cancel_context_menu = False
+
+        self.source_pixels = screenshot_image
+        self.metadata = metadata
 
         self.input_POINT1 = None
         self.input_POINT2 = None
@@ -2525,17 +2524,16 @@ class ScreenshotWindow(QWidget, ElementsMixin):
 
         self.start_cursor_position = QPointF(0, 0)
 
-        self.capture_region_widget_enabled = True
-
-        self.show_background = True
-
         self.tools_window = None
+        self.view_window = None
+        self.dialog = None
+        self.cancel_context_menu = False
 
         self.default_corner_space = None
         self.reserved_corner_1_space = None
         self.reserved_corner_2_space = None
 
-        self.tools_space = None
+        self.debug_tools_space = None
 
         self._custom_cursor_data = None
         self._custom_cursor_cycle = 0
@@ -2556,36 +2554,28 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         self.drag_inside_capture_zone = False
         # задаём курсор
         self.setCursor(self.get_custom_cross_cursor())
-        # лупа
+        # лупа задания области захвата
         self.magnifier_size = 100
         self.color_at_pixel = QColor(Qt.black)
         self.colors_reprs = []
         # помощь F1
         self.show_help_hint = False
-        # для рисования элементов на скриншоте
-        self.elementsInit()
-        self.elementsCreateBackgroundPictures()
 
-        self.setWindowTitle(f"Oxxxy Screenshoter {Globals.VERSION_INFO} {Globals.AUTHOR_INFO}")
-
+        # для рисования пометок на скриншоте
+        self.checkerboard_brush = Globals.get_checkerboard_brush()
         self.tools_settings = SettingsJson().get_data("TOOLS_SETTINGS")
         self.current_picture_pixmap = None
         self.current_picture_id = None
         self.current_picture_angle = 0
-
-        self.editing_ready.connect(self.editing_is_done_handler)
-
+        self.elementsInit()
+        self.elementsCreateBackgroundPictures()
         self.hex_mask = False
 
-        self.dialog = None
+        self.setMouseTracking(True)
+        self.editing_ready.connect(self.editing_is_done_handler)
 
-        self.dark_pictures = True
-
+        # для временного отображения текста в левом верхнем углу
         self.uncapture_mode_label_tstamp = time.time()
-
-        self.checkerboard_brush = Globals.get_checkerboard_brush()
-
-        self.view_window = None
 
     def set_saved_capture_frame(self):
         if self.tools_settings.get("savecaptureframe", False):

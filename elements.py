@@ -292,6 +292,11 @@ class ElementsMixin(ElementsTransformMixin):
 
         self.elements_final_output = None
 
+        self.capture_region_widget_enabled = True
+        self.show_background = True
+        self.dark_pictures = True
+        
+
         # хоть эти три атрибута и начинаются со слова "canvas",
         # но здесь они на самом деле значат "viewport",
         # потому что управляют лишь отображением холста на экране

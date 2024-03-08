@@ -3565,6 +3565,22 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             self.elementsPasteImageFromBuffer(event)
         if check_scancode_for(event, "A") and event.modifiers() & Qt.ControlModifier:
             self.elementsSelectDeselectAll()
+        if check_scancode_for(event, "F"):
+            self.elementsFitSelectedItemsOnScreen()
+
+    def get_center_position(self):
+        if False:
+            # не подходит в системе с двумя пониторами,
+            # потому что центрируется в середине пространства, формируемоего двумя мониторами
+            return QPointF(
+                self.frameGeometry().width()/2,
+                self.frameGeometry().height()/2
+            )
+        else:
+            desktop = QDesktopWidget()
+            screen = desktop.screenNumber(QCursor().pos())
+            screen_rect = desktop.screenGeometry(screen=screen)            
+            return screen_rect.center()
 
 class StylizedUIBase():
 

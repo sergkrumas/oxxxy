@@ -38,7 +38,7 @@ from PyQt5.QtGui import (QPainterPath, QColor, QKeyEvent, QMouseEvent, QBrush, Q
 
 from _utils import (convex_hull, check_scancode_for, SettingsJson,
      generate_metainfo, build_valid_rect, build_valid_rectF, dot, get_nearest_point_on_rect,
-     get_creation_date, capture_rotated_rect_from_pixmap,
+     get_creation_date, capture_rotated_rect_from_pixmap, fit_rect_into_rect,
      find_browser_exe_file, open_link_in_browser, open_in_google_chrome, save_meta_info,
      make_screenshot_pyqt, webRGBA, generate_gradient, draw_shadow, draw_cyberpunk,
      constraint45Degree, get_bounding_points, load_svg, is_webp_file_animated, apply_blur_effect)
@@ -2653,8 +2653,45 @@ class ElementsMixin(ElementsTransformMixin):
         self.update_selection_bouding_box()
         self.update()
         if self.tools_window:
-            self.tools_window.update()
             self.autopos_tools_window()
+            self.tools_window.update()
+
+
+    def elementsFitContentOnScreen(self, element=None, use_selection=False):
+        canvas_scale_x = self.canvas_scale_x
+        canvas_scale_y = self.canvas_scale_y
+
+        if use_selection:
+            content_pos = self.selection_bounding_box.boundingRect().center() - self.canvas_origin
+        else:
+
+            content_pos = QPointF(element.element_position.x()*canvas_scale_x, element.element_position.y()*canvas_scale_y)
+        viewport_center_pos = self.get_center_position()
+
+        self.canvas_origin = - content_pos + viewport_center_pos
+
+        if use_selection:
+            content_rect = self.selection_bounding_box.boundingRect().toRect()
+        else:
+            content_rect = element.get_selection_area(canvas=self, place_center_at_origin=False).boundingRect().toRect()
+        fitted_rect = fit_rect_into_rect(content_rect, self.rect())
+        self.elementsDoScaleCanvas(0, False, False, False,
+            pivot=viewport_center_pos,
+            factor_x=fitted_rect.width()/content_rect.width(),
+            factor_y=fitted_rect.height()/content_rect.height(),
+        )
+
+        self.update_selection_bouding_box()
+        self.update()
+        if self.tools_window:
+            self.autopos_tools_window()
+            self.tools_window.update()
+
+    def elementsFitSelectedItemsOnScreen(self):
+        if self.selected_items:
+            self.elementsFitContentOnScreen(use_selection=True)
+
+
 
 
 # для запуска программы прямо из этого файла при разработке и отладке

@@ -263,12 +263,12 @@ class Element():
 
 class ElementsHistorySlot():
 
-    __slots__ = ['elements', 'comment', 'unique_index']
+    __slots__ = ['elements', 'content_type', 'unique_index']
 
-    def __init__(self, comment):
+    def __init__(self, content_type):
         super().__init__()
         self.elements = list()
-        self.comment = comment
+        self.content_type = content_type
         if hasattr(ElementsHistorySlot, "_counter"):
             ElementsHistorySlot._counter += 1
         else:
@@ -318,7 +318,7 @@ class ElementsMixin(ElementsTransformMixin):
 
     def elementsFindBackgroundSlot(self):
         for slot in self.elementsHistoryFilterSlots():
-            if slot.comment == ToolID.background_picture:
+            if slot.content_type == ToolID.background_picture:
                 return slot
         return None
 
@@ -332,7 +332,7 @@ class ElementsMixin(ElementsTransformMixin):
                 unique_index =  els[-1].unique_index
 
             element = self.elementsCreateNew(ToolID.picture,
-                comment=ToolID.background_picture,
+                content_type=ToolID.background_picture,
                 create_new_slot=False,
                 history_slot=background_history_slot,
             )
@@ -341,7 +341,7 @@ class ElementsMixin(ElementsTransformMixin):
                 # но оно остаётся в слоте
                 element.source_index = unique_index
         else:
-            element = self.elementsCreateNew(ToolID.picture, comment=ToolID.background_picture)
+            element = self.elementsCreateNew(ToolID.picture, content_type=ToolID.background_picture)
         element.pixmap = background_pixmap
         element.background_image = True
         element.calc_local_data()
@@ -954,7 +954,7 @@ class ElementsMixin(ElementsTransformMixin):
 
     def elementsMakeSureTheresNoUnfinishedElement(self):
         hs = self.elementsGetLastHS()
-        if hs and hs.comment in [ToolID.zoom_in_region, ToolID.copypaste] and len(hs.elements) == 1:
+        if hs and hs.content_type in [ToolID.zoom_in_region, ToolID.copypaste] and len(hs.elements) == 1:
             self.elements_history_index -= 1
             self.history_slots = self.elementsHistoryFilterSlots()
 
@@ -981,8 +981,8 @@ class ElementsMixin(ElementsTransformMixin):
                 element.textbox.hide()
                 element.textbox.setParent(None)
 
-    def elementsCreateNewSlot(self, comment):
-        hs = ElementsHistorySlot(comment)
+    def elementsCreateNewSlot(self, content_type):
+        hs = ElementsHistorySlot(content_type)
         self.history_slots.append(hs)
         self.elements_history_index += 1
         return hs
@@ -1002,15 +1002,15 @@ class ElementsMixin(ElementsTransformMixin):
             return None
 
     def elementsCreateNew(self, element_type, start_drawing=False,
-                                        create_new_slot=True, comment=None, history_slot=None):
+                                        create_new_slot=True, content_type=None, history_slot=None):
         self.elementsDeactivateTextElements()
         # срезание отменённой (невидимой) части истории
         # перед созданием элемента
         if create_new_slot:
-            if comment is None:
-                comment = element_type
+            if content_type is None:
+                content_type = element_type
             self.history_slots = self.elementsHistoryFilterSlots()
-            hs = self.elementsCreateNewSlot(comment)
+            hs = self.elementsCreateNewSlot(content_type)
         else:
             if history_slot is None:
                 hs = self.elementsGetLastHS()
@@ -1131,7 +1131,7 @@ class ElementsMixin(ElementsTransformMixin):
     def elementsIsSpecialCase(self, element):
         special_case = element is not None
         hs = self.elementsGetLastHS()
-        special_case = special_case and hs and hs.comment in [ToolID.zoom_in_region, ToolID.copypaste]
+        special_case = special_case and hs and hs.content_type in [ToolID.zoom_in_region, ToolID.copypaste]
         # даём возможность создать другой слот
         special_case = special_case and hs and not len(hs.elements) == 2
         return special_case
@@ -2091,7 +2091,7 @@ class ElementsMixin(ElementsTransformMixin):
             for index, hs in list(enumerate(self.history_slots)):
                 painter.save()
                 painter.setPen(Qt.white)
-                slot_info_text = f'[slot {index}] {hs.comment}'
+                slot_info_text = f'[slot {index}] {hs.content_type}'
                 font = painter.font()
                 pixel_height = 25
                 font.setPixelSize(20)

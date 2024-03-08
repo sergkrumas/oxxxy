@@ -2921,8 +2921,11 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             self.autopos_tools_window()
             self.update_selection_bouding_box()
 
-        if event.buttons() == Qt.LeftButton and not self.is_rect_being_redefined:
-            self.setCursor(self.get_custom_cross_cursor())
+        if event.buttons() == Qt.LeftButton:
+            if any((self.translation_ongoing, self.rotation_ongoing, self.scaling_ongoing)):
+                self.setCursor(self.define_transform_tool_cursor())
+            elif not self.is_rect_being_redefined:
+                self.setCursor(self.get_custom_cross_cursor())
 
         self.update()
         self.update_tools_window()

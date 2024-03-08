@@ -2764,6 +2764,10 @@ class ScreenshotWindow(QWidget, ElementsMixin):
                 # чтобы оно не пропадало и не падало за основное
                 self.tools_window = ToolsWindow(self)
                 self.tools_window.show()
+                # так как в историю действий записывается создание фона,
+                # то после задания рамки придётся сразу выставить
+                # кнопки истории в актуальное состояние
+                self.tools_window.forwards_backwards_update()
         self.autopos_tools_window()
 
     def autopos_tools_window(self):

@@ -4217,6 +4217,16 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
         self.setLayout(self.layout)
         self.setMouseTracking(True)
 
+    def contextMenuEvent(self, event):
+        menu = QMenu()
+        restart_app = menu.addAction('Перезапустить приложение')
+        action = menu.exec_(QCursor().pos())
+        if action is None:
+            pass
+        elif action == restart_app:
+            _restart_app()
+            self.app_quit()
+
     def open_settings_window(self):
         SettingsWindow().place_window()
         self.hide()

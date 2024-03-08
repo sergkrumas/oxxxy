@@ -67,6 +67,7 @@ class Globals():
     DEBUG_ELEMENTS_PICTURE_FRAMING = True
     DEBUG_ELEMENTS_COLLAGE = False
     CRASH_SIMULATOR = False
+    DEBUG_UNCAPTURED_ZONES = False
 
     DEBUG_VIZ = False
     DEBUG_ANALYSE_CORNERS_SPACES = False
@@ -2239,20 +2240,6 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         return hexaF
 
     def draw_uncaptured_zones(self, painter, opacity_type, input_rect, step=1):
-        ###### OLD VERSION ONLY FOR STEP == 1:
-        # if opacity_type == LayerOpacity.FullTransparent: # full transparent
-        #   painter.fillRect(self.rect(), QColor(0, 0, 0, 100))
-        # elif opacity_type == LayerOpacity.HalfTransparent: # ghost
-        #   painter.fillRect(self.rect(), QColor(0, 0, 0, 100))
-        #   painter.setOpacity(0.6)
-        #   painter.drawImage(self.rect(), self.source_pixels)
-        #   painter.setOpacity(1.0)
-        # elif opacity_type == LayerOpacity.Opaque: # stay still
-        #   painter.fillRect(self.rect(), Qt.black)
-        #   painter.setOpacity(0.6)
-        #   painter.drawImage(self.rect(), self.source_pixels)
-        #   painter.setOpacity(1.0)
-        ###### NEW VERSION FOR STEP == 1 AND STEP == 2:
 
         # поправочка нужна для случая, когда использована команда "Содержимое в фон"
         # и после неё габариты получившегося изображения уже не равны
@@ -2286,19 +2273,20 @@ class ScreenshotWindow(QWidget, ElementsMixin):
                 elif opacity_type == LayerOpacity.Opaque: # stay still
                     painter.fillRect(self_rect, QColor(0, 0, 0, 100))
                 painter.setClipping(False)
-        # if self.undermouse_region_rect:
-        #   pen = painter.pen()
-        #   brush = painter.brush()
-        #   painter.setPen(Qt.NoPen)
-        #   b = QBrush(Qt.green)
-        #   b.setStyle(Qt.DiagCrossPattern)
-        #   painter.setBrush(b)
-        #   painter.setOpacity(0.06)
-        #   self.define_regions_rects_and_set_cursor(write_data=False)
-        #   painter.drawRect(self.undermouse_region_rect)
-        #   painter.setOpacity(1.0)
-        #   painter.setPen(pen)
-        #   painter.setBrush(brush)
+
+                if Globals.DEBUG_UNCAPTURED_ZONES and self.undermouse_region_rect:
+                    pen = painter.pen()
+                    brush = painter.brush()
+                    painter.setPen(Qt.NoPen)
+                    b = QBrush(Qt.green)
+                    b.setStyle(Qt.DiagCrossPattern)
+                    painter.setBrush(b)
+                    painter.setOpacity(0.06)
+                    self.define_regions_rects_and_set_cursor(write_data=False)
+                    painter.drawRect(self.undermouse_region_rect)
+                    painter.setOpacity(1.0)
+                    painter.setPen(pen)
+                    painter.setBrush(brush)
 
     def draw_capture_zone(self, painter, input_rect, _input_rect, shot=1):
         tw = self.tools_window

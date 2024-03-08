@@ -1298,7 +1298,7 @@ class ElementsMixin(ElementsTransformMixin):
         elif key == Qt.Key_Left:
             delta = QPoint(-value, 0)
         for element in self.selected_items:
-            element = self.elementsCreateModificatedCopyOnNeed(element)
+            element = self.elementsPrepareForModificationsIfNeeded(element)
             if hasattr(element, 'element_position'):
                 element.element_position += delta
             else:
@@ -1406,7 +1406,7 @@ class ElementsMixin(ElementsTransformMixin):
                     self.canvas_selection_callback(event.modifiers() == Qt.ShiftModifier)
 
             for element in self.selected_items:
-                element = self.elementsCreateModificatedCopyOnNeed(element)
+                element = self.elementsPrepareForModificationsIfNeeded(element)
 
         self.update()
 
@@ -2197,7 +2197,7 @@ class ElementsMixin(ElementsTransformMixin):
                 self.canvas_scale_y = self._canvas_scale_y
                 painter.end()
 
-    def elementsCreateModificatedCopyOnNeed(self, element, force_new=False):
+    def elementsPrepareForModificationsIfNeeded(self, element, force_new=False):
         if element == self.elementsGetLastElement() and not force_new:
             # если элемент последний в списке элементов,
             # то его предыдущее состояние не сохраняется
@@ -2217,7 +2217,7 @@ class ElementsMixin(ElementsTransformMixin):
             case1 = element and element.type == self.tools_window.current_tool and element.fresh
             case2 = element and tw.current_tool == ToolID.transform
             if case1 or case2:
-                element = self.elementsCreateModificatedCopyOnNeed(element)
+                element = self.elementsPrepareForModificationsIfNeeded(element)
                 self.elementsSetElementParameters(element)
         self.update()
         self.activateWindow() # чтобы фокус не соскакивал на панель иструментов
@@ -2466,7 +2466,7 @@ class ElementsMixin(ElementsTransformMixin):
 
         for source_element in elements:
 
-            element = self.elementsCreateModificatedCopyOnNeed(source_element, force_new=True)
+            element = self.elementsPrepareForModificationsIfNeeded(source_element, force_new=True)
 
             start_br = element.get_canvas_space_selection_area().boundingRect()
 

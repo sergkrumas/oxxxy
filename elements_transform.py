@@ -6,6 +6,8 @@ import sys
 import os
 import itertools
 import json
+import functools
+
 
 
 from PyQt5.QtWidgets import (QSystemTrayIcon, QWidget, QMessageBox, QMenu, QGraphicsPixmapItem,
@@ -59,6 +61,7 @@ class ElementsTransformMixin():
 
         self.scale_rastr_source = None
         self.rotate_rastr_source = None
+        self.translate_rastr_source = None
         self.load_svg_cursors()
 
         self.cyclic_select_activated = False
@@ -67,15 +70,18 @@ class ElementsTransformMixin():
         folder_path = os.path.dirname(__file__)
         filepath_scale_svg = os.path.join(folder_path, "cursors", "scale.svg")
         filepath_rotate_svg = os.path.join(folder_path, "cursors", "rotate.svg")
+        filepath_translate_svg = os.path.join(folder_path, "cursors", "translate.svg")
 
         scale_rastr_source = QPixmap(filepath_scale_svg)
         rotate_rastr_source = QPixmap(filepath_rotate_svg)
+        translate_rastr_source = QPixmap(filepath_translate_svg)
 
         if not scale_rastr_source.isNull():
             self.scale_rastr_source = scale_rastr_source
         if not rotate_rastr_source.isNull():
             self.rotate_rastr_source = rotate_rastr_source
-
+        if not translate_rastr_source.isNull():
+            self.translate_rastr_source = translate_rastr_source
 
     def update_selection_bouding_box(self):
         self.selection_bounding_box = None
@@ -135,6 +141,13 @@ class ElementsTransformMixin():
         self.widget_active_point_index = None
         return False
 
+    def is_over_translation_activation_area(self, position):
+        for element in self.selected_items:
+            sa = element.get_selection_area(canvas=self)
+            if sa.containsPoint(position, Qt.WindingFill):
+                return True
+        return False
+
     def widget_get_cursor_angle(self):
         points_count = self.selection_bounding_box.size()
         index = self.widget_active_point_index
@@ -172,6 +185,11 @@ class ElementsTransformMixin():
         pixmap = pixmap.scaled(50, 50, Qt.KeepAspectRatio, Qt.SmoothTransformation)
         return QCursor(pixmap)
 
+    @functools.cache
+    def get_widget_translation_cursor(self):
+        pixmap = self.translate_rastr_source.scaled(50, 50, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        return QCursor(pixmap)
+
     def define_transform_tool_cursor(self):
         if self.scaling_ongoing:
             if self.scale_rastr_source is not None:
@@ -192,6 +210,9 @@ class ElementsTransformMixin():
 
             elif self.is_over_rotation_activation_area(self.mapped_cursor_pos()):
                 cursor = self.get_widget_cursor(self.rotate_rastr_source, self.widget_get_cursor_angle())
+                return cursor
+            elif self.is_over_translation_activation_area(self.mapped_cursor_pos()):
+                cursor = self.get_widget_translation_cursor()
                 return cursor
             else:
                 return Qt.ArrowCursor

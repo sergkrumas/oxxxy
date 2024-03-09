@@ -270,25 +270,13 @@ class ElementsHistorySlot():
 
 class ElementsMixin(ElementsTransformMixin):
 
-    ToolID = ToolID
+    ToolID = ToolID #для поддержки миксина
 
     def elementsInit(self):
         self.current_tool = ToolID.none
         self.drag_capture_zone = False
         self.ocp = self.mapFromGlobal(QCursor().pos())
         self.current_capture_zone_center = QPoint(0, 0)
-
-        self.elements = []
-        self.history_slots = []
-        self.elements_history_index = 0
-        self.elementsSetSelected(None)
-
-        self.elements_final_output = None
-
-        self.capture_region_widget_enabled = True
-        self.show_background = True
-        self.dark_pictures = True
-
 
         # хоть эти три атрибута и начинаются со слова "canvas",
         # но здесь они на самом деле значат "viewport",
@@ -297,17 +285,23 @@ class ElementsMixin(ElementsTransformMixin):
         self.canvas_scale_x = 1.0
         self.canvas_scale_y = 1.0
 
-        self.NUMBERING_WIDTH = 25
-
-        self.active_element = None #active element is the last selected element
-
+        self.NUMBERING_ELEMENT_WIDTH = 25
+        self.elements = []
         self.__te = Element(ToolID.zoom_in_region, [])
-
+        self.history_slots = []
+        self.elements_history_index = 0
         self.SelectionFilter = SelectionFilter
         self.selection_filter = self.SelectionFilter.content_only
-
+        self.active_element = None #active element is the last selected element
         # для выделения элементов и виджета трансформации элементов
         self.elementsInitTransform()
+        self.elementsSetSelected(None)
+
+        self.elements_final_output = None
+
+        self.capture_region_widget_enabled = True
+        self.show_background = True
+        self.dark_pictures = True
 
     def elementsFindBackgroundSlot(self):
         for slot in self.elementsHistoryFilterSlots():
@@ -1778,7 +1772,7 @@ class ElementsMixin(ElementsTransformMixin):
             else:
                 painter.drawRect(rect)
             if el_type == ToolID.numbering:
-                w = self.NUMBERING_WIDTH
+                w = self.NUMBERING_ELEMENT_WIDTH
                 end_point_rect = QRectF(element.local_end_point - QPointF(int(w/2), int(w/2)), QSizeF(w, w))
                 painter.setBrush(cur_brush)
                 painter.setPen(Qt.NoPen)

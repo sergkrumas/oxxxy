@@ -1785,6 +1785,7 @@ class ElementsMixin(ElementsTransformMixin):
                                                                         str(element.number))
             painter.resetTransform()
         elif el_type == ToolID.text:
+            painter.setTransform(element.get_transform_obj(canvas=self))
             if element.pixmap:
                 pixmap = QPixmap(element.pixmap.size())
                 pixmap.fill(Qt.transparent)
@@ -1792,8 +1793,7 @@ class ElementsMixin(ElementsTransformMixin):
                 p.begin(pixmap)
                 p.setClipping(True)
                 path = QPainterPath()
-                pos = element.end_point - QPoint(0, element.pixmap.height())
-                # text_rect = QRectF(pos, element.pixmap.size())
+                pos = element.local_end_point - QPointF(0, element.pixmap.height())
                 text_rect = QRectF(QPointF(0, 0), QSizeF(element.pixmap.size()))
                 path.addRoundedRect(QRectF(text_rect), element.margin_value,
                         element.margin_value)
@@ -1805,29 +1805,14 @@ class ElementsMixin(ElementsTransformMixin):
             painter.setPen(Qt.NoPen)
             if element.start_point != element.end_point:
                 if element.end_point_modified:
-                    modified_end_point = get_nearest_point_on_rect(
-                        QRect(pos, QSize(element.pixmap.width(), element.pixmap.height())),
-                        element.start_point
-                    )
+                    modified_end_point = get_nearest_point_on_rect(QRect(pos.toPoint(), element.pixmap.size()), element.local_start_point.toPoint())
                 else:
-                    modified_end_point = element.end_point
-                self.elementsDrawArrow(painter, modified_end_point, element.start_point,
-                                                                                size, False)
+                    modified_end_point = element.local_end_point
+                self.elementsDrawArrow(painter, modified_end_point, element.local_start_point, size, False)
             if element.pixmap:
                 image_rect = QRectF(pos, QSizeF(pixmap.size()))
-                painter.translate(image_rect.center())
-                image_rect = QRectF(-image_rect.width()/2, -image_rect.height()/2,
-                        image_rect.width(), image_rect.height()).toRect()
-                painter.rotate(element.element_rotation)
-                editing = not final and (element is self.active_element or \
-                                    (element.textbox is not None and element.textbox.isVisible()))
-                if editing:
-                    painter.setOpacity(0.5)
-                painter.drawPixmap(image_rect, pixmap)
-                if editing:
-                    painter.setOpacity(1.0)
-                painter.resetTransform()
-
+                painter.drawPixmap(image_rect.toRect(), pixmap)
+            painter.resetTransform()
         elif el_type in [ToolID.blurring, ToolID.darkening]:
             painter.setTransform(element.get_transform_obj(canvas=self))
             rect = build_valid_rectF(element.local_start_point, element.local_end_point)
@@ -1839,7 +1824,6 @@ class ElementsMixin(ElementsTransformMixin):
                 else:
                     painter.drawPixmap(rect, element.pixmap, QRectF(element.pixmap.rect()))
             elif el_type == ToolID.darkening:
-                # painter.setBrush(QBrush(QColor(150, 150, 0), Qt.BDiagPattern))
                 pass
             painter.drawRect(rect)
             painter.resetTransform()
@@ -2061,8 +2045,12 @@ class ElementsMixin(ElementsTransformMixin):
             painter.drawPixmap(screenshot_cursor_position, self.cursor_pixmap)
 
     def elementsDrawDebugInfo(self, painter, viewport_input_rect):
-        pos_right = self.elementsMapFromCanvasToViewport(viewport_input_rect.bottomRight())
-        pos_left = self.elementsMapFromCanvasToViewport(viewport_input_rect.bottomLeft())
+        if self.capture_region_rect:
+            r = self.capture_region_rect
+        else:
+            r = viewport_input_rect
+        pos_right = self.elementsMapFromCanvasToViewport(r.bottomRight())
+        pos_left = self.elementsMapFromCanvasToViewport(r.bottomLeft())
         visible_elements = self.elementsHistoryFilter()
 
         def build_info_text(elem):

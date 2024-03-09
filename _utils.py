@@ -36,10 +36,10 @@ from PIL import Image, ImageGrab, PngImagePlugin
 from PyQt5.QtWidgets import (QWidget, QMessageBox, QDesktopWidget, QApplication,
     QGraphicsBlurEffect, QGraphicsPixmapItem, QGraphicsScene)
 from PyQt5.QtCore import (QRectF, QPoint, pyqtSignal, QSizeF, Qt, QPointF, QSize, QRect,
-                                                                            QMimeData, QUrl)
+                                                                    QMimeData, QUrl)
 from PyQt5.QtGui import (QPixmap, QBrush, QRegion, QImage, QRadialGradient, QColor,
                     QGuiApplication, QPen, QPainterPath, QPolygon, QLinearGradient, QPainter,
-                    QCursor, QImageReader, QTransform, QPolygonF)
+                    QCursor, QImageReader, QTransform, QPolygonF, QVector2D)
 from PyQt5.QtSvg import  QSvgRenderer
 
 win32process = None

@@ -2786,21 +2786,21 @@ class ScreenshotWindow(QWidget, ElementsMixin):
 
         self.draw_checkerboard(painter)
 
-        self.draw_uncaptured_zones(painter, self.uncapture_draw_type, viewport_input_rect, step=1)
+        self.draw_uncaptured_zones(painter, self.uncapture_draw_type, QRectF(viewport_input_rect), step=1)
 
         # background image
-        self.draw_capture_zone(painter, viewport_input_rect, canvas_input_rect, shot=1)
+        self.draw_capture_zone(painter, QRectF(viewport_input_rect), canvas_input_rect, shot=1)
         # elements
         self.elementsDrawMain(painter)
         # mask overlay
-        self.draw_capture_zone(painter, viewport_input_rect, None, shot=2)
+        self.draw_capture_zone(painter, QRectF(viewport_input_rect), None, shot=2)
 
-        self.draw_uncaptured_zones(painter, self.uncapture_draw_type, viewport_input_rect, step=2)
+        self.draw_uncaptured_zones(painter, self.uncapture_draw_type, QRectF(viewport_input_rect), step=2)
 
-        self.draw_magnifier(painter, viewport_input_rect, cursor_pos, text_pen, text_white_pen)
+        self.draw_magnifier(painter, QRectF(viewport_input_rect), cursor_pos, text_pen, text_white_pen)
         self.draw_wrapper_cyberpunk(painter)
         self.draw_wrapper_shadow(painter)
-        self.draw_capture_zone_resolution_label(painter, text_pen, viewport_input_rect)
+        self.draw_capture_zone_resolution_label(painter, text_pen, QRectF(viewport_input_rect))
 
         self.draw_vertical_horizontal_lines(painter, cursor_pos)
 
@@ -2814,7 +2814,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         if Globals.DEBUG:
             self.draw_canvas_origin(painter)
             self.draw_analyse_corners(painter)
-            self.elementsDrawDebugInfo(painter, viewport_input_rect)
+            self.elementsDrawDebugInfo(painter, QRectF(viewport_input_rect))
 
         painter.end()
 

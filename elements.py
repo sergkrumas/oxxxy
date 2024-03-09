@@ -84,12 +84,7 @@ class SelectionFilter():
 class Element():
 
     def __init__(self, element_type, elements_list):
-        self.textbox = None
         self.type = element_type
-        self.finished = False
-
-        self.background_image = False
-
         elements_list.append(self)
 
         n = 0
@@ -105,11 +100,15 @@ class Element():
         self.unique_index = Element._counter
 
         self.fresh = True
+        self.finished = False
 
         self.backup_pixmap = None
         self.frame_info = None
+        self.background_image = False
 
         self.opacity = 1.0
+
+        self.textbox = None
 
         # element attributes for canvas
         self.element_scale_x = 1.0

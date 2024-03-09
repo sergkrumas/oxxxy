@@ -32,6 +32,7 @@ import locale
 import argparse
 import importlib.util
 import math
+import random
 import json
 from functools import partial
 
@@ -3415,6 +3416,48 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         # для временного отображения текста в левом верхнем углу
         self.uncapture_mode_label_tstamp = time.time()
 
+
+    def animated_tool_drawing(self, tool_id, a, b, randomize=True):
+        if self.tools_window.current_tool != tool_id:
+            self.tools_window.set_current_tool(tool_id)
+
+        points = []
+        count = 10
+        delta = b - a
+        for n in range(count+1):
+            ratio = n/count
+            pos = a + delta*ratio
+            points.append(self.elementsMapFromCanvasToViewport(pos))
+
+        for n, pos in enumerate(points):
+            time.sleep(0.01)
+            if n == 0:
+                self.mousePressEvent(QMouseEvent(QEvent.MouseButtonPress, pos, Qt.LeftButton, Qt.LeftButton, Qt.NoModifier))
+            if randomize:
+                value_x = 50-100*random.random()
+                value_y = 50-100*random.random()
+                pos += QPointF(value_x, value_y)
+            self.mouseMoveEvent(QMouseEvent(QEvent.MouseMove, pos, Qt.LeftButton, Qt.LeftButton, Qt.NoModifier))
+            self.update()
+            app = QApplication.instance()
+            app.processEvents()
+        self.mouseReleaseEvent(QMouseEvent(QEvent.MouseButtonRelease, pos, Qt.LeftButton, Qt.LeftButton, Qt.NoModifier))
+        self.update()
+
+    def animated_debug_drawing(self):
+        if self.tools_window:
+
+            tl = self.capture_region_rect.topLeft()
+            rb = self.capture_region_rect.bottomRight()
+
+            a = tl + QPointF(20, 20)
+            b = rb
+            self.animated_tool_drawing(ToolID.line, a, b)
+
+            a = tl + QPointF(20, 20)
+            b = rb
+            self.animated_tool_drawing(ToolID.marker, a, b)
+
     def set_saved_capture_frame(self):
         if self.tools_settings.get("savecaptureframe", False):
             rect_params = self.tools_settings.get("capture_frame", None)
@@ -3815,7 +3858,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             desktop = QDesktopWidget()
             screen = desktop.screenNumber(QCursor().pos())
             screen_rect = desktop.screenGeometry(screen=screen)
-            return screen_rect.center(), screen_rect        
+            return screen_rect.center(), screen_rect
 
     def change_tools_params(self, delta_value, modifiers):
         tools_window = self.tools_window
@@ -4398,7 +4441,8 @@ class ScreenshotWindow(QWidget, ElementsMixin):
                 self.elementsFitCaptureZoneOnScreen()
             else:
                 self.elementsFitSelectedItemsOnScreen()
-
+        if key == (Qt.Key_F2):
+            self.animated_debug_drawing()
 
 
 

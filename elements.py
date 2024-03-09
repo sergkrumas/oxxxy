@@ -1219,7 +1219,8 @@ class ElementsMixin(ElementsTransformMixin):
         elif tool == ToolID.text:
             self.elementsMousePressEventDefault(element, event)
             element.pixmap = None
-            element.modify_end_point = False
+            element.end_point_modified = False
+            element.calc_local_data()
         elif tool in [ToolID.blurring, ToolID.darkening]:
             self.elementsMousePressEventDefault(element, event)
             if tool == ToolID.blurring:
@@ -1354,7 +1355,8 @@ class ElementsMixin(ElementsTransformMixin):
             element.calc_local_data()
         elif tool == ToolID.text:
             element.end_point = event_pos
-            element.modify_end_point = False
+            element.end_point_modified = False
+            element.calc_local_data()
         elif tool in [ToolID.blurring, ToolID.darkening]:
             element.equilateral = bool(event.modifiers() & Qt.ShiftModifier)
             if element.equilateral:
@@ -1436,7 +1438,8 @@ class ElementsMixin(ElementsTransformMixin):
             element.calc_local_data()
         elif tool == ToolID.text:
             element.end_point = event_pos
-            element.modify_end_point = False
+            element.end_point_modified = False
+            element.calc_local_data()
             self.elementsCreateTextbox(self, element)
         elif tool in [ToolID.blurring, ToolID.darkening]:
             element.equilateral = bool(event.modifiers() & Qt.ShiftModifier)
@@ -1494,7 +1497,7 @@ class ElementsMixin(ElementsTransformMixin):
                             if not element.second:
                                 self.elementsSetCopiedPixmap(element)
                         elif element.type == ToolID.text:
-                            element.modify_end_point = True
+                            element.end_point_modified = True
 
         if tool != ToolID.transform:
             self.elementsSetSelected(None)
@@ -1801,7 +1804,7 @@ class ElementsMixin(ElementsTransformMixin):
 
             painter.setPen(Qt.NoPen)
             if element.start_point != element.end_point:
-                if element.modify_end_point:
+                if element.end_point_modified:
                     modified_end_point = get_nearest_point_on_rect(
                         QRect(pos, QSize(element.pixmap.width(), element.pixmap.height())),
                         element.start_point

@@ -412,8 +412,6 @@ class ElementsMixin(ElementsTransformMixin):
 
         self.update()
 
-
-
     def save_project(self):
         # задание папки для скриншота
 
@@ -2378,7 +2376,6 @@ class ElementsMixin(ElementsTransformMixin):
             self.capture_region_rect = build_valid_rectF(self.input_POINT1, self.input_POINT2)
 
     def elementsDoRenderToBackground(self):
-
         subMenu = QMenu()
         subMenu.setStyleSheet(self.context_menu_stylesheet)
         action_extend = subMenu.addAction("Расширить картинку-фон, если контент будет превосходить её размеры")
@@ -2482,11 +2479,8 @@ class ElementsMixin(ElementsTransformMixin):
         self.update()
 
     def elementsArrangePictures(self, elements, target_width, target_height):
-
         points = []
-
         pos = QPointF(0, 0)
-
         for source_element in elements:
 
             element = self.elementsPrepareForModificationsIfNeeded(source_element, force_new=True)
@@ -2679,7 +2673,6 @@ class ElementsMixin(ElementsTransformMixin):
         if self.tools_window:
             self.autopos_tools_window()
             self.tools_window.update()
-
 
     def elementsFitContentOnScreen(self, element=None, use_selection=False, use_capture_region=False):
         canvas_scale_x = self.canvas_scale_x

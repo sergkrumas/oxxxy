@@ -3603,13 +3603,10 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         _background_only.setChecked(False)
         if self.selection_filter == self.SelectionFilter.all:
             _all.setChecked(True)
-            _all.setProperty('callback', lambda: setattr(self, 'selection_filter', self.SelectionFilter.all))
         elif self.selection_filter == self.SelectionFilter.content_only:
             _content_only.setChecked(True)
-            _content_only.setProperty('callback', lambda: setattr(self, 'selection_filter', self.SelectionFilter.content_only))
         elif self.selection_filter == self.SelectionFilter.background_only:
             _background_only.setChecked(True)
-            _background_only.setProperty('callback', lambda: setattr(self, 'selection_filter', self.SelectionFilter.background_only))
 
         def click_handler(a):
             if a == None:

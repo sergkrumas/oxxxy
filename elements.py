@@ -88,7 +88,6 @@ class Element():
         self.type = element_type
         self.finished = False
 
-        self.copy_pos = None
         self.zoom_second_input = False
 
         self.background_image = False

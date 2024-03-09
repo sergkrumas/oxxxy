@@ -1364,8 +1364,6 @@ class ElementsMixin(ElementsTransformMixin):
             else:
                 element.end_point = event_pos
             element.calc_local_data()
-            if tool == ToolID.blurring:
-                pass
         elif tool == ToolID.transform:
             no_mod = event.modifiers() == Qt.NoModifier
 

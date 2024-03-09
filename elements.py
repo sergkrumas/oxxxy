@@ -1888,6 +1888,16 @@ class ElementsMixin(ElementsTransformMixin):
                 painter.setPen(QPen(Qt.red, 1, Qt.DashLine))
 
             painter.setTransform(element.get_transform_obj(canvas=self))
+
+            # отрисовка первой пометки
+            if not element.second:
+                if el_type == ToolID.zoom_in_region or (el_type == ToolID.copypaste and not final):
+                    capture_rect = build_valid_rectF(
+                        f_element.local_start_point,
+                        f_element.local_end_point
+                    )
+                    painter.drawRect(capture_rect)
+
             # отрисовка второй пометки
             # special_case - когда вторая пометка ещё не введена,
             # надо рисовать её образ центированный по кусроску мыши
@@ -1983,14 +1993,7 @@ class ElementsMixin(ElementsTransformMixin):
                         for n, coord in enumerate(coords[:-1]):
                             painter.drawLine(coord, coords[n+1])
 
-            # отрисовка первой пометки
-            if not element.second:
-                if el_type == ToolID.zoom_in_region or (el_type == ToolID.copypaste and not final):
-                    capture_rect = build_valid_rectF(
-                        f_element.local_start_point,
-                        f_element.local_end_point
-                    )
-                    painter.drawRect(capture_rect)
+
             painter.resetTransform()
 
     def elementsGetRectCorners(self, rect):

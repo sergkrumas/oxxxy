@@ -67,5 +67,3 @@ Image by Namakxin
 ## [Заметки](NOTES.md)
 
 ## [Ручное тестирование и рефакторинг](MANUAL_TESTING.md)
-
-## [Туториал по созданию нового инструмента (Python и PyQt)](TUTORIAL.md)

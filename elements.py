@@ -132,7 +132,6 @@ class Element():
         self._touched = False
 
     def __repr__(self):
-        # return f'{self.type} {hex(id(self))}'
         return f'{self.unique_index} {self.type}'
 
     def calc_local_data_default(self):

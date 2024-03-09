@@ -82,7 +82,7 @@ class QMyWidget(QWidget):
             self.result = self.doc.documentLayout().hitTest(event.pos(), Qt.FuzzyHit)
 
             print(self.result)
-            # self.doc.setTextWidth(event.x())
+            self.doc.setTextWidth(event.x())
 
             self.get_info()
             self.update()
@@ -125,7 +125,7 @@ class QMyWidget(QWidget):
         self.cursor = QTextCursor(self.doc)
         self.cursor.setPosition(0)
         self.cursor.beginEditBlock()
-        self.cursor.insertText("Hello")
+        # self.cursor.insertText("Hello")
         # self.cursor.insertText("World")
         self.cursor.endEditBlock()
         # print('a',  len(self.doc.toPlainText()))
@@ -152,10 +152,31 @@ class QMyWidget(QWidget):
             #     continue
 
             blockRect = docLayout.blockBoundingRect(block)
-            print(type(block))
+            # print(type(block))
             self.rects.append(blockRect)
-            block.setLineCount(3)
-            print(blockRect, block.position(), block.lineCount(),)
+            # print(blockRect, block.position(), block.lineCount(),)
+
+            # if  block.lineCount() != 3:
+            #     block.setLineCount(3)
+            # for i in range(block.lineCount()):
+
+            if False:
+                block.layout().beginLayout()
+                line = block.layout().createLine()
+                line.setNumColumns(5)
+                # line.setLineWidth(40)
+
+                for i in range(5):
+                    line = block.layout().createLine()
+                    line.setNumColumns(5)                    
+                    line.setPosition(QPointF(20, 20*i))
+                line = block.layout().createLine()
+                # line.setNumColumns(5)                    
+                line.setPosition(QPointF(20, 20*(i+1)))
+
+                    # print(dir(line))
+                block.layout().endLayout()
+#
              # dir(block)) #dir(block))
             block = block.next()
 

@@ -4443,10 +4443,26 @@ class ScreenshotWindow(QWidget, ElementsMixin):
                 self.elementsFitSelectedItemsOnScreen()
         if key == (Qt.Key_F2):
             self.animated_debug_drawing()
+        if key == (Qt.Key_F3):
+            for element in self.elements:
+                if hasattr(element, 'local_end_point') or hasattr(element, 'end_point'):
 
+                    element.local_end_point.setX(element.local_end_point.x() * element.element_scale_x)
+                    element.local_end_point.setY(element.local_end_point.y() * element.element_scale_y) 
 
+                    element.local_start_point.setX(element.local_start_point.x() * element.element_scale_x)
+                    element.local_start_point.setY(element.local_start_point.y() * element.element_scale_y)
 
+                    element.element_width *= element.element_scale_x
+                    element.element_height *= element.element_scale_y
+                    element.element_scale_x = element.element_scale_y = 1.0
 
+                    self.update()
+
+                # появилась идея вместо этого использовать корневой элемент для трансформаций
+                # и объект-копию для отрисовки, в котором скейл всегда будет 1.0, а ширина и длина будут менятся.
+                # Однако, возможно всё это можно сделать даже без дубликата, чуть поправив формирование матрицы пометки,
+                # т.е. убрав локальный скейл
 
 
 

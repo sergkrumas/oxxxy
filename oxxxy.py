@@ -3553,8 +3553,6 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         else:
             self.elementsUpdateFinalPicture()
             pix = self.elements_final_output
-            if self.tools_window.chb_masked.isChecked():
-                pix = self.circle_mask_image(pix)
 
             if Globals.save_to_memory_mode:
                 Globals.images_in_memory.append(pix)

@@ -1930,7 +1930,6 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         painter.begin(self)
 
         text_white_pen = text_pen = QPen(QColor(255, 255, 255, 255), 1)
-        # text_pen = QPen(QColor(255, 127, 127, 255), 1)
         font = painter.font()
         font.setPixelSize(15)
         painter.setFont(font)

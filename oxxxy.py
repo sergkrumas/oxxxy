@@ -3544,24 +3544,23 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         SettingsWindow.set_screenshot_folder_path()
         # сохранение файла
         formated_datetime = datetime.datetime.now().strftime("%Y-%m-%d %H-%M-%S")
+        filepath = get_screenshot_filepath(formated_datetime)
         if grabbed_image:
             # QUICK FULLSCREEN
-            filepath = get_screenshot_filepath(formated_datetime)
             grabbed_image.save(filepath)
             # copy_image_data_to_clipboard(filepath)
             save_meta_info(metadata, filepath)
         else:
             self.elementsUpdateFinalPicture()
             pix = self.elements_final_output
-
             if Globals.save_to_memory_mode:
                 Globals.images_in_memory.append(pix)
             else:
-                filepath = get_screenshot_filepath(formated_datetime)
                 pix.save(filepath)
                 if self.tools_window.chb_add_meta.isChecked():
                     save_meta_info(self.metadata, filepath)
                 copy_image_data_to_clipboard(filepath)
+        # restart
         if grabbed_image or not Globals.save_to_memory_mode:
             restart_app_in_notification_mode(filepath)
 

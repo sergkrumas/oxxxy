@@ -1869,17 +1869,16 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         out_img.fill(Qt.transparent)
 
         brush = QBrush(image)
-        painter = QPainter(out_img)
+        painter = QPainter()
+        painter.begin(out_img)
         painter.setBrush(brush)
         painter.setPen(Qt.NoPen)
         painter.setRenderHint(QPainter.Antialiasing, True)
-
         rect = QRect(0, 0, imgsize, imgsize)
         if self.hex_mask:
             painter.drawPolygon(self.build_hex_polygon(rect))
         else:
             painter.drawEllipse(rect)
-
         painter.end()
 
         # Convert the image to a pixmap and rescale it.  Take pixel ratio into

@@ -40,7 +40,7 @@ from pyqtkeybind import keybinder
 from PyQt5.QtWidgets import (QSystemTrayIcon, QWidget, QMessageBox, QMenu, QFileDialog,
     QHBoxLayout, QCheckBox, QVBoxLayout, QTextEdit, QGridLayout,
     QPushButton, QLabel, QApplication, QScrollArea, QDesktopWidget, QActionGroup)
-from PyQt5.QtCore import (QUrl, QMimeData, pyqtSignal, QPoint, QPointF, pyqtSlot, QRect, QEvent,
+from PyQt5.QtCore import (pyqtSignal, QPoint, QPointF, pyqtSlot, QRect, QEvent,
     QTimer, Qt, QSize, QSizeF, QRectF, QThread, QAbstractNativeEventFilter,
     QAbstractEventDispatcher, QFile, QDataStream, QIODevice)
 from PyQt5.QtGui import (QPainterPath, QColor, QKeyEvent, QMouseEvent, QBrush, QPixmap,
@@ -51,7 +51,8 @@ from image_viewer_lite import ViewerWindow
 from key_seq_edit import KeySequenceEdit
 
 from _utils import (convex_hull, check_scancode_for, SettingsJson,
-     generate_metainfo, build_valid_rect, build_valid_rectF, dot, get_nearest_point_on_rect, get_creation_date,
+     generate_metainfo, build_valid_rect, build_valid_rectF, dot,
+     get_creation_date, copy_image_file_to_clipboard, get_nearest_point_on_rect,
      find_browser_exe_file, open_link_in_browser, open_in_google_chrome, save_meta_info,
      make_screenshot_pyqt, webRGBA, generate_gradient, draw_shadow, draw_cyberpunk,
      get_bounding_points, load_svg, is_webp_file_animated, apply_blur_effect)
@@ -3528,16 +3529,6 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         self.view_window.activateWindow()
 
     def save_screenshot(self, grabbed_image=None, metadata=None):
-        def copy_image_data_to_clipboard(fp):
-            # засовывает содержимое картинки в буфер,
-            # чтобы можно было вставить в браузере или телеге
-            if os.path.exists(fp):
-                app = QApplication.instance()
-                data = QMimeData()
-                url = QUrl.fromLocalFile(fp)
-                data.setUrls([url])
-                app.clipboard().setMimeData(data)
-
         close_all_windows()
 
         # задание папки для скриншота
@@ -3548,7 +3539,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         if grabbed_image:
             # QUICK FULLSCREEN
             grabbed_image.save(filepath)
-            # copy_image_data_to_clipboard(filepath)
+            # copy_image_file_to_clipboard(filepath)
             save_meta_info(metadata, filepath)
         else:
             self.elementsUpdateFinalPicture()
@@ -3559,7 +3550,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
                 pix.save(filepath)
                 if self.tools_window.chb_add_meta.isChecked():
                     save_meta_info(self.metadata, filepath)
-                copy_image_data_to_clipboard(filepath)
+                copy_image_file_to_clipboard(filepath)
         # restart
         if grabbed_image or not Globals.save_to_memory_mode:
             restart_app_in_notification_mode(filepath)

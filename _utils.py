@@ -35,7 +35,8 @@ from PIL import Image, ImageGrab, PngImagePlugin
 
 from PyQt5.QtWidgets import (QWidget, QMessageBox, QDesktopWidget, QApplication,
     QGraphicsBlurEffect, QGraphicsPixmapItem, QGraphicsScene)
-from PyQt5.QtCore import (QRectF, QPoint, pyqtSignal, QSizeF, Qt, QPointF, QSize, QRect)
+from PyQt5.QtCore import (QRectF, QPoint, pyqtSignal, QSizeF, Qt, QPointF, QSize, QRect,
+                                                                            QMimeData, QUrl)
 from PyQt5.QtGui import (QPixmap, QBrush, QRegion, QImage, QRadialGradient, QColor,
                     QGuiApplication, QPen, QPainterPath, QPolygon, QLinearGradient, QPainter,
                     QCursor, QImageReader, QTransform, QPolygonF)
@@ -94,6 +95,8 @@ __all__ = (
     'apply_blur_effect',
 
     'capture_rotated_rect_from_pixmap',
+
+    'copy_image_file_to_clipboard',
 )
 
 # Python3 program to find convex hull of a set of points. Refer
@@ -858,3 +861,13 @@ def capture_rotated_rect_from_pixmap(pixmap, capture_pos, capture_rotation,
     op.end()
 
     return output_pixmap
+
+def copy_image_file_to_clipboard(filepath):
+    # засовывает содержимое картинки в буфер,
+    # чтобы можно было вставить в браузере или телеге
+    if os.path.exists(filepath):
+        app = QApplication.instance()
+        data = QMimeData()
+        url = QUrl.fromLocalFile(filepath)
+        data.setUrls([url])
+        app.clipboard().setMimeData(data)

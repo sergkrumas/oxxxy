@@ -1227,6 +1227,8 @@ class ElementsMixin(ElementsTransformMixin):
                 element.finished = False
         elif tool == ToolID.transform:
 
+            self.elementsDeactivateTextElements()
+
             if self.is_over_scaling_activation_area(event.pos()):
                 self.canvas_START_selected_elements_SCALING(event)
 

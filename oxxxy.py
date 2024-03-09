@@ -2245,7 +2245,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             painter.drawText(text_pos, "%dx%d" % (input_r.width(), input_r.height()))
 
     def build_hex_polygon(self, outer_rect):
-        x = (3**0.5 / 2)
+        x = 3**0.5 / 2
         size = min(outer_rect.width(), outer_rect.height())
         hexaPointsF = [QPointF(size/4, 0.0),
                         QPointF(size/4 + size/2, 0.0),
@@ -2263,7 +2263,6 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         return hexaF
 
     def draw_uncaptured_zones(self, painter, opacity_type, input_rect, step=1):
-
         # поправочка нужна для случая, когда использована команда "Содержимое в фон"
         # и после неё габариты получившегося изображения уже не равны
         # габаритам скриншота монитора(ов)
@@ -2367,12 +2366,10 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             draw_cyberpunk(painter, capture_region_rect)
 
     def draw_vertical_horizontal_lines(self, painter, cursor_pos):
-        if True:
-            line_pen = QPen(QColor(127, 127, 127, 172), 2, Qt.DashLine)
-            old_comp_mode = painter.compositionMode()
-            painter.setCompositionMode(QPainter.RasterOp_SourceXorDestination)
-        else:
-            line_pen = QPen(QColor(127, 127, 127, 127), 1)
+        painter.save()
+        line_pen = QPen(QColor(127, 127, 127, 172), 2, Qt.DashLine)
+        old_comp_mode = painter.compositionMode()
+        painter.setCompositionMode(QPainter.RasterOp_SourceXorDestination)
 
         if self.is_input_points_set():
             painter.setPen(line_pen)
@@ -2399,8 +2396,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             pos_y = cursor_pos.y()
             painter.drawLine(pos_x, 0, pos_x, self.height())
             painter.drawLine(0, pos_y, self.width(), pos_y)
-        if True:
-            painter.setCompositionMode(old_comp_mode)
+        painter.restore()
 
     def draw_analyse_corners(self, painter):
         if Globals.DEBUG_ANALYSE_CORNERS_SPACES:

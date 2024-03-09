@@ -3503,34 +3503,29 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             self.elementsUpdatePanelUI()
         self.update()
 
+    def place_view_window(self):
+        self.view_window.show()
+        # показываем только на первом мониторе слева
+        self.view_window.move(0, 0)
+        desktop_rect = QDesktopWidget().screenGeometry(screen=0)
+        self.view_window.resize(desktop_rect.width(), desktop_rect.height())
+
     def show_view_window(self, get_pixmap_callback_func, _type="final", data=None):
         if self.view_window:
             self.view_window.show()
             self.view_window.activateWindow()
         else:
             self.view_window = ViewerWindow(self, main_window=self, _type=_type, data=data)
-            self.view_window.show()
-            # показываем только на первом мониторе слева
-            self.view_window.move(0, 0)
-            desktop_rect = QDesktopWidget().screenGeometry(screen=0)
-            self.view_window.resize(desktop_rect.width(), desktop_rect.height())
-            self.view_window.show_image_default(get_pixmap_callback_func())
+            self.place_view_window()
+            pixmap = get_pixmap_callback_func()
+            self.view_window.show_image_default(pixmap)
             self.view_window.activateWindow()
 
     def show_view_window_for_animated(self, filepath):
-        # if self.view_window:
-        #     self.view_window.show()
-        #     self.view_window.activateWindow()
-        # else:
-        if True:
-            self.view_window = ViewerWindow(self, main_window=self, _type="final", data=None)
-            self.view_window.show()
-            # показываем только на первом мониторе слева
-            self.view_window.move(0, 0)
-            desktop_rect = QDesktopWidget().screenGeometry(screen=0)
-            self.view_window.resize(desktop_rect.width(), desktop_rect.height())
-            self.view_window.show_image(filepath)
-            self.view_window.activateWindow()
+        self.view_window = ViewerWindow(self, main_window=self, _type="final", data=None)
+        self.place_view_window()
+        self.view_window.show_image(filepath)
+        self.view_window.activateWindow()
 
     def save_screenshot(self, grabbed_image=None, metadata=None):
         def copy_image_data_to_clipboard(fp):
@@ -4423,6 +4418,14 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             screen = desktop.screenNumber(QCursor().pos())
             screen_rect = desktop.screenGeometry(screen=screen)
             return screen_rect.center(), screen_rect
+
+
+
+
+
+
+
+
 
 class WinEventFilter(QAbstractNativeEventFilter):
     def __init__(self, kb):

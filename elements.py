@@ -2426,7 +2426,7 @@ class ElementsMixin(ElementsTransformMixin):
             w = self.capture_region_rect.width()
             h = self.capture_region_rect.height()
             self.input_POINT2, self.input_POINT1 = get_bounding_points([QPointF(0, 0), QPointF(w, h)])
-            self.capture_region_rect = self._build_valid_rect(self.input_POINT1, self.input_POINT2)
+            self.capture_region_rect = build_valid_rectF(self.input_POINT1, self.input_POINT2)
 
         # cleaning
         self.elementsSetSelected(None)

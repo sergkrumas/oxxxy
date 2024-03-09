@@ -88,8 +88,6 @@ class Element():
         self.type = element_type
         self.finished = False
 
-        self.zoom_second_input = False
-
         self.background_image = False
 
         elements_list.append(self)

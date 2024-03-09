@@ -414,7 +414,6 @@ class ElementsMixin(ElementsTransformMixin):
 
     def save_project(self):
         # задание папки для скриншота
-
         self.SettingsWindow.set_screenshot_folder_path()
         if not os.path.exists(self.Globals.SCREENSHOT_FOLDER_PATH):
             return
@@ -559,9 +558,8 @@ class ElementsMixin(ElementsTransformMixin):
         data = dialog.getOpenFileName(self, title, self.Globals.SCREENSHOT_FOLDER_PATH, filter_data)
         return data[0]
 
-    # при написании этой функции использовался готовый проект, который загружался сразу
+    # при написании и отладке этой функции использовался готовый проект, который загружался сразу
     def open_project(self):
-
         project_filepath = ""
 
         project_filepath = self.dialog_open_project()
@@ -1396,7 +1394,6 @@ class ElementsMixin(ElementsTransformMixin):
         self.update()
 
     def elementsMouseReleaseEvent(self, event):
-
         event_pos = self.elementsMapFromViewportToCanvas(QPointF(event.pos()))
 
         tool = self.current_tool

@@ -482,10 +482,6 @@ class CustomPushButton(QPushButton):
             pos1y = 6 - _offset
             pos2y = 15 - _offset
             pos3y = 40 - _offset
-            # pos1y = 6
-            # pos2y = 15
-            # pos3y = 40
-            # painter.translate(20,0)
             transform = QTransform()
             transform.translate(10, 40)
             transform.rotate(45)
@@ -505,7 +501,6 @@ class CustomPushButton(QPushButton):
             offset = self.BUTTON_SIZE/2
             painter.setPen(Qt.NoPen)
             _offset = 45
-            # _offset = 0
             pos1y = 6 - _offset
             pos2y = 15 - _offset
             pos3y = 45 - _offset

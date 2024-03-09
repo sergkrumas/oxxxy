@@ -3803,6 +3803,20 @@ class ScreenshotWindow(QWidget, ElementsMixin):
                 index +=1
         self.magnifier_size = values[index]
 
+    def get_center_position_and_screen_rect(self):
+        if False:
+            # не подходит в системе с двумя пониторами,
+            # потому что центрируется в середине пространства, формируемоего двумя мониторами
+            return QPointF(
+                self.frameGeometry().width()/2,
+                self.frameGeometry().height()/2
+            )
+        else:
+            desktop = QDesktopWidget()
+            screen = desktop.screenNumber(QCursor().pos())
+            screen_rect = desktop.screenGeometry(screen=screen)
+            return screen_rect.center(), screen_rect        
+
     def change_tools_params(self, delta_value, modifiers):
         tools_window = self.tools_window
         if self.active_element and tools_window.current_tool == ToolID.transform and \
@@ -4384,21 +4398,6 @@ class ScreenshotWindow(QWidget, ElementsMixin):
                 self.elementsFitCaptureZoneOnScreen()
             else:
                 self.elementsFitSelectedItemsOnScreen()
-
-    def get_center_position_and_screen_rect(self):
-        if False:
-            # не подходит в системе с двумя пониторами,
-            # потому что центрируется в середине пространства, формируемоего двумя мониторами
-            return QPointF(
-                self.frameGeometry().width()/2,
-                self.frameGeometry().height()/2
-            )
-        else:
-            desktop = QDesktopWidget()
-            screen = desktop.screenNumber(QCursor().pos())
-            screen_rect = desktop.screenGeometry(screen=screen)
-            return screen_rect.center(), screen_rect
-
 
 
 

@@ -2210,6 +2210,9 @@ class ElementsMixin(ElementsTransformMixin):
                 self.canvas_scale_y = self._canvas_scale_y
                 painter.end()
 
+                if self.tools_window and self.tools_window.chb_masked.isChecked():
+                    self.elements_final_output = self.circle_mask_image(self.elements_final_output)
+
     def elementsPrepareForModificationsIfNeeded(self, element, force_new=False):
         if element == self.elementsGetLastElement() and not force_new:
             # если элемент последний в списке элементов,

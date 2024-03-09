@@ -3559,12 +3559,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             if Globals.save_to_memory_mode:
                 Globals.images_in_memory.append(pix)
             else:
-                if self.tools_window.chb_masked.isChecked():
-                    # FRAGMENT OR FULLSCREEN: masked version
-                    filepath = get_screenshot_filepath(f"{formated_datetime} masked")
-                else:
-                    # FRAGMENT OR FULLSCREEN: default version
-                    filepath = get_screenshot_filepath(formated_datetime)
+                filepath = get_screenshot_filepath(formated_datetime)
                 pix.save(filepath)
                 if self.tools_window.chb_add_meta.isChecked():
                     save_meta_info(self.metadata, filepath)

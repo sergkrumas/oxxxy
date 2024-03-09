@@ -83,6 +83,10 @@ class ElementsTransformMixin():
 
         self.cyclic_select_activated = False
 
+
+
+
+
     def load_svg_cursors(self):
         folder_path = os.path.dirname(__file__)
         filepath_scale_svg = os.path.join(folder_path, "cursors", "scale.svg")
@@ -99,71 +103,6 @@ class ElementsTransformMixin():
             self.rotate_rastr_source = rotate_rastr_source
         if not translate_rastr_source.isNull():
             self.translate_rastr_source = translate_rastr_source
-
-    def update_selection_bouding_box(self):
-        self.selection_bounding_box = None
-        if len(self.selected_items) == 1:
-            self.selection_bounding_box = self.selected_items[0].get_selection_area(canvas=self)
-        elif len(self.selected_items) > 1:
-            bounding_box = QRectF()
-            for element in self.selected_items:
-                bounding_box = bounding_box.united(element.get_selection_area(canvas=self).boundingRect())
-            self.selection_bounding_box = QPolygonF([
-                bounding_box.topLeft(),
-                bounding_box.topRight(),
-                bounding_box.bottomRight(),
-                bounding_box.bottomLeft(),
-            ])
-
-
-    def find_min_area_element(self, elements, pos):
-        found_elements = self.find_all_elements_under_this_pos(elements, pos)
-        found_elements = list(sorted(found_elements, key=lambda x: x.calc_area))
-        if found_elements:
-            return found_elements[0]
-        return None
-
-    def find_all_elements_under_this_pos(self, elements, pos):
-        undermouse_elements = []
-        for element in elements:
-            if element.type in [self.ToolID.removing]:
-                continue
-            element_selection_area = element.get_selection_area(canvas=self)
-            is_under_mouse = element_selection_area.containsPoint(pos, Qt.WindingFill)
-            if is_under_mouse:
-                undermouse_elements.append(element)
-        return undermouse_elements
-
-
-
-    def is_over_rotation_activation_area(self, position):
-        for index, raa in self.rotation_activation_areas:
-            if raa.containsPoint(position, Qt.WindingFill):
-                self.widget_active_point_index = index
-                return True
-        self.widget_active_point_index = None
-        return False
-
-    def is_over_scaling_activation_area(self, position):
-        if self.selection_bounding_box is not None:
-            enumerated = list(enumerate(self.selection_bounding_box))
-            enumerated.insert(0, enumerated.pop(2))
-            for index, point in enumerated:
-                diff = point - QPointF(position)
-                if QVector2D(diff).length() < self.STNG_transform_widget_activation_area_size:
-                    self.scaling_active_point_index = index
-                    self.widget_active_point_index = index
-                    return True
-        self.scaling_active_point_index = None
-        self.widget_active_point_index = None
-        return False
-
-    def is_over_translation_activation_area(self, position):
-        for element in self.selected_items:
-            sa = element.get_selection_area(canvas=self)
-            if sa.containsPoint(position, Qt.WindingFill):
-                return True
-        return False
 
     def widget_get_cursor_angle(self):
         points_count = self.selection_bounding_box.size()
@@ -235,6 +174,27 @@ class ElementsTransformMixin():
                 return Qt.ArrowCursor
         else:
             return Qt.ArrowCursor
+
+
+
+
+    def find_min_area_element(self, elements, pos):
+        found_elements = self.find_all_elements_under_this_pos(elements, pos)
+        found_elements = list(sorted(found_elements, key=lambda x: x.calc_area))
+        if found_elements:
+            return found_elements[0]
+        return None
+
+    def find_all_elements_under_this_pos(self, elements, pos):
+        undermouse_elements = []
+        for element in elements:
+            if element.type in [self.ToolID.removing]:
+                continue
+            element_selection_area = element.get_selection_area(canvas=self)
+            is_under_mouse = element_selection_area.containsPoint(pos, Qt.WindingFill)
+            if is_under_mouse:
+                undermouse_elements.append(element)
+        return undermouse_elements
 
     def any_element_area_under_mouse(self, add_selection):
         self.prevent_item_deselection = False
@@ -339,12 +299,62 @@ class ElementsTransformMixin():
             undermouse_elements[0]._selected = True
 
 
+
+
+
     def init_selection_bounding_box_widget(self):
         self.selected_items = []
         for element in self.elementsHistoryFilter():
             if element._selected and element.type not in [self.ToolID.removing]:
                 self.selected_items.append(element)
         self.update_selection_bouding_box()
+
+    def update_selection_bouding_box(self):
+        self.selection_bounding_box = None
+        if len(self.selected_items) == 1:
+            self.selection_bounding_box = self.selected_items[0].get_selection_area(canvas=self)
+        elif len(self.selected_items) > 1:
+            bounding_box = QRectF()
+            for element in self.selected_items:
+                bounding_box = bounding_box.united(element.get_selection_area(canvas=self).boundingRect())
+            self.selection_bounding_box = QPolygonF([
+                bounding_box.topLeft(),
+                bounding_box.topRight(),
+                bounding_box.bottomRight(),
+                bounding_box.bottomLeft(),
+            ])
+
+
+
+
+    def is_over_rotation_activation_area(self, position):
+        for index, raa in self.rotation_activation_areas:
+            if raa.containsPoint(position, Qt.WindingFill):
+                self.widget_active_point_index = index
+                return True
+        self.widget_active_point_index = None
+        return False
+
+    def is_over_scaling_activation_area(self, position):
+        if self.selection_bounding_box is not None:
+            enumerated = list(enumerate(self.selection_bounding_box))
+            enumerated.insert(0, enumerated.pop(2))
+            for index, point in enumerated:
+                diff = point - QPointF(position)
+                if QVector2D(diff).length() < self.STNG_transform_widget_activation_area_size:
+                    self.scaling_active_point_index = index
+                    self.widget_active_point_index = index
+                    return True
+        self.scaling_active_point_index = None
+        self.widget_active_point_index = None
+        return False
+
+    def is_over_translation_activation_area(self, position):
+        for element in self.selected_items:
+            sa = element.get_selection_area(canvas=self)
+            if sa.containsPoint(position, Qt.WindingFill):
+                return True
+        return False
 
 
 
@@ -687,6 +697,13 @@ class ElementsTransformMixin():
             self.transform_cancelled = True
             self.update()
             print('cancel scaling')
+
+
+
+
+
+
+
 
 
     def elementsDrawSelectionMouseRect(self, painter):

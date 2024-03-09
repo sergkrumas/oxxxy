@@ -1920,11 +1920,6 @@ class ScreenshotWindow(QWidget, ElementsMixin):
     def is_input_points_set(self):
         return self.is_point_set(self.input_POINT1) and self.is_point_set(self.input_POINT2)
 
-    def build_input_rect(self, cursor_pos):
-        ip1 = self.get_first_set_point([self.input_POINT1], cursor_pos)
-        ip2 = self.get_first_set_point([self.input_POINT2, self.input_POINT1], cursor_pos)
-        return build_valid_rect(ip1, ip2)
-
     def build_input_rectF(self, cursor_pos):
         ip1 = self.get_first_set_point([self.input_POINT1], cursor_pos)
         ip2 = self.get_first_set_point([self.input_POINT2, self.input_POINT1], cursor_pos)

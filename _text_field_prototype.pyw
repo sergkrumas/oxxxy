@@ -110,6 +110,8 @@ class QMyWidget(QWidget):
         text = "text " + "text\n " * 5
         # text = "\n\n"
         text = lorem.text().replace("\n\n", "\n - ")
+
+        text = lorem.text().replace("\n\n", "\n")
         font = QFont('Arial')
         # self.textLayout = QTextLayout(text, font)
         self.doc = QTextDocument()
@@ -160,18 +162,22 @@ class QMyWidget(QWidget):
             #     block.setLineCount(3)
             # for i in range(block.lineCount()):
 
-            if False:
+            if True:
                 block.layout().beginLayout()
-                line = block.layout().createLine()
-                line.setNumColumns(5)
+                # line = block.layout().createLine()
+                # line.setNumColumns(5)
                 # line.setLineWidth(40)
-
-                for i in range(5):
+                h = 0
+                for i in range(10):
                     line = block.layout().createLine()
                     line.setNumColumns(5)                    
-                    line.setPosition(QPointF(20, 20*i))
+                    # line.setPosition(QPointF(20, 20*i))
+
+                    line.setPosition(QPointF(0, h))
+                    h += line.height()
+
                 line = block.layout().createLine()
-                # line.setNumColumns(5)                    
+                # line.setNumColumns(5)
                 line.setPosition(QPointF(20, 20*(i+1)))
 
                     # print(dir(line))

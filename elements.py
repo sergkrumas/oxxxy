@@ -210,8 +210,8 @@ class Element():
 
     def get_canvas_space_selection_area(self):
         return self.get_selection_area(canvas=None,
-                                    # здесь обязательно надо ставить объект в origin,
-                                    # иначе трансформации неправильно сработают
+                                    # здесь обязательно надо центрировать объект в начало координат,
+                                    # иначе повороты и масштабы неправильно сработают
                                     place_center_at_origin=True,
                                     apply_global_scale=False,
                                     apply_translation=True

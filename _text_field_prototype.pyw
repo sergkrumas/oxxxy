@@ -66,9 +66,8 @@ class QMyWidget(QWidget):
 
         while block != end:
 
-
-
-            block.layout().drawCursor(painter, QPointF(0,0), self.cursor_pos)
+            if block.contains(self.result):
+                    block.layout().drawCursor(painter, QPointF(0,0), self.result, 4)
  
             block = block.next()
 
@@ -77,16 +76,34 @@ class QMyWidget(QWidget):
 
     def mousePressEvent(self, event):
 
-        self.doc.setTextWidth(event.x())
-        self.doc.setIndentWidth(50)
-        self.get_info()
-        self.update()
 
-        self.cursor_pos += 1
+        if event.button() == Qt.LeftButton:
+
+            self.result = self.doc.documentLayout().hitTest(event.pos(), Qt.FuzzyHit)
+
+            print(self.result)
+            # self.doc.setTextWidth(event.x())
+
+            self.get_info()
+            self.update()
+
+            self.cursor_pos += 1
+
+        else:
+            self.cursor = QTextCursor(self.doc)
+            self.cursor.setPosition(self.result)
+            self.cursor.beginEditBlock()
+            self.cursor.insertText("Hello")
+            # self.cursor.insertText("World")
+            self.cursor.endEditBlock()
+
+            self.update()
+
 
     def __init__(self, ):
         super().__init__()
-
+        
+        self.result = 0
 
         self.cursor_pos = 0
 

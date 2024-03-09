@@ -107,7 +107,6 @@ class Element():
         self.fresh = True
 
         self.backup_pixmap = None
-
         self.frame_info = None
 
         self.opacity = 1.0
@@ -117,6 +116,8 @@ class Element():
         self.element_scale_y = 1.0
         self.element_position = QPointF()
         self.element_rotation = 0
+        self.element_width = None
+        self.element_height = None
 
         self.__element_scale_x = None
         self.__element_scale_y = None
@@ -126,9 +127,6 @@ class Element():
         self.__element_scale_x_init = None
         self.__element_scale_y_init = None
         self.__element_position_init = None
-
-        self.element_width = None
-        self.element_height = None
 
         self._selected = False
         self._touched = False

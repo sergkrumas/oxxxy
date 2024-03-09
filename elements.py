@@ -254,6 +254,36 @@ class Element():
         transform = local_scaling * rotation * global_scaling * translation
         return transform
 
+    def enable_distortion_fixer(self):
+        if hasattr(self, 'local_end_point') or hasattr(self, 'end_point'):
+            self._saved_data = (
+                QPointF(self.local_end_point),
+                QPointF(self.local_start_point),
+                self.element_width,
+                self.element_height,
+                self.element_scale_x,
+                self.element_scale_y
+            )
+
+            self.local_end_point.setX(self.local_end_point.x() * self.element_scale_x)
+            self.local_end_point.setY(self.local_end_point.y() * self.element_scale_y) 
+
+            self.local_start_point.setX(self.local_start_point.x() * self.element_scale_x)
+            self.local_start_point.setY(self.local_start_point.y() * self.element_scale_y)
+
+            self.element_width *= self.element_scale_x
+            self.element_height *= self.element_scale_y
+            self.element_scale_x = self.element_scale_y = 1.0
+
+    def disable_distortion_fixer(self):
+        if hasattr(self, '_saved_data'):        
+            self.local_end_point, \
+            self.local_start_point, \
+            self.element_width, \
+            self.element_height, \
+            self.element_scale_x, \
+            self.element_scale_y = self._saved_data
+
 class ElementsHistorySlot():
 
     __slots__ = ['elements', 'content_type', 'unique_index']
@@ -1724,6 +1754,7 @@ class ElementsMixin(ElementsTransformMixin):
         pen, color, size = self.elementsGetPenFromElement(element)
         painter.setPen(pen)
         painter.setBrush(QBrush(color))
+        element.enable_distortion_fixer()
         if el_type == ToolID.arrow:
             painter.setTransform(element.get_transform_obj(canvas=self))
             painter.setPen(Qt.NoPen)
@@ -1982,6 +2013,7 @@ class ElementsMixin(ElementsTransformMixin):
 
 
             painter.resetTransform()
+        element.disable_distortion_fixer()            
 
     def elementsGetRectCorners(self, rect):
         return [

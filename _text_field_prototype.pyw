@@ -68,7 +68,7 @@ class QMyWidget(QWidget):
 
             if block.contains(self.result):
                     block.layout().drawCursor(painter, QPointF(0,0), self.result, 4)
- 
+
             block = block.next()
 
 
@@ -100,9 +100,13 @@ class QMyWidget(QWidget):
             self.update()
 
 
+        # !!!!!!!!!!!! DOCUMENT SIZE!!!!!!!!!
+        print(self.doc.size().toSize())
+
+
     def __init__(self, ):
         super().__init__()
-        
+
         self.result = 0
 
         self.cursor_pos = 0
@@ -164,7 +168,7 @@ class QMyWidget(QWidget):
             #     block.setLineCount(3)
             # for i in range(block.lineCount()):
 
-            # !!!!! 
+            # !!!!!
             # !!!!! https://doc.qt.io/qt-5/qtextblock.html
             # !!!!! Note that the returned QTextLayout object can only be modified from the documentChanged implementation of a QAbstractTextDocumentLayout subclass. Any changes applied from the outside cause undefined behavior.
             # !!!!!
@@ -179,7 +183,7 @@ class QMyWidget(QWidget):
                 h = 0
                 for i in range(10):
                     line = block.layout().createLine()
-                    line.setNumColumns(5)                    
+                    line.setNumColumns(5)
                     # line.setPosition(QPointF(20, 20*i))
 
                     line.setPosition(QPointF(0, h))
@@ -226,7 +230,7 @@ class QMyWidget(QWidget):
                             right, lineEnd = line.cursorToX(fragEnd)
                             print('s', x, right, block, block.text(), fragPos, fragEnd, block.position())
                             rect = QRectF(
-                                blockX + x, blockY + line.y(), 
+                                blockX + x, blockY + line.y(),
                                 right - x, line.height()
                             )
                             lastBorderRects.append(rect)
@@ -237,7 +241,7 @@ class QMyWidget(QWidget):
                         else:
                             break
                 it += 1
-                
+
             block = block.next()
 
 
@@ -259,7 +263,7 @@ class QMyWidget(QWidget):
 
 
 if __name__ == '__main__':
-     
+
     app = QApplication(sys.argv)
 
     widget = QMyWidget()

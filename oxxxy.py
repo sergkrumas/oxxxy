@@ -2429,6 +2429,7 @@ class ToolsWindow(QWidget):
         self.chb_savecaptureframe.setStyleSheet(checkbox_style)
         self.chb_savecaptureframe.installEventFilter(self)
         self.chb_savecaptureframe.setChecked(tools_settings.get('savecaptureframe', False))
+        self.chb_savecaptureframe.stateChanged.connect(self.parent().update_saved_capture_callback)
         checkboxes.addWidget(self.chb_savecaptureframe)
 
         self.chb_masked = CheckBoxCustom("Обтравка")
@@ -3671,6 +3672,10 @@ class ScreenshotWindow(QWidget, ElementsMixin):
 
         action = menu.exec_(QCursor().pos())
         click_handler(action)
+
+    def update_saved_capture_callback(self, int_value):
+        if int_value:
+            self.update_saved_capture()
 
     def update_saved_capture(self):
         ts = self.tools_settings

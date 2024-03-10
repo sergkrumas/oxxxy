@@ -37,11 +37,12 @@ from PyQt5.QtGui import (QPainterPath, QColor, QKeyEvent, QMouseEvent, QBrush, Q
     QIcon, QFont, QCursor, QPolygonF, QVector2D)
 
 from _utils import (convex_hull, check_scancode_for, SettingsJson,
-     generate_metainfo, build_valid_rect, build_valid_rectF, dot, get_nearest_point_on_rect,
-     get_creation_date, capture_rotated_rect_from_pixmap, fit_rect_into_rect,
-     find_browser_exe_file, open_link_in_browser, open_in_google_chrome, save_meta_info,
-     make_screenshot_pyqt, webRGBA, generate_gradient, draw_shadow, draw_cyberpunk,
-     constraint45Degree, get_bounding_points, load_svg, is_webp_file_animated, apply_blur_effect)
+    generate_metainfo, build_valid_rect, build_valid_rectF, dot, get_nearest_point_on_rect,
+    get_creation_date, capture_rotated_rect_from_pixmap, fit_rect_into_rect,
+    find_browser_exe_file, open_link_in_browser, open_in_google_chrome, save_meta_info,
+    make_screenshot_pyqt, webRGBA, generate_gradient, draw_shadow, draw_cyberpunk,
+    constraint45Degree, get_bounding_points, get_bounding_pointsF, load_svg,
+    is_webp_file_animated, apply_blur_effect)
 
 from elements_transform import ElementsTransformMixin
 
@@ -2394,7 +2395,7 @@ class ElementsMixin(ElementsTransformMixin):
 
         if points:
             # обновление области захвата
-            self.input_POINT2, self.input_POINT1 = get_bounding_points(points)
+            self.input_POINT2, self.input_POINT1 = get_bounding_pointsF(points)
             self.capture_region_rect = build_valid_rectF(self.input_POINT1, self.input_POINT2)
 
     def elementsDoRenderToBackground(self):
@@ -2424,7 +2425,7 @@ class ElementsMixin(ElementsTransformMixin):
                 points.append(br.bottomRight())
 
             if points:
-                content_rect = build_valid_rectF(*get_bounding_points(points))
+                content_rect = build_valid_rectF(*get_bounding_pointsF(points))
             else:
                 content_rect = QRectF()
             new_width = max(self.source_pixels.width(), content_rect.width())
@@ -2450,7 +2451,7 @@ class ElementsMixin(ElementsTransformMixin):
         if action == action_crop:
             w = self.capture_region_rect.width()
             h = self.capture_region_rect.height()
-            self.input_POINT2, self.input_POINT1 = get_bounding_points([QPointF(0, 0), QPointF(w, h)])
+            self.input_POINT2, self.input_POINT1 = get_bounding_pointsF([QPointF(0, 0), QPointF(w, h)])
             self.capture_region_rect = build_valid_rectF(self.input_POINT1, self.input_POINT2)
 
         # cleaning
@@ -2533,7 +2534,7 @@ class ElementsMixin(ElementsTransformMixin):
             points.append(br.bottomRight())
 
         # обновление области захвата
-        self.input_POINT2, self.input_POINT1 = get_bounding_points(points)
+        self.input_POINT2, self.input_POINT1 = get_bounding_pointsF(points)
         self.capture_region_rect = build_valid_rectF(self.input_POINT1, self.input_POINT2)
         # print('capture region', self.capture_region_rect)
 

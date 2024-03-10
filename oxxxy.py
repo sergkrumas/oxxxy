@@ -3514,10 +3514,10 @@ class ScreenshotWindow(QWidget, ElementsMixin):
                 elementTopLeft += QPointF(pixmap.width(), 0)
                 pixmaps.append(pixmap)
         if pixmaps:
-            self.input_POINT2, self.input_POINT1 = get_bounding_points([QPointF(0, 0), elementBottomRight])
+            self.input_POINT2, self.input_POINT1 = get_bounding_pointsF([QPointF(0, 0), elementBottomRight])
         else:
-            self.input_POINT2 = QPoint(0, 0)
-            self.input_POINT1 = self.frameGeometry().bottomRight()
+            self.input_POINT2 = QPointF(0, 0)
+            self.input_POINT1 = QPointF(self.frameGeometry().bottomRight())
         self.capture_region_rect = build_valid_rectF(self.input_POINT1, self.input_POINT2)
         print(self.capture_region_rect, self.input_POINT1, self.input_POINT2)
         tw.set_current_tool(ToolID.transform)

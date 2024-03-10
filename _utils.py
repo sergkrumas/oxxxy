@@ -61,6 +61,7 @@ __all__ = (
 
     'generate_metainfo',
     'get_bounding_points',
+    'build_valid_rectF',
     'build_valid_rect',
     'build_valid_rectF',
     'dot',
@@ -320,21 +321,26 @@ def get_bounding_points(points):
         bottom = max(int(p.y()), bottom)
     return QPoint(left, top), QPoint(right, bottom)
 
-def build_valid_rect(p1, p2):
-    return QRect(*get_bounding_points((p1, p2)))
-
-def build_valid_rectF(p1, p2):
-    MAX = sys.maxsize
+def get_bounding_pointsF(points):
+    MAX = float(sys.maxsize)
     left = MAX
     right = -MAX
     top = MAX
     bottom = -MAX
-    for p in [p1, p2]:
+    if not points:
+        raise Exception("Empty list!")
+    for p in points:
         left = min(p.x(), left)
         right = max(p.x(), right)
         top = min(p.y(), top)
         bottom = max(p.y(), bottom)
-    return QRectF(QPointF(left, top), QPointF(right, bottom))
+    return QPointF(left, top), QPointF(right, bottom)
+
+def build_valid_rect(p1, p2):
+    return QRect(*get_bounding_points((p1, p2)))
+
+def build_valid_rectF(p1, p2):
+    return QRectF(*get_bounding_pointsF((p1, p2)))
 
 def dot(p1, p2):
     return p1.x()*p2.x() + p1.y()*p2.y()

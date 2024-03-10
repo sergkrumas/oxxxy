@@ -139,6 +139,8 @@ class QMyWidget(QWidget):
         self.rects = []
         self.get_info()
 
+        self.doc.setDocumentMargin(30)
+
 
     def get_info(self):
 
@@ -161,6 +163,13 @@ class QMyWidget(QWidget):
             # if  block.lineCount() != 3:
             #     block.setLineCount(3)
             # for i in range(block.lineCount()):
+
+            # !!!!! 
+            # !!!!! https://doc.qt.io/qt-5/qtextblock.html
+            # !!!!! Note that the returned QTextLayout object can only be modified from the documentChanged implementation of a QAbstractTextDocumentLayout subclass. Any changes applied from the outside cause undefined behavior.
+            # !!!!!
+            # !!!!!
+            # !!!!!
 
             if True:
                 block.layout().beginLayout()

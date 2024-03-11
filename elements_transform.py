@@ -267,7 +267,7 @@ class ElementsTransformMixin():
 
 
         self.init_selection_bounding_box_widget()
-        self.elementsUpdatePanelUI()
+        self.elementsActiveElementParamsToPanelSliders()
 
     def cyclic_select(self):
         elements = self.elementsFilterElementsForSelection()

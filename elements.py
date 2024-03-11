@@ -1046,6 +1046,11 @@ class ElementsMixin(ElementsTransformMixin):
         self.elements_history_index = len(self.history_slots)
         return element
 
+    def _elementsSetSelectedPreReset(self):
+        for __el in self.elements:
+            __el._selected = False
+        self.active_element = None
+
     def elementsSetSelected(self, arg, update_panel=True):
         els = None
         el = None
@@ -1055,16 +1060,15 @@ class ElementsMixin(ElementsTransformMixin):
             el = arg
 
         # reset
-        for el in self.elements:
-            el._selected = False
-        self.active_element = None
+        self._elementsSetSelectedPreReset()
+
         # setting
         if el:
             el._selected = True
             self.active_element = el
         if els:
-            for el in els:
-                el._selected = True
+            for __el in els:
+                __el._selected = True
         # updating
         self.init_selection_bounding_box_widget()
         if update_panel:

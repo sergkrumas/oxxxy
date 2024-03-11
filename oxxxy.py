@@ -2892,10 +2892,10 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         painter.end()
 
     def draw_checkerboard(self, painter):
-        old_brush = painter.brush()
+        painter.save()
         painter.setBrush(self.checkerboard_brush)
         painter.drawRect(self.rect())
-        painter.setBrush(old_brush)
+        painter.restore()
 
     def draw_canvas_origin(self, painter):
         pen = QPen(Qt.magenta, 4)
@@ -2916,10 +2916,10 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         temp.color = self.tools_window.color_slider.get_color()
         temp.size = self.tools_window.size_slider.value
         pen, _, _ = self.elementsGetPenFromElement(temp)
-        old_pen = painter.pen()
+        painter.save()
         painter.setPen(pen)
         painter.drawPoint(cursor_pos)
-        painter.setPen(old_pen)
+        painter.restore()
 
     def draw_picture_tool(self, painter, cursor_pos):
         if self.current_tool != ToolID.picture or not self.current_picture_pixmap:
@@ -2963,13 +2963,13 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             painter.drawEllipse(rect)
 
             painter.setPen(Qt.white)
-            old_font = QFont(painter.font())
+            painter.save()
             font = painter.font()
             font.setFamily("Consolas")
             font.setWeight(1600)
             painter.setFont(font)
             painter.drawText(rect, Qt.AlignCenter | Qt.AlignVCenter, count_str)
-            painter.setFont(old_font)
+            painter.restore()
 
         painter.setRenderHint(QPainter.HighQualityAntialiasing, False)
         painter.setRenderHint(QPainter.Antialiasing, False)
@@ -3089,8 +3089,8 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         painter.drawRect(mag_text_rect)
         painter.setOpacity(1.0)
         painter.setPen(text_white_pen)
-        old_font = painter.font()
-        font = QFont(old_font)
+        painter.save()
+        font = painter.font()
         font.setPixelSize(int(mag_text_rect.height()/2.0+5))
         painter.setFont(font)
         cp = QPoint(magnifier_source_rect.width()//2, magnifier_source_rect.height()//2)
@@ -3098,7 +3098,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         self.color_at_pixel = QColor(magnifier_image.pixel(cp))
         color_hex_string = self.color_at_pixel.name()
         painter.drawText(mag_text_rect, Qt.AlignCenter, color_hex_string)
-        painter.setFont(old_font)
+        painter.restore()
         color_rect = QRect(focus_rect.bottomLeft()+QPoint(0, -5), QSize(focus_rect.width(), 6))
         painter.fillRect(color_rect, self.color_at_pixel)
 
@@ -3289,7 +3289,6 @@ class ScreenshotWindow(QWidget, ElementsMixin):
     def draw_vertical_horizontal_lines(self, painter, cursor_pos):
         painter.save()
         line_pen = QPen(QColor(127, 127, 127, 172), 2, Qt.DashLine)
-        old_comp_mode = painter.compositionMode()
         painter.setCompositionMode(QPainter.RasterOp_SourceXorDestination)
 
         if self.is_input_points_set():

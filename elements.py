@@ -876,7 +876,7 @@ class ElementsMixin(ElementsTransformMixin):
         if not self.elements:
             return
         try:
-            candidat = self.active_element or self.elementsHistoryFilter()[-1]
+            candidat = self.active_element
             if candidat not in self.elementsHistoryFilter(): # element should be visible at the moment
                 candidat = None
         except Exception:
@@ -944,23 +944,24 @@ class ElementsMixin(ElementsTransformMixin):
             setattr(element, "textbox", copy_textbox)
 
     def elementsUpdatePanelUI(self):
-        if not self.active_element:
-            return
         self.elementsDeactivateTextElements()
+        tw = self.tools_window
+        if not tw:
+            return
         if self.active_element is not None:
             el = self.active_element
-            self.tools_window.color_slider.value = el.color_slider_value
-            self.tools_window.color_slider.palette_index = el.color_slider_palette_index
-            self.tools_window.size_slider.value = el.size
-            self.tools_window.opacity_slider.value = el.opacity
-            self.tools_window.chb_toolbool.setChecked(el.toolbool)
+            tw.color_slider.value = el.color_slider_value
+            tw.color_slider.palette_index = el.color_slider_palette_index
+            tw.size_slider.value = el.size
+            tw.opacity_slider.value = el.opacity
+            tw.chb_toolbool.setChecked(el.toolbool)
             if el.type == ToolID.text:
                 self.elementsActivateTextElement(el)
-            self.tools_window.set_ui_on_toolchange(element_type=el.type)
-            self.tools_window.update()
+            tw.set_ui_on_toolchange(element_type=el.type)
+            tw.update()
         else:
-            self.tools_window.set_ui_on_toolchange(hide=True)
-            self.tools_window.update()
+            tw.set_ui_on_toolchange(hide=True)
+            tw.update()
         self.update()
 
     def elementsMakeSureTheresNoUnfinishedElement(self):

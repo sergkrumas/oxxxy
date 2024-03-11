@@ -123,6 +123,82 @@ class Globals():
         brush.setTexture(pixmap)
         return brush
 
+    @classmethod
+    def generate_icons(cls):
+
+        bitmap_cancel = QPixmap(50, 50)
+        bitmap_cancel.fill(Qt.transparent)
+        painter = QPainter()
+        painter.begin(bitmap_cancel)
+        inner_rect = bitmap_cancel.rect().adjusted(13, 13, -13, -13)
+        pen = QPen(QColor(200, 100, 0), 10)
+        pen.setCapStyle(Qt.RoundCap)
+        painter.setPen(pen)
+        painter.drawLine(inner_rect.topLeft(), inner_rect.bottomRight())
+        painter.drawLine(inner_rect.bottomLeft(), inner_rect.topRight())
+        painter.end()
+
+        bitmap_halt = QPixmap(50, 50)
+        bitmap_halt.fill(Qt.transparent)
+        painter = QPainter()
+        painter.begin(bitmap_halt)
+        inner_rect = bitmap_halt.rect().adjusted(13, 13, -13, -13)
+        painter.setBrush(QBrush(QColor(200, 0, 0)))
+        path = QPainterPath()
+        path.addRoundedRect(QRectF(0, 0, 50, 50), 10, 10)
+        painter.drawPath(path)
+        painter.setPen(Qt.NoPen)
+        pen = QPen(Qt.white, 10)
+        pen.setCapStyle(Qt.RoundCap)
+        painter.setPen(pen)
+        painter.drawLine(inner_rect.topLeft(), inner_rect.bottomRight())
+        painter.drawLine(inner_rect.bottomLeft(), inner_rect.topRight())
+        painter.end()
+
+        bitmap_refresh = QPixmap(50, 50)
+        bitmap_refresh.fill(Qt.transparent)
+        painter = QPainter()
+        painter.begin(bitmap_refresh)
+        pen = painter.pen()
+        pen.setWidth(5)
+        pen.setColor(Qt.white)
+        pen.setCapStyle(Qt.RoundCap)
+        painter.setPen(pen)
+        rectangle = QRectF(bitmap_refresh.rect().adjusted(13, 13, -13, -13))
+        painter.setBrush(QBrush(Qt.white))
+        startAngle = 60 * 16
+        spanAngle = (180-60) * 16
+        painter.drawArc(rectangle, startAngle, spanAngle)
+        startAngle = (180+60) * 16
+        spanAngle = (360-180-60) * 16
+        painter.drawArc(rectangle, startAngle, spanAngle)
+        w = bitmap_refresh.rect().width()
+        points = [
+            QPointF(50, 50) - QPointF(44, w/2),
+            QPointF(50, 50) - QPointF(31, w/2),
+            QPointF(50, 50) - QPointF(37.5, w/2-8),
+        ]
+        poly = QPolygonF(points)
+        painter.setPen(Qt.NoPen)
+        painter.drawPolygon(poly, fillRule=Qt.WindingFill)
+        points = [
+            QPointF(44, w/2),
+            QPointF(31, w/2),
+            QPointF(37.5, w/2-8),
+        ]
+        poly = QPolygonF(points)
+        painter.setPen(Qt.NoPen)
+        painter.drawPolygon(poly, fillRule=Qt.WindingFill)
+        painter.end()
+
+        cls.icon_cancel = QIcon(bitmap_cancel)
+        cls.icon_halt = QIcon(bitmap_halt)
+        path = os.path.join(os.path.dirname(__file__), "icon.png")
+        cls.icon_multiframing = QIcon(path)
+        cls.icon_refresh = QIcon(bitmap_refresh)
+
+
+
 
 def get_screenshot_filepath(params):
     return os.path.join(Globals.SCREENSHOT_FOLDER_PATH, f"{params}.png")
@@ -3953,77 +4029,6 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             self.cancel_context_menu = False
             return
 
-        bitmap_cancel = QPixmap(50, 50)
-        bitmap_cancel.fill(Qt.transparent)
-        painter = QPainter()
-        painter.begin(bitmap_cancel)
-        inner_rect = bitmap_cancel.rect().adjusted(13, 13, -13, -13)
-        pen = QPen(QColor(200, 100, 0), 10)
-        pen.setCapStyle(Qt.RoundCap)
-        painter.setPen(pen)
-        painter.drawLine(inner_rect.topLeft(), inner_rect.bottomRight())
-        painter.drawLine(inner_rect.bottomLeft(), inner_rect.topRight())
-        painter.end()
-
-        bitmap_halt = QPixmap(50, 50)
-        bitmap_halt.fill(Qt.transparent)
-        painter = QPainter()
-        painter.begin(bitmap_halt)
-        inner_rect = bitmap_halt.rect().adjusted(13, 13, -13, -13)
-        painter.setBrush(QBrush(QColor(200, 0, 0)))
-        path = QPainterPath()
-        path.addRoundedRect(QRectF(0, 0, 50, 50), 10, 10)
-        painter.drawPath(path)
-        painter.setPen(Qt.NoPen)
-        pen = QPen(Qt.white, 10)
-        pen.setCapStyle(Qt.RoundCap)
-        painter.setPen(pen)
-        painter.drawLine(inner_rect.topLeft(), inner_rect.bottomRight())
-        painter.drawLine(inner_rect.bottomLeft(), inner_rect.topRight())
-        painter.end()
-
-        bitmap_refresh = QPixmap(50, 50)
-        bitmap_refresh.fill(Qt.transparent)
-        painter = QPainter()
-        painter.begin(bitmap_refresh)
-        pen = painter.pen()
-        pen.setWidth(5)
-        pen.setColor(Qt.white)
-        pen.setCapStyle(Qt.RoundCap)
-        painter.setPen(pen)
-        rectangle = QRectF(bitmap_refresh.rect().adjusted(13, 13, -13, -13))
-        painter.setBrush(QBrush(Qt.white))
-        startAngle = 60 * 16
-        spanAngle = (180-60) * 16
-        painter.drawArc(rectangle, startAngle, spanAngle)
-        startAngle = (180+60) * 16
-        spanAngle = (360-180-60) * 16
-        painter.drawArc(rectangle, startAngle, spanAngle)
-        w = bitmap_refresh.rect().width()
-        points = [
-            QPointF(50, 50) - QPointF(44, w/2),
-            QPointF(50, 50) - QPointF(31, w/2),
-            QPointF(50, 50) - QPointF(37.5, w/2-8),
-        ]
-        poly = QPolygonF(points)
-        painter.setPen(Qt.NoPen)
-        painter.drawPolygon(poly, fillRule=Qt.WindingFill)
-        points = [
-            QPointF(44, w/2),
-            QPointF(31, w/2),
-            QPointF(37.5, w/2-8),
-        ]
-        poly = QPolygonF(points)
-        painter.setPen(Qt.NoPen)
-        painter.drawPolygon(poly, fillRule=Qt.WindingFill)
-        painter.end()
-
-        icon_cancel = QIcon(bitmap_cancel)
-        icon_halt = QIcon(bitmap_halt)
-        path = os.path.join(os.path.dirname(__file__), "icon.png")
-        icon_multiframing = QIcon(path)
-        icon_refresh = QIcon(bitmap_refresh)
-
         contextMenu = QMenu()
         contextMenu.setStyleSheet(self.context_menu_stylesheet)
 
@@ -4040,8 +4045,8 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             contextMenu.addSeparator()
 
         render_elements_to_background = add_item("Нарисовать содержимое на фоне и удалить содержимое")
-        special_tool = add_item(icon_multiframing, "Активировать инструмент мультикадрирования")
-        reshot = add_item(icon_refresh, "Переснять скриншот")
+        special_tool = add_item(Globals.icon_multiframing, "Активировать инструмент мультикадрирования")
+        reshot = add_item(Globals.icon_refresh, "Переснять скриншот")
         autocollage = add_item("Автоколлаж")
         fit_images_to_size = add_item("Подогнать все картинки по размеру под одну")
         get_toolwindow_in_view = add_item("Подтянуть панель инструментов")
@@ -4093,8 +4098,8 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         contextMenu.addSeparator() ###############################################################
 
         minimize = add_item("Свернуть на панель задач")
-        cancel = add_item(icon_cancel, "Отменить создание скриншота")
-        halt = add_item(icon_halt, "Отменить создание скриншота и вырубить приложение")
+        cancel = add_item(Globals.icon_cancel, "Отменить создание скриншота")
+        halt = add_item(Globals.icon_halt, "Отменить создание скриншота и вырубить приложение")
 
         action = contextMenu.exec_(self.mapToGlobal(event.pos()))
         if action == None:
@@ -4758,6 +4763,7 @@ def _main():
     read_settings_file()
 
     app = QApplication(sys.argv)
+    Globals.generate_icons()
     app.aboutToQuit.connect(exit_threads)
     # app.setAttribute(Qt.AA_DontShowIconsInMenus, True)
     # задание иконки для таскбара

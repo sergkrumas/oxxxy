@@ -1069,9 +1069,6 @@ class CheckBoxCustom(QCheckBox):
 
     def state_changed(self, int_value):
         self.update()
-        if self.parent():
-            self.parent().update()
-            self.parent().on_parameters_changed()
 
 class CustomPushButton(QPushButton):
     right_clicked = pyqtSignal()
@@ -2466,6 +2463,8 @@ class ToolsWindow(QWidget):
         forwards_btn.setToolTip("<b>Накатить шаг обратно</b><br>Ctrl+Shift+Z")
         backwards_btn.setToolTip("<b>Откатиться на шаг назад</b><br>Ctrl+Z")
 
+
+        # для пометок
         if Globals.USE_COLOR_PALETTE:
             _type = "PALETTE"
         else:
@@ -2480,6 +2479,7 @@ class ToolsWindow(QWidget):
         self.chb_toolbool.setStyleSheet(checkbox_style)
         self.chb_toolbool.setEnabled(False)
         self.chb_toolbool.installEventFilter(self)
+        self.chb_toolbool.stateChanged.connect(self.on_parameters_changed)
         sliders.addWidget(self.chb_toolbool)
 
         self.size_slider = CustomSlider("SCALAR", 180, 0.2, Globals.ENABLE_FLAT_EDITOR_UI)
@@ -2492,7 +2492,10 @@ class ToolsWindow(QWidget):
         self.opacity_slider.value_changed.connect(self.on_parameters_changed)
         self.opacity_slider.installEventFilter(self)
         self.opacity_slider.setToolTip("Слайдер прозрачности")
+        checkboxes.addWidget(self.opacity_slider)
 
+
+        # общие для скриншота
         tools_settings = self.parent().tools_settings
 
         self.chb_savecaptureframe = CheckBoxCustom("Запомнить захват")
@@ -2502,7 +2505,7 @@ class ToolsWindow(QWidget):
         self.chb_savecaptureframe.setStyleSheet(checkbox_style)
         self.chb_savecaptureframe.installEventFilter(self)
         self.chb_savecaptureframe.setChecked(tools_settings.get('savecaptureframe', False))
-        self.chb_savecaptureframe.stateChanged.connect(self.parent().update_saved_capture_callback)
+        self.chb_savecaptureframe.stateChanged.connect(self.on_screenshot_parameters_changed)
         checkboxes.addWidget(self.chb_savecaptureframe)
 
         self.chb_masked = CheckBoxCustom("Обтравка")
@@ -2513,6 +2516,7 @@ class ToolsWindow(QWidget):
         self.chb_masked.setStyleSheet(checkbox_style)
         self.chb_masked.installEventFilter(self)
         self.chb_masked.setChecked(tools_settings.get("masked", False))
+        self.chb_masked.stateChanged.connect(self.on_screenshot_parameters_changed)
         self.parent().hex_mask = tools_settings.get("hex_mask", False)
         checkboxes.addWidget(self.chb_masked)
 
@@ -2522,6 +2526,7 @@ class ToolsWindow(QWidget):
         self.chb_draw_thirds.setStyleSheet(checkbox_style)
         self.chb_draw_thirds.installEventFilter(self)
         self.chb_draw_thirds.setChecked(tools_settings.get("draw_thirds", False))
+        self.chb_draw_thirds.stateChanged.connect(self.on_screenshot_parameters_changed)
         checkboxes.addWidget(self.chb_draw_thirds)
 
         self.chb_add_meta = CheckBoxCustom("Метаинфа")
@@ -2531,6 +2536,7 @@ class ToolsWindow(QWidget):
         self.chb_add_meta.installEventFilter(self)
         self.chb_add_meta.setChecked(tools_settings.get("add_meta", False))
         if os.name == 'nt':
+            self.chb_add_meta.stateChanged.connect(self.on_screenshot_parameters_changed)            
             checkboxes.addWidget(self.chb_add_meta)
 
         self.chb_draw_cursor = CheckBoxCustom("Курсор")
@@ -2538,9 +2544,8 @@ class ToolsWindow(QWidget):
         self.chb_draw_cursor.setStyleSheet(checkbox_style)
         self.chb_draw_cursor.installEventFilter(self)
         self.chb_draw_cursor.setChecked(tools_settings.get("draw_cursor", False))
+        self.chb_draw_cursor.stateChanged.connect(self.on_screenshot_parameters_changed) 
         checkboxes.addWidget(self.chb_draw_cursor)
-
-        checkboxes.addWidget(self.opacity_slider)
 
         spacing = 2
         cms = 2
@@ -2659,15 +2664,8 @@ class ToolsWindow(QWidget):
         self.parent().elementsHistoryBackwards()
         self.forwards_backwards_update()
 
-    def on_parameters_changed(self):
-        self.parent().elementsParametersChanged()
-        # обновление параметров инструментов
+    def on_screenshot_parameters_changed(self):        
         ts = self.parent().tools_settings
-        # инструменты и их параметры
-        values = ts.get("values", {})
-        values.update({self.current_tool: self.tool_data_dict_from_ui()})
-        ts.update({"values": values})
-        # прочее
         ts.update({
             "masked": self.chb_masked.isChecked(),
             "draw_thirds": self.chb_draw_thirds.isChecked(),
@@ -2676,7 +2674,23 @@ class ToolsWindow(QWidget):
             "savecaptureframe": self.chb_savecaptureframe.isChecked(),
             "draw_cursor": self.chb_draw_cursor.isChecked(),
         })
+        if self.chb_savecaptureframe.isChecked():
+            self.parent().update_saved_capture()
+        if Globals.DEBUG:
+            self.parent().save_tools_settings()
         self.parent().update()
+
+    def on_parameters_changed(self):
+        self.parent().elementsParametersChanged()
+        # обновление параметров инструментов
+        ts = self.parent().tools_settings
+        # инструменты и их параметры
+        values = ts.get("values", {})
+        values.update({self.current_tool: self.tool_data_dict_from_ui()})
+        ts.update({"values": values})
+        self.parent().update()
+        if Globals.DEBUG:
+            self.parent().save_tools_settings()
 
     def keyPressEvent(self, event):
         # это делается для того, чтобы после использования окна редактора
@@ -3744,10 +3758,6 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         action = menu.exec_(QCursor().pos())
         click_handler(action)
 
-    def update_saved_capture_callback(self, int_value):
-        if int_value:
-            self.update_saved_capture()
-
     def update_saved_capture(self):
         ts = self.tools_settings
         if ts.get("savecaptureframe", False):
@@ -4259,10 +4269,13 @@ class ScreenshotWindow(QWidget, ElementsMixin):
                 data = touching_move_data[self.region_num]
                 self.undermouse_region_info = RegionInfo(*data)
 
+    def save_tools_settings(self):
+        SettingsJson().set_data("TOOLS_SETTINGS", self.tools_settings)
+
     def close_this(self, save_settings=True, force_close=False):
         # сохранение настроек тулз
         if save_settings:
-            SettingsJson().set_data("TOOLS_SETTINGS", self.tools_settings)
+            self.save_tools_settings()
         if Globals.close_editor_on_done or force_close:
             if self.tools_window:
                 self.tools_window.update_timer.stop()

@@ -2269,6 +2269,7 @@ class ToolsWindow(QWidget):
             DEFAULT_TOOLBOOL_VALUE = False
         else:
             DEFAULT_TOOLBOOL_VALUE = True
+        self.parent().disable_callbacks = True
         self.color_slider.value = data.get("color_slider_value", DEFAULT_COLOR_SLIDER_VALUE)
         self.color_slider.palette_index = data.get("color_slider_palette_index",
                                                                 DEFAULT_COLOR_SLIDER_PALETTE_INDEX)
@@ -2294,6 +2295,7 @@ class ToolsWindow(QWidget):
                     main_window.current_picture_id = PictureInfo.TYPE_STAMP
                     main_window.current_picture_angle = 0
                     self.on_parameters_changed()
+        self.parent().disable_callbacks = False                    
         self.update() #обязательно!
 
     def set_tool_data(self):
@@ -3615,7 +3617,6 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             element.element_position = self.input_POINT2
             element.element_position += QPointF(pixmap.width()/2, pixmap.height()/2)
             self.elementsSetSelected(element)
-            self.elementsUpdatePanelUI()
         self.update()
 
     def place_view_window(self):

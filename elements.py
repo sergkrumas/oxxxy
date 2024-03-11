@@ -107,6 +107,12 @@ class Element():
         self.background_image = False
 
         self.opacity = 1.0
+        self.color = QColor(0, 0, 0)
+        self.size = 1.0
+        self.color_slider_value = 0.1
+        self.color_slider_palette_index = 0
+        self.toolbool = False
+
 
         self.textbox = None
 
@@ -851,7 +857,7 @@ class ElementsMixin(ElementsTransformMixin):
                 element.element_position = pos + QPointF(picture.width()/2, picture.height()/2)
                 element.calc_local_data()
                 pos += QPoint(element.pixmap.width(), 0)
-                self.elementsUpdatePanelUI()
+                self.elementsActiveElementParamsToPanelSliders()
 
         self.update()
 
@@ -943,8 +949,7 @@ class ElementsMixin(ElementsTransformMixin):
             copy_textbox.setText(copy_textbox_value)
             setattr(element, "textbox", copy_textbox)
 
-    def elementsUpdatePanelUI(self):
-        self.elementsDeactivateTextElements()
+    def elementsActiveElementParamsToPanelSliders(self):
         tw = self.tools_window
         if not tw:
             return
@@ -974,7 +979,7 @@ class ElementsMixin(ElementsTransformMixin):
     def elementsOnTransformToolActivated(self):
         if self.active_element:
             self.elementsSetSelected(self.active_element)
-        self.elementsUpdatePanelUI()
+        self.elementsActiveElementParamsToPanelSliders()
         self.update()
         self.activateWindow() # чтобы фокус не соскакивал на панель иструментов
 
@@ -1017,7 +1022,6 @@ class ElementsMixin(ElementsTransformMixin):
 
     def elementsCreateNew(self, element_type, start_drawing=False,
                                         create_new_slot=True, content_type=None, history_slot=None):
-        self.elementsDeactivateTextElements()
         # срезание отменённой (невидимой) части истории
         # перед созданием элемента
         if create_new_slot:
@@ -1038,18 +1042,18 @@ class ElementsMixin(ElementsTransformMixin):
         # создание элемента
         element = Element(element_type, self.elements)
         self.elementsAppendElementToHS(element, hs)
-        self.elementsSetElementParameters(element)
         # обновление индекса после создания элемента
         self.elements_history_index = len(self.history_slots)
         return element
 
-    def elementsSetSelected(self, arg):
+    def elementsSetSelected(self, arg, update_panel=True):
         els = None
         el = None
         if isinstance(arg, (list, tuple)):
             els = arg
         else:
             el = arg
+
         # reset
         for el in self.elements:
             el._selected = False
@@ -1063,7 +1067,8 @@ class ElementsMixin(ElementsTransformMixin):
                 el._selected = True
         # updating
         self.init_selection_bounding_box_widget()
-        self.elementsUpdatePanelUI()
+        if update_panel:
+            self.elementsActiveElementParamsToPanelSliders()
         self.update()
 
     def elementsSelectDeselectAll(self):
@@ -1077,7 +1082,7 @@ class ElementsMixin(ElementsTransformMixin):
             for el in self.elementsFilterElementsForSelection():
                 el._selected = True
         self.init_selection_bounding_box_widget()
-        self.elementsUpdatePanelUI()
+        self.elementsActiveElementParamsToPanelSliders()
         self.update()
 
     def elementsFilterElementsForSelection(self):
@@ -1219,9 +1224,11 @@ class ElementsMixin(ElementsTransformMixin):
         elif self.elementsIsSpecialCase(el):
             # zoom_in_region and copypaste case, when it needs more additional clicks
             element = self.elementsCreateNew(self.current_tool, start_drawing=True, create_new_slot=False)
+            self.elementsSetElementParameters(element)
         else:
             # default case
             element = self.elementsCreateNew(self.current_tool, start_drawing=True)
+            self.elementsSetElementParameters(element)
         # #######
         if tool == ToolID.arrow:
             self.elementsMousePressEventDefault(element, event)
@@ -1318,11 +1325,11 @@ class ElementsMixin(ElementsTransformMixin):
         new_elements = []
         for element in self.selected_items[:]:
             mod_el = self.elementsPrepareForModificationsIfNeeded(element)
+            new_elements.append(mod_el)
             if hasattr(mod_el, 'element_position'):
                 mod_el.element_position += delta
             else:
                 raise Exception('Unsupported type:', mod_el.type)
-            new_elements.append(mod_el)
         self.elementsSetSelected(new_elements)
         self.update()
 
@@ -2274,8 +2281,9 @@ class ElementsMixin(ElementsTransformMixin):
             case1 = element and element.type == tw.current_tool
             case2 = element and tw.current_tool == ToolID.transform
             if case1 or case2:
-                element = self.elementsPrepareForModificationsIfNeeded(element)
-                self.elementsSetElementParameters(element)
+                el = self.elementsPrepareForModificationsIfNeeded(element)
+                self.elementsSetSelected(el, update_panel=False)
+                self.elementsSetElementParameters(el)
         self.update()
         self.activateWindow() # чтобы фокус не соскакивал на панель иструментов
 
@@ -2679,7 +2687,7 @@ class ElementsMixin(ElementsTransformMixin):
                 element.element_position = pos + QPointF(pixmap.width()/2, pixmap.height()/2)
                 element.calc_local_data()
                 self.elementsSetSelected(element)
-                self.elementsUpdatePanelUI()
+                self.elementsActiveElementParamsToPanelSliders()
         else:
             print("image is broken")
 

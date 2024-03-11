@@ -267,7 +267,7 @@ class Element():
             )
 
             self.local_end_point.setX(self.local_end_point.x() * self.element_scale_x)
-            self.local_end_point.setY(self.local_end_point.y() * self.element_scale_y) 
+            self.local_end_point.setY(self.local_end_point.y() * self.element_scale_y)
 
             self.local_start_point.setX(self.local_start_point.x() * self.element_scale_x)
             self.local_start_point.setY(self.local_start_point.y() * self.element_scale_y)
@@ -277,7 +277,7 @@ class Element():
             self.element_scale_x = self.element_scale_y = 1.0
 
     def disable_distortion_fixer(self):
-        if hasattr(self, '_saved_data'):        
+        if hasattr(self, '_saved_data'):
             self.local_end_point, \
             self.local_start_point, \
             self.element_width, \
@@ -2014,7 +2014,7 @@ class ElementsMixin(ElementsTransformMixin):
 
 
             painter.resetTransform()
-        element.disable_distortion_fixer()            
+        element.disable_distortion_fixer()
 
     def elementsGetRectCorners(self, rect):
         return [

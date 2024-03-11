@@ -3345,39 +3345,39 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         self.setWindowTitle(f"Oxxxy Screenshoter {Globals.VERSION_INFO} {Globals.AUTHOR_INFO}")
 
         self.context_menu_stylesheet = """
-        QMenu{
+        QMenu, QCheckBox{
             padding: 0px;
             font-size: 16px;
             font-weight: normal;
             font-family: 'Consolas';
         }
-        QMenu::item {
+        QMenu::item, QCheckBox{
             padding: 10px;
             background: #303940;
             color: rgb(230, 230, 230);
         }
-        QMenu::icon {
+        QMenu::icon{
             padding-left: 15px;
         }
-        QMenu::item:selected {
+        QMenu::item:selected, QCheckBox:hover{
             background-color: rgb(253, 203, 54);
             color: rgb(50, 50, 50);
             border-left: 2px dashed #303940;
         }
-        QMenu::item:checked {
+        QMenu::item:checked, QCheckBox:checked{
             font-weight: bold;
             color: white;
             background: #304550;
         }
-        QMenu::item:unchecked {
+        QMenu::item:unchecked, QCheckBox:unchecked{
             background: #304550;
         }
-        QMenu::item:checked:selected{
+        QMenu::item:checked:selected, QCheckBox:checked:hover{
             font-weight: bold;
             color: rgb(50, 50, 50);
             background-color: rgb(253, 203, 54);
         }
-        QMenu::item:unchecked:selected{
+        QMenu::item:unchecked:selected, QCheckBox:unchecked:hover{
             color: rgb(50, 50, 50);
             background-color: rgb(253, 203, 54);
         }
@@ -3389,8 +3389,6 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         QMenu::separator {
             height: 1px;
             background: gray;
-        }
-        QMenu::item:checked {
         }
         QMenu::indicator {
             left: 6px;
@@ -4090,6 +4088,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         for title, value, callback in checkboxes:
             wa = QWidgetAction(contextMenu)
             chb = QCheckBox(title)
+            chb.setStyleSheet(self.context_menu_stylesheet)
             chb.setChecked(value)
             chb.stateChanged.connect(callback)
             wa.setDefaultWidget(chb)

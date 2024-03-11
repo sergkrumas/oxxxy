@@ -4332,6 +4332,12 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             if self.tools_window:
                 self.tools_window.done_button.setEnabled(True)
 
+    def keyReleaseEvent(self, event):
+        if not event.isAutoRepeat():
+            # сюда попадём только когда отпускается клавиша,
+            # во вне условия будет срабатывать постоянно пока зажата клавиша
+            self.elementsDeacquireStampForFinishedElementsModification()
+
     def keyPressEvent(self, event):
         key = event.key()
         arrow_keys = [Qt.Key_Up, Qt.Key_Down, Qt.Key_Right, Qt.Key_Left]

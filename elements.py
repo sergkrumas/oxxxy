@@ -25,6 +25,7 @@ import sys
 import os
 import itertools
 import json
+import time
 
 from PyQt5.QtWidgets import (QSystemTrayIcon, QWidget, QMessageBox, QMenu, QGraphicsPixmapItem,
     QGraphicsScene, QFileDialog, QHBoxLayout, QCheckBox, QVBoxLayout, QTextEdit, QGridLayout,
@@ -135,6 +136,8 @@ class Element():
 
         self._selected = False
         self._touched = False
+
+        self._modification_stamp = 0.0
 
     def __repr__(self):
         return f'{self.unique_index} {self.type}'
@@ -333,11 +336,24 @@ class ElementsMixin(ElementsTransformMixin):
         self.elementsInitTransform()
         self.elementsSetSelected(None)
 
+        self.modification_stamp = None
+
         self.elements_final_output = None
 
         self.capture_region_widget_enabled = True
         self.show_background = True
         self.dark_pictures = True
+
+    def elementsAcquireStampForOngoingElementsModification(self):
+        if self.modification_stamp is None:
+            self.modification_stamp = time.time()
+
+    def elementsDeacquireStampForFinishedElementsModification(self):
+        self.modification_stamp = None
+
+    def elementsCheckAcquiredModificationStamp(self):
+        if self.modification_stamp is None:
+            raise Exception('Unsupported modification!')
 
     def elementsFindBackgroundSlot(self):
         for slot in self.elementsHistoryFilterSlots():
@@ -1315,6 +1331,7 @@ class ElementsMixin(ElementsTransformMixin):
         self.update()
 
     def elementsMoveElement(self, event):
+        self.elementsAcquireStampForOngoingElementsModification()
         modifiers = QApplication.queryKeyboardModifiers()
         value = 1
         if modifiers & Qt.ShiftModifier:
@@ -1330,7 +1347,7 @@ class ElementsMixin(ElementsTransformMixin):
             delta = QPoint(-value, 0)
         new_elements = []
         for element in self.selected_items[:]:
-            mod_el = self.elementsPrepareForModificationsIfNeeded(element)
+            mod_el = self.elementsPrepareElementCopyForModifications(element)
             new_elements.append(mod_el)
             if hasattr(mod_el, 'element_position'):
                 mod_el.element_position += delta
@@ -1438,7 +1455,7 @@ class ElementsMixin(ElementsTransformMixin):
                     self.canvas_selection_callback(event.modifiers() == Qt.ShiftModifier)
 
             for element in self.selected_items[:]:
-                element = self.elementsPrepareForModificationsIfNeeded(element)
+                element = self.elementsPrepareElementCopyForModifications(element)
 
         self.update()
 
@@ -2271,14 +2288,20 @@ class ElementsMixin(ElementsTransformMixin):
                 if self.tools_window and self.tools_window.chb_masked.isChecked():
                     self.elements_final_output = self.circle_mask_image(self.elements_final_output)
 
-    def elementsPrepareForModificationsIfNeeded(self, element):
+    def elementsPrepareElementCopyForModifications(self, element):
+        if self.modification_stamp is None:
+            raise Exception('modifcation stamp is not acquired for this modification operation!')
         if element.hs.content_type in (ToolID.zoom_in_region, ToolID.copypaste):
             return element
         else:
-            new_element = self.elementsCreateNew(ToolID.TEMPORARY_TYPE_NOT_DEFINED)
-            self.elementsCopyElementData(new_element, element)
-            new_element.source_index = element.unique_index
-            return new_element
+            if element._modification_stamp != self.modification_stamp:
+                new_element = self.elementsCreateNew(ToolID.TEMPORARY_TYPE_NOT_DEFINED)
+                self.elementsCopyElementData(new_element, element)
+                new_element.source_index = element.unique_index
+                new_element._modification_stamp = self.modification_stamp
+                return new_element
+            else:
+                return element
 
     def elementsParametersChanged(self):
         tw = self.tools_window
@@ -2287,7 +2310,7 @@ class ElementsMixin(ElementsTransformMixin):
             case1 = element and element.type == tw.current_tool
             case2 = element and tw.current_tool == ToolID.transform
             if case1 or case2:
-                el = self.elementsPrepareForModificationsIfNeeded(element)
+                el = self.elementsPrepareElementCopyForModifications(element)
                 self.elementsSetSelected(el, update_panel=False)
                 self.elementsSetElementParameters(el)
         self.update()
@@ -2533,7 +2556,7 @@ class ElementsMixin(ElementsTransformMixin):
         pos = QPointF(0, 0)
         for source_element in elements:
 
-            element = self.elementsPrepareForModificationsIfNeeded(source_element)
+            element = self.elementsPrepareElementCopyForModifications(source_element)
 
             start_br = element.get_canvas_space_selection_area().boundingRect()
 

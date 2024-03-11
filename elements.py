@@ -2090,10 +2090,12 @@ class ElementsMixin(ElementsTransformMixin):
     def elementsDrawDebugInfo(self, painter, viewport_input_rect):
         if self.capture_region_rect:
             r = self.capture_region_rect
+            pos_right = self.elementsMapFromCanvasToViewport(r.bottomRight())
+            pos_left = self.elementsMapFromCanvasToViewport(r.bottomLeft())
         else:
             r = viewport_input_rect
-        pos_right = self.elementsMapFromCanvasToViewport(r.bottomRight())
-        pos_left = self.elementsMapFromCanvasToViewport(r.bottomLeft())
+            pos_right = r.bottomRight()
+            pos_left = r.bottomLeft()
         visible_elements = self.elementsHistoryFilter()
 
         def get_element_info_into_text(elem):

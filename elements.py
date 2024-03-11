@@ -1151,14 +1151,6 @@ class ElementsMixin(ElementsTransformMixin):
         special_case = special_case and hs and not len(hs.elements) == 2
         return special_case
 
-    def elementsFreshAttributeHandler(self, el):
-        if el:
-            if hasattr(el, 'finished'):
-                if el.finished:
-                    el.fresh = False
-            else:
-                el.fresh = False
-
     def elementsAdvancedInputPressEvent(self, event, event_pos, element):
         els_count = len(element.hs.elements)
         if els_count == 1:
@@ -1212,7 +1204,6 @@ class ElementsMixin(ElementsTransformMixin):
             return
         # основная часть
         el = self.elementsGetLastElement()
-        self.elementsFreshAttributeHandler(el)
         if self.current_tool == ToolID.transform:
             element = None
         elif self.elementsIsSpecialCase(el):
@@ -2258,7 +2249,7 @@ class ElementsMixin(ElementsTransformMixin):
         tw = self.tools_window
         if tw:
             element = self.active_element or self.elementsGetLastElement()
-            case1 = element and element.type == self.tools_window.current_tool and element.fresh
+            case1 = element and element.type == self.tools_window.current_tool
             case2 = element and tw.current_tool == ToolID.transform
             if case1 or case2:
                 element = self.elementsPrepareForModificationsIfNeeded(element)

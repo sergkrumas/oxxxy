@@ -2337,11 +2337,6 @@ class ToolsWindow(QWidget):
         if self.current_tool != ToolID.transform:
             self.set_ui_on_toolchange()
 
-        p = self.parent()
-        el = p.elementsGetLastElement()
-        if el:
-            el.fresh = False
-
     def update_timer_handler(self):
         for but in self.tools_buttons:
             but.update()

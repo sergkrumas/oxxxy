@@ -2134,12 +2134,19 @@ class ElementsMixin(ElementsTransformMixin):
         painter.fillRect(info_rect, QColor(0, 0, 0, 180))
         info_rect.moveBottomLeft(QPointF(10, -10) + info_rect.bottomLeft())
         vertical_offset = 0
+        visible_slots = self.elementsHistoryFilterSlots()
         for index, hs in list(enumerate(self.history_slots)):
             painter.save()
             painter.setPen(Qt.white)
             slot_info_text = f'[slot {index}] {hs.content_type}'
             font = painter.font()
             pixel_height = 25
+            if hs not in visible_slots:
+                painter.setPen(QPen(QColor(255, 100, 100)))
+                font.setStrikeOut(True)
+            else:
+                painter.setPen(QPen(Qt.white))
+                font.setStrikeOut(False)
             font.setPixelSize(20)
             painter.setFont(font)
             vertical_offset += (len(hs.elements) + 1)

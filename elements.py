@@ -100,7 +100,6 @@ class Element():
             Element._counter = 0
         self.unique_index = Element._counter
 
-        self.fresh = True
         self.finished = False
 
         self.backup_pixmap = None

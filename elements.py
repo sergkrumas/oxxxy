@@ -2018,8 +2018,7 @@ class ElementsMixin(ElementsTransformMixin):
         painter.setRenderHint(QPainter.HighQualityAntialiasing, True)
         painter.setRenderHint(QPainter.Antialiasing, True)
         painter.setRenderHint(QPainter.SmoothPixmapTransform, True)
-        old_brush = painter.brush()
-        old_pen = painter.pen()
+        painter.save()
         # draw elements
         if not self.dark_pictures:
             self.elementsDrawDarkening(painter)
@@ -2057,8 +2056,7 @@ class ElementsMixin(ElementsTransformMixin):
             painter.drawText(self.capture_region_rect, Qt.AlignCenter, text)
         if self.dark_pictures:
             self.elementsDrawDarkening(painter)
-        painter.setBrush(old_brush)
-        painter.setPen(old_pen)
+        painter.restore()
 
         painter.setRenderHint(QPainter.HighQualityAntialiasing, False)
         painter.setRenderHint(QPainter.Antialiasing, False)

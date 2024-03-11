@@ -2078,7 +2078,7 @@ class ElementsMixin(ElementsTransformMixin):
         pos_left = self.elementsMapFromCanvasToViewport(r.bottomLeft())
         visible_elements = self.elementsHistoryFilter()
 
-        def build_info_text(elem):
+        def get_element_info_into_text(elem):
             info_text = ""
             if hasattr(elem, "source_index"):
                 info_text += f"[{elem.unique_index}] {elem.type} from [{elem.source_index}]"
@@ -2101,7 +2101,7 @@ class ElementsMixin(ElementsTransformMixin):
 
         pos_left += QPointF(-10, -10)
         for element in self.elements:
-            element.debug_text = build_info_text(element)
+            element.debug_text = get_element_info_into_text(element)
             max_width = max(max_width, painter.boundingRect(QRect(), Qt.AlignLeft, element.debug_text).width())
 
         for n, element in enumerate(self.elements):
@@ -2118,7 +2118,17 @@ class ElementsMixin(ElementsTransformMixin):
         painter.restore()
 
 
-        # правая сторона
+        # правая сторона, под линией
+        if self.active_element is not None:
+            info = get_element_info_into_text(self.active_element)
+        else:
+            info = f'No active element: {self.active_element}'
+        r = painter.boundingRect(QRect(), Qt.AlignLeft, info)
+        right_underground = pos_right + QPointF(0, r.height())
+        painter.drawText(right_underground, info)
+
+
+        # правая сторона, над линией
         info_rect = build_valid_rectF(pos_right, self.rect().topRight())
         info_rect.setWidth(800)
         painter.fillRect(info_rect, QColor(0, 0, 0, 180))
@@ -2148,7 +2158,7 @@ class ElementsMixin(ElementsTransformMixin):
                 if self.selected_items and elem in self.selected_items:
                     painter.setPen(QPen(Qt.green))
 
-                info_text = build_info_text(elem)
+                info_text = get_element_info_into_text(elem)
 
                 y = -vertical_offset*pixel_height + pixel_height*(i+1)
                 pos_right = info_rect.bottomLeft() + QPointF(100, y)

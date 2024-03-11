@@ -2976,6 +2976,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         painter.setRenderHint(QPainter.SmoothPixmapTransform, False)
 
     def draw_uncapture_zones_mode_info(self, painter):
+        painter.save()
         info = {
             LayerOpacity.FullTransparent: 'Прозрачность фона: 100%',
             LayerOpacity.HalfTransparent: 'Прозрачность фона: 50%',
@@ -2993,6 +2994,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             painter.drawRect(rect)
             painter.setPen(QPen(QColor(255, 255, 255)))
             painter.drawText(rect, Qt.AlignLeft | Qt.AlignTop, text_info)
+        painter.restore()
 
     def draw_magnifier(self, painter, input_rect, cursor_pos, text_pen, text_white_pen):
         MAGNIFIER_SIZE = self.magnifier_size

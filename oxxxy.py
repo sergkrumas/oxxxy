@@ -3935,6 +3935,19 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         Globals.DEBUG = not Globals.DEBUG
         self.update()
 
+    def toggle_capture_region_widget(self):
+        self.capture_region_widget_enabled = not self.capture_region_widget_enabled
+        self.update()
+
+    def toggle_dark_pictures(self):
+        self.dark_pictures = not self.dark_pictures
+        self.elementsUpdateFinalPicture()
+        self.update()
+
+    def toggle_close_on_done(self):
+        Globals.close_editor_on_done = not Globals.close_editor_on_done
+        self.update()
+
     def contextMenuEvent(self, event):
         if self.cancel_context_menu:
             self.cancel_context_menu = False
@@ -4054,44 +4067,28 @@ class ScreenshotWindow(QWidget, ElementsMixin):
 
         contextMenu.addSeparator()
 
-        for i in range(2):
-            wa = QWidgetAction(contextMenu)
-            m = QCheckBox(f'Checkbox {i}', contextMenu)
-            wa.setDefaultWidget(m)
-            contextMenu.addAction(wa)
-
-        start_save_to_memory_mode = add_item("Сохранить результат в память")
-        start_save_to_memory_mode.setCheckable(True)
-        start_save_to_memory_mode.setChecked(Globals.save_to_memory_mode)
-
         if Globals.images_in_memory:
             finish_save_to_memory_mode = add_item("Разложить на холсте все готовые изображения из памяти")
         else:
             finish_save_to_memory_mode = None
 
-        enable_capture_widget = add_item("Виджет области захвата")
-        enable_capture_widget.setCheckable(True)
-        enable_capture_widget.setChecked(self.capture_region_widget_enabled)
+        checkboxes = (
+            ("Сохранить результат в память", Globals.save_to_memory_mode, self.elementsStartSaveToMemoryMode),
+            ("Виджет области захвата", self.capture_region_widget_enabled, self.toggle_capture_region_widget),
+            ("Фон", self.show_background, self.toggle_show_background),
+            ("Затемнять после отрисовки пометок", self.dark_pictures, self.toggle_dark_pictures),
+            ("Закрывать редактор после нажатия кнопки «Готово»", Globals.close_editor_on_done, self.toggle_close_on_done),
+            ("Показывать дебаг-отрисовку для виджета трансформации", self.canvas_debug_transform_widget, self.toggle_transform_widget_debug_mode),
+            ("DEBUG", Globals.DEBUG, self.toggle_debug_mode),
+        )
 
-        show_background = add_item("Фон")
-        show_background.setCheckable(True)
-        show_background.setChecked(self.show_background)
-
-        toggle_dark_pictures = add_item("Затемнять после отрисовки пометок")
-        toggle_dark_pictures.setCheckable(True)
-        toggle_dark_pictures.setChecked(self.dark_pictures)
-
-        toggle_close_on_done = add_item("Закрывать редактор после нажатия кнопки Готово")
-        toggle_close_on_done.setCheckable(True)
-        toggle_close_on_done.setChecked(Globals.close_editor_on_done)
-
-        transform_widget_debug_mode = add_item("Показывать дебаг-отрисовку для виджета трансформации")
-        transform_widget_debug_mode.setCheckable(True)
-        transform_widget_debug_mode.setChecked(self.canvas_debug_transform_widget)
-
-        toggle_debug_mode = add_item("DEBUG")
-        toggle_debug_mode.setCheckable(True)
-        toggle_debug_mode.setChecked(Globals.DEBUG)
+        for title, value, callback in checkboxes:
+            wa = QWidgetAction(contextMenu)
+            chb = QCheckBox(title)
+            chb.setChecked(value)
+            chb.stateChanged.connect(callback)
+            wa.setDefaultWidget(chb)
+            contextMenu.addAction(wa)
 
         contextMenu.addSeparator() ###############################################################
 
@@ -4106,22 +4103,14 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             pass
         elif action == save_project:
             self.save_project()
-        elif action == toggle_debug_mode:
-            self.toggle_debug_mode()
         elif action == reset_panzoom:
             self.elementsResetPanZoom()
         elif action == reset_pan:
             self.elementsResetPanZoom(reset_zoom=False)
         elif action == reset_zoom:
             self.elementsResetPanZoom(reset_pan=False)
-        elif action == enable_capture_widget:
-            self.capture_region_widget_enabled = not self.capture_region_widget_enabled
         elif action == open_project:
             self.open_project()
-        elif action == show_background:
-            self.toggle_show_background()
-        elif action == transform_widget_debug_mode:
-            self.toggle_transform_widget_debug_mode()
         elif action == fit_images_to_size:
             self.elementsFitImagesToSize()
         elif action == render_elements_to_background:
@@ -4143,14 +4132,6 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             else:
                 pixmap = sel_elem.backup_pixmap
             self.show_view_window(lambda: pixmap, _type="edit", data=sel_elem.frame_info)
-        elif action == toggle_dark_pictures:
-            self.dark_pictures = not self.dark_pictures
-            self.elementsUpdateFinalPicture()
-            self.update()
-        elif action == toggle_close_on_done:
-            Globals.close_editor_on_done = not Globals.close_editor_on_done
-        elif action == start_save_to_memory_mode:
-            self.elementsStartSaveToMemoryMode()
         elif action == finish_save_to_memory_mode:
             self.elementsFinishSaveToMemoryMode()
         elif action == get_toolwindow_in_view:

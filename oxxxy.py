@@ -4736,9 +4736,10 @@ def _main():
         1 / 0
 
     RERUN_ARG = '-rerun'
-    if (RERUN_ARG not in sys.argv) and ("-aftercrash" not in sys.argv):
-        subprocess.Popen([sys.executable, *sys.argv, RERUN_ARG])
-        sys.exit()
+    if not Globals.DEBUG:
+        if (RERUN_ARG not in sys.argv) and ("-aftercrash" not in sys.argv):
+            subprocess.Popen([sys.executable, *sys.argv, RERUN_ARG])
+            sys.exit()
 
     # разбор аргументов
     parser = argparse.ArgumentParser()
@@ -4755,7 +4756,6 @@ def _main():
         Globals.DEBUG = False
     if args.aftercrash:
         Globals.AFTERCRASH = True
-
     read_settings_file()
 
     app = QApplication(sys.argv)

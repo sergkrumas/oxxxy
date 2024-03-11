@@ -39,7 +39,7 @@ from functools import partial
 from pyqtkeybind import keybinder
 
 from PyQt5.QtWidgets import (QSystemTrayIcon, QWidget, QMessageBox, QMenu, QFileDialog,
-    QHBoxLayout, QCheckBox, QVBoxLayout, QTextEdit, QGridLayout,
+    QHBoxLayout, QCheckBox, QVBoxLayout, QTextEdit, QGridLayout, QWidgetAction,
     QPushButton, QLabel, QApplication, QScrollArea, QDesktopWidget, QActionGroup)
 from PyQt5.QtCore import (pyqtSignal, QPoint, QPointF, pyqtSlot, QRect, QEvent,
     QTimer, Qt, QSize, QSizeF, QRectF, QThread, QAbstractNativeEventFilter,
@@ -3936,9 +3936,6 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         self.update()
 
     def contextMenuEvent(self, event):
-        contextMenu = QMenu()
-        contextMenu.setStyleSheet(self.context_menu_stylesheet)
-
         if self.cancel_context_menu:
             self.cancel_context_menu = False
             return
@@ -4014,6 +4011,9 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         icon_multiframing = QIcon(path)
         icon_refresh = QIcon(bitmap_refresh)
 
+        contextMenu = QMenu()
+        contextMenu.setStyleSheet(self.context_menu_stylesheet)
+
         def add_item(*args):
             return contextMenu.addAction(*args)
 
@@ -4053,6 +4053,12 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         open_project = add_item("Открыть проект")
 
         contextMenu.addSeparator()
+
+        for i in range(2):
+            wa = QWidgetAction(contextMenu)
+            m = QCheckBox(f'Checkbox {i}', contextMenu)
+            wa.setDefaultWidget(m)
+            contextMenu.addAction(wa)
 
         start_save_to_memory_mode = add_item("Сохранить результат в память")
         start_save_to_memory_mode.setCheckable(True)

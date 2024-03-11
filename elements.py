@@ -1233,6 +1233,8 @@ class ElementsMixin(ElementsTransformMixin):
             # default case
             element = self.elementsCreateNew(self.current_tool, start_drawing=True)
             self.elementsSetElementParameters(element)
+        if element is not None:
+            self.active_element = element
         # #######
         if tool == ToolID.arrow:
             self.elementsMousePressEventDefault(element, event)
@@ -1546,8 +1548,6 @@ class ElementsMixin(ElementsTransformMixin):
                         elif element.type == ToolID.text:
                             element.end_point_modified = True
 
-        if tool != ToolID.transform:
-            self.elementsSetSelected(None)
 
         self.elementsAutoDeleteInvisibleElement(element)
         self.tools_window.forwards_backwards_update()

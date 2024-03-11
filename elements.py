@@ -944,22 +944,22 @@ class ElementsMixin(ElementsTransformMixin):
             setattr(element, "textbox", copy_textbox)
 
     def elementsUpdatePanelUI(self):
-        if not self.selected_items:
+        if not self.active_element:
             return
         self.elementsDeactivateTextElements()
-        if len(self.selected_items) > 1:
-            self.tools_window.set_ui_on_toolchange(hide=True)
+        if self.active_element is not None:
+            el = self.active_element
+            self.tools_window.color_slider.value = el.color_slider_value
+            self.tools_window.color_slider.palette_index = el.color_slider_palette_index
+            self.tools_window.size_slider.value = el.size
+            self.tools_window.opacity_slider.value = el.opacity
+            self.tools_window.chb_toolbool.setChecked(el.toolbool)
+            if el.type == ToolID.text:
+                self.elementsActivateTextElement(el)
+            self.tools_window.set_ui_on_toolchange(element_type=el.type)
             self.tools_window.update()
         else:
-            element = self.selected_items[0]
-            self.tools_window.color_slider.value = element.color_slider_value
-            self.tools_window.color_slider.palette_index = element.color_slider_palette_index
-            self.tools_window.size_slider.value = element.size
-            self.tools_window.opacity_slider.value = element.opacity
-            self.tools_window.chb_toolbool.setChecked(element.toolbool)
-            if element.type == ToolID.text:
-                self.elementsActivateTextElement(element)
-            self.tools_window.set_ui_on_toolchange(element_type=element.type)
+            self.tools_window.set_ui_on_toolchange(hide=True)
             self.tools_window.update()
         self.update()
 
@@ -971,9 +971,8 @@ class ElementsMixin(ElementsTransformMixin):
             self.elements = self.elementsHistoryFilter()
 
     def elementsOnTransformToolActivated(self):
-        elements = self.elementsFilterElementsForSelection()
-        if elements:
-            self.elementsSetSelected(elements[-1])
+        if self.active_element:
+            self.elementsSetSelected(self.active_element)
         self.elementsUpdatePanelUI()
         self.update()
         self.activateWindow() # чтобы фокус не соскакивал на панель иструментов
@@ -1043,14 +1042,25 @@ class ElementsMixin(ElementsTransformMixin):
         self.elements_history_index = len(self.history_slots)
         return element
 
-    def elementsSetSelected(self, element):
-        if element is None:
-            self.active_element = None
-            for element in self.elementsHistoryFilter():
-                element._selected = False
+    def elementsSetSelected(self, arg):
+        els = None
+        el = None
+        if isinstance(arg, (list, tuple)):
+            els = arg
         else:
-            element._selected = True
-            self.active_element = element
+            el = arg
+        # reset
+        for el in self.elements:
+            el._selected = False
+        self.active_element = None
+        # setting
+        if el:
+            el._selected = True
+            self.active_element = el
+        if els:
+            for el in els:
+                el._selected = True
+        # updating
         self.init_selection_bounding_box_widget()
         self.elementsUpdatePanelUI()
         self.update()
@@ -1304,13 +1314,15 @@ class ElementsMixin(ElementsTransformMixin):
             delta = QPoint(value, 0)
         elif key == Qt.Key_Left:
             delta = QPoint(-value, 0)
-        for element in self.selected_items:
-            element = self.elementsPrepareForModificationsIfNeeded(element)
-            if hasattr(element, 'element_position'):
-                element.element_position += delta
+        new_elements = []
+        for element in self.selected_items[:]:
+            mod_el = self.elementsPrepareForModificationsIfNeeded(element)
+            if hasattr(mod_el, 'element_position'):
+                mod_el.element_position += delta
             else:
-                raise Exception('Unsupported type:', element.type)
-            self.elementsSetSelected(element)
+                raise Exception('Unsupported type:', mod_el.type)
+            new_elements.append(mod_el)
+        self.elementsSetSelected(new_elements)
         self.update()
 
     def elementsSetCursorShapeInsideCaptureZone(self):
@@ -1411,7 +1423,7 @@ class ElementsMixin(ElementsTransformMixin):
                     self.selection_rect = build_valid_rectF(self.selection_start_point, self.selection_end_point)
                     self.canvas_selection_callback(event.modifiers() == Qt.ShiftModifier)
 
-            for element in self.selected_items:
+            for element in self.selected_items[:]:
                 element = self.elementsPrepareForModificationsIfNeeded(element)
 
         self.update()
@@ -2245,25 +2257,20 @@ class ElementsMixin(ElementsTransformMixin):
                 if self.tools_window and self.tools_window.chb_masked.isChecked():
                     self.elements_final_output = self.circle_mask_image(self.elements_final_output)
 
-    def elementsPrepareForModificationsIfNeeded(self, element, force_new=False):
-        if element == self.elementsGetLastElement() and not force_new:
-            # если элемент последний в списке элементов,
-            # то его предыдущее состояние не сохраняется
-            return element
-        elif element.hs.content_type in (ToolID.zoom_in_region, ToolID.copypaste):
+    def elementsPrepareForModificationsIfNeeded(self, element):
+        if element.hs.content_type in (ToolID.zoom_in_region, ToolID.copypaste):
             return element
         else:
             new_element = self.elementsCreateNew(ToolID.TEMPORARY_TYPE_NOT_DEFINED)
             self.elementsCopyElementData(new_element, element)
             new_element.source_index = element.unique_index
-            self.elementsSetSelected(new_element)
             return new_element
 
     def elementsParametersChanged(self):
         tw = self.tools_window
         if tw:
-            element = self.active_element or self.elementsGetLastElement()
-            case1 = element and element.type == self.tools_window.current_tool
+            element = self.active_element
+            case1 = element and element.type == tw.current_tool
             case2 = element and tw.current_tool == ToolID.transform
             if case1 or case2:
                 element = self.elementsPrepareForModificationsIfNeeded(element)
@@ -2511,7 +2518,7 @@ class ElementsMixin(ElementsTransformMixin):
         pos = QPointF(0, 0)
         for source_element in elements:
 
-            element = self.elementsPrepareForModificationsIfNeeded(source_element, force_new=True)
+            element = self.elementsPrepareForModificationsIfNeeded(source_element)
 
             start_br = element.get_canvas_space_selection_area().boundingRect()
 

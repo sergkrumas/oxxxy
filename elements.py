@@ -2565,7 +2565,9 @@ class ElementsMixin(ElementsTransformMixin):
         pos = QPointF(0, 0)
         for source_element in elements:
 
+            self.elementsAcquireStampForOngoingElementsModification()
             element = self.elementsPrepareElementCopyForModifications(source_element)
+            self.elementsDeacquireStampForFinishedElementsModification()
 
             start_br = element.get_canvas_space_selection_area().boundingRect()
 

@@ -264,7 +264,7 @@ class Element():
         return transform
 
     def enable_distortion_fixer(self):
-        if hasattr(self, 'local_end_point') or hasattr(self, 'end_point'):
+        if hasattr(self, 'local_end_point'):
             self._saved_data = (
                 QPointF(self.local_end_point),
                 QPointF(self.local_start_point),

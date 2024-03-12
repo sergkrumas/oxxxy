@@ -101,6 +101,8 @@ class Element():
             Element._counter = 0
         self.unique_index = Element._counter
 
+        self.group_id = None
+
         self.finished = False
 
         self.backup_pixmap = None
@@ -1039,8 +1041,6 @@ class ElementsMixin(ElementsTransformMixin):
         hs.elements.append(element)
         # для редактора
         element.hs = hs
-        # для сохранения в файл
-        element.hs_index = hs.unique_index
 
     def elementsGetLastHS(self):
         slots = self.elementsHistoryFilterSlots()
@@ -1080,7 +1080,7 @@ class ElementsMixin(ElementsTransformMixin):
             __el._selected = False
         self.active_element = None
 
-    def elementsSetSelected(self, arg, update_panel=True):
+    def elementsSetSelected(self, arg, update_panel=True, update_widget=True):
         els = None
         el = None
         if isinstance(arg, (list, tuple)):
@@ -1099,7 +1099,7 @@ class ElementsMixin(ElementsTransformMixin):
             for __el in els:
                 __el._selected = True
         # updating
-        self.init_selection_bounding_box_widget()
+        self.init_selection_bounding_box_widget(update_widget=update_widget)
         if update_panel:
             self.elementsActiveElementParamsToPanelSliders()
         self.update()
@@ -1199,22 +1199,38 @@ class ElementsMixin(ElementsTransformMixin):
         special_case = special_case and hs and not len(hs.elements) == 2
         return special_case
 
+    def elementsRetrieveElementsFromElementGroup(self, visible_elements, group_id):
+        if group_id is not None:
+            first_element = None
+            second_element = None
+            for el in visible_elements:
+                if el.group_id == group_id:
+                    if el.second:
+                        second_element = el
+                    else:
+                        first_element = el
+            return first_element, second_element
+        else:
+            return None, None
+
     def elementsAdvancedInputPressEvent(self, event, event_pos, element):
-        els_count = len(element.hs.elements)
+        els_count = element.hs.elements.__len__()
         if els_count == 1:
             self.elementsMousePressEventDefault(element, event)
             element.calc_local_data()
             element.second = False
+            element.group_id = element.unique_index
         elif els_count == 2:
             element.element_position = event_pos
             first_element = element.hs.elements[0]
+            element.group_id = first_element.group_id
             element.calc_local_data_finish(first_element)
             element.second = True
         else:
             raise Exception("unsupported branch!")
 
     def elementsAdvancedInputMoveEvent(self, event, event_pos, element, finish=False):
-        els_count = len(element.hs.elements)
+        els_count = element.hs.elements.__len__()
         if els_count == 1:
             element.end_point = event_pos
             element.calc_local_data()
@@ -1804,7 +1820,7 @@ class ElementsMixin(ElementsTransformMixin):
         pen.setJoinStyle(Qt.RoundJoin)
         return pen, color, size
 
-    def elementsDrawMainElement(self, painter, element, final):
+    def elementsDrawMainElement(self, painter, element, final, ve):
         el_type = element.type
         pen, color, size = self.elementsGetPenFromElement(element)
         painter.setPen(pen)
@@ -1937,13 +1953,7 @@ class ElementsMixin(ElementsTransformMixin):
 
             painter.setBrush(Qt.NoBrush)
 
-            slot_elements = element.hs.elements
-            f_element = slot_elements[0]
-
-            if len(slot_elements) > 1:
-                s_element = slot_elements[1]
-            else:
-                s_element = None
+            f_element, s_element = self.elementsRetrieveElementsFromElementGroup(ve, element.group_id)    
 
             if f_element.finished:
                 if s_element is None:
@@ -2101,9 +2111,9 @@ class ElementsMixin(ElementsTransformMixin):
                 else:
                     all_the_rest.append(element)
         for element in pictures_first:
-            self.elementsDrawMainElement(painter, element, final)
+            self.elementsDrawMainElement(painter, element, final, all_visible_elements)
         for element in all_the_rest:
-            self.elementsDrawMainElement(painter, element, final)
+            self.elementsDrawMainElement(painter, element, final, all_visible_elements)
 
         if not draw_background_only:
             self.elementsDrawSystemCursor(painter)
@@ -2316,20 +2326,17 @@ class ElementsMixin(ElementsTransformMixin):
     def elementsPrepareElementCopyForModifications(self, element):
         if self.modification_stamp is None:
             raise Exception('modifcation stamp is not acquired for this modification operation!')
-        if element.hs.content_type in (ToolID.zoom_in_region, ToolID.copypaste):
-            return element
+        if element._modification_stamp != self.modification_stamp:
+            new_element = self.elementsCreateNew(ToolID.TEMPORARY_TYPE_NOT_DEFINED,
+                history_slot=self.modification_slot,
+                create_new_slot=False
+            )
+            self.elementsCopyElementData(new_element, element)
+            new_element.source_index = element.unique_index
+            new_element._modification_stamp = self.modification_stamp
+            return new_element
         else:
-            if element._modification_stamp != self.modification_stamp:
-                new_element = self.elementsCreateNew(ToolID.TEMPORARY_TYPE_NOT_DEFINED,
-                    history_slot=self.modification_slot,
-                    create_new_slot=False
-                )
-                self.elementsCopyElementData(new_element, element)
-                new_element.source_index = element.unique_index
-                new_element._modification_stamp = self.modification_stamp
-                return new_element
-            else:
-                return element
+            return element
 
     def elementsParametersChanged(self):
         tw = self.tools_window

@@ -1457,12 +1457,12 @@ class ElementsMixin(ElementsTransformMixin):
                     self.selection_rect = build_valid_rectF(self.selection_start_point, self.selection_end_point)
                     self.canvas_selection_callback(event.modifiers() == Qt.ShiftModifier)
 
-
-            new_elements = []
-            for element in self.selected_items[:]:
-                mod_element = self.elementsPrepareElementCopyForModifications(element)
-                new_elements.append(mod_element)
-            self.elementsSetSelected(new_elements)
+            if self.selection_rect is None:
+                new_elements = []
+                for element in self.selected_items[:]:
+                    mod_element = self.elementsPrepareElementCopyForModifications(element)
+                    new_elements.append(mod_element)
+                self.elementsSetSelected(new_elements)
 
         self.update()
 

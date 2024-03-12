@@ -545,52 +545,84 @@ class ElementsMixin(ElementsTransformMixin):
         # сохранение зума холста
         data.update({'canvas_scale':      tuple((self.canvas_scale_x, self.canvas_scale_y))     })
 
-        elements_to_store = list()
-        # сохранение элементов
-        for n, element in enumerate(self.elements):
+        slots_to_store = list()
+        # сохранение слотов
+        for n, slot in enumerate(self.modification_slots):
 
-            element_base = list()
-            elements_to_store.append(element_base)
+            slot_base = list()
+            slots_to_store.append(slot_base)
 
-            attributes = element.__dict__.items()
-            for attr_name, attr_value in attributes:
+            slot_attributes = slot.__dict__.items()
+            for slot_attr_name, slot_attr_value in slot_attributes:
+                slot_attr_type = type(slot_attr_value).__name__
 
-                attr_type = type(attr_value).__name__
-
-                if isinstance(attr_value, QPoint):
-                    attr_data = (attr_value.x(), attr_value.y())
-
-                elif isinstance(attr_value, (bool, int, float, str, tuple, list)):
-                    attr_data = attr_value
-
-                elif isinstance(attr_value, QPainterPath):
-                    filename = f"path_{attr_name}_{n:04}.data"
-                    filepath = os.path.join(folder_path, filename)
-                    file_handler = QFile(filepath)
-                    file_handler.open(QIODevice.WriteOnly)
-                    stream = QDataStream(file_handler)
-                    stream << attr_value
-                    attr_data = filename
-
-                elif isinstance(attr_value, QPixmap):
-                    filename = f"pixmap_{attr_name}_{n:04}.png"
-                    filepath = os.path.join(folder_path, filename)
-                    attr_value.save(filepath)
-                    attr_data = filename
-
-                elif isinstance(attr_value, QColor):
-                    attr_data = attr_value.getRgbF()
-
-                elif attr_value is None or attr_name in ["textbox"]:
-                    attr_data = None
-
+                if isinstance(slot_attr_value, (int, str)):
+                    slot_attr_data = slot_attr_value
+                elif isinstance(slot_attr_value, list) and slot_attr_name == 'elements':
+                    continue
                 else:
-                    status = f"name: '{attr_name}' type: '{attr_type}' value: '{attr_value}'"
+                    status = f"name: '{slot_attr_name}' type: '{slot_attr_type}' value: '{slot_attr_value}'"
                     raise Exception(f"Unable to handle attribute, {status}")
 
-                element_base.append((attr_name, attr_type, attr_data))
+                slot_base.append((slot_attr_name, slot_attr_type, slot_attr_data))
 
-        data.update({'elements': elements_to_store})
+            elements_to_store = list()
+            # сохранение пометок в слоте
+            for element in slot.elements:
+
+                element_base = list()
+                elements_to_store.append(element_base)
+
+                attributes = element.__dict__.items()
+                for attr_name, attr_value in attributes:
+
+                    if attr_name.startswith("__"):
+                        continue
+
+                    attr_type = type(attr_value).__name__
+
+                    if isinstance(attr_value, QPointF):
+                        attr_data = (attr_value.x(), attr_value.y())
+
+                    elif attr_name == '_saved_data' and isinstance(attr_value, tuple):
+                        continue
+
+                    elif isinstance(attr_value, (bool, int, float, str, tuple, list)):
+                        attr_data = attr_value
+
+                    elif isinstance(attr_value, QPainterPath):
+                        filename = f"path_{attr_name}_{n:04}.data"
+                        filepath = os.path.join(folder_path, filename)
+                        file_handler = QFile(filepath)
+                        file_handler.open(QIODevice.WriteOnly)
+                        stream = QDataStream(file_handler)
+                        stream << attr_value
+                        attr_data = filename
+
+                    elif isinstance(attr_value, QPixmap):
+                        filename = f"pixmap_{attr_name}_{n:04}.png"
+                        filepath = os.path.join(folder_path, filename)
+                        attr_value.save(filepath)
+                        attr_data = filename
+
+                    elif isinstance(attr_value, QColor):
+                        attr_data = attr_value.getRgbF()
+
+                    elif attr_value is None or attr_name in ["textbox"]:
+                        attr_data = None
+
+                    elif isinstance(attr_value, ElementsModificationSlot):
+                        continue
+
+                    else:
+                        status = f"name: '{attr_name}' type: '{attr_type}' value: '{attr_value}'"
+                        raise Exception(f"Unable to handle attribute, {status}")
+
+                    element_base.append((attr_name, attr_type, attr_data))
+
+            slot_base.append(('elements', 'list', elements_to_store))
+
+        data.update({'slots': slots_to_store})
 
         # ЗАПИСЬ В ФАЙЛ НА ДИСКЕ
         data_to_write = json.dumps(data, indent=True)

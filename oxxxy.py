@@ -2288,7 +2288,7 @@ class ToolsWindow(QWidget):
                     main_window.current_picture_id = PictureInfo.TYPE_STAMP
                     main_window.current_picture_angle = 0
                     self.on_parameters_changed()
-        self.parent().disable_callbacks = False                    
+        self.parent().disable_callbacks = False
         self.update() #обязательно!
 
     def set_tool_data(self):
@@ -2539,7 +2539,7 @@ class ToolsWindow(QWidget):
         self.chb_add_meta.installEventFilter(self)
         self.chb_add_meta.setChecked(tools_settings.get("add_meta", False))
         if os.name == 'nt':
-            self.chb_add_meta.stateChanged.connect(self.on_screenshot_parameters_changed)            
+            self.chb_add_meta.stateChanged.connect(self.on_screenshot_parameters_changed)
             second_row.addWidget(self.chb_add_meta)
 
         self.chb_draw_cursor = CheckBoxCustom("Курсор")
@@ -2547,7 +2547,7 @@ class ToolsWindow(QWidget):
         self.chb_draw_cursor.setStyleSheet(checkbox_style)
         self.chb_draw_cursor.installEventFilter(self)
         self.chb_draw_cursor.setChecked(tools_settings.get("draw_cursor", False))
-        self.chb_draw_cursor.stateChanged.connect(self.on_screenshot_parameters_changed) 
+        self.chb_draw_cursor.stateChanged.connect(self.on_screenshot_parameters_changed)
         second_row.addWidget(self.chb_draw_cursor)
 
         # добавлять его надо здесь, после чекбоксов. не переносить выше!
@@ -2671,7 +2671,7 @@ class ToolsWindow(QWidget):
         self.parent().elementsHistoryBackwards()
         self.forwards_backwards_update()
 
-    def on_screenshot_parameters_changed(self):        
+    def on_screenshot_parameters_changed(self):
         ts = self.parent().tools_settings
         ts.update({
             "masked": self.chb_masked.isChecked(),

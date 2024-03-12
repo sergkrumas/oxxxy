@@ -738,50 +738,70 @@ class ElementsMixin(ElementsTransformMixin):
         # сохранение сдвига холста
         self.canvas_origin = QPointF(*data.get('canvas_origin', (0.0, 0.0)))
         # сохранение зума холста
-        self.canvas_scale_x = data.get('canvas_scale_x')
-        self.canvas_scale_y = data.get('canvas_scale_y')
+        canvas_scale = data.get('canvas_scale')
+        self.canvas_scale_x = canvas_scale[0]
+        self.canvas_scale_y = canvas_scale[1]
 
-        # загрузка элементов и их данных
-        elements_from_store = data.get('elements', [])
-        for element_attributes in elements_from_store:
-            element = self.elementsCreateNew(ToolID.TEMPORARY_TYPE_NOT_DEFINED)
+        # загрузка слотов, элементов и их данных
+        slots_from_store = data.get('slots', [])
 
-            for attr_name, attr_type, attr_data in element_attributes:
+        for slot_attributes in slots_from_store:
 
-                if attr_type in ['QPoint']:
-                    attr_value = QPoint(*attr_data)
+            elements_from_slot = slot_attributes[-1][2]
 
-                elif attr_type in ['QPointF']:
-                    attr_value = QPointF(*attr_data)
+            ms = self.elementsCreateNewSlot('FROM_FILE')
 
-                elif attr_type in ['bool', 'int', 'float', 'str', 'tuple', 'list']:
-                    attr_value = attr_data
+            for slot_attr_name, slot_attr_type, slot_attr_data in slot_attributes[:-1]:
 
-                elif attr_type in ['QPainterPath']:
-                    filepath = os.path.join(folder_path, attr_data)
-                    file_handler = QFile(filepath)
-                    file_handler.open(QIODevice.ReadOnly)
-                    stream = QDataStream(file_handler)
-                    path = QPainterPath()
-                    stream >> path
-                    attr_value = path
-
-                elif attr_type in ['QPixmap']:
-                    filepath = os.path.join(folder_path, attr_data)
-                    attr_value = QPixmap(filepath)
-
-                elif attr_type in ['QColor']:
-                    attr_value = QColor()
-                    attr_value.setRgbF(*attr_data)
-
-                elif attr_type in ['NoneType'] or attr_name in ["textbox"]:
-                    attr_value = None
+                if slot_attr_type in ['bool', 'int', 'float', 'str', 'tuple', 'list']:
+                    slot_attr_value = slot_attr_data
 
                 else:
-                    status = f"name: '{attr_name}' type: '{attr_type}' value: '{attr_data}'"
+                    status = f"name: '{slot_attr_name}' type: '{slot_attr_type}' value: '{slot_attr_data}'"
                     raise Exception(f"Unable to handle attribute, {status}")
 
-                setattr(element, attr_name, attr_value)
+                setattr(ms, slot_attr_name, slot_attr_value)
+
+            for element_attributes in elements_from_slot:
+                element = self.elementsCreateNew(ToolID.TEMPORARY_TYPE_NOT_DEFINED,
+                    create_new_slot=False, modification_slot=ms)
+                # print(elements_from_slot)
+                for attr_name, attr_type, attr_data in element_attributes:
+
+                    if attr_type in ['QPoint']:
+                        attr_value = QPoint(*attr_data)
+
+                    elif attr_type in ['QPointF']:
+                        attr_value = QPointF(*attr_data)
+
+                    elif attr_type in ['bool', 'int', 'float', 'str', 'tuple', 'list']:
+                        attr_value = attr_data
+
+                    elif attr_type in ['QPainterPath']:
+                        filepath = os.path.join(folder_path, attr_data)
+                        file_handler = QFile(filepath)
+                        file_handler.open(QIODevice.ReadOnly)
+                        stream = QDataStream(file_handler)
+                        path = QPainterPath()
+                        stream >> path
+                        attr_value = path
+
+                    elif attr_type in ['QPixmap']:
+                        filepath = os.path.join(folder_path, attr_data)
+                        attr_value = QPixmap(filepath)
+
+                    elif attr_type in ['QColor']:
+                        attr_value = QColor()
+                        attr_value.setRgbF(*attr_data)
+
+                    elif attr_type in ['NoneType'] or attr_name in ["textbox"]:
+                        attr_value = None
+
+                    else:
+                        status = f"name: '{attr_name}' type: '{attr_type}' value: '{attr_data}'"
+                        raise Exception(f"Unable to handle attribute, {status}")
+
+                    setattr(element, attr_name, attr_value)
 
         #  приготовление UI
         self.tools_window.forwards_backwards_update()

@@ -2657,18 +2657,18 @@ class ToolsWindow(QWidget):
         self.drag_flag = False
 
     def forwards_backwards_update(self):
-        f, b = self.parent().elementsUpdateHistoryButtonsStatus()
+        f, b = self.parent().elementsUpdateEditHistoryButtonsStatus()
         self.forwards_btn.setEnabled(f)
         self.backwards_btn.setEnabled(b)
         self.update()
         self.parent().update()
 
     def on_forwards_clicked(self):
-        self.parent().elementsHistoryForwards()
+        self.parent().elementsEditHistoryForwards()
         self.forwards_backwards_update()
 
     def on_backwars_clicked(self):
-        self.parent().elementsHistoryBackwards()
+        self.parent().elementsEditHistoryBackwards()
         self.forwards_backwards_update()
 
     def on_screenshot_parameters_changed(self):

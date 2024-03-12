@@ -303,7 +303,7 @@ class ElementsTransformMixin():
 
     def init_selection_bounding_box_widget(self, update_widget=True):
         self.selected_items = []
-        for element in self.elementsHistoryFilter():
+        for element in self.elementsFilter():
             if element._selected and element.type not in [self.ToolID.removing]:
                 self.selected_items.append(element)
         if update_widget:
@@ -364,10 +364,10 @@ class ElementsTransformMixin():
     def canvas_START_selected_elements_TRANSLATION(self, event_pos, viewport_zoom_changed=False):
         self.start_translation_pos = self.elementsMapFromViewportToCanvas(event_pos)
         if viewport_zoom_changed:
-            for element in self.elementsHistoryFilter():
+            for element in self.elementsFilter():
                 element.element_position = element.__element_position
 
-        for element in self.elementsHistoryFilter():
+        for element in self.elementsFilter():
             element.__element_position = QPointF(element.element_position)
             if not viewport_zoom_changed:
                 element.__element_position_init = QPointF(element.element_position)
@@ -375,7 +375,7 @@ class ElementsTransformMixin():
             # if element.type == BoardItem.types.ITEM_FRAME:
             #     this_frame_area = element.calc_area
             #     item_frame_area = element.get_selection_area(canvas=self)
-                # for el in self.elementsHistoryFilter():
+                # for el in self.elementsFilter():
                 #     el_area = el.get_selection_area(canvas=self)
                 #     center_point = el_area.boundingRect().center()
                 #     if item_frame_area.containsPoint(QPointF(center_point), Qt.WindingFill):
@@ -386,7 +386,7 @@ class ElementsTransformMixin():
         if self.start_translation_pos:
             self.translation_ongoing = True
             delta = QPointF(self.elementsMapFromViewportToCanvas(event_pos)) - self.start_translation_pos
-            for element in self.elementsHistoryFilter():
+            for element in self.elementsFilter():
                 if element._selected:
                     element.element_position = element.__element_position + delta
                     # if element.type == BoardItem.types.ITEM_FRAME:
@@ -398,7 +398,7 @@ class ElementsTransformMixin():
 
     def canvas_FINISH_selected_elements_TRANSLATION(self, event, cancel=False):
         self.start_translation_pos = None
-        for element in self.elementsHistoryFilter():
+        for element in self.elementsFilter():
             if cancel:
                 element.element_position = QPointF(element.__element_position_init)
             else:

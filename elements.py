@@ -295,7 +295,7 @@ class Element():
             self.element_scale_x, \
             self.element_scale_y = self._saved_data
 
-class ElementsHistorySlot():
+class ElementsModificationSlot():
 
     __slots__ = ['elements', 'content_type', 'unique_index']
 
@@ -303,11 +303,11 @@ class ElementsHistorySlot():
         super().__init__()
         self.elements = list()
         self.content_type = content_type
-        if hasattr(ElementsHistorySlot, "_counter"):
-            ElementsHistorySlot._counter += 1
+        if hasattr(ElementsModificationSlot, "_counter"):
+            ElementsModificationSlot._counter += 1
         else:
-            ElementsHistorySlot._counter = 0
-        self.unique_index = ElementsHistorySlot._counter
+            ElementsModificationSlot._counter = 0
+        self.unique_index = ElementsModificationSlot._counter
 
 class ElementsMixin(ElementsTransformMixin):
 
@@ -329,8 +329,8 @@ class ElementsMixin(ElementsTransformMixin):
         self.NUMBERING_ELEMENT_WIDTH = 25
         self.elements = []
         self.__te = Element(ToolID.zoom_in_region, [])
-        self.history_slots = []
-        self.elements_history_index = 0
+        self.modification_slots = []
+        self.elements_modification_index = 0
         self.SelectionFilter = SelectionFilter
         self.selection_filter = self.SelectionFilter.content_only
         self.active_element = None #active element is the last selected element
@@ -355,11 +355,11 @@ class ElementsMixin(ElementsTransformMixin):
         if self.modification_stamp is not None:
             self.modification_stamp = None
             if len(self.modification_slot.elements) == 0:
-                if self.modification_slot in self.history_slots:
-                    self.history_slots.remove(self.modification_slot)
-                    self.elements_history_index -= 1
-                    self.history_slots = self.elementsHistoryFilterSlots()
-                    self.elements = self.elementsHistoryFilter()
+                if self.modification_slot in self.modification_slots:
+                    self.modification_slots.remove(self.modification_slot)
+                    self.elements_modification_index -= 1
+                    self.modification_slots = self.elementsModificationSlotsFilter()
+                    self.elements = self.elementsFilter()
             self.modification_slot = None
 
     def elementsCheckAcquiredModificationStamp(self):
@@ -367,24 +367,24 @@ class ElementsMixin(ElementsTransformMixin):
             raise Exception('Unsupported modification!')
 
     def elementsFindBackgroundSlot(self):
-        for slot in self.elementsHistoryFilterSlots():
+        for slot in self.elementsModificationSlotsFilter():
             if slot.content_type == ToolID.background_picture:
                 return slot
         return None
 
     def elementsCreateBackgroundPictures(self, update=False):
         background_pixmap = QPixmap.fromImage(self.source_pixels)
-        background_history_slot = self.elementsFindBackgroundSlot()
-        if update and background_history_slot is not None:
+        background_modification_slot = self.elementsFindBackgroundSlot()
+        if update and background_modification_slot is not None:
             unique_index = None
-            els = background_history_slot.elements
+            els = background_modification_slot.elements
             if els and els[-1]:
                 unique_index =  els[-1].unique_index
 
             element = self.elementsCreateNew(ToolID.picture,
                 content_type=ToolID.background_picture,
                 create_new_slot=False,
-                history_slot=background_history_slot,
+                modification_slot=background_modification_slot,
             )
             if unique_index is not None:
                 # задавая source_index мы удаляем из фильтра прошлое изображение,
@@ -544,7 +544,7 @@ class ElementsMixin(ElementsTransformMixin):
 
 
         # сохранение индексов для истории действий
-        data.update({'elements_history_index':     self.elements_history_index                  })
+        data.update({'elements_modificaton_index':     self.elements_modificaton_index                  })
 
 
         # сохранение сдвига холста
@@ -707,7 +707,7 @@ class ElementsMixin(ElementsTransformMixin):
 
 
         # загрузка индексов для истории действий
-        self.elements_history_index = data.get('elements_history_index', 0)
+        self.elements_modificaton_index = data.get('elements_modificaton_index', 0)
 
 
         # сохранение сдвига холста
@@ -910,7 +910,7 @@ class ElementsMixin(ElementsTransformMixin):
             return
         try:
             candidat = self.active_element
-            if candidat not in self.elementsHistoryFilter(): # element should be visible at the moment
+            if candidat not in self.elementsFilter(): # element should be visible at the moment
                 candidat = None
         except Exception:
             candidat = None
@@ -923,7 +923,7 @@ class ElementsMixin(ElementsTransformMixin):
         self.update()
 
     def elementsRemoveElement(self):
-        if not self.elementsHistoryFilterSlots():
+        if not self.elementsModificationSlotsFilter():
             return
         create_new_slot = True
         if self.selected_items:
@@ -932,21 +932,21 @@ class ElementsMixin(ElementsTransformMixin):
                     continue
                 candidat.selected = False
                 element = self.elementsCreateNew(ToolID.removing, create_new_slot=create_new_slot)
-                create_new_slot = False # first candidat creates new history slot for all candidates
+                create_new_slot = False # first candidat creates new modification slot for all candidates
                 element.source_index = candidat.unique_index
             self.elementsSetSelected(None)
         self.update()
 
     def elementsGetLastElement(self):
         try:
-            element = self.elementsHistoryFilter()[-1]
+            element = self.elementsFilter()[-1]
         except Exception:
             element = None
         return element
 
     def elementsGetLastElement1(self):
         try:
-            element = self.elementsHistoryFilter()[-2]
+            element = self.elementsFilter()[-2]
         except Exception:
             element = None
         return element
@@ -996,16 +996,16 @@ class ElementsMixin(ElementsTransformMixin):
             tw.update()
         self.update()
 
-    def elementsRemoveCurrentHistorySlot(self):
-        self.elements_history_index -= 1
-        self.history_slots = self.elementsHistoryFilterSlots()
-        self.elements = self.elementsHistoryFilter()
+    def elementsRemoveCurrentModificationSlot(self):
+        self.elements_modification_index -= 1
+        self.modification_slots = self.elementsModificationSlotsFilter()
+        self.elements = self.elementsFilter()
 
     def elementsMakeSureTheresNoUnfinishedElement(self):
         return
         hs = self.elementsGetLastHS()
         if hs and hs.content_type in [ToolID.zoom_in_region, ToolID.copypaste] and len(hs.elements) == 1:
-            self.elementsRemoveCurrentHistorySlot()
+            self.elementsRemoveCurrentModificationSlot()
 
     def elementsOnTransformToolActivated(self):
         if self.active_element:
@@ -1025,16 +1025,16 @@ class ElementsMixin(ElementsTransformMixin):
             element.textbox.setFocus()
 
     def elementsDeactivateTextElements(self):
-        for element in self.elementsHistoryFilter():
+        for element in self.elementsFilter():
             if element.type == ToolID.text and element.textbox and element.textbox.parent():
                 self.elementsOnTextChanged(element)
                 element.textbox.hide()
                 element.textbox.setParent(None)
 
     def elementsCreateNewSlot(self, content_type):
-        hs = ElementsHistorySlot(content_type)
-        self.history_slots.append(hs)
-        self.elements_history_index += 1
+        hs = ElementsModificationSlot(content_type)
+        self.modification_slots.append(hs)
+        self.elements_modification_index += 1
         return hs
 
     def elementsAppendElementToHS(self, element, hs):
@@ -1043,36 +1043,36 @@ class ElementsMixin(ElementsTransformMixin):
         element.hs = hs
 
     def elementsGetLastHS(self):
-        slots = self.elementsHistoryFilterSlots()
+        slots = self.elementsModificationSlotsFilter()
         if slots:
             return slots[-1]
         else:
             return None
 
     def elementsCreateNew(self, element_type, start_drawing=False,
-                                        create_new_slot=True, content_type=None, history_slot=None):
+                                        create_new_slot=True, content_type=None, modification_slot=None):
         # срезание отменённой (невидимой) части истории
         # перед созданием элемента
         if create_new_slot:
             if content_type is None:
                 content_type = element_type
-            self.history_slots = self.elementsHistoryFilterSlots()
+            self.modification_slots = self.elementsModificationSlotsFilter()
             hs = self.elementsCreateNewSlot(content_type)
         else:
-            if history_slot is None:
+            if modification_slot is None:
                 hs = self.elementsGetLastHS()
             else:
-                hs = history_slot
+                hs = modification_slot
         case1 = element_type == ToolID.removing
         case2 = element_type == ToolID.TEMPORARY_TYPE_NOT_DEFINED
         case3 = start_drawing
         is_removing = case1 or case2 or case3
-        self.elements = self.elementsHistoryFilter(only_filter=is_removing)
+        self.elements = self.elementsFilter(only_filter=is_removing)
         # создание элемента
         element = Element(element_type, self.elements)
         self.elementsAppendElementToHS(element, hs)
         # обновление индекса после создания элемента
-        self.elements_history_index = len(self.history_slots)
+        self.elements_modification_index = len(self.modification_slots)
         return element
 
     def _elementsSetSelectedPreReset(self):
@@ -1140,16 +1140,16 @@ class ElementsMixin(ElementsTransformMixin):
         return [el for el in visible_elements if el.background_image]
 
     def elementsAllVisibleElements(self):
-        return self.elementsHistoryFilter()
+        return self.elementsFilter()
 
-    def elementsHistoryFilterSlots(self):
+    def elementsModificationSlotsFilter(self):
         # all visible slots
-        return self.history_slots[:self.elements_history_index]
+        return self.modification_slots[:self.elements_modification_index]
 
-    def elementsHistoryFilter(self, only_filter=False):
+    def elementsFilter(self, only_filter=False):
         # фильтрация по индексу
         visible_elements = []
-        for hs in self.elementsHistoryFilterSlots():
+        for hs in self.elementsModificationSlotsFilter():
             visible_elements.extend(hs.elements)
 
         if only_filter:
@@ -1169,7 +1169,7 @@ class ElementsMixin(ElementsTransformMixin):
 
     def elementsGetElementsUnderMouse(self, cursor_pos):
         elements_under_mouse = []
-        for el in self.elementsHistoryFilter():
+        for el in self.elementsFilter():
             if el.type in [ToolID.removing,]:
                 continue
             element_selection_area = el.get_selection_area(canvas=self)
@@ -1249,7 +1249,7 @@ class ElementsMixin(ElementsTransformMixin):
 
         event_pos = self.elementsMapFromViewportToCanvas(QPointF(event.pos()))
 
-        self.prev_elements_history_index = self.elements_history_index
+        self.prev_elements_modification_index = self.elements_modification_index
         isLeftButton = event.buttons() == Qt.LeftButton
         isAltOnly = event.modifiers() == Qt.AltModifier
         isCaptureZone = self.capture_region_rect is not None
@@ -1352,7 +1352,7 @@ class ElementsMixin(ElementsTransformMixin):
 
     def elementsTextElementRotate(self, clockwise_rotation):
         element = None
-        for el in self.elementsHistoryFilter():
+        for el in self.elementsFilter():
             if el.type == ToolID.text:
                 element = el
         if element:
@@ -1615,7 +1615,7 @@ class ElementsMixin(ElementsTransformMixin):
             if element.end_point == element.start_point:
                 self.elements.remove(element)
                 if self.tools_window:
-                    self.elements_history_index = self.prev_elements_history_index
+                    self.elements_modification_index = self.prev_elements_modification_index
                     # print('correcting after autodelete')
 
     def elementsSetCopiedPixmap(self, element):
@@ -1779,7 +1779,7 @@ class ElementsMixin(ElementsTransformMixin):
             darkening_zone = QPainterPath()
             darkening_zone.setFillRule(Qt.WindingFill)
             at_least_one_exists = False
-            for element in self.elementsHistoryFilter():
+            for element in self.elementsFilter():
                 if element.type == ToolID.darkening:
                     at_least_one_exists = True
                     darkening_value = element.size
@@ -2098,7 +2098,7 @@ class ElementsMixin(ElementsTransformMixin):
             self.elementsDrawDarkening(painter)
 
         # штампы (изображения) рисуем первыми, чтобы пометки всегда были поверх них
-        all_visible_elements = self.elementsHistoryFilter()
+        all_visible_elements = self.elementsFilter()
         pictures_first = []
         all_the_rest = []
         if draw_background_only:
@@ -2126,7 +2126,7 @@ class ElementsMixin(ElementsTransformMixin):
 
         if self.Globals.DEBUG and self.capture_region_rect and not final:
             painter.setPen(QPen(QColor(Qt.white)))
-            text = f"{self.elements_history_index} :: {self.current_tool}"
+            text = f"{self.elements_modification_index} :: {self.current_tool}"
             painter.drawText(self.capture_region_rect, Qt.AlignCenter, text)
         if self.dark_pictures:
             self.elementsDrawDarkening(painter)
@@ -2150,7 +2150,7 @@ class ElementsMixin(ElementsTransformMixin):
             r = viewport_input_rect
             pos_right = r.bottomRight()
             pos_left = r.bottomLeft()
-        visible_elements = self.elementsHistoryFilter()
+        visible_elements = self.elementsFilter()
 
         def get_element_info_into_text(elem):
             info_text = ""
@@ -2210,8 +2210,8 @@ class ElementsMixin(ElementsTransformMixin):
         painter.fillRect(info_rect, QColor(0, 0, 0, 180))
         info_rect.moveBottomLeft(QPointF(10, -10) + info_rect.bottomLeft())
         vertical_offset = 0
-        visible_slots = self.elementsHistoryFilterSlots()
-        for index, hs in list(enumerate(self.history_slots)):
+        visible_slots = self.elementsModificationSlotsFilter()
+        for index, hs in list(enumerate(self.modification_slots)):
             painter.save()
             painter.setPen(Qt.white)
             slot_info_text = f'[slot {index}] {hs.content_type}'
@@ -2263,7 +2263,7 @@ class ElementsMixin(ElementsTransformMixin):
 
     def elementsUpdateFinalPicture(self, capture_region_rect=None):
         if self.capture_region_rect:
-            specials = [el for el in self.elementsHistoryFilter() if el.type == ToolID.multiframing]
+            specials = [el for el in self.elementsFilter() if el.type == ToolID.multiframing]
             any_multiframing_element = any(specials)
             if any_multiframing_element:
                 max_width = -1
@@ -2328,7 +2328,7 @@ class ElementsMixin(ElementsTransformMixin):
             raise Exception('modifcation stamp is not acquired for this modification operation!')
         if element._modification_stamp != self.modification_stamp:
             new_element = self.elementsCreateNew(ToolID.TEMPORARY_TYPE_NOT_DEFINED,
-                history_slot=self.modification_slot,
+                modification_slot=self.modification_slot,
                 create_new_slot=False
             )
             self.elementsCopyElementData(new_element, element)
@@ -2447,21 +2447,21 @@ class ElementsMixin(ElementsTransformMixin):
         path = transform.map(path)
         painter.drawPath(path)
 
-    def elementsHistoryForwards(self):
+    def elementsEditHistoryForwards(self):
         self.elementsDeactivateTextElements()
-        if self.elements_history_index < len(self.history_slots):
-            self.elements_history_index += 1
+        if self.elements_modification_index < len(self.modification_slots):
+            self.elements_modification_index += 1
         self.elementsSetSelected(None)
 
-    def elementsHistoryBackwards(self):
+    def elementsEditHistoryBackwards(self):
         self.elementsDeactivateTextElements()
-        if self.elements_history_index > 0:
-            self.elements_history_index -= 1
+        if self.elements_modification_index > 0:
+            self.elements_modification_index -= 1
         self.elementsSetSelected(None)
 
-    def elementsUpdateHistoryButtonsStatus(self):
-        f = self.elements_history_index < len(self.history_slots)
-        b = self.elements_history_index > 0
+    def elementsUpdateEditHistoryButtonsStatus(self):
+        f = self.elements_modification_index < len(self.modification_slots)
+        b = self.elements_modification_index > 0
         return f, b
 
     def elementsSetCaptureFromContent(self):
@@ -2502,7 +2502,7 @@ class ElementsMixin(ElementsTransformMixin):
             pass
         elif action == action_extend:
             points = []
-            for element in self.elementsHistoryFilter():
+            for element in self.elementsFilter():
                 sel_area = element.get_canvas_space_selection_area()
                 br = sel_area.boundingRect()
 
@@ -2521,7 +2521,7 @@ class ElementsMixin(ElementsTransformMixin):
         if action == action_crop:
             self.elementsUpdateFinalPicture()
         elif action == action_keep:
-            hs = self.history_slots[0]
+            hs = self.modification_slots[0]
             r = QRectF(QPointF(0, 0), QSizeF(hs.elements[0].pixmap.size()))
             self.elementsUpdateFinalPicture(capture_region_rect=r)
         elif action == action_extend:
@@ -2542,7 +2542,7 @@ class ElementsMixin(ElementsTransformMixin):
         # cleaning
         self.elementsSetSelected(None)
 
-        self.elements_history_index = 1 # 1, а не 0, потому что оставляем слот с фоном
+        self.elements_modification_index = 1 # 1, а не 0, потому что оставляем слот с фоном
         if self.tools_window:
             self.tools_window.forwards_backwards_update()
 

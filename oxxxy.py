@@ -1061,14 +1061,10 @@ class CheckBoxCustom(QCheckBox):
 
     def __init__(self, *args):
         super().__init__(*args)
-        self.stateChanged.connect(self.state_changed)
 
     def paintEvent(self, event):
         if self.isEnabled():
             super(type(self), self).paintEvent(event)
-
-    def state_changed(self, int_value):
-        self.update()
 
 class CustomPushButton(QPushButton):
     right_clicked = pyqtSignal()
@@ -2485,7 +2481,8 @@ class ToolsWindow(QWidget):
         self.chb_toolbool.setStyleSheet(checkbox_style)
         self.chb_toolbool.setEnabled(False)
         self.chb_toolbool.installEventFilter(self)
-        self.chb_toolbool.stateChanged.connect(self.on_parameters_changed)
+
+        self.chb_toolbool.stateChanged.connect(partial(self.parent().special_change_handler, self.on_parameters_changed))
         first_row.addWidget(self.chb_toolbool)
 
         self.size_slider = CustomSlider("SCALAR", 180, 0.2, Globals.ENABLE_FLAT_EDITOR_UI)
@@ -3767,6 +3764,11 @@ class ScreenshotWindow(QWidget, ElementsMixin):
 
         action = menu.exec_(QCursor().pos())
         click_handler(action)
+
+    def special_change_handler(self, callback):
+        self.elementsAcquireStampForOngoingElementsModification()
+        callback()
+        self.elementsDeacquireStampForFinishedElementsModification()
 
     def update_saved_capture(self):
         ts = self.tools_settings

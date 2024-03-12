@@ -1305,7 +1305,7 @@ class ElementsMixin(ElementsTransformMixin):
             self.elementsDeactivateTextElements()
 
             if self.is_over_scaling_activation_area(event.pos()):
-                self.elementsAcquireStampForOngoingElementsModification('mouse; scaling')                
+                self.elementsAcquireStampForOngoingElementsModification('mouse; scaling')
                 self.canvas_START_selected_elements_SCALING(event)
 
             elif self.is_over_rotation_activation_area(event.pos()):

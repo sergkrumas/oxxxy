@@ -98,6 +98,8 @@ __all__ = (
     'capture_rotated_rect_from_pixmap',
 
     'copy_image_file_to_clipboard',
+
+    'get_bounding_pointsF',
 )
 
 # Python3 program to find convex hull of a set of points. Refer

@@ -56,7 +56,8 @@ from _utils import (convex_hull, check_scancode_for, SettingsJson,
      get_creation_date, copy_image_file_to_clipboard, get_nearest_point_on_rect,
      find_browser_exe_file, open_link_in_browser, open_in_google_chrome, save_meta_info,
      make_screenshot_pyqt, webRGBA, generate_gradient, draw_shadow, draw_cyberpunk,
-     get_bounding_points, load_svg, is_webp_file_animated, apply_blur_effect)
+     get_bounding_points, load_svg, is_webp_file_animated, apply_blur_effect, 
+     get_bounding_pointsF)
 
 from _sliders import (CustomSlider,)
 from on_windows_startup import is_app_in_startup, add_to_startup, remove_from_startup

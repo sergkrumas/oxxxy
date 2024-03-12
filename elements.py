@@ -26,6 +26,7 @@ import os
 import itertools
 import json
 import time
+import cbor2
 
 from PyQt5.QtWidgets import (QSystemTrayIcon, QWidget, QMessageBox, QMenu, QGraphicsPixmapItem,
     QGraphicsScene, QFileDialog, QHBoxLayout, QCheckBox, QVBoxLayout, QTextEdit, QGridLayout,
@@ -625,9 +626,14 @@ class ElementsMixin(ElementsTransformMixin):
         data.update({'slots': slots_to_store})
 
         # ЗАПИСЬ В ФАЙЛ НА ДИСКЕ
-        data_to_write = json.dumps(data, indent=True)
-        with open(project_filepath, "w+", encoding="utf8") as file:
-            file.write(data_to_write)
+        if self.Globals.ENABLE_CBOR2:
+            data_to_write = cbor2.dumps(data)
+            with open(project_filepath, "wb") as file:
+                file.write(data_to_write)
+        else:
+            data_to_write = json.dumps(data, indent=True)
+            with open(project_filepath, "w+", encoding="utf8") as file:
+                file.write(data_to_write)
 
         # ВЫВОД СООБЩЕНИЯ О ЗАВЕРШЕНИИ
         text = f"Проект сохранён в \n{project_filepath}"
@@ -660,15 +666,33 @@ class ElementsMixin(ElementsTransformMixin):
             return
 
         # чтение json
-        read_data = ""
-        with open(project_filepath, "r", encoding="utf8") as file:
-            read_data = file.read()
-
+        cbor2_project = False
+        json_project = False
         try:
-            data = json.loads(read_data)
+
+            # пытаемся читать как cbor2
+            read_data = ""
+            with open(project_filepath, "rb") as file:
+                read_data = file.read()
+
+            data = cbor2.loads(read_data)
+            cbor2_project = True
+
         except:
-            self.show_notify_dialog("Ошибка при чтении файла. Отмена!")
-            return
+
+            try:
+
+                # пытаемся читать как json
+                read_data = ""
+                with open(project_filepath, "r", encoding="utf8") as file:
+                    read_data = file.read()
+                data = json.loads(read_data)
+
+                json_project = True
+
+            except:
+                self.show_notify_dialog("Ошибка при чтении файла. Отмена!")
+                return
 
         # подготовка перед загрузкой данных
         self.elementsInit()
@@ -808,7 +832,14 @@ class ElementsMixin(ElementsTransformMixin):
         self.update_tools_window()
         self.update()
 
-        self.show_notify_dialog("Файл загружен")
+        project_format = ''
+        if cbor2_project:
+            project_format = 'cbor2'
+        elif json_project:
+            project_format = 'json'
+
+        msg = f'Файл загружен, формат {project_format}'
+        self.show_notify_dialog(msg)
 
     def elementsMapFromViewportToCanvas(self, viewport_pos):
         delta = QPointF(viewport_pos - self.canvas_origin)

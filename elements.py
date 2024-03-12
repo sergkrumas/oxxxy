@@ -1953,7 +1953,7 @@ class ElementsMixin(ElementsTransformMixin):
 
             painter.setBrush(Qt.NoBrush)
 
-            f_element, s_element = self.elementsRetrieveElementsFromElementGroup(ve, element.group_id)    
+            f_element, s_element = self.elementsRetrieveElementsFromElementGroup(ve, element.group_id)
 
             if f_element.finished:
                 if s_element is None:

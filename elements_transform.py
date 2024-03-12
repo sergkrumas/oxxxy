@@ -442,6 +442,8 @@ class ElementsTransformMixin():
         pivot_point_index = (index+2) % points_count
         self.rotation_pivot_corner_point = QPointF(self.selection_bounding_box[pivot_point_index])
 
+        self.rotation_pivot_center_point = self.__selection_bounding_box.boundingRect().center()
+
         for element in self.selected_items:
             element.__element_rotation = element.element_rotation
             element.__element_position = QPointF(element.element_position)
@@ -468,7 +470,7 @@ class ElementsTransformMixin():
         if use_corner_pivot:
             pivot = self.rotation_pivot_corner_point
         else:
-            pivot = self.selection_bounding_box.boundingRect().center()
+            pivot = self.rotation_pivot_center_point
         radius_vector = QPointF(event_pos) - pivot
         self.rotation_end_angle_rad = math.atan2(radius_vector.y(), radius_vector.x())
         self.rotation_delta = self.rotation_end_angle_rad - self.rotation_start_angle_rad
@@ -493,8 +495,8 @@ class ElementsTransformMixin():
             pos_radius_vector = rotation.map(pos_radius_vector)
             new_absolute_position = pivot + pos_radius_vector
             rel_pos_global_scaled = new_absolute_position - self.canvas_origin
-            new_item_position = QPointF(rel_pos_global_scaled.x()/self.canvas_scale_x, rel_pos_global_scaled.y()/self.canvas_scale_y)
-            element.element_position = new_item_position
+            new_element_position = QPointF(rel_pos_global_scaled.x()/self.canvas_scale_x, rel_pos_global_scaled.y()/self.canvas_scale_y)
+            element.element_position = new_element_position
         # bounding box transformation
         translate_to_coord_origin = QTransform()
         translate_back_to_place = QTransform()

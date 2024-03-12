@@ -349,7 +349,8 @@ class ElementsMixin(ElementsTransformMixin):
             self.modification_stamp = time.time()
 
     def elementsDeacquireStampForFinishedElementsModification(self):
-        self.modification_stamp = None
+        if self.modification_stamp is not None:
+            self.modification_stamp = None
 
     def elementsCheckAcquiredModificationStamp(self):
         if self.modification_stamp is None:
@@ -1237,6 +1238,8 @@ class ElementsMixin(ElementsTransformMixin):
         if self.current_tool == ToolID.picture and not self.current_picture_pixmap:
             self.tools_window.show_picture_menu()
             return
+
+        self.elementsAcquireStampForOngoingElementsModification()
         # основная часть
         el = self.elementsGetLastElement()
         if self.current_tool == ToolID.transform:
@@ -1454,13 +1457,19 @@ class ElementsMixin(ElementsTransformMixin):
                     self.selection_rect = build_valid_rectF(self.selection_start_point, self.selection_end_point)
                     self.canvas_selection_callback(event.modifiers() == Qt.ShiftModifier)
 
+
+            new_elements = []
             for element in self.selected_items[:]:
-                element = self.elementsPrepareElementCopyForModifications(element)
+                mod_element = self.elementsPrepareElementCopyForModifications(element)
+                new_elements.append(mod_element)
+            self.elementsSetSelected(new_elements)
 
         self.update()
 
     def elementsMouseReleaseEvent(self, event):
         event_pos = self.elementsMapFromViewportToCanvas(QPointF(event.pos()))
+
+        self.elementsDeacquireStampForFinishedElementsModification()
 
         tool = self.current_tool
         if self.drag_capture_zone:

@@ -2187,6 +2187,8 @@ class ElementsMixin(ElementsTransformMixin):
             info = get_element_info_into_text(self.active_element)
         else:
             info = f'No active element: {self.active_element}'
+        info += f"\n self.modification_stamp = {self.modification_stamp}"
+
         r = painter.boundingRect(QRect(), Qt.AlignLeft, info)
         right_underground = pos_right + QPointF(0, r.height())
         painter.drawText(right_underground, info)

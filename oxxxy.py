@@ -2271,7 +2271,7 @@ class ToolsWindow(QWidget):
         self.color_slider.palette_index = data.get("color_slider_palette_index",
                                                                 DEFAULT_COLOR_SLIDER_PALETTE_INDEX)
         self.size_slider.value = data.get("size_slider_value", DEFAULT_SIZE_SLIDER_VALUE)
-        self.opacity_slider.vaue = data.get("opacity_slider_value", DEFAULT_OPACITY_SLIDER_VALUE)
+        self.opacity_slider.value = data.get("opacity_slider_value", DEFAULT_OPACITY_SLIDER_VALUE)
         self.chb_toolbool.setChecked(data.get("toolbool", DEFAULT_TOOLBOOL_VALUE))
         if self.current_tool == ToolID.picture:
             main_window = self.parent()
@@ -2413,8 +2413,8 @@ class ToolsWindow(QWidget):
         main_layout = QVBoxLayout()
         tools = QHBoxLayout()
         self.button_layout = tools
-        sliders = QHBoxLayout()
-        checkboxes = QHBoxLayout()
+        first_row = QHBoxLayout()
+        second_row = QHBoxLayout()
 
         self.drag_placeholder = DragQLabel(self)
         tools.addWidget(self.drag_placeholder)
@@ -2453,7 +2453,7 @@ class ToolsWindow(QWidget):
         self.forwards_btn = forwards_btn
         for hb in [backwards_btn, forwards_btn]:
             hb.setCursor(QCursor(Qt.PointingHandCursor))
-            sliders.addWidget(hb)
+            first_row.addWidget(hb)
             hb.setEnabled(False)
             hb.installEventFilter(self)
         self.backwards_btn.installEventFilter(self)
@@ -2464,35 +2464,41 @@ class ToolsWindow(QWidget):
         backwards_btn.setToolTip("<b>Откатиться на шаг назад</b><br>Ctrl+Z")
 
 
+
+        def set_callbacks_for_sliders(widget):
+            widget.value_changed.connect(self.on_parameters_changed)
+            widget.value_changing_initiated.connect(self.parent().elementsAcquireStampForOngoingElementsModification)
+            widget.value_changing_finished.connect(self.parent().elementsDeacquireStampForFinishedElementsModification)
+
         # для пометок
         if Globals.USE_COLOR_PALETTE:
             _type = "PALETTE"
         else:
             _type = "COLOR"
         self.color_slider = CustomSlider(_type, 400, 0.01, Globals.ENABLE_FLAT_EDITOR_UI)
-        self.color_slider.value_changed.connect(self.on_parameters_changed)
+        set_callbacks_for_sliders(self.color_slider)
         self.color_slider.installEventFilter(self)
         self.color_slider.setToolTip("Слайдер цвета")
-        sliders.addWidget(self.color_slider)
+        first_row.addWidget(self.color_slider)
 
         self.chb_toolbool = CheckBoxCustom("Подложка")
         self.chb_toolbool.setStyleSheet(checkbox_style)
         self.chb_toolbool.setEnabled(False)
         self.chb_toolbool.installEventFilter(self)
         self.chb_toolbool.stateChanged.connect(self.on_parameters_changed)
-        sliders.addWidget(self.chb_toolbool)
+        first_row.addWidget(self.chb_toolbool)
 
         self.size_slider = CustomSlider("SCALAR", 180, 0.2, Globals.ENABLE_FLAT_EDITOR_UI)
-        self.size_slider.value_changed.connect(self.on_parameters_changed)
+        set_callbacks_for_sliders(self.size_slider)
         self.size_slider.installEventFilter(self)
         self.size_slider.setToolTip("Слайдер размера")
-        sliders.addWidget(self.size_slider)
+        first_row.addWidget(self.size_slider)
 
         self.opacity_slider = CustomSlider("SCALAR", 180, 1.0, Globals.ENABLE_FLAT_EDITOR_UI)
-        self.opacity_slider.value_changed.connect(self.on_parameters_changed)
+        set_callbacks_for_sliders(self.opacity_slider)
         self.opacity_slider.installEventFilter(self)
         self.opacity_slider.setToolTip("Слайдер прозрачности")
-        checkboxes.addWidget(self.opacity_slider)
+
 
 
         # общие для скриншота
@@ -2506,7 +2512,7 @@ class ToolsWindow(QWidget):
         self.chb_savecaptureframe.installEventFilter(self)
         self.chb_savecaptureframe.setChecked(tools_settings.get('savecaptureframe', False))
         self.chb_savecaptureframe.stateChanged.connect(self.on_screenshot_parameters_changed)
-        checkboxes.addWidget(self.chb_savecaptureframe)
+        second_row.addWidget(self.chb_savecaptureframe)
 
         self.chb_masked = CheckBoxCustom("Обтравка")
         self.chb_masked.setToolTip((
@@ -2518,7 +2524,7 @@ class ToolsWindow(QWidget):
         self.chb_masked.setChecked(tools_settings.get("masked", False))
         self.chb_masked.stateChanged.connect(self.on_screenshot_parameters_changed)
         self.parent().hex_mask = tools_settings.get("hex_mask", False)
-        checkboxes.addWidget(self.chb_masked)
+        second_row.addWidget(self.chb_masked)
 
         self.chb_draw_thirds = CheckBoxCustom("Трети")
         self.chb_draw_thirds.setToolTip("<b>Отображать трети в области захвата для режима"
@@ -2527,7 +2533,7 @@ class ToolsWindow(QWidget):
         self.chb_draw_thirds.installEventFilter(self)
         self.chb_draw_thirds.setChecked(tools_settings.get("draw_thirds", False))
         self.chb_draw_thirds.stateChanged.connect(self.on_screenshot_parameters_changed)
-        checkboxes.addWidget(self.chb_draw_thirds)
+        second_row.addWidget(self.chb_draw_thirds)
 
         self.chb_add_meta = CheckBoxCustom("Метаинфа")
         self.chb_add_meta.setToolTip("<b>Добавить название заголовка активного окна в метатеги"
@@ -2537,7 +2543,7 @@ class ToolsWindow(QWidget):
         self.chb_add_meta.setChecked(tools_settings.get("add_meta", False))
         if os.name == 'nt':
             self.chb_add_meta.stateChanged.connect(self.on_screenshot_parameters_changed)            
-            checkboxes.addWidget(self.chb_add_meta)
+            second_row.addWidget(self.chb_add_meta)
 
         self.chb_draw_cursor = CheckBoxCustom("Курсор")
         self.chb_draw_cursor.setToolTip("<b>Отображать курсор на скриншоте</b>")
@@ -2545,7 +2551,11 @@ class ToolsWindow(QWidget):
         self.chb_draw_cursor.installEventFilter(self)
         self.chb_draw_cursor.setChecked(tools_settings.get("draw_cursor", False))
         self.chb_draw_cursor.stateChanged.connect(self.on_screenshot_parameters_changed) 
-        checkboxes.addWidget(self.chb_draw_cursor)
+        second_row.addWidget(self.chb_draw_cursor)
+
+        # добавлять его надо здесь, после чекбоксов. не переносить выше!
+        second_row.addWidget(self.opacity_slider)
+
 
         spacing = 2
         cms = 2
@@ -2553,19 +2563,19 @@ class ToolsWindow(QWidget):
         tools.setContentsMargins(cms, cms, cms, cms)
         main_layout.setSpacing(spacing)
         main_layout.setContentsMargins(cms, cms, cms, cms)
-        sliders.setSpacing(spacing)
+        first_row.setSpacing(spacing)
         cms = 0
-        sliders.setContentsMargins(cms, cms, cms, cms)
-        checkboxes.setSpacing(spacing)
-        checkboxes.setContentsMargins(cms, cms, cms, cms)
-        checkboxes.setAlignment(Qt.AlignRight)
+        first_row.setContentsMargins(cms, cms, cms, cms)
+        second_row.setSpacing(spacing)
+        second_row.setContentsMargins(cms, cms, cms, cms)
+        second_row.setAlignment(Qt.AlignRight)
 
         main_layout.addLayout(tools)
-        main_layout.addLayout(sliders)
-        main_layout.addLayout(checkboxes)
+        main_layout.addLayout(first_row)
+        main_layout.addLayout(second_row)
 
-        sliders.addSpacing(75)
-        checkboxes.addSpacing(75)
+        first_row.addSpacing(75)
+        second_row.addSpacing(75)
 
         self.setLayout(main_layout)
 

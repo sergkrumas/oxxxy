@@ -42,7 +42,12 @@ class CustomSlider(QWidget):
     colorGrads.setColorAt(xRatio * 4, Qt.green)
     colorGrads.setColorAt(xRatio * 5, Qt.yellow)
     colorGrads.setColorAt(1, Qt.red)
+
+
     value_changed = pyqtSignal()
+    value_changing_initiated = pyqtSignal()
+    value_changing_finished = pyqtSignal()
+
     def __init__(self, _type, width, default_value, flat_look):
         super().__init__()
         if _type == "PALETTE":
@@ -291,6 +296,7 @@ class CustomSlider(QWidget):
             self.set_value(event)
             if self.build_hot_rect().contains(event.pos()):
                 self.changing = True
+            self.value_changing_initiated.emit()
         self.update()
         super().mousePressEvent(event)
 
@@ -298,8 +304,8 @@ class CustomSlider(QWidget):
         if event.buttons() == Qt.LeftButton:
             if self.changing:
                 self.set_value(event)
+                self.value_changed.emit()
         self.update()
-        self.value_changed.emit()
         super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
@@ -308,8 +314,9 @@ class CustomSlider(QWidget):
             # for simple click
             if self.build_click_rect().contains(event.pos()):
                 self.set_value(event)
+                self.value_changed.emit()
+            self.value_changing_finished.emit()
         self.update()
-        self.value_changed.emit()
         super().mouseReleaseEvent(event)
 
 def main():

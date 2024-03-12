@@ -1471,12 +1471,12 @@ class ElementsMixin(ElementsTransformMixin):
                     self.selection_rect = build_valid_rectF(self.selection_start_point, self.selection_end_point)
                     self.canvas_selection_callback(event.modifiers() == Qt.ShiftModifier)
 
-            if self.selection_rect is None and not (self.scaling_ongoing or self.rotation_ongoing or self.translation_ongoing):
+            if not self.selection_ongoing:
                 new_elements = []
                 for element in self.selected_items[:]:
                     mod_element = self.elementsPrepareElementCopyForModifications(element)
                     new_elements.append(mod_element)
-                self.elementsSetSelected(new_elements)
+                self.elementsSetSelected(new_elements, update_panel=False, update_widget=False)
 
         self.update()
 

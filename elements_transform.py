@@ -301,12 +301,13 @@ class ElementsTransformMixin():
 
 
 
-    def init_selection_bounding_box_widget(self):
+    def init_selection_bounding_box_widget(self, update_widget=True):
         self.selected_items = []
         for element in self.elementsHistoryFilter():
             if element._selected and element.type not in [self.ToolID.removing]:
                 self.selected_items.append(element)
-        self.update_selection_bouding_box()
+        if update_widget:
+            self.update_selection_bouding_box()
 
     def update_selection_bouding_box(self):
         self.selection_bounding_box = None

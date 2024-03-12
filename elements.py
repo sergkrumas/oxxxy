@@ -956,7 +956,7 @@ class ElementsMixin(ElementsTransformMixin):
         copy_textbox = None
         copy_textbox_value = None
         for attr_name, attr_value in attributes:
-            if attr_name in ["unique_index", "hs", "hs_index"]:
+            if attr_name in ["unique_index", "ms"]:
                 continue
             type_class = type(attr_value)
             # if type_class is type(None):
@@ -1003,8 +1003,8 @@ class ElementsMixin(ElementsTransformMixin):
 
     def elementsMakeSureTheresNoUnfinishedElement(self):
         return
-        hs = self.elementsGetLastHS()
-        if hs and hs.content_type in [ToolID.zoom_in_region, ToolID.copypaste] and len(hs.elements) == 1:
+        ms = self.elementsGetLastModSlot()
+        if ms and ms.content_type in [ToolID.zoom_in_region, ToolID.copypaste] and len(ms.elements) == 1:
             self.elementsRemoveCurrentModificationSlot()
 
     def elementsOnTransformToolActivated(self):
@@ -1032,17 +1032,17 @@ class ElementsMixin(ElementsTransformMixin):
                 element.textbox.setParent(None)
 
     def elementsCreateNewSlot(self, content_type):
-        hs = ElementsModificationSlot(content_type)
-        self.modification_slots.append(hs)
+        ms = ElementsModificationSlot(content_type)
+        self.modification_slots.append(ms)
         self.elements_modification_index += 1
-        return hs
+        return ms
 
-    def elementsAppendElementToHS(self, element, hs):
-        hs.elements.append(element)
+    def elementsAppendElementToMS(self, element, ms):
+        ms.elements.append(element)
         # для редактора
-        element.hs = hs
+        element.ms = ms
 
-    def elementsGetLastHS(self):
+    def elementsGetLastModSlot(self):
         slots = self.elementsModificationSlotsFilter()
         if slots:
             return slots[-1]
@@ -1057,12 +1057,12 @@ class ElementsMixin(ElementsTransformMixin):
             if content_type is None:
                 content_type = element_type
             self.modification_slots = self.elementsModificationSlotsFilter()
-            hs = self.elementsCreateNewSlot(content_type)
+            ms = self.elementsCreateNewSlot(content_type)
         else:
             if modification_slot is None:
-                hs = self.elementsGetLastHS()
+                ms = self.elementsGetLastModSlot()
             else:
-                hs = modification_slot
+                ms = modification_slot
         case1 = element_type == ToolID.removing
         case2 = element_type == ToolID.TEMPORARY_TYPE_NOT_DEFINED
         case3 = start_drawing
@@ -1070,7 +1070,7 @@ class ElementsMixin(ElementsTransformMixin):
         self.elements = self.elementsFilter(only_filter=is_removing)
         # создание элемента
         element = Element(element_type, self.elements)
-        self.elementsAppendElementToHS(element, hs)
+        self.elementsAppendElementToMS(element, ms)
         # обновление индекса после создания элемента
         self.elements_modification_index = len(self.modification_slots)
         return element
@@ -1149,8 +1149,8 @@ class ElementsMixin(ElementsTransformMixin):
     def elementsFilter(self, only_filter=False):
         # фильтрация по индексу
         visible_elements = []
-        for hs in self.elementsModificationSlotsFilter():
-            visible_elements.extend(hs.elements)
+        for ms in self.elementsModificationSlotsFilter():
+            visible_elements.extend(ms.elements)
 
         if only_filter:
             return visible_elements
@@ -1193,10 +1193,10 @@ class ElementsMixin(ElementsTransformMixin):
 
     def elementsIsSpecialCase(self, element):
         special_case = element is not None
-        hs = self.elementsGetLastHS()
-        special_case = special_case and hs and hs.content_type in [ToolID.zoom_in_region, ToolID.copypaste]
+        ms = self.elementsGetLastModSlot()
+        special_case = special_case and ms and ms.content_type in [ToolID.zoom_in_region, ToolID.copypaste]
         # даём возможность создать другой слот
-        special_case = special_case and hs and not len(hs.elements) == 2
+        special_case = special_case and ms and not len(ms.elements) == 2
         return special_case
 
     def elementsRetrieveElementsFromElementGroup(self, visible_elements, group_id):
@@ -1214,7 +1214,7 @@ class ElementsMixin(ElementsTransformMixin):
             return None, None
 
     def elementsAdvancedInputPressEvent(self, event, event_pos, element):
-        els_count = element.hs.elements.__len__()
+        els_count = element.ms.elements.__len__()
         if els_count == 1:
             self.elementsMousePressEventDefault(element, event)
             element.calc_local_data()
@@ -1222,7 +1222,7 @@ class ElementsMixin(ElementsTransformMixin):
             element.group_id = element.unique_index
         elif els_count == 2:
             element.element_position = event_pos
-            first_element = element.hs.elements[0]
+            first_element = element.ms.elements[0]
             element.group_id = first_element.group_id
             element.calc_local_data_finish(first_element)
             element.second = True
@@ -1230,7 +1230,7 @@ class ElementsMixin(ElementsTransformMixin):
             raise Exception("unsupported branch!")
 
     def elementsAdvancedInputMoveEvent(self, event, event_pos, element, finish=False):
-        els_count = element.hs.elements.__len__()
+        els_count = element.ms.elements.__len__()
         if els_count == 1:
             element.end_point = event_pos
             element.calc_local_data()
@@ -2211,13 +2211,13 @@ class ElementsMixin(ElementsTransformMixin):
         info_rect.moveBottomLeft(QPointF(10, -10) + info_rect.bottomLeft())
         vertical_offset = 0
         visible_slots = self.elementsModificationSlotsFilter()
-        for index, hs in list(enumerate(self.modification_slots)):
+        for index, ms in list(enumerate(self.modification_slots)):
             painter.save()
             painter.setPen(Qt.white)
-            slot_info_text = f'[slot {index}] {hs.content_type}'
+            slot_info_text = f'[slot {index}] {ms.content_type}'
             font = painter.font()
             pixel_height = 25
-            if hs not in visible_slots:
+            if ms not in visible_slots:
                 painter.setPen(QPen(QColor(255, 100, 100)))
                 font.setStrikeOut(True)
             else:
@@ -2225,10 +2225,10 @@ class ElementsMixin(ElementsTransformMixin):
                 font.setStrikeOut(False)
             font.setPixelSize(20)
             painter.setFont(font)
-            vertical_offset += (len(hs.elements) + 1)
+            vertical_offset += (len(ms.elements) + 1)
             pos_right = info_rect.bottomLeft() + QPointF(0, -vertical_offset*pixel_height)
             painter.drawText(pos_right, slot_info_text)
-            for i, elem in enumerate(hs.elements):
+            for i, elem in enumerate(ms.elements):
 
                 painter.setPen(Qt.white)
                 if elem not in visible_elements:

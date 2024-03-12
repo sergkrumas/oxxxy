@@ -297,17 +297,10 @@ class Element():
 
 class ElementsModificationSlot():
 
-    __slots__ = ['elements', 'content_type', 'unique_index']
-
     def __init__(self, content_type):
         super().__init__()
         self.elements = list()
         self.content_type = content_type
-        if hasattr(ElementsModificationSlot, "_counter"):
-            ElementsModificationSlot._counter += 1
-        else:
-            ElementsModificationSlot._counter = 0
-        self.unique_index = ElementsModificationSlot._counter
 
 class ElementsMixin(ElementsTransformMixin):
 

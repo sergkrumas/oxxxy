@@ -2463,7 +2463,7 @@ class ToolsWindow(QWidget):
 
         def set_callbacks_for_sliders(widget):
             widget.value_changed.connect(self.on_parameters_changed)
-            widget.value_changing_initiated.connect(self.parent().elementsAcquireStampForOngoingElementsModification)
+            widget.value_changing_initiated.connect(partial(self.parent().elementsAcquireStampForOngoingElementsModification, 'sliders'))
             widget.value_changing_finished.connect(self.parent().elementsDeacquireStampForFinishedElementsModification)
 
         # для пометок
@@ -3766,7 +3766,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         click_handler(action)
 
     def special_change_handler(self, callback):
-        self.elementsAcquireStampForOngoingElementsModification()
+        self.elementsAcquireStampForOngoingElementsModification('checkbox')
         callback()
         self.elementsDeacquireStampForFinishedElementsModification()
 

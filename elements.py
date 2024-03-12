@@ -344,13 +344,21 @@ class ElementsMixin(ElementsTransformMixin):
         self.show_background = True
         self.dark_pictures = True
 
-    def elementsAcquireStampForOngoingElementsModification(self):
+    def elementsAcquireStampForOngoingElementsModification(self, _type):
         if self.modification_stamp is None:
             self.modification_stamp = time.time()
+            self.modification_slot = self.elementsCreateNewSlot(_type)
 
     def elementsDeacquireStampForFinishedElementsModification(self):
         if self.modification_stamp is not None:
             self.modification_stamp = None
+            if len(self.modification_slot.elements) == 0:
+                if self.modification_slot in self.history_slots:
+                    self.history_slots.remove(self.modification_slot)
+                    self.elements_history_index -= 1
+                    self.history_slots = self.elementsHistoryFilterSlots()
+                    self.elements = self.elementsHistoryFilter()
+            self.modification_slot = None
 
     def elementsCheckAcquiredModificationStamp(self):
         if self.modification_stamp is None:
@@ -986,12 +994,16 @@ class ElementsMixin(ElementsTransformMixin):
             tw.update()
         self.update()
 
+    def elementsRemoveCurrentHistorySlot(self):
+        self.elements_history_index -= 1
+        self.history_slots = self.elementsHistoryFilterSlots()
+        self.elements = self.elementsHistoryFilter()
+
     def elementsMakeSureTheresNoUnfinishedElement(self):
+        return
         hs = self.elementsGetLastHS()
         if hs and hs.content_type in [ToolID.zoom_in_region, ToolID.copypaste] and len(hs.elements) == 1:
-            self.elements_history_index -= 1
-            self.history_slots = self.elementsHistoryFilterSlots()
-            self.elements = self.elementsHistoryFilter()
+            self.elementsRemoveCurrentHistorySlot()
 
     def elementsOnTransformToolActivated(self):
         if self.active_element:
@@ -1239,7 +1251,6 @@ class ElementsMixin(ElementsTransformMixin):
             self.tools_window.show_picture_menu()
             return
 
-        self.elementsAcquireStampForOngoingElementsModification()
         # основная часть
         el = self.elementsGetLastElement()
         if self.current_tool == ToolID.transform:
@@ -1294,12 +1305,15 @@ class ElementsMixin(ElementsTransformMixin):
             self.elementsDeactivateTextElements()
 
             if self.is_over_scaling_activation_area(event.pos()):
+                self.elementsAcquireStampForOngoingElementsModification('mouse; scaling')                
                 self.canvas_START_selected_elements_SCALING(event)
 
             elif self.is_over_rotation_activation_area(event.pos()):
+                self.elementsAcquireStampForOngoingElementsModification('mouse; rotation')
                 self.canvas_START_selected_elements_ROTATION(event.pos())
 
             elif self.any_element_area_under_mouse(event.modifiers() & Qt.ShiftModifier):
+                self.elementsAcquireStampForOngoingElementsModification('mouse; translation')
                 self.canvas_START_selected_elements_TRANSLATION(event.pos())
                 self.update_selection_bouding_box()
 
@@ -1334,7 +1348,7 @@ class ElementsMixin(ElementsTransformMixin):
         self.update()
 
     def elementsMoveElement(self, event):
-        self.elementsAcquireStampForOngoingElementsModification()
+        self.elementsAcquireStampForOngoingElementsModification('arrows')
         modifiers = QApplication.queryKeyboardModifiers()
         value = 1
         if modifiers & Qt.ShiftModifier:
@@ -1469,7 +1483,6 @@ class ElementsMixin(ElementsTransformMixin):
     def elementsMouseReleaseEvent(self, event):
         event_pos = self.elementsMapFromViewportToCanvas(QPointF(event.pos()))
 
-        self.elementsDeacquireStampForFinishedElementsModification()
 
         tool = self.current_tool
         if self.drag_capture_zone:
@@ -1564,16 +1577,17 @@ class ElementsMixin(ElementsTransformMixin):
                     self.selection_ongoing = False
 
                 if self.selected_items:
-                    for element in self.selected_items:
-                        if element.type == ToolID.blurring:
-                            element.finished = True
-                            self.elementsSetBlurredPixmap(element)
-                        elif element.type in [ToolID.zoom_in_region, ToolID.copypaste]:
-                            if not element.second:
-                                self.elementsSetCopiedPixmap(element)
-                        elif element.type == ToolID.text:
-                            element.end_point_modified = True
+                    for se in self.selected_items:
+                        if se.type == ToolID.blurring:
+                            se.finished = True
+                            self.elementsSetBlurredPixmap(se)
+                        elif se.type in [ToolID.zoom_in_region, ToolID.copypaste]:
+                            if not se.second:
+                                self.elementsSetCopiedPixmap(se)
+                        elif se.type == ToolID.text:
+                            se.end_point_modified = True
 
+        self.elementsDeacquireStampForFinishedElementsModification()
 
         self.elementsAutoDeleteInvisibleElement(element)
         self.tools_window.forwards_backwards_update()
@@ -2304,7 +2318,10 @@ class ElementsMixin(ElementsTransformMixin):
             return element
         else:
             if element._modification_stamp != self.modification_stamp:
-                new_element = self.elementsCreateNew(ToolID.TEMPORARY_TYPE_NOT_DEFINED)
+                new_element = self.elementsCreateNew(ToolID.TEMPORARY_TYPE_NOT_DEFINED,
+                    history_slot=self.modification_slot,
+                    create_new_slot=False
+                )
                 self.elementsCopyElementData(new_element, element)
                 new_element.source_index = element.unique_index
                 new_element._modification_stamp = self.modification_stamp
@@ -2565,7 +2582,7 @@ class ElementsMixin(ElementsTransformMixin):
         pos = QPointF(0, 0)
         for source_element in elements:
 
-            self.elementsAcquireStampForOngoingElementsModification()
+            self.elementsAcquireStampForOngoingElementsModification('arranging')
             element = self.elementsPrepareElementCopyForModifications(source_element)
             self.elementsDeacquireStampForFinishedElementsModification()
 

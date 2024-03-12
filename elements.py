@@ -537,7 +537,7 @@ class ElementsMixin(ElementsTransformMixin):
 
 
         # сохранение индексов для истории действий
-        data.update({'elements_modificaton_index':     self.elements_modificaton_index                  })
+        data.update({'elements_modification_index':     self.elements_modification_index        })
 
 
         # сохранение сдвига холста
@@ -700,7 +700,7 @@ class ElementsMixin(ElementsTransformMixin):
 
 
         # загрузка индексов для истории действий
-        self.elements_modificaton_index = data.get('elements_modificaton_index', 0)
+        self.elements_modification_index = data.get('elements_modification_index', 0)
 
 
         # сохранение сдвига холста

@@ -1628,6 +1628,8 @@ class ElementsMixin(ElementsTransformMixin):
                 element.end_point = event_pos
                 element.path.lineTo(event_pos)
             element.calc_local_data()
+            if element.straight:
+                element.recalc_local_data_for_straight_objects()
         elif tool == ToolID.line:
             element.end_point = event_pos
             if event.modifiers() & Qt.ShiftModifier:

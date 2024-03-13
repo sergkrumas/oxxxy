@@ -169,6 +169,7 @@ class ViewerWindow(QWidget):
             self.INPUT_POINT2 = frame_rect.bottomRight()
             self.capture_region_rect = build_valid_rect(self.INPUT_POINT1, self.INPUT_POINT2)
             self.is_rect_defined = True
+            self.user_input_started = True
         self.update()
 
     def no_frame_info(self):

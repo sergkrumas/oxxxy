@@ -66,6 +66,7 @@ from elements import ElementsMixin, ToolID
 class Globals():
     DEBUG = True
     DEBUG_SETTINGS_WINDOW = False
+    DEBUG_TRAY_MENU_WINDOW = False
     DEBUG_ELEMENTS = False
     DEBUG_ELEMENTS_PICTURE_FRAMING = True
     DEBUG_ELEMENTS_COLLAGE = False
@@ -744,6 +745,8 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
         if menu and not notification:
             self.widget_type = "menu"
 
+            self.setAcceptDrops(True)
+
             self.label = QLabel()
             self.label.setText(f"Oxxxy {Globals.VERSION_INFO}")
             self.label.setStyleSheet(self.title_label_style)
@@ -842,6 +845,35 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
         self.setLayout(self.layout)
         self.setMouseTracking(True)
 
+    def dragEnterEvent(self, event):
+        mime_data = event.mimeData()
+        if mime_data.hasUrls() or mime_data.hasImage():
+            event.accept()
+        else:
+            event.ignore()
+
+    def dropEvent(self, event):
+        if event.mimeData().hasUrls():
+            event.setDropAction(Qt.CopyAction)
+            event.accept()
+            paths = []
+            for url in event.mimeData().urls():
+                if url.isLocalFile():
+                    path = str(url.toLocalFile())
+                    # if not os.path.isdir(path):
+                    #     path = os.path.dirname(path)
+                    paths.append(path)
+                else:
+                    pass
+                    # url = url.url()
+                    # download_file(url)
+            if Globals.DEBUG:
+                to_print = f'Drop Event Data Local Paths: {paths}'
+                print(to_print)
+            self.start_editor_in_compile_mode(filepaths=paths)
+        else:
+            event.ignore()
+
     def contextMenuEvent(self, event):
         menu = QMenu()
         restart_app = menu.addAction('Перезапустить приложение')
@@ -918,9 +950,9 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
         self.hide()
         invoke_screenshot_editor(request_type=RequestType.Fullscreen)
 
-    def start_editor_in_compile_mode(self):
+    def start_editor_in_compile_mode(self, filepaths=None):
         self.hide()
-        invoke_screenshot_editor(request_type=RequestType.Editor)
+        invoke_screenshot_editor(request_type=RequestType.Editor, filepaths=filepaths)
 
     def open_folder(self):
         SettingsWindow.set_screenshot_folder_path(get_only=True)
@@ -4614,7 +4646,7 @@ def hide_all_windows():
     if SettingsWindow.instance:
         SettingsWindow.instance.hide()
 
-def invoke_screenshot_editor(request_type=None):
+def invoke_screenshot_editor(request_type=None, filepaths=None):
     global screenshot_editor
     if request_type is None:
         raise Exception("Unknown request type")
@@ -4661,10 +4693,11 @@ def invoke_screenshot_editor(request_type=None):
         screenshot_editor.activateWindow()
 
     if request_type == RequestType.Editor:
-        path = SettingsJson().get_data("SCREENSHOT_FOLDER_PATH")
-        if not path:
-            path = ""
-        filepaths = get_filepaths_dialog(path=path)
+        if not filepaths:
+            path = SettingsJson().get_data("SCREENSHOT_FOLDER_PATH")
+            if not path:
+                path = ""
+            filepaths = get_filepaths_dialog(path=path)
         if filepaths:
             screenshot_editor = ScreenshotWindow(screenshot_image, metadata)
             screenshot_editor.request_images_editor_mode(filepaths)
@@ -4826,7 +4859,9 @@ def _main():
     else:
         # editor mode
         if Globals.DEBUG or Globals.RUN_ONCE:
-            if Globals.DEBUG_SETTINGS_WINDOW:
+            if Globals.DEBUG_TRAY_MENU_WINDOW:
+                NotificationOrMenu(menu=True).place_window()
+            elif Globals.DEBUG_SETTINGS_WINDOW:
                 init_global_hotkeys_base()
                 sw = SettingsWindow()
                 sw.show()
@@ -4834,7 +4869,6 @@ def _main():
             else:
                 invoke_screenshot_editor(request_type=RequestType.Fragment)
             # invoke_screenshot_editor(request_type=RequestType.Fullscreen)
-            # NotificationOrMenu(menu=True).place_window()
         else:
             registred_hotkeys = True
             init_global_hotkeys_base()

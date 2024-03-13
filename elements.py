@@ -928,8 +928,11 @@ class ElementsMixin(ElementsTransformMixin):
             if hasattr(element, 'second') and not element.second:
                 self.elementsSetCopiedPixmap(element)
 
-    def elementsFramePicture(self, frame_rect=None, frame_info=None, pixmap=None):
-        ae = self.active_element
+    def elementsFramePicture(self, element=None, frame_rect=None, frame_info=None, pixmap=None):
+        if element is not None:
+            ae = element
+        else:
+            ae = self.active_element
         if frame_rect:
             if ae.backup_pixmap is None:
                 ae.backup_pixmap = ae.pixmap

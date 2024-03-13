@@ -259,7 +259,6 @@ class ElementsTransformMixin():
                     else:
                         if min_area_element is not element:
                             element._selected = False
-                            self.active_element = None
                         else:
                             element._selected = is_under_mouse
                             if is_under_mouse:

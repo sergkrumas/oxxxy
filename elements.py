@@ -1234,12 +1234,11 @@ class ElementsMixin(ElementsTransformMixin):
         el = None
         if isinstance(arg, (list, tuple)):
             els = arg
-        else:
+        elif isinstance(arg, Element):
             el = arg
 
         # reset
         self._elementsSetSelectedPreReset()
-
         # setting
         if el:
             el._selected = True
@@ -1393,8 +1392,6 @@ class ElementsMixin(ElementsTransformMixin):
 
     def elementsMousePressEvent(self, event):
         tool = self.current_tool
-
-        self.active_element = None
 
         event_pos = self.elementsMapFromViewportToCanvas(QPointF(event.pos()))
 

@@ -1723,6 +1723,16 @@ class ElementsMixin(ElementsTransformMixin):
             if event.button() == Qt.LeftButton:
                 self.start_translation_pos = None
 
+                if any((self.translation_ongoing, self.scaling_ongoing, self.rotation_ongoing)):
+                    if self.selected_items:
+                        for el in self.elements:
+                            if el.type == ToolID.blurring:
+                                el.finished = True
+                                self.elementsSetBlurredPixmap(el)
+                            elif el.type == [ToolID.zoom_in_region, ToolID.copypaste]:
+                                if not el.second:
+                                    self.elementsSetCopiedPixmap(el)
+
                 if not alt and not self.translation_ongoing and not self.rotation_ongoing and not self.scaling_ongoing:
                     self.canvas_selection_callback(event.modifiers() == Qt.ShiftModifier)
                     # if self.selection_rect is not None:
@@ -1773,53 +1783,95 @@ class ElementsMixin(ElementsTransformMixin):
     def elementsSetCopiedPixmap(self, element):
         if element.second:
             return
-        er = element.get_size_rect(scaled=True)
-        er.moveCenter(element.element_position)
-        capture_pos = element.element_position
-        capture_width = er.width()
-        capture_height = er.height()
-        capture_rotation = element.element_rotation
-        pixmap = QPixmap.fromImage(self.source_pixels)
-        element.pixmap = capture_rotated_rect_from_pixmap(pixmap,
-            capture_pos,
-            capture_rotation,
-            capture_width,
-            capture_height
-        )
+
+        if False:
+            er = element.get_size_rect(scaled=True)
+            capture_pos = element.element_position
+            capture_width = er.width()
+            capture_height = er.height()
+            capture_rotation = element.element_rotation
+            pixmap = QPixmap.fromImage(self.source_pixels)
+            element.pixmap = capture_rotated_rect_from_pixmap(pixmap,
+                capture_pos,
+                capture_rotation,
+                capture_width,
+                capture_height
+            )
+        else:
+            capture_region_rect = element.get_canvas_space_selection_area().boundingRect()
+            self.elementsUpdateFinalPicture(
+                capture_region_rect=capture_region_rect,
+                draw_background_only=True,
+                no_multiframing=True
+            )
+            er = element.get_size_rect(scaled=True)
+            capture_pos = element.element_position - capture_region_rect.topLeft()
+            capture_width = er.width()
+            capture_height = er.height()
+            capture_rotation = element.element_rotation
+            pixmap = self.elements_final_output
+            element.pixmap = capture_rotated_rect_from_pixmap(pixmap,
+                capture_pos,
+                capture_rotation,
+                capture_width,
+                capture_height
+            )
 
     def elementsSetBlurredPixmap(self, element):
         if not element.finished:
             return
 
-        element_area = element.get_canvas_space_selection_area()
-        eabr = element_area.boundingRect()
-        canvas_source_rect = build_valid_rectF(QPointF(0, 0), eabr.bottomRight())
+        if False:
+            element_area = element.get_canvas_space_selection_area()
+            eabr = element_area.boundingRect()
+            canvas_source_rect = build_valid_rectF(QPointF(0, 0), eabr.bottomRight())
 
-        # код для учёта затемнения в фоне
-        cropped_source_pixels = QPixmap(canvas_source_rect.size().toSize())
-        cropped_source_pixels.fill(Qt.transparent)
-        pr = QPainter()
-        pr.begin(cropped_source_pixels)
-        target_rect = canvas_source_rect
-        source_rect = canvas_source_rect
-        pr.drawImage(target_rect, self.source_pixels, source_rect)
-        self.elementsDrawDarkening(pr, prepare_pixmap=True)
-        pr.end()
-        del pr
+            # код для учёта затемнения в фоне
+            cropped_source_pixels = QPixmap(canvas_source_rect.size().toSize())
+            cropped_source_pixels.fill(Qt.transparent)
+            pr = QPainter()
+            pr.begin(cropped_source_pixels)
+            target_rect = canvas_source_rect
+            source_rect = canvas_source_rect
+            pr.drawImage(target_rect, self.source_pixels, source_rect)
+            self.elementsDrawDarkening(pr, prepare_pixmap=True)
+            pr.end()
+            del pr
 
-        er = element.get_size_rect(scaled=True)
-        er.moveCenter(element.element_position)
-        capture_pos = element.element_position
-        capture_width = er.width()
-        capture_height = er.height()
-        capture_rotation = element.element_rotation
-        source_pixmap = cropped_source_pixels
-        element.pixmap = capture_rotated_rect_from_pixmap(source_pixmap,
-            capture_pos,
-            capture_rotation,
-            capture_width,
-            capture_height
-        )
+            er = element.get_size_rect(scaled=True)
+            capture_pos = element.element_position
+            capture_width = er.width()
+            capture_height = er.height()
+            capture_rotation = element.element_rotation
+            source_pixmap = cropped_source_pixels
+            element.pixmap = capture_rotated_rect_from_pixmap(source_pixmap,
+                capture_pos,
+                capture_rotation,
+                capture_width,
+                capture_height
+            )
+        else:
+            
+            capture_region_rect = element.get_canvas_space_selection_area().boundingRect()
+            self.elementsUpdateFinalPicture(
+                capture_region_rect=capture_region_rect,
+                draw_background_only=True,
+                no_multiframing=True,
+                prepare_darkening=True,
+            )
+            er = element.get_size_rect(scaled=True)
+            capture_pos = element.element_position - capture_region_rect.topLeft()
+            capture_width = er.width()
+            capture_height = er.height()
+            capture_rotation = element.element_rotation
+            source_pixmap = self.elements_final_output
+            element.pixmap = capture_rotated_rect_from_pixmap(source_pixmap,
+                capture_pos,
+                capture_rotation,
+                capture_width,
+                capture_height
+            )
+
         blured = QPixmap(er.size().toSize())
         blured.fill(Qt.transparent)
         if element.toolbool:
@@ -2239,14 +2291,15 @@ class ElementsMixin(ElementsTransformMixin):
             rect.bottomLeft()
         ]
 
-    def elementsDrawMain(self, painter, final=False, draw_background_only=False):
+    def elementsDrawMain(self, painter, final=False, draw_background_only=False, prepare_darkening=False):
         painter.setRenderHint(QPainter.HighQualityAntialiasing, True)
         painter.setRenderHint(QPainter.Antialiasing, True)
         painter.setRenderHint(QPainter.SmoothPixmapTransform, True)
         painter.save()
         # draw elements
-        if not self.dark_pictures:
-            self.elementsDrawDarkening(painter)
+        if not prepare_darkening:
+            if not self.dark_pictures:
+                self.elementsDrawDarkening(painter)
 
         # штампы (изображения) рисуем первыми, чтобы пометки всегда были поверх них
         all_visible_elements = self.elementsFilter()
@@ -2275,12 +2328,14 @@ class ElementsMixin(ElementsTransformMixin):
             self.elementsDrawSelectionTransformBox(painter)
             self.elementsDrawSelectedElementsDottedOutlines(painter)
 
+        if self.dark_pictures or prepare_darkening:
+            self.elementsDrawDarkening(painter)
+
         if self.Globals.DEBUG and self.capture_region_rect and not final:
             painter.setPen(QPen(QColor(Qt.white)))
             text = f"{self.elements_modification_index} :: {self.current_tool}"
             painter.drawText(self.capture_region_rect, Qt.AlignCenter, text)
-        if self.dark_pictures:
-            self.elementsDrawDarkening(painter)
+
         painter.restore()
 
         painter.setRenderHint(QPainter.HighQualityAntialiasing, False)
@@ -2412,11 +2467,12 @@ class ElementsMixin(ElementsTransformMixin):
                 painter.restore()
             painter.restore()
 
-    def elementsUpdateFinalPicture(self, capture_region_rect=None):
+    def elementsUpdateFinalPicture(self, capture_region_rect=None,
+                        draw_background_only=False, no_multiframing=False, prepare_darkening=False):
         if self.capture_region_rect:
             specials = [el for el in self.elementsFilter() if el.type == ToolID.multiframing]
             any_multiframing_element = any(specials)
-            if any_multiframing_element:
+            if any_multiframing_element and not no_multiframing:
                 max_width = -1
                 total_height = 0
                 specials_rects = []
@@ -2465,7 +2521,10 @@ class ElementsMixin(ElementsTransformMixin):
                 self.canvas_origin = -capture_region_rect.topLeft()
                 self.canvas_scale_x = 1.0
                 self.canvas_scale_y = 1.0
-                self.elementsDrawMain(painter, final=True)
+                self.elementsDrawMain(painter, final=True,
+                        draw_background_only=draw_background_only,
+                        prepare_darkening=prepare_darkening,
+                )
                 self.canvas_origin = self._canvas_origin
                 self.canvas_scale_x = self._canvas_scale_x
                 self.canvas_scale_y = self._canvas_scale_y

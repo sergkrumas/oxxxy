@@ -149,7 +149,10 @@ class Element():
         self.element_position = (self.start_point + self.end_point)/2.0
         self.local_start_point = self.start_point - self.element_position
         self.local_end_point = self.end_point - self.element_position
-        diff = self.start_point - self.end_point
+        diff = self.local_start_point - self.local_end_point
+        self.element_width = abs(diff.x())
+        self.element_height = abs(diff.y())
+
     def recalc_local_data_for_straight_objects(self):
         rot = QTransform()
 

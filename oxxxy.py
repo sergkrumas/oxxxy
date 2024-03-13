@@ -2918,11 +2918,11 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         self.draw_uncaptured_zones(painter, self.uncapture_draw_type, QRectF(viewport_input_rect), step=1)
 
         # background image
-        self.draw_capture_zone(painter, QRectF(viewport_input_rect), canvas_input_rect, shot=1)
+        self.draw_capture_zone(painter, QRectF(viewport_input_rect), shot=1)
         # elements
         self.elementsDrawMain(painter)
         # mask overlay
-        self.draw_capture_zone(painter, QRectF(viewport_input_rect), None, shot=2)
+        self.draw_capture_zone(painter, QRectF(viewport_input_rect), shot=2)
 
         self.draw_uncaptured_zones(painter, self.uncapture_draw_type, QRectF(viewport_input_rect), step=2)
 
@@ -3251,7 +3251,6 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             elif opacity_type == LayerOpacity.HalfTransparent: # ghost
                 pass
             elif opacity_type == LayerOpacity.Opaque: # stay still
-                # painter.drawImage(self_rect, self.source_pixels)
                 self.elementsDrawMain(painter, final=False, draw_background_only=True)
         elif step == 2:
 
@@ -3267,7 +3266,6 @@ class ScreenshotWindow(QWidget, ElementsMixin):
                     painter.fillRect(self_rect, QColor(0, 0, 0, 100))
                     painter.setOpacity(0.6)
                     self.elementsDrawMain(painter, final=False, draw_background_only=True)
-                    # painter.drawImage(self_rect, self.source_pixels)
                     painter.setOpacity(1.0)
                 elif opacity_type == LayerOpacity.Opaque: # stay still
                     painter.fillRect(self_rect, QColor(0, 0, 0, 100))
@@ -3287,13 +3285,10 @@ class ScreenshotWindow(QWidget, ElementsMixin):
                     painter.setPen(pen)
                     painter.setBrush(brush)
 
-    def draw_capture_zone(self, painter, input_rect, _input_rect, shot=1):
+    def draw_capture_zone(self, painter, input_rect, shot=1):
         tw = self.tools_window
         if shot == 1 and self.is_input_points_set():
             if self.show_background:
-                # input_rect_dest = input_rect
-                # input_rect_source = QRectF(_input_rect)
-                # painter.drawImage(input_rect_dest, self.source_pixels, input_rect_source)
                 painter.setClipping(True)
                 path = QPainterPath()
                 path.addRect(QRectF(input_rect))

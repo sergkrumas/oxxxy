@@ -1635,6 +1635,7 @@ class ElementsMixin(ElementsTransformMixin):
             if event.modifiers() & Qt.ShiftModifier:
                 element.end_point = constraint45Degree(element.start_point, element.end_point)
             element.calc_local_data()
+            element.recalc_local_data_for_straight_objects()
         # где-то здесь надо удалять элементы, если начальная и конечная точки совпадают
         elif tool in [ToolID.oval, ToolID.rect, ToolID.numbering, ToolID.multiframing]:
             if element.equilateral:

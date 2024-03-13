@@ -943,7 +943,7 @@ class ElementsMixin(ElementsTransformMixin):
             ae.backup_pixmap = None
         ae.frame_info = frame_info
         ae.calc_local_data()
-        ae.element_scale_y = 1.0
+        ae.element_scale_x = 1.0
         ae.element_scale_y = 1.0
         self.elementsSetSelected(ae)
 

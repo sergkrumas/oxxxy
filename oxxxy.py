@@ -4118,8 +4118,8 @@ class ScreenshotWindow(QWidget, ElementsMixin):
 
         contextMenu.addSeparator() ###############################################################
 
+        open_project = add_item("Открыть проект...")
         save_project = add_item("Сохранить проект")
-        open_project = add_item("Открыть проект")
 
         contextMenu.addSeparator()
 

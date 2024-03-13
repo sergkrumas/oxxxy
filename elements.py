@@ -157,7 +157,8 @@ class Element():
         rot = QTransform()
 
         # default_45_degrees будет иметь значение не 45 градусов,
-        # а -45, потому что здесь ось Y направлена вниз 
+        # а -45, потому что здесь ось Y направлена вниз
+        # -1, 1 обозначет вектор, направленный снизу слева вверх вправо
         default_45_degrees = math.degrees(math.atan2(-1, 1))
         diff = self.local_end_point - self.local_start_point
         object_orientation_degrees = math.degrees(math.atan2(diff.y(), diff.x()))

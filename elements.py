@@ -2291,6 +2291,9 @@ class ElementsMixin(ElementsTransformMixin):
             rect.bottomLeft()
         ]
 
+    def elementsDrawMainBackgroundOnlyNotFinal(self, painter):
+        self.elementsDrawMain(painter, final=False, draw_background_only=True)
+
     def elementsDrawMain(self, painter, final=False, draw_background_only=False, prepare_darkening=False):
         painter.setRenderHint(QPainter.HighQualityAntialiasing, True)
         painter.setRenderHint(QPainter.Antialiasing, True)

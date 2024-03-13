@@ -3247,11 +3247,11 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         self_rect = self.elementsMapFromCanvasToViewportRectF(self_rect)
         if step == 1:
             if opacity_type == LayerOpacity.FullTransparent: # full transparent
-                painter.fillRect(self_rect, QColor(0, 0, 0, 5))
+                painter.fillRect(self_rect, QColor(0, 0, 0, 150))
             elif opacity_type == LayerOpacity.HalfTransparent: # ghost
                 pass
             elif opacity_type == LayerOpacity.Opaque: # stay still
-                self.elementsDrawMain(painter, final=False, draw_background_only=True)
+                self.elementsDrawMainBackgroundOnlyNotFinal(painter)
         elif step == 2:
 
             if self.capture_region_widget_enabled:
@@ -3265,7 +3265,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
                 elif opacity_type == LayerOpacity.HalfTransparent: # ghost
                     painter.fillRect(self_rect, QColor(0, 0, 0, 100))
                     painter.setOpacity(0.6)
-                    self.elementsDrawMain(painter, final=False, draw_background_only=True)
+                    self.elementsDrawMainBackgroundOnlyNotFinal(painter)
                     painter.setOpacity(1.0)
                 elif opacity_type == LayerOpacity.Opaque: # stay still
                     painter.fillRect(self_rect, QColor(0, 0, 0, 100))
@@ -3293,7 +3293,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
                 path = QPainterPath()
                 path.addRect(QRectF(input_rect))
                 painter.setClipPath(path)
-                self.elementsDrawMain(painter, final=False, draw_background_only=True)
+                self.elementsDrawMainBackgroundOnlyNotFinal(painter)
                 painter.setClipping(False)
 
         if shot == 2 and self.is_input_points_set():

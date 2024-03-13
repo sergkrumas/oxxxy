@@ -456,6 +456,8 @@ class ElementsMixin(ElementsTransformMixin):
                     pos_y = y1 + row_height/2
                     element.element_position = QPointF(pos_x, pos_y)
 
+            self.elementsSetSelected(None)
+
     def elementsUpdateUI(self):
         self.update()
         if self.tools_window:

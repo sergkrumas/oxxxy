@@ -1615,7 +1615,9 @@ class ElementsMixin(ElementsTransformMixin):
         elif tool == ToolID.transform:
             no_mod = event.modifiers() == Qt.NoModifier
 
-            if not self.selection_ongoing:
+            self.canvas_ALLOW_selected_elements_TRANSLATION(event.pos())
+
+            if any((self.translation_ongoing, self.scaling_ongoing, self.rotation_ongoing)):
                 new_elements = []
                 for element in self.selected_items[:]:
                     mod_element = self.elementsPrepareElementCopyForModifications(element)
@@ -1631,11 +1633,11 @@ class ElementsMixin(ElementsTransformMixin):
             elif self.rotation_ongoing:
                 self.canvas_DO_selected_elements_ROTATION(event.pos())
 
-            elif no_mod and not self.selection_ongoing:
+            elif self.translation_ongoing:
                 self.canvas_DO_selected_elements_TRANSLATION(event.pos())
                 self.update_selection_bouding_box()
 
-            elif self.selection_ongoing is not None and not self.translation_ongoing:
+            elif self.selection_ongoing is not None:
                 self.selection_end_point = QPointF(event.pos())
                 if self.selection_start_point:
                     self.selection_rect = build_valid_rectF(self.selection_start_point, self.selection_end_point)

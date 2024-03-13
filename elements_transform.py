@@ -382,17 +382,24 @@ class ElementsTransformMixin():
                 #         if el.type != BoardItem.types.ITEM_FRAME or (el.type == BoardItem.types.ITEM_FRAME and el.calc_area < this_frame_area):
                 #             board_item._children_items.append(el)
 
+    def canvas_ALLOW_selected_elements_TRANSLATION(self, event_pos):
+        if self.start_translation_pos:
+            delta = QPointF(self.elementsMapFromViewportToCanvas(event_pos)) - self.start_translation_pos
+            if not self.translation_ongoing:
+                if abs(delta.x()) > 0 or abs(delta.y()) > 0:
+                    self.translation_ongoing = True
+
     def canvas_DO_selected_elements_TRANSLATION(self, event_pos):
         if self.start_translation_pos:
-            self.translation_ongoing = True
             delta = QPointF(self.elementsMapFromViewportToCanvas(event_pos)) - self.start_translation_pos
-            for element in self.elementsFilter():
-                if element._selected:
-                    element.element_position = element.__element_position + delta
-                    # if element.type == BoardItem.types.ITEM_FRAME:
-                    #     for ch_bi in element._children_items:
-                    #         ch_bi.element_position = ch_bi.__element_position + delta
-            self.init_selection_bounding_box_widget()
+            if self.translation_ongoing:
+                for element in self.elementsFilter():
+                    if element._selected:
+                        element.element_position = element.__element_position + delta
+                        # if element.type == BoardItem.types.ITEM_FRAME:
+                        #     for ch_bi in element._children_items:
+                        #         ch_bi.element_position = ch_bi.__element_position + delta
+                self.init_selection_bounding_box_widget()
         else:
             self.translation_ongoing = False
 

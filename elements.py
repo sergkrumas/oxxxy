@@ -150,6 +150,24 @@ class Element():
         self.local_start_point = self.start_point - self.element_position
         self.local_end_point = self.end_point - self.element_position
         diff = self.start_point - self.end_point
+    def recalc_local_data_for_straight_objects(self):
+        rot = QTransform()
+
+        # default_45_degrees будет иметь значение не 45 градусов,
+        # а -45, потому что здесь ось Y направлена вниз 
+        default_45_degrees = math.degrees(math.atan2(-1, 1))
+        diff = self.local_end_point - self.local_start_point
+        object_orientation_degrees = math.degrees(math.atan2(diff.y(), diff.x()))
+        diff_angle = default_45_degrees - object_orientation_degrees
+
+        rot.rotate(-diff_angle)
+
+        self.local_start_point = rot.map(self.local_start_point)
+        self.local_end_point = rot.map(self.local_end_point)
+
+        self.element_rotation = diff_angle
+
+        diff = self.local_start_point - self.local_end_point
         self.element_width = abs(diff.x())
         self.element_height = abs(diff.y())
 
@@ -1591,6 +1609,7 @@ class ElementsMixin(ElementsTransformMixin):
             if event.modifiers() & Qt.ShiftModifier:
                 element.end_point = constraint45Degree(element.start_point, element.end_point)
             element.calc_local_data()
+            element.recalc_local_data_for_straight_objects()
         elif tool in [ToolID.zoom_in_region, ToolID.copypaste]:
             self.elementsAdvancedInputMoveEvent(event, event_pos, element, finish=True)
         elif tool == ToolID.picture:

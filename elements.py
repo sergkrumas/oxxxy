@@ -786,7 +786,7 @@ class ElementsMixin(ElementsTransformMixin):
                     self.Globals.images_in_memory.append(QPixmap(filepath))
 
 
-        # загрузка картинки-фона
+        # загрузка исходной немодифицированной картинки-фона
         image_path = os.path.join(folder_path, "background.png")
         self.source_pixels = QImage(image_path)
 
@@ -1813,7 +1813,6 @@ class ElementsMixin(ElementsTransformMixin):
         capture_width = er.width()
         capture_height = er.height()
         capture_rotation = element.element_rotation
-        # source_pixmap = QPixmap.fromImage(self.source_pixels)
         source_pixmap = cropped_source_pixels
         element.pixmap = capture_rotated_rect_from_pixmap(source_pixmap,
             capture_pos,

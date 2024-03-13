@@ -3725,13 +3725,17 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         if grabbed_image or not Globals.save_to_memory_mode:
             restart_app_in_notification_mode(filepath)
 
+    def create_tools_window_if_needed(self):
+        if not self.tools_window:
+            self.tools_window = ToolsWindow(self)
+            self.tools_window.show()
+
     def update_tools_window(self):
         if self.is_rect_defined:
             if not self.tools_window: # create window
                 # делаем окно ребёнком основного,
                 # чтобы оно не пропадало и не падало за основное
-                self.tools_window = ToolsWindow(self)
-                self.tools_window.show()
+                self.create_tools_window_if_needed()
                 # так как в историю действий записывается создание фона,
                 # то после задания рамки придётся сразу выставить
                 # кнопки истории в актуальное состояние

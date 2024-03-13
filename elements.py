@@ -728,6 +728,9 @@ class ElementsMixin(ElementsTransformMixin):
         # загрузка метаданных
         self.metadata = data.get('metadata', ("", ""))
 
+        # покажет панель инструментов если она скрыта
+        self.create_tools_window_if_needed()
+
 
         # загрузка состояния обтравки маской
         self.tools_window.chb_masked.setChecked(data.get("masked", False))

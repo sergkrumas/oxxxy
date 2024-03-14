@@ -2313,6 +2313,71 @@ class ElementsMixin(ElementsTransformMixin):
     def elementsDrawMainBackgroundOnlyNotFinal(self, painter):
         self.elementsDrawMain(painter, final=False, draw_background_only=True)
 
+    def elementsGenerateDateTimeStamp(self, picture_rect, text_rect, text, font, base=False):
+        stamp = QPixmap(picture_rect.width(), picture_rect.height())
+        stamp.fill(Qt.transparent)
+        ps = QPainter()
+        ps.begin(stamp)
+        # coral   #FF7F50 rgb(255,127,80)
+        # tomato  #FF6347 rgb(255,99,71)
+        # orangered   #FF4500 rgb(255,69,0)
+        # gold    #FFD700 rgb(255,215,0)
+        # orange  #FFA500 rgb(255,165,0)
+        # darkorange  #FF8C00 rgb(255,140,0)
+        if base:
+            color = QColor("#FFD700")
+        else:
+            color = QColor(Qt.red) # "#FF4500"
+        ps.setPen(QPen(color))
+        ps.setFont(font)
+        _pos = stamp.rect().bottomRight() - QPoint(text_rect.height(), 0)
+        ps.drawText(text_rect, Qt.AlignLeft, text)
+        ps.end()
+        return stamp
+
+    def elementsDrawDateTime(self, painter, pos=None):
+        tw = self.tools_window
+        if tw and tw.chb_datetimestamp.isChecked():
+
+            font = QFont(self.Globals.SEVEN_SEGMENT_FONT)
+            font.setPixelSize(20)
+            painter.save()
+            painter.setFont(font)
+            text = self.datetime_stamp
+
+            text_rect_b = painter.boundingRect(QRect(), Qt.AlignLeft, text)
+            picture_rect = text_rect_b.adjusted(0, 0, 20, 10)
+            text_rect = painter.boundingRect(picture_rect, Qt.AlignHCenter | Qt.AlignVCenter, text)
+
+            stamp1 = self.elementsGenerateDateTimeStamp(picture_rect, text_rect, text, font, base=True)
+            stamp2 = self.elementsGenerateDateTimeStamp(picture_rect, text_rect, text, font)
+
+            result = QPixmap(picture_rect.width(), picture_rect.height())
+            result.fill(Qt.transparent)
+
+            # здесь result и stamp поменяны местами, чтобы текст был резким
+            result = apply_blur_effect(result, stamp1, blur_radius=20)
+
+            # блюр
+            result = apply_blur_effect(stamp2, result, blur_radius=5)
+            result = apply_blur_effect(stamp2, result, blur_radius=8)
+
+            if pos is None:
+                pos = self.rect().bottomRight()
+
+
+            stamp_place = QRect(result.rect())
+            stamp_place.moveBottomLeft(stamp_place.topLeft())
+
+            pos -= QPoint(5, 10) # offset
+            t = QTransform()
+            t.translate(pos.x(), pos.y())
+            t.rotate(-90)
+            painter.setTransform(t)
+
+            painter.drawPixmap(stamp_place, result, result.rect())
+            painter.restore()
+
     def elementsDrawMain(self, painter, final=False, draw_background_only=False, prepare_darkening=False):
         painter.setRenderHint(QPainter.HighQualityAntialiasing, True)
         painter.setRenderHint(QPainter.Antialiasing, True)
@@ -2533,6 +2598,7 @@ class ElementsMixin(ElementsTransformMixin):
                 if capture_region_rect is None:
                     capture_region_rect = self.capture_region_rect
 
+                # draw elements
                 self.elements_final_output = QPixmap(capture_region_rect.size().toSize())
                 self.elements_final_output.fill(Qt.transparent)
                 painter = QPainter()
@@ -2552,8 +2618,17 @@ class ElementsMixin(ElementsTransformMixin):
                 self.canvas_scale_y = self._canvas_scale_y
                 painter.end()
 
+                # mask
                 if self.tools_window and self.tools_window.chb_masked.isChecked():
                     self.elements_final_output = self.circle_mask_image(self.elements_final_output)
+
+                # datetime stamp
+                painter = QPainter()
+                painter.begin(self.elements_final_output)
+                efo = self.elements_final_output
+                pos = QPoint(efo.width(), efo.height())
+                self.elementsDrawDateTime(painter, pos=pos)
+                painter.end()
 
     def elementsPrepareElementCopyForModifications(self, element):
         if self.modification_stamp is None:

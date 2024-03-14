@@ -46,7 +46,7 @@ from PyQt5.QtCore import (pyqtSignal, QPoint, QPointF, pyqtSlot, QRect, QEvent,
     QAbstractEventDispatcher, QFile, QDataStream, QIODevice)
 from PyQt5.QtGui import (QPainterPath, QColor, QKeyEvent, QMouseEvent, QBrush, QPixmap,
     QPaintEvent, QPainter, QWindow, QPolygon, QImage, QTransform, QPen, QLinearGradient,
-    QIcon, QFont, QCursor, QPolygonF, QVector2D)
+    QIcon, QFont, QCursor, QPolygonF, QVector2D, QFontDatabase)
 
 from image_viewer_lite import ViewerWindow
 from key_seq_edit import KeySequenceEdit
@@ -57,7 +57,7 @@ from _utils import (convex_hull, check_scancode_for, SettingsJson,
      find_browser_exe_file, open_link_in_browser, open_in_google_chrome, save_meta_info,
      make_screenshot_pyqt, webRGBA, generate_gradient, draw_shadow, draw_cyberpunk,
      get_bounding_points, load_svg, is_webp_file_animated, apply_blur_effect, 
-     get_bounding_pointsF)
+     get_bounding_pointsF, generate_datetime_stamp)
 
 from _sliders import (CustomSlider,)
 from on_windows_startup import is_app_in_startup, add_to_startup, remove_from_startup
@@ -107,6 +107,14 @@ class Globals():
     AUTHOR_INFO = "by Sergei Krumas"
 
     background_threads = []
+
+    @classmethod
+    def load_fonts(cls):
+        folder_path = os.path.dirname(__file__)
+        font_filepath = os.path.join(folder_path, 'resources', '7segment.ttf')
+        ID = QFontDatabase.addApplicationFont(font_filepath)
+        family = QFontDatabase.applicationFontFamilies(ID)[0]
+        cls.SEVEN_SEGMENT_FONT = QFont(family)
 
     @staticmethod
     def get_checkerboard_brush():
@@ -2534,6 +2542,18 @@ class ToolsWindow(QWidget):
         # общие для скриншота
         tools_settings = self.parent().tools_settings
 
+        self.chb_datetimestamp = CheckBoxCustom("ДатаВремя")
+        self.chb_datetimestamp.setToolTip((
+            "<b>Отобразить дату в правом нижнем углу</b>"
+        ))
+        self.chb_datetimestamp.setStyleSheet(checkbox_style)
+        self.chb_datetimestamp.installEventFilter(self)
+        self.chb_datetimestamp.setChecked(tools_settings.get('datetimestamp', False))
+        self.chb_datetimestamp.stateChanged.connect(self.on_screenshot_parameters_changed)
+        self.parent().draw_datetimestamp = tools_settings.get('datetimestamp', False)
+        second_row.addWidget(self.chb_datetimestamp)
+
+
         self.chb_savecaptureframe = CheckBoxCustom("Запомнить")
         self.chb_savecaptureframe.setToolTip((
             "<b>Запоминает положение и размеры области захвата</b>"
@@ -2713,7 +2733,9 @@ class ToolsWindow(QWidget):
             "hex_mask": getattr(self.parent(), 'hex_mask', False),
             "savecaptureframe": self.chb_savecaptureframe.isChecked(),
             "draw_cursor": self.chb_draw_cursor.isChecked(),
+            "datetimestamp": self.chb_datetimestamp.isChecked(),
         })
+        self.draw_datetimestamp = self.chb_datetimestamp.isChecked()
         if self.chb_savecaptureframe.isChecked():
             self.parent().update_saved_capture()
         if Globals.DEBUG:
@@ -2939,6 +2961,9 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         self.draw_hint(painter, cursor_pos, text_white_pen)
 
         self.draw_uncapture_zones_mode_info(painter)
+
+        pos = viewport_input_rect.bottomRight().toPoint()
+        self.elementsDrawDateTime(painter, pos)
 
         if Globals.DEBUG:
             self.draw_canvas_origin(painter)
@@ -3384,7 +3409,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
                 painter.setBrush(QBrush(Qt.blue, Qt.DiagCrossPattern))
                 painter.drawRect(self.debug_tools_space.adjusted(10, 10, -10, -10))
 
-    def __init__(self, screenshot_image, metadata, parent=None):
+    def __init__(self, screenshot_image, metadata, datetime_stamp, parent=None):
         super().__init__()
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
         self.set_size_and_position()
@@ -3470,6 +3495,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
 
         self.source_pixels = screenshot_image
         self.metadata = metadata
+        self.datetime_stamp = datetime_stamp
 
         self.input_POINT1 = None
         self.input_POINT2 = None
@@ -4654,6 +4680,7 @@ def invoke_screenshot_editor(request_type=None, filepaths=None):
     # hide_all_windows()
 
     metadata = generate_metainfo()
+    datetime_stamp = generate_datetime_stamp()
     # started_time = time.time()
 
     ScreenshotWindow.screenshot_cursor_position = QCursor().pos()
@@ -4664,7 +4691,7 @@ def invoke_screenshot_editor(request_type=None, filepaths=None):
     if request_type == RequestType.Fragment:
         # print("^^^^^^", time.time() - started_time)
         if Globals.DEBUG and Globals.DEBUG_ELEMENTS and not Globals.DEBUG_ELEMENTS_COLLAGE:
-            screenshot_editor = ScreenshotWindow(screenshot_image, metadata)
+            screenshot_editor = ScreenshotWindow(screenshot_image, metadata, datetime_stamp)
             screenshot_editor.set_saved_capture_frame()
             screenshot_editor.show()
             screenshot_editor.request_elements_debug_mode()
@@ -4673,11 +4700,11 @@ def invoke_screenshot_editor(request_type=None, filepaths=None):
             if not path:
                 path = ""
             filepaths = get_filepaths_dialog(path=path)
-            screenshot_editor = ScreenshotWindow(screenshot_image, metadata)
+            screenshot_editor = ScreenshotWindow(screenshot_image, metadata, datetime_stamp)
             screenshot_editor.request_images_editor_mode(filepaths)
             screenshot_editor.show()
         else:
-            screenshot_editor = ScreenshotWindow(screenshot_image, metadata)
+            screenshot_editor = ScreenshotWindow(screenshot_image, metadata, datetime_stamp)
             screenshot_editor.set_saved_capture_frame()
             screenshot_editor.show()
         # чтобы activateWindow точно сработал и взял фокус ввода
@@ -4685,7 +4712,7 @@ def invoke_screenshot_editor(request_type=None, filepaths=None):
         screenshot_editor.activateWindow()
 
     if request_type == RequestType.Fullscreen:
-        screenshot_editor = ScreenshotWindow(screenshot_image, metadata)
+        screenshot_editor = ScreenshotWindow(screenshot_image, metadata, datetime_stamp)
         screenshot_editor.request_fullscreen_capture_region()
         screenshot_editor.show()
         # чтобы activateWindow точно сработал и взял фокус ввода
@@ -4699,7 +4726,7 @@ def invoke_screenshot_editor(request_type=None, filepaths=None):
                 path = ""
             filepaths = get_filepaths_dialog(path=path)
         if filepaths:
-            screenshot_editor = ScreenshotWindow(screenshot_image, metadata)
+            screenshot_editor = ScreenshotWindow(screenshot_image, metadata, datetime_stamp)
             screenshot_editor.request_images_editor_mode(filepaths)
             screenshot_editor.show()
             # чтобы activateWindow точно сработал и взял фокус ввода
@@ -4825,6 +4852,7 @@ def _main():
 
     app = QApplication(sys.argv)
     Globals.generate_icons()
+    Globals.load_fonts()
     app.aboutToQuit.connect(exit_threads)
     # app.setAttribute(Qt.AA_DontShowIconsInMenus, True)
     # задание иконки для таскбара

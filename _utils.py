@@ -29,6 +29,7 @@ import math
 import json
 import webbrowser
 import random
+import datetime
 
 import psutil
 from PIL import Image, ImageGrab, PngImagePlugin
@@ -60,7 +61,11 @@ __all__ = (
     'SettingsJson',
 
     'generate_metainfo',
+    'generate_datetime_stamp',
+
     'get_bounding_points',
+    'get_bounding_pointsF',
+
     'build_valid_rectF',
     'build_valid_rect',
     'build_valid_rectF',
@@ -98,8 +103,6 @@ __all__ = (
     'capture_rotated_rect_from_pixmap',
 
     'copy_image_file_to_clipboard',
-
-    'get_bounding_pointsF',
 )
 
 # Python3 program to find convex hull of a set of points. Refer
@@ -307,6 +310,9 @@ def generate_metainfo():
         except Exception:
             pass
     return "Not defined", "Not defined"
+
+def generate_datetime_stamp():
+    return datetime.datetime.now().strftime("%Y %m %d %H:%M:%S")
 
 def get_bounding_points(points):
     MAX = sys.maxsize

@@ -3013,24 +3013,27 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         crr_viewport = self.elementsMapFromCanvasToViewportRectF(crr_canvas)
         if not crr_viewport.contains(cursor_pos):
             return
-        pixmap = self.current_picture_pixmap
-        rotation = self.current_picture_angle
-        painter.setOpacity(0.5)
-        size = 1.0 or self.tools_window.size_slider.value
-        r = QRectF(0, 0, pixmap.width()*size, pixmap.height()*size)
-        r.moveCenter(cursor_pos)
-        s = QRectF(QPoint(0,0), QSizeF(pixmap.size()))
-        painter.translate(r.center())
-        painter.rotate(rotation)
-        r = QRectF(int(-r.width()/2), int(-r.height()/2), r.width(), r.height())
-        painter.drawPixmap(r, pixmap, s)
-        painter.resetTransform()
-        painter.setOpacity(1.0)
 
-        # счётчик оставшихся изображений в магазине
+        self._tei.element_rotation = self.current_picture_angle
+        self._tei.pixmap = self.current_picture_pixmap
+        self._tei.element_position = self.elementsMapFromViewportToCanvas(cursor_pos)
+        self._tei.calc_local_data()
+        # нет смысла в этом задании размера здесь,
+        # потому что слайдер ограничен диапазоном 0.5 до 1.5
+        # size = self.tools_window.size_slider.value
+        # self._tei.element_scale_x = size
+        # self._tei.element_scale_y = size
+
+        painter.save()
         painter.setRenderHint(QPainter.HighQualityAntialiasing, True)
         painter.setRenderHint(QPainter.Antialiasing, True)
         painter.setRenderHint(QPainter.SmoothPixmapTransform, True)
+
+        painter.setOpacity(0.5)
+        self.elementsDrawMainElement(painter, self._tei, True, [])
+        painter.setOpacity(1.0)
+
+        # счётчик оставшихся изображений в магазине
         if Globals.dasPictureMagazin:
             count = len(Globals.dasPictureMagazin)
             count_str = str(count)
@@ -3052,9 +3055,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             painter.drawText(rect, Qt.AlignCenter | Qt.AlignVCenter, count_str)
             painter.restore()
 
-        painter.setRenderHint(QPainter.HighQualityAntialiasing, False)
-        painter.setRenderHint(QPainter.Antialiasing, False)
-        painter.setRenderHint(QPainter.SmoothPixmapTransform, False)
+        painter.restore()
 
     def draw_uncapture_zones_mode_info(self, painter):
         painter.save()

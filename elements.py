@@ -86,21 +86,22 @@ class SelectionFilter():
 
 class Element():
 
-    def __init__(self, element_type, elements_list):
+    def __init__(self, element_type, elements_list, skip=False):
         self.type = element_type
-        elements_list.append(self)
+        if not skip:
+            elements_list.append(self)
 
-        n = 0
-        for el in elements_list:
-            if el.type == ToolID.numbering:
-                n += 1
-        self.number = n
+            n = 0
+            for el in elements_list:
+                if el.type == ToolID.numbering:
+                    n += 1
+            self.number = n
 
-        if hasattr(Element, "_counter"):
-            Element._counter += 1
-        else:
-            Element._counter = 0
-        self.unique_index = Element._counter
+            if hasattr(Element, "_counter"):
+                Element._counter += 1
+            else:
+                Element._counter = 0
+            self.unique_index = Element._counter
 
         self.group_id = None
 
@@ -344,7 +345,8 @@ class ElementsMixin(ElementsTransformMixin):
 
         self.NUMBERING_ELEMENT_WIDTH = 25
         self.elements = []
-        self.__te = Element(ToolID.zoom_in_region, [])
+        self.__te = Element(ToolID.zoom_in_region, [], skip=True)
+        self._tei = Element(ToolID.picture, None, skip=True)
         self.modification_slots = []
         self.elements_modification_index = 0
         self.SelectionFilter = SelectionFilter

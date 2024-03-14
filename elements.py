@@ -2291,6 +2291,25 @@ class ElementsMixin(ElementsTransformMixin):
             rect.bottomLeft()
         ]
 
+    def elementsDrawBackgroundGhost(self, painter, self_rect):
+        if False:
+            painter.fillRect(self_rect, QColor(0, 0, 0, 150))
+        else:
+            painter.save()
+            painter.setPen(Qt.NoPen)
+            painter.setBrush(QBrush(QColor(0, 0, 0, 150)))
+            unmodificated_backgrounds = self.modification_slots[0].elements
+            visible_backgorunds = self.elementsFilter()
+            if False:
+                elements = visible_backgorunds
+            else:
+                elements = unmodificated_backgrounds
+            backgrounds = [el for el in elements if el.background_image]
+            for bg in backgrounds:
+                sa = bg.get_selection_area(canvas=self)
+                painter.drawPolygon(sa)
+            painter.restore()        
+
     def elementsDrawMainBackgroundOnlyNotFinal(self, painter):
         self.elementsDrawMain(painter, final=False, draw_background_only=True)
 

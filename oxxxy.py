@@ -3247,7 +3247,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         self_rect = self.elementsMapFromCanvasToViewportRectF(self_rect)
         if step == 1:
             if opacity_type == LayerOpacity.FullTransparent: # full transparent
-                painter.fillRect(self_rect, QColor(0, 0, 0, 150))
+                self.elementsDrawBackgroundGhost(painter, self_rect)
             elif opacity_type == LayerOpacity.HalfTransparent: # ghost
                 pass
             elif opacity_type == LayerOpacity.Opaque: # stay still

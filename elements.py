@@ -2374,7 +2374,7 @@ class ElementsMixin(ElementsTransformMixin):
             t.translate(pos.x(), pos.y())
             t.rotate(-90)
             painter.setTransform(t)
-
+            painter.setOpacity(0.85)
             painter.drawPixmap(stamp_place, result, result.rect())
             painter.restore()
 

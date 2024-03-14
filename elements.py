@@ -2375,6 +2375,7 @@ class ElementsMixin(ElementsTransformMixin):
             t.rotate(-90)
             painter.setTransform(t)
             painter.setOpacity(0.85)
+            painter.setCompositionMode(QPainter.CompositionMode_HardLight)
             painter.drawPixmap(stamp_place, result, result.rect())
             painter.restore()
 

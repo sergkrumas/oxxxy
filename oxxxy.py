@@ -2992,14 +2992,23 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             return
         if not self.capture_region_rect.contains(cursor_pos):
             return
-        temp = type('temp', (), {})
-        temp.type = self.current_tool
-        temp.color = self.tools_window.color_slider.get_color()
-        temp.size = self.tools_window.size_slider.value
-        pen, _, _ = self.elementsGetPenFromElement(temp)
+
+        self._ted.type = self.current_tool
+        self._ted.color = self.tools_window.color_slider.get_color()
+        self._ted.size = self.tools_window.size_slider.value
+        self._ted.element_position = self.elementsMapFromViewportToCanvas(cursor_pos)
+        self._ted.start_point = self._ted.element_position
+        self._ted.end_point = self._ted.element_position
+        self._ted.straight = True
+        self._ted.element_scale_x = 1.0
+        self._ted.element_scale_y = 1.0
+        self._ted.calc_local_data()
+
         painter.save()
-        painter.setPen(pen)
-        painter.drawPoint(cursor_pos)
+        painter.setRenderHint(QPainter.HighQualityAntialiasing, True)
+        painter.setRenderHint(QPainter.Antialiasing, True)
+        painter.setRenderHint(QPainter.SmoothPixmapTransform, True)
+        self.elementsDrawMainElement(painter, self._ted, False, [])
         painter.restore()
 
     def draw_picture_tool(self, painter, cursor_pos):

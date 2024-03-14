@@ -347,6 +347,7 @@ class ElementsMixin(ElementsTransformMixin):
         self.elements = []
         self.__te = Element(ToolID.zoom_in_region, [], skip=True)
         self._tei = Element(ToolID.picture, None, skip=True)
+        self._ted = Element(ToolID.line, None, skip=True)
         self.modification_slots = []
         self.elements_modification_index = 0
         self.SelectionFilter = SelectionFilter
@@ -2040,18 +2041,24 @@ class ElementsMixin(ElementsTransformMixin):
         elif el_type in [ToolID.pen, ToolID.marker]:
             painter.setTransform(element.get_transform_obj(canvas=self))
             painter.setBrush(Qt.NoBrush)
-            if element.straight:
-                painter.drawLine(element.local_start_point, element.local_end_point)
+            if element.start_point == element.end_point:
+                painter.drawPoint(QPointF(0, 0))
             else:
-                p = element.path
-                path = p.translated(-p.boundingRect().center())
-                painter.drawPath(path)
+                if element.straight:
+                    painter.drawLine(element.local_start_point, element.local_end_point)
+                else:
+                    p = element.path
+                    path = p.translated(-p.boundingRect().center())
+                    painter.drawPath(path)
             painter.resetTransform()
         elif el_type == ToolID.line:
             painter.setTransform(element.get_transform_obj(canvas=self))
-            sp = element.local_start_point
-            ep = element.local_end_point
-            painter.drawLine(sp, ep)
+            if element.start_point == element.end_point:
+                painter.drawPoint(QPointF(0, 0))
+            else:
+                sp = element.local_start_point
+                ep = element.local_end_point
+                painter.drawLine(sp, ep)
             painter.resetTransform()
         elif el_type in [ToolID.multiframing]:
             if not final:

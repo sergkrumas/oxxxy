@@ -2534,7 +2534,7 @@ class ToolsWindow(QWidget):
         # общие для скриншота
         tools_settings = self.parent().tools_settings
 
-        self.chb_savecaptureframe = CheckBoxCustom("Запомнить захват")
+        self.chb_savecaptureframe = CheckBoxCustom("Запомнить")
         self.chb_savecaptureframe.setToolTip((
             "<b>Запоминает положение и размеры области захвата</b>"
         ))
@@ -2544,7 +2544,7 @@ class ToolsWindow(QWidget):
         self.chb_savecaptureframe.stateChanged.connect(self.on_screenshot_parameters_changed)
         second_row.addWidget(self.chb_savecaptureframe)
 
-        self.chb_masked = CheckBoxCustom("Обтравка")
+        self.chb_masked = CheckBoxCustom("Маска")
         self.chb_masked.setToolTip((
             "<b>Применить маску к скриншоту</b><br>"
             "<b>Клавиша H</b> ➜ сменить круглую маску на гексагональную и наоборот"
@@ -2565,7 +2565,7 @@ class ToolsWindow(QWidget):
         self.chb_draw_thirds.stateChanged.connect(self.on_screenshot_parameters_changed)
         second_row.addWidget(self.chb_draw_thirds)
 
-        self.chb_add_meta = CheckBoxCustom("Метаинфа")
+        self.chb_add_meta = CheckBoxCustom("Мета")
         self.chb_add_meta.setToolTip("<b>Добавить название заголовка активного окна в метатеги"
                                                                             " скриншота</b>")
         self.chb_add_meta.setStyleSheet(checkbox_style)

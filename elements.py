@@ -1805,7 +1805,8 @@ class ElementsMixin(ElementsTransformMixin):
             self.elementsUpdateFinalPicture(
                 capture_region_rect=capture_region_rect,
                 draw_background_only=True,
-                no_multiframing=True
+                no_multiframing=True,
+                clean=True
             )
             er = element.get_size_rect(scaled=True)
             capture_pos = element.element_position - capture_region_rect.topLeft()
@@ -1861,6 +1862,7 @@ class ElementsMixin(ElementsTransformMixin):
                 draw_background_only=True,
                 no_multiframing=True,
                 prepare_darkening=True,
+                clean=True,
             )
             er = element.get_size_rect(scaled=True)
             capture_pos = element.element_position - capture_region_rect.topLeft()
@@ -2565,11 +2567,11 @@ class ElementsMixin(ElementsTransformMixin):
             painter.restore()
 
     def elementsUpdateFinalPicture(self, capture_region_rect=None,
-                        draw_background_only=False, no_multiframing=False, prepare_darkening=False):
+                draw_background_only=False, no_multiframing=False, prepare_darkening=False, clean=False):
         if self.capture_region_rect:
             specials = [el for el in self.elementsFilter() if el.type == ToolID.multiframing]
             any_multiframing_element = any(specials)
-            if any_multiframing_element and not no_multiframing:
+            if any_multiframing_element and not no_multiframing and not clean:
                 max_width = -1
                 total_height = 0
                 specials_rects = []
@@ -2629,16 +2631,17 @@ class ElementsMixin(ElementsTransformMixin):
                 painter.end()
 
                 # mask
-                if self.tools_window and self.tools_window.chb_masked.isChecked():
+                if not clean and self.tools_window and self.tools_window.chb_masked.isChecked():
                     self.elements_final_output = self.circle_mask_image(self.elements_final_output)
 
-                # datetime stamp
-                painter = QPainter()
-                painter.begin(self.elements_final_output)
-                efo = self.elements_final_output
-                pos = QPoint(efo.width(), efo.height())
-                self.elementsDrawDateTime(painter, pos=pos)
-                painter.end()
+                if not clean:
+                    # datetime stamp
+                    painter = QPainter()
+                    painter.begin(self.elements_final_output)
+                    efo = self.elements_final_output
+                    pos = QPoint(efo.width(), efo.height())
+                    self.elementsDrawDateTime(painter, pos=pos)
+                    painter.end()
 
     def elementsPrepareElementCopyForModifications(self, element):
         if self.modification_stamp is None:
@@ -2836,14 +2839,14 @@ class ElementsMixin(ElementsTransformMixin):
 
         # рендер картинки
         if action == action_crop:
-            self.elementsUpdateFinalPicture()
+            self.elementsUpdateFinalPicture(clean=True)
         elif action == action_keep:
             hs = self.modification_slots[0]
             r = QRectF(QPointF(0, 0), QSizeF(hs.elements[0].pixmap.size()))
-            self.elementsUpdateFinalPicture(capture_region_rect=r)
+            self.elementsUpdateFinalPicture(capture_region_rect=r, clean=True)
         elif action == action_extend:
             self.elementsUpdateFinalPicture(
-                    capture_region_rect=QRectF(0, 0, new_width, new_height))
+                    capture_region_rect=QRectF(0, 0, new_width, new_height), clean=True)
 
         # заменяем картинку
         self.source_pixels = self.elements_final_output.toImage()

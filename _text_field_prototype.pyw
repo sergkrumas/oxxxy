@@ -47,6 +47,20 @@ import lorem
 
 
 
+# QTextLine currentTextLine(const QTextCursor &cursor)
+# {
+#     const QTextBlock block = cursor.block();
+#     if (!block.isValid())
+#         return QTextLine();
+ 
+#     const QTextLayout *layout = block.layout();
+#     if (!layout)
+#         return QTextLine();
+ 
+#     const int relativePos = cursor.position() - block.position();
+#     return layout->lineForTextPosition(relativePos);
+# }
+
 
 class QMyWidget(QWidget):
 

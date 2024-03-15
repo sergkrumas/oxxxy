@@ -2189,7 +2189,7 @@ class ElementsMixin(ElementsTransformMixin):
                     path = QPainterPath()
                     path.addRoundedRect(QRectF(content_rect), element.margin_value,
                         element.margin_value)
-                    painter.fillPath(path, QBrush(Qt.white))
+                    painter.fillPath(path, QBrush(QColor(200, 200, 200)))
                     painter.restore()
 
                 # сам текст

@@ -2169,14 +2169,6 @@ class ElementsMixin(ElementsTransformMixin):
             painter.setTransform(element_transform)
             painter.save()
 
-            # painter.setPen(Qt.NoPen)
-            # if element.start_point != element.end_point:
-            #     if element.end_point_modified:
-            #         modified_end_point = get_nearest_point_on_rect(QRect(pos.toPoint(), size_obj), element.local_start_point.toPoint())
-            #     else:
-            #         modified_end_point = element.local_end_point
-            #     self.elementsDrawArrow(painter, modified_end_point, element.local_start_point, size, False)
-
             if element.text_doc:
                 text_doc = element.text_doc
 
@@ -2278,7 +2270,7 @@ class ElementsMixin(ElementsTransformMixin):
 
             # отрисовка второй пометки
             # special_case - когда вторая пометка ещё не введена,
-            # надо рисовать её образ центированный по кусроску мыши
+            # надо рисовать её образ центированный по курсору мыши
             special_case = (not element.second and f_element.finished and s_element is None)
             if element.second or special_case:
 

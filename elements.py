@@ -36,7 +36,8 @@ from PyQt5.QtCore import (QUrl, QMimeData, pyqtSignal, QPoint, QPointF, pyqtSlot
     QAbstractEventDispatcher, QFile, QDataStream, QIODevice, QMarginsF)
 from PyQt5.QtGui import (QPainterPath, QColor, QKeyEvent, QMouseEvent, QBrush, QPixmap,
     QPaintEvent, QPainter, QWindow, QPolygon, QImage, QTransform, QPen, QLinearGradient,
-    QIcon, QFont, QCursor, QPolygonF, QVector2D)
+    QIcon, QFont, QCursor, QPolygonF, QVector2D, QTextDocument, QAbstractTextDocumentLayout,
+        QPalette, QTextCursor)
 
 from _utils import (convex_hull, check_scancode_for, SettingsJson,
     generate_metainfo, build_valid_rect, build_valid_rectF, dot, get_nearest_point_on_rect,
@@ -118,8 +119,8 @@ class Element():
         self.color_slider_palette_index = 0
         self.toolbool = False
 
-
-        self.textbox = None
+        self.text_doc = None
+        self.draw_transform = None
 
         # element attributes for canvas
         self.element_scale_x = 1.0
@@ -967,9 +968,8 @@ class ElementsMixin(ElementsTransformMixin):
             element.color_slider_value = 0.01
             element.color_slider_palette_index = 0
             element.toolbool = False
-            element.margin_value = 5
         if element.type == ToolID.text:
-            self.elementsChangeTextbox(element)
+            self.elementsTextDocSetParameters(element)
         if element.type == ToolID.blurring:
             self.elementsSetBlurredPixmap(element)
         if element.type in [ToolID.copypaste, ToolID.zoom_in_region]:
@@ -1105,8 +1105,6 @@ class ElementsMixin(ElementsTransformMixin):
 
     def elementsCopyElementData(self, element, source_element):
         attributes = source_element.__dict__.items()
-        copy_textbox = None
-        copy_textbox_value = None
         for attr_name, attr_value in attributes:
             if attr_name in ["unique_index", "ms"]:
                 continue
@@ -1118,15 +1116,12 @@ class ElementsMixin(ElementsTransformMixin):
                 final_value = attr_value
             else:
                 final_value = type_class(attr_value)
-            if attr_name == "textbox" and attr_value is not None:
-                copy_textbox = type_class(attr_value)
-                copy_textbox_value = attr_value.toPlainText()
+            if attr_name == "text_doc" and attr_value is not None:
+                element.text_doc = type_class(attr_value)
+                element.text_doc.setPlainText(attr_value.toPlainText())
+                self.elementsTextBoxInit(element)
             else:
                 setattr(element, attr_name, final_value)
-        if copy_textbox:
-            self.elementsTextBoxInit(copy_textbox, self, element)
-            copy_textbox.setText(copy_textbox_value)
-            setattr(element, "textbox", copy_textbox)
 
     def elementsActiveElementParamsToPanelSliders(self):
         tw = self.tools_window
@@ -1167,21 +1162,12 @@ class ElementsMixin(ElementsTransformMixin):
         self.activateWindow() # чтобы фокус не соскакивал на панель иструментов
 
     def elementsActivateTextElement(self, element):
-        if element.textbox is None:
-            # после загрузки open_project
-            parent = self
-            self.elementsCreateTextbox(parent, element)
-        else:
-            element.textbox.setParent(self)
-            element.textbox.show()
-            element.textbox.setFocus()
+        pass
 
     def elementsDeactivateTextElements(self):
         for element in self.elementsFilter():
-            if element.type == ToolID.text and element.textbox and element.textbox.parent():
-                self.elementsOnTextChanged(element)
-                element.textbox.hide()
-                element.textbox.setParent(None)
+            if element.type == ToolID.text:
+                pass
 
     def elementsCreateNewSlot(self, content_type):
         ms = ElementsModificationSlot(content_type)
@@ -1397,6 +1383,12 @@ class ElementsMixin(ElementsTransformMixin):
         tool = self.current_tool
 
         event_pos = self.elementsMapFromViewportToCanvas(QPointF(event.pos()))
+
+        ae = self.active_element
+        if ae is not None and ae.type == ToolID.text:
+            if ae.get_selection_area(canvas=self).containsPoint(event.pos(), Qt.WindingFill):
+                self.elementsTextDocSetCursorPosByClick(event)
+                return
 
         self.prev_elements_modification_index = self.elements_modification_index
         isLeftButton = event.buttons() == Qt.LeftButton
@@ -1894,92 +1886,92 @@ class ElementsMixin(ElementsTransformMixin):
             blured = apply_blur_effect(blured, blured, blur_radius=5)
             element.pixmap = blured
 
-    def elementsChangeTextbox(self, elem):
-        if elem.toolbool:
-            background_color = "rgb(200, 200, 200)"
-        else:
-            background_color = "transparent"
-        style = """QTextEdit {
-            border: none;
-            font-size: %dpx;
-            background-color: %s;
-            padding: %dpx;
-            border-radius: 5px;
-            color: %s;
-        }
-        QTextEdit QMenu::item {
-            color: rgb(100, 100, 100);
-        }
-        QTextEdit QMenu::item:selected{
-            color: rgb(0, 0, 0);
-        }
-        """ % (
-                self.elementsGetFontPixelSize(elem),
-                background_color,
-                elem.margin_value,
-                elem.color.name()
-        )
-        if elem.textbox:
-            elem.textbox.setStyleSheet(style)
-            self.elementsOnTextChanged(elem)
+    def elementsTextDocSetParameters(self, elem):
+        if elem.text_doc is not None:
+            self.elementsTextDocSetFont(elem)
 
     def elementsGetFontPixelSize(self, elem):
-        return 20+10*elem.size
+        return int(20+10*elem.size)
 
-    def elementsOnTextChanged(self, elem):
-        tb = elem.textbox
-        textbox_text = tb.toPlainText()
-        if textbox_text: # проверяем есть ли текст,
-                         # это нужно чтобы при иниализации не стёрлось ничего
-            elem.text = textbox_text
-        size = tb.document().size().toSize()
-        # correcting height
-        new_height = size.height()+elem.margin_value*2
-        tb.setFixedHeight(int(new_height))
-        # correcting width
-        max_width_limit = int(max(20, self.capture_region_rect.right() - elem.end_point.x()))
-        H, W = 100, max_width_limit+10
-        pixmap = QPixmap(H, W)
-        r = QRect(0, 0, H, W)
-        p = QPainter()
-        p.begin(pixmap)
-        font = tb.currentFont()
-        font_pixel_size = self.elementsGetFontPixelSize(elem)
-        font.setPixelSize(int(font_pixel_size))
-        p.setFont(font)
-        brect = p.drawText(r.x(), r.y(), r.width(), r.height(), Qt.AlignCenter, tb.toPlainText())
-        p.end()
-        del p
-        del pixmap
-        new_width = min(max_width_limit, brect.width()+elem.margin_value*2+font_pixel_size*1.5)
-        tb.setFixedWidth(int(new_width))
-        ___p = elem.end_point-QPointF(0, new_height)
-        tb.move(___p.toPoint())
-        # making screenshot
-        r = tb.rect()
-        cw = tb.cursorWidth()
-        tb.setCursorWidth(0)
-        elem.pixmap = tb.grab(r)
-        tb.setCursorWidth(cw)
-        if tb.parent():
-            tb.parent().update()
+    def elementsTextFieldInputEvent(self, event):
+        ae = self.active_element
+        if ae.type != ToolID.text:
+            return
+
+        if event.modifiers() == Qt.ControlModifier and check_scancode_for(event, "V"):
+            text = ""
+            app = QApplication.instance()
+            cb = app.clipboard()
+            mdata = cb.mimeData()
+            if mdata and mdata.hasText():
+                text = mdata.text()
+        else:
+            text = event.text()
+
+        _cursor = QTextCursor(ae.text_doc)
+        _cursor.setPosition(ae.text_doc_cursor_pos)
+
+        if event.key() in [Qt.Key_Left, Qt.Key_Right]:
+            if event.key() == Qt.Key_Left:
+                ae.text_doc_cursor_pos -= 1
+                ae.text_doc_cursor_pos = max(ae.text_doc_cursor_pos, 0)
+            elif event.key() == Qt.Key_Right:
+                ae.text_doc_cursor_pos += 1
+                ae.text_doc_cursor_pos = min(ae.text_doc_cursor_pos, len(ae.text_doc.toPlainText()))
+        elif event.key() == Qt.Key_Backspace:
+            _cursor.deletePreviousChar()
+            ae.text_doc_cursor_pos -= 1
+        else:
+            _cursor.beginEditBlock()
+            _cursor.insertText(text)
+            ae.text_doc_cursor_pos += len(text)
+            _cursor.endEditBlock()
+        self.update()
+
+    def elementsDeactivateTextField(self):
+        if self.active_element:
+            if self.active_element.type == ToolID.text:
+                self.active_element = None
+                self.elementsSetSelected(None)
+                self.update()
+                return True
+        return False
+
+    def elementsIsTextFieldInputEvent(self, event):
+        is_event = self.active_element is not None and self.active_element.type == ToolID.text
+        is_event = is_event and event.key() != Qt.Key_Escape
+        is_event = is_event and bool(event.text()) or (event.key() in [Qt.Key_Left, Qt.Key_Right])
+        is_event = is_event and (not event.modifiers() or (event.modifiers() == Qt.ControlModifier and check_scancode_for(event, "V")))
+        return is_event 
 
     def elementsCreateTextbox(self, parent, elem):
-        textbox = QTextEdit()
-        if hasattr(elem, "text"):
-            textbox.setText(elem.text)
-        self.elementsTextBoxInit(textbox, parent, elem)
+        text_doc = QTextDocument()
+        elem.text_doc = text_doc
+        # elem.text_doc.setDefaultFont(self.Globals.SEVEN_SEGMENT_FONT)
+        text_doc.setPlainText('')
+        self.elementsTextBoxInit(elem)
 
-    def elementsTextBoxInit(self, textbox, parent, elem):
-        textbox.setParent(parent)
-        elem.textbox = textbox
-        textbox.move(elem.end_point.toPoint())
-        self.elementsChangeTextbox(elem)
-        textbox.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        textbox.show()
-        self.elementsOnTextChanged(elem) #call to adjust for empty string
-        textbox.textChanged.connect(lambda x=elem: self.elementsOnTextChanged(x))
-        textbox.setFocus()
+    def elementsTextDocSetFont(self, element):
+        font = QFont()
+        font_pixel_size = self.elementsGetFontPixelSize(element)
+        font.setPixelSize(font_pixel_size)
+        element.text_doc.setDefaultFont(font)
+
+    def elementsTextDocSetCursorPosByClick(self, event):
+        ae = self.active_element
+        if ae.draw_transform is not None:
+            viewport_cursor_pos = event.pos()
+            inv, ok = ae.draw_transform.inverted()
+            if ok:
+                pos = inv.map(viewport_cursor_pos)
+                text_cursor_pos = ae.text_doc.documentLayout().hitTest(pos, Qt.FuzzyHit)
+                ae.text_doc_cursor_pos = text_cursor_pos
+
+    def elementsTextBoxInit(self, elem):
+        text_doc = elem.text_doc
+        self.elementsTextDocSetFont(elem)
+        text_doc.setTextWidth(200)
+        elem.text_doc_cursor_pos = 0
 
     def elementsDrawDarkening(self, painter, prepare_pixmap=False):
         if self.capture_region_rect:
@@ -2103,33 +2095,84 @@ class ElementsMixin(ElementsTransformMixin):
                                                                         str(element.number))
             painter.resetTransform()
         elif el_type == ToolID.text:
-            painter.setTransform(element.get_transform_obj(canvas=self))
-            if element.pixmap:
-                pixmap = QPixmap(element.pixmap.size())
-                pixmap.fill(Qt.transparent)
-                p = QPainter()
-                p.begin(pixmap)
-                p.setClipping(True)
-                path = QPainterPath()
-                pos = element.local_end_point - QPointF(0, element.pixmap.height())
-                text_rect = QRectF(QPointF(0, 0), QSizeF(element.pixmap.size()))
-                path.addRoundedRect(QRectF(text_rect), element.margin_value,
-                        element.margin_value)
-                p.setClipPath(path)
-                p.drawPixmap(QPoint(0, 0), element.pixmap)
-                p.setClipping(False)
-                p.end()
 
-            painter.setPen(Qt.NoPen)
-            if element.start_point != element.end_point:
-                if element.end_point_modified:
-                    modified_end_point = get_nearest_point_on_rect(QRect(pos.toPoint(), element.pixmap.size()), element.local_start_point.toPoint())
-                else:
-                    modified_end_point = element.local_end_point
-                self.elementsDrawArrow(painter, modified_end_point, element.local_start_point, size, False)
-            if element.pixmap:
-                image_rect = QRectF(pos, QSizeF(pixmap.size()))
-                painter.drawPixmap(image_rect.toRect(), pixmap)
+            def tweakedDrawContents(text_document, _painter_, rect):
+                # дефолтный drawContents не поддерживает изменение текста
+                _painter_.save()
+                ctx = QAbstractTextDocumentLayout.PaintContext()
+                ctx.palette.setColor(QPalette.Text, _painter_.pen().color())
+                # у нас всегда отображается всё, поэтому смысла в этом нет
+                # if rect.isValid():
+                #     _painter_.setClipRect(rect)
+                #     ctx.clip = rect
+                text_document.documentLayout().draw(_painter_, ctx)
+                _painter_.restore()
+
+            if element.text_doc is not None:
+                text_doc = element.text_doc
+                text_doc.setTextWidth(element.get_size_rect(scaled=True).width())
+
+                size_obj = text_doc.size().toSize()
+                height = size_obj.height()
+                pos = element.local_end_point - QPointF(0, height)
+
+                s = text_doc.size().toSize()
+
+                # смещение к середине
+                offset_x = s.width()/2
+                offset_y = s.height()/2
+                offset_translation = QTransform()
+                offset_translation.translate(-offset_x, -offset_y)
+
+            element_transform = element.get_transform_obj(canvas=self)
+            if element.text_doc is not None:            
+                element_transform = offset_translation * element_transform
+            element.draw_transform = element_transform
+            painter.setTransform(element_transform)
+            painter.save()
+
+            # painter.setPen(Qt.NoPen)
+            # if element.start_point != element.end_point:
+            #     if element.end_point_modified:
+            #         modified_end_point = get_nearest_point_on_rect(QRect(pos.toPoint(), size_obj), element.local_start_point.toPoint())
+            #     else:
+            #         modified_end_point = element.local_end_point
+            #     self.elementsDrawArrow(painter, modified_end_point, element.local_start_point, size, False)
+
+            if element.text_doc:
+                text_doc = element.text_doc
+
+                # подложка
+                if element.toolbool:
+                    painter.save()
+                    painter.setPen(Qt.NoPen)
+                    content_rect = QRect(QPoint(), s)
+
+                    path = QPainterPath()
+                    path.addRoundedRect(QRectF(content_rect), element.margin_value,
+                        element.margin_value)
+                    painter.fillPath(path, QBrush(Qt.white))
+                    painter.restore()
+
+                # сам текст
+                tweakedDrawContents(text_doc, painter, None) # text_doc.drawContents(painter, QRectF())
+
+                # курсор
+                doc_layout = text_doc.documentLayout()
+                cursor_pos = element.text_doc_cursor_pos
+                block = text_doc.begin()
+                end = text_doc.end()
+                while block != end:
+                    # block_rect = doc_layout.blockBoundingRect(block)
+                    # painter.drawRect(block_rect)
+                    if self.active_element is element:
+                        if block.contains(cursor_pos):
+                            block.layout().drawCursor(painter, QPointF(0,0), cursor_pos, 1)
+
+                    block = block.next()
+
+
+            painter.restore()
             painter.resetTransform()
         elif el_type in [ToolID.blurring, ToolID.darkening]:
             painter.setTransform(element.get_transform_obj(canvas=self))

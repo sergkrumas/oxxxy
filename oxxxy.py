@@ -4421,6 +4421,9 @@ class ScreenshotWindow(QWidget, ElementsMixin):
 
     def keyPressEvent(self, event):
         key = event.key()
+        if self.elementsIsTextFieldInputEvent(event):
+            self.elementsTextFieldInputEvent(event)
+            return
         arrow_keys = [Qt.Key_Up, Qt.Key_Down, Qt.Key_Right, Qt.Key_Left]
         if key in arrow_keys:
             if not self.is_rect_defined:
@@ -4454,6 +4457,8 @@ class ScreenshotWindow(QWidget, ElementsMixin):
                 return
             elif self.scaling_ongoing:
                 self.canvas_CANCEL_selected_elements_SCALING()
+                return
+            elif self.elementsDeactivateTextField():
                 return
             elif self.tools_window:
                 select_window = self.tools_window.select_window

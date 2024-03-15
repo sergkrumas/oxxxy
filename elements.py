@@ -1115,6 +1115,8 @@ class ElementsMixin(ElementsTransformMixin):
             #     print(attributes)
             if attr_value is None:
                 final_value = attr_value
+            elif isinstance(attr_value, Element):
+                continue
             else:
                 final_value = type_class(attr_value)
             if attr_name == "text_doc" and attr_value is not None:
@@ -1316,7 +1318,7 @@ class ElementsMixin(ElementsTransformMixin):
                 elements_under_mouse.append(el)
         return elements_under_mouse
 
-    def elementsMousePressEventDefault(self, element, event):
+    def elementsMousePressEventDefault(self, element, event, reversed=False):
         event_pos = self.elementsMapFromViewportToCanvas(QPointF(event.pos()))
         if element.type == ToolID.line and event.modifiers() & Qt.ControlModifier:
             last_element = self.elementsGetLastElement1()
@@ -1325,7 +1327,11 @@ class ElementsMixin(ElementsTransformMixin):
             else:
                 element.start_point = event_pos
         else:
-            element.start_point = event_pos
+            if reversed:
+                element.start_point = event_pos
+                element.end_point = event_pos
+            else:
+                element.start_point = event_pos
         element.end_point = event_pos
         element.calc_local_data()
 
@@ -1417,12 +1423,20 @@ class ElementsMixin(ElementsTransformMixin):
             # zoom_in_region and copypaste case, when it needs more additional clicks
             element = self.elementsCreateNew(self.current_tool, start_drawing=True, create_new_slot=False)
             self.elementsSetElementParameters(element)
+        elif self.current_tool == ToolID.text:
+            arrow_element = self.elementsCreateNew(ToolID.arrow, start_drawing=True)
+            arrow_element._modified = False
+            arrow_element.color = Qt.red
+            arrow_element.size = 0.5
+            element = self.elementsCreateNew(self.current_tool, create_new_slot=False)
+            self.elementsSetElementParameters(element)
+            element.arrow = arrow_element
         else:
             # default case
             element = self.elementsCreateNew(self.current_tool, start_drawing=True)
             self.elementsSetElementParameters(element)
-        if element is not None:
-            self.active_element = element
+
+        self.active_element = element
         # #######
         if tool == ToolID.arrow:
             self.elementsMousePressEventDefault(element, event)
@@ -1451,9 +1465,9 @@ class ElementsMixin(ElementsTransformMixin):
             self.elementsMousePressEventDefault(element, event)
         elif tool == ToolID.text:
             self.elementsMousePressEventDefault(element, event)
-            element.pixmap = None
-            element.end_point_modified = False
+            self.elementsMousePressEventDefault(element.arrow, event, reversed=True)
             element.calc_local_data()
+            element.arrow.calc_local_data()
         elif tool in [ToolID.blurring, ToolID.darkening]:
             self.elementsMousePressEventDefault(element, event)
             if tool == ToolID.blurring:
@@ -1596,8 +1610,9 @@ class ElementsMixin(ElementsTransformMixin):
             element.calc_local_data()
         elif tool == ToolID.text:
             element.end_point = event_pos
-            element.end_point_modified = False
+            element.arrow.start_point = event_pos
             element.calc_local_data()
+            element.arrow.calc_local_data()
         elif tool in [ToolID.blurring, ToolID.darkening]:
             element.equilateral = bool(event.modifiers() & Qt.ShiftModifier)
             if element.equilateral:
@@ -1689,10 +1704,12 @@ class ElementsMixin(ElementsTransformMixin):
                 element.end_point = event_pos
             element.calc_local_data()
         elif tool == ToolID.text:
-            element.end_point = event_pos
-            element.end_point_modified = False
+            element.start_point = event_pos
+            element.end_point = event_pos + QPointF(200, 50)
+            # element.arrow.end_point = event_pos
             element.calc_local_data()
-            self.elementsCreateTextbox(self, element)
+            element.arrow.calc_local_data()
+            self.elementsCreateTextbox(element)
         elif tool in [ToolID.blurring, ToolID.darkening]:
             element.equilateral = bool(event.modifiers() & Qt.ShiftModifier)
             if element.equilateral:
@@ -1960,7 +1977,7 @@ class ElementsMixin(ElementsTransformMixin):
         is_event = is_event and (not event.modifiers() or (event.modifiers() == Qt.ControlModifier and check_scancode_for(event, "V")))
         return is_event 
 
-    def elementsCreateTextbox(self, parent, elem):
+    def elementsCreateTextbox(self, elem):
         text_doc = QTextDocument()
         elem.text_doc = text_doc
         # elem.text_doc.setDefaultFont(self.Globals.SEVEN_SEGMENT_FONT)

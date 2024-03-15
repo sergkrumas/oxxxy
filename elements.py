@@ -1926,7 +1926,22 @@ class ElementsMixin(ElementsTransformMixin):
             _cursor.insertText(text)
             ae.text_doc_cursor_pos += len(text)
             _cursor.endEditBlock()
+
+        # text_line = self.currentTextLine(_cursor)
+        # print('text_line', text_line.lineNumber())
         self.update()
+
+    def currentTextLine(self, cursor):
+        block = cursor.block()
+        if not block.isValid():
+            return QTextLine()
+
+        layout = block.layout()
+        if not layout:
+            return QTextLine()
+
+        relativePos = cursor.position() - block.position()
+        return layout.lineForTextPosition(relativePos)
 
     def elementsDeactivateTextField(self):
         if self.active_element:

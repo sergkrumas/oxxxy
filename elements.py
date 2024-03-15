@@ -1706,9 +1706,14 @@ class ElementsMixin(ElementsTransformMixin):
         elif tool == ToolID.text:
             element.start_point = event_pos
             element.end_point = event_pos + QPointF(200, 50)
-            # element.arrow.end_point = event_pos
             element.calc_local_data()
             element.arrow.calc_local_data()
+            a = element.arrow
+            if QVector2D(a.end_point-a.start_point).length() < 100.0:
+                element.arrow = None
+                self.elements.remove(a)
+                element.ms.elements.remove(a)
+                a.ms = None
             self.elementsCreateTextbox(element)
         elif tool in [ToolID.blurring, ToolID.darkening]:
             element.equilateral = bool(event.modifiers() & Qt.ShiftModifier)

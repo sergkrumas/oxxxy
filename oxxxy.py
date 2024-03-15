@@ -3000,6 +3000,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         self._ted.start_point = self._ted.element_position
         self._ted.end_point = self._ted.element_position
         self._ted.straight = True
+        self._ted.preview = True
         self._ted.element_scale_x = 1.0
         self._ted.element_scale_y = 1.0
         self._ted.calc_local_data()

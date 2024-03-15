@@ -107,6 +107,7 @@ class Element():
         self.group_id = None
 
         self.finished = False
+        self.preview = False
 
         self.backup_pixmap = None
         self.frame_info = None
@@ -2050,7 +2051,7 @@ class ElementsMixin(ElementsTransformMixin):
         elif el_type in [ToolID.pen, ToolID.marker]:
             painter.setTransform(element.get_transform_obj(canvas=self))
             painter.setBrush(Qt.NoBrush)
-            if element.start_point == element.end_point:
+            if element.preview:
                 painter.drawPoint(QPointF(0, 0))
             else:
                 if element.straight:
@@ -2062,7 +2063,7 @@ class ElementsMixin(ElementsTransformMixin):
             painter.resetTransform()
         elif el_type == ToolID.line:
             painter.setTransform(element.get_transform_obj(canvas=self))
-            if element.start_point == element.end_point:
+            if element.preview:
                 painter.drawPoint(QPointF(0, 0))
             else:
                 sp = element.local_start_point

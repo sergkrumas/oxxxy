@@ -106,6 +106,7 @@ __all__ = (
 
     'squarize_rect',
     'calculate_tangent_points',
+    'get_rect_corners',
 )
 
 # Python3 program to find convex hull of a set of points. Refer
@@ -948,3 +949,11 @@ def calculate_tangent_points(c1, r1, c2, r2):
     tangent_lines.append(get_tangent_line_points(radians_angle))
 
     return tangent_lines
+
+def get_rect_corners(rect):
+    return [
+        rect.topLeft(),
+        rect.topRight(),
+        rect.bottomRight(),
+        rect.bottomLeft(),
+    ]

@@ -45,7 +45,7 @@ from _utils import (convex_hull, check_scancode_for, SettingsJson, calculate_tan
     find_browser_exe_file, open_link_in_browser, open_in_google_chrome, save_meta_info,
     make_screenshot_pyqt, webRGBA, generate_gradient, draw_shadow, draw_cyberpunk,
     constraint45Degree, get_bounding_points, get_bounding_pointsF, load_svg,
-    is_webp_file_animated, apply_blur_effect, squarize_rect)
+    is_webp_file_animated, apply_blur_effect, squarize_rect, get_rect_corners)
 
 from elements_transform import ElementsTransformMixin
 
@@ -2357,7 +2357,7 @@ class ElementsMixin(ElementsTransformMixin):
 
                         size_rect = f_element.get_size_rect(scaled=False)
                         size_rect.moveCenter(QPointF(0, 0))
-                        sr1_points = self.elementsGetRectCorners(size_rect)
+                        sr1_points = get_rect_corners(size_rect)
                         for p in sr1_points:
                             # from f_element local to canvas world
                             p = f_canvas_transform.map(p)
@@ -2370,7 +2370,7 @@ class ElementsMixin(ElementsTransformMixin):
                             convex_hull_points.append(p)
 
                         size_rect_local.moveCenter(QPointF(0, 0))
-                        sr2_points = self.elementsGetRectCorners(size_rect_local)
+                        sr2_points = get_rect_corners(size_rect_local)
                         for p in sr2_points:
                             convex_hull_points.append(p)
 
@@ -2392,13 +2392,6 @@ class ElementsMixin(ElementsTransformMixin):
             painter.resetTransform()
         element.disable_distortion_fixer()
 
-    def elementsGetRectCorners(self, rect):
-        return [
-            rect.topLeft(),
-            rect.topRight(),
-            rect.bottomRight(),
-            rect.bottomLeft()
-        ]
 
     def elementsDrawBackgroundGhost(self, painter, self_rect):
         if False:

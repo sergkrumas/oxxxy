@@ -103,6 +103,9 @@ __all__ = (
     'capture_rotated_rect_from_pixmap',
 
     'copy_image_file_to_clipboard',
+
+    'squarize_rect',
+    'calculate_tangent_points',
 )
 
 # Python3 program to find convex hull of a set of points. Refer
@@ -885,3 +888,63 @@ def copy_image_file_to_clipboard(filepath):
         url = QUrl.fromLocalFile(filepath)
         data.setUrls([url])
         app.clipboard().setMimeData(data)
+
+def squarize_rect(rect):
+    min_length = min(rect.width(), rect.height())
+    _output_rect = QRectF(0, 0, min_length, min_length)
+    _output_rect.moveCenter(rect.center())
+    return _output_rect
+
+
+def calculate_tangent_points(c1, r1, c2, r2):
+    center_position_values = [c1, c2]
+    radius_values = [r1, r2]
+
+    radius_max = max(radius_values)
+    radius_min = min(radius_values)
+    radius_diff = radius_max - radius_min
+
+    p1 = center_position_values[0]
+    p2 = center_position_values[1]
+    distance = math.hypot(p1.x()-p2.x(), p1.y() - p2.y())
+    sinus_alpha = radius_diff/abs(distance)
+
+    position_angle = math.atan2(p1.x()-p2.x(), p1.y() - p2.y())
+
+    if radius_values[0] > radius_values[1]:
+        factor = 1.0
+    else:
+        factor = -1.0
+
+    def get_tangent_line_points(radians_angle):
+        points_on_circles = []
+        for n, (center_pos, radius) in enumerate(zip(center_position_values, radius_values)):
+            radius_length = radius
+            x = math.cos(radians_angle)*radius_length
+            y = math.sin(radians_angle)*radius_length
+            radius_vector = QPointF(x, y)
+            point_on_circle = center_pos + radius_vector
+            points_on_circles.append(point_on_circle)
+        return points_on_circles
+
+    tangent_lines = []
+
+    try:
+        radians_angle = math.asin(sinus_alpha)
+    except:
+        radians_angle = 0
+    radians_angle += - position_angle - math.pi/2 - math.pi/2*factor
+
+    tangent_lines.append(get_tangent_line_points(radians_angle))
+
+    try:
+        # !!! отличается знаком минус
+        radians_angle = - math.asin(sinus_alpha)
+    except:
+        radians_angle = 0
+        # !!! отличается знаком плюс
+    radians_angle += - position_angle + math.pi/2 - math.pi/2*factor
+
+    tangent_lines.append(get_tangent_line_points(radians_angle))
+
+    return tangent_lines

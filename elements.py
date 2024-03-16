@@ -39,13 +39,13 @@ from PyQt5.QtGui import (QPainterPath, QColor, QKeyEvent, QMouseEvent, QBrush, Q
     QIcon, QFont, QCursor, QPolygonF, QVector2D, QTextDocument, QAbstractTextDocumentLayout,
         QPalette, QTextCursor)
 
-from _utils import (convex_hull, check_scancode_for, SettingsJson,
+from _utils import (convex_hull, check_scancode_for, SettingsJson, calculate_tangent_points,
     generate_metainfo, build_valid_rect, build_valid_rectF, dot, get_nearest_point_on_rect,
     get_creation_date, capture_rotated_rect_from_pixmap, fit_rect_into_rect,
     find_browser_exe_file, open_link_in_browser, open_in_google_chrome, save_meta_info,
     make_screenshot_pyqt, webRGBA, generate_gradient, draw_shadow, draw_cyberpunk,
     constraint45Degree, get_bounding_points, get_bounding_pointsF, load_svg,
-    is_webp_file_animated, apply_blur_effect)
+    is_webp_file_animated, apply_blur_effect, squarize_rect)
 
 from elements_transform import ElementsTransformMixin
 
@@ -347,7 +347,7 @@ class ElementsMixin(ElementsTransformMixin):
 
         self.NUMBERING_ELEMENT_WIDTH = 25
         self.elements = []
-        self.__te = Element(ToolID.zoom_in_region, [], skip=True)
+        self._te = Element(ToolID.zoom_in_region, [], skip=True)
         self._tei = Element(ToolID.picture, None, skip=True)
         self._ted = Element(ToolID.line, None, skip=True)
         self.modification_slots = []
@@ -2242,38 +2242,46 @@ class ElementsMixin(ElementsTransformMixin):
 
             f_element, s_element = self.elementsRetrieveElementsFromElementGroup(ve, element.group_id)
 
-            if f_element.finished:
-                if s_element is None:
-                    output_pos = self.elementsMapFromViewportToCanvas(QCursor().pos())
-                    toolbool = f_element.toolbool
-                    color = f_element.color
-                else:
-                    output_pos = s_element.element_position
-                    toolbool = s_element.toolbool
-                    color = s_element.color
+            if s_element is None:
+                output_pos = self.elementsMapFromViewportToCanvas(QCursor().pos())
+                apply_circle_mask = f_element.toolbool
+                color = f_element.color
+            else:
+                output_pos = s_element.element_position
+                apply_circle_mask = s_element.toolbool
+                color = s_element.color
 
             if el_type == ToolID.zoom_in_region:
                 painter.setPen(QPen(color, 1))
             if el_type == ToolID.copypaste:
                 painter.setPen(QPen(Qt.red, 1, Qt.DashLine))
 
-            painter.setTransform(element.get_transform_obj(canvas=self))
 
             # отрисовка первой пометки
             if not element.second:
+                painter.setTransform(element.get_transform_obj(canvas=self))
                 if el_type == ToolID.zoom_in_region or (el_type == ToolID.copypaste and not final):
                     capture_rect = build_valid_rectF(
                         f_element.local_start_point,
                         f_element.local_end_point
                     )
-                    painter.drawRect(capture_rect)
+                    if apply_circle_mask and el_type == ToolID.zoom_in_region:
+                        capture_rect = squarize_rect(capture_rect)
+                        painter.drawEllipse(capture_rect)
+                    else:
+                        painter.drawRect(capture_rect)
+                painter.resetTransform()
 
-            # отрисовка второй пометки
-            # special_case - когда вторая пометка ещё не введена,
-            # надо рисовать её образ центированный по курсору мыши
+            # отрисовка второй пометки, которая ещё и отрисовываться как превью при нанесении
             special_case = (not element.second and f_element.finished and s_element is None)
-            if element.second or special_case:
+            if special_case:
+                # заменяем пока не нарисованный второй элемент на превью
+                self._te.element_position = output_pos
+                self._te.calc_local_data_finish(f_element)                
+                s_element = self._te
 
+            if element.second or special_case:
+                painter.setTransform(s_element.get_transform_obj(canvas=self))
                 output_rect = element.get_size_rect(scaled=False)
                 if s_element is None:
                     pos = output_pos - f_element.element_position
@@ -2284,20 +2292,19 @@ class ElementsMixin(ElementsTransformMixin):
                     pos = output_pos - s_element.element_position
                 output_rect.moveCenter(pos)
 
-
                 painter.drawPixmap(output_rect, f_element.pixmap, QRectF(f_element.pixmap.rect()))
 
                 if el_type == ToolID.zoom_in_region:
+                    if apply_circle_mask:
+                        output_rect = squarize_rect(output_rect)
+                        painter.drawEllipse(output_rect)
+                    else:
+                        painter.drawRect(output_rect)
 
-                    painter.drawRect(output_rect)
-
-                if toolbool and el_type == ToolID.zoom_in_region:
-                    all_points = []
-
-                    font = painter.font()
-                    font.setPixelSize(35)
-                    painter.setFont(font)
-
+                # выпуклая оболочка для прямоугольников или касательные к окружностям
+                if el_type == ToolID.zoom_in_region:
+                    convex_hull_points = []
+                    tangent_lines_points = []
                     kwargs = {
                         "canvas":self,
                         "apply_local_scale":True,
@@ -2305,9 +2312,29 @@ class ElementsMixin(ElementsTransformMixin):
                         "apply_global_scale":False
                     }
                     f_canvas_transform = f_element.get_transform_obj(**kwargs)
-                    if s_element is not None:
-                        s_canvas_transform = s_element.get_transform_obj(**kwargs)
-                        size_rect_local = s_element.get_size_rect(scaled=False)
+
+                    # ! рисуем относительно фрейма второго элемента
+                    s_canvas_transform = s_element.get_transform_obj(**kwargs)
+                    size_rect_local = s_element.get_size_rect(scaled=False)
+
+                    def map_point(point_pos):
+                        point_pos = f_canvas_transform.map(point_pos)
+                        t = s_canvas_transform.inverted()
+                        if not t[1]:
+                            raise Exception('inverted matrix doesn\'t exist!')
+                        s_canvas_transform_inverted = t[0]
+                        point_pos = s_canvas_transform_inverted.map(point_pos)
+                        return point_pos
+
+                    if apply_circle_mask:
+                        c1 = map_point(QPointF(0, 0))
+                        c2 = QPointF(0, 0)
+                        r = squarize_rect(f_element.get_size_rect(scaled=False))
+                        radius_length = map_point(QPointF(r.width()/2,0))
+                        r1 = QVector2D(c1 - radius_length).length()
+                        r2 = min(size_rect_local.width(), size_rect_local.height())/2
+                        tangent_lines_points = calculate_tangent_points(c1, r1, c2, r2)
+                    else:
 
                         size_rect = f_element.get_size_rect(scaled=False)
                         size_rect.moveCenter(QPointF(0, 0))
@@ -2321,48 +2348,24 @@ class ElementsMixin(ElementsTransformMixin):
                                 raise Exception('inverted matrix doesn\'t exist!')
                             s_canvas_transform_inverted = t[0]
                             p = s_canvas_transform_inverted.map(p)
-                            all_points.append(p)
-
+                            convex_hull_points.append(p)
 
                         size_rect_local.moveCenter(QPointF(0, 0))
                         sr2_points = self.elementsGetRectCorners(size_rect_local)
                         for p in sr2_points:
-                            all_points.append(p)
+                            convex_hull_points.append(p)
 
-                    else:
+                    if convex_hull_points:
+                        coords = convex_hull(convex_hull_points)
+                        if coords is not None and len(coords) > 1:
+                            coords.append(coords[0])
+                            for n, coord in enumerate(coords[:-1]):
+                                painter.drawLine(coord, coords[n+1])
 
-                        self.__te.element_position = output_pos
-                        self.__te.calc_local_data_finish(f_element)
-
-                        s_canvas_transform = self.__te.get_transform_obj(**kwargs)
-                        size_rect_non_local = self.__te.get_size_rect(scaled=False)
-
-                        # так как образ отрисовывается во фрейме первого элемента,
-                        # то мапить придётся уже sr2, а не sr1
-                        size_rect = f_element.get_size_rect(scaled=False)
-                        size_rect.moveCenter(QPointF(0, 0))
-                        sr1_points = self.elementsGetRectCorners(size_rect)
-                        for p in sr1_points:
-                            all_points.append(p)
-
-                        size_rect_non_local.moveCenter(QPointF(0, 0))
-                        sr2_points = self.elementsGetRectCorners(size_rect_non_local)
-                        for p in sr2_points:
-                            p = s_canvas_transform.map(p)
-                            t = f_canvas_transform.inverted()
-                            if not t[1]:
-                                raise Exception('inverted matrix doesn\'t exist!')
-                            f_canvas_transform_inverted = t[0]
-                            p = f_canvas_transform_inverted.map(p)
-                            all_points.append(p)
-
-
-                    coords = convex_hull(all_points)
-                    if coords is not None and len(coords) > 1:
-                        coords.append(coords[0])
-                        for n, coord in enumerate(coords[:-1]):
-                            painter.drawLine(coord, coords[n+1])
-
+                    if tangent_lines_points:
+                        for line in tangent_lines_points:
+                            painter.drawLine(line[0], line[1])
+                painter.resetTransform()
 
             painter.resetTransform()
         element.disable_distortion_fixer()

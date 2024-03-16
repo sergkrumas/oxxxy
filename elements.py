@@ -2355,7 +2355,7 @@ class ElementsMixin(ElementsTransformMixin):
                     painter.drawPixmap(output_rect, f_element.pixmap, QRectF(f_element.pixmap.rect()))
                     painter.setClipping(False)
                 else:
-                    painter.drawPixmap(output_rect, f_element.pixmap, QRectF(f_element.pixmap.rect()))                    
+                    painter.drawPixmap(output_rect, f_element.pixmap, QRectF(f_element.pixmap.rect()))
 
                 if el_type == ToolID.zoom_in_region:
                     if apply_circle_mask:

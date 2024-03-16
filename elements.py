@@ -2330,18 +2330,19 @@ class ElementsMixin(ElementsTransformMixin):
 
                     if apply_circle_mask:
                         c1 = map_point(QPointF(0, 0))
-                        c2 = QPointF(0, 0)
-                        r = squarize_rect(f_element.get_size_rect(scaled=False))
-                        radius_length = map_point(QPointF(r.width()/2,0))
-                        r1 = QVector2D(c1 - radius_length).length()
-                        r2 = min(size_rect_local.width(), size_rect_local.height())/2
-                        tangent_lines_points = calculate_tangent_points(c1, r1, c2, r2)
+                        if c1 is not None:
+                            c2 = QPointF(0, 0)
+                            r = squarize_rect(f_element.get_size_rect(scaled=False))
+                            radius_length = map_point(QPointF(r.width()/2,0))
+                            r1 = QVector2D(c1 - radius_length).length()
+                            r2 = min(size_rect_local.width(), size_rect_local.height())/2
+                            tangent_lines_points = calculate_tangent_points(c1, r1, c2, r2)
 
-                        # рисуем кружок первой пометки
-                        # рисуем именно здесь, чтобы толщины линий были одинаковыми
-                        f_rect = QRectF(0, 0, r1*2, r1*2)
-                        f_rect.moveCenter(c1)
-                        painter.drawEllipse(f_rect)
+                            # рисуем кружок первой пометки
+                            # рисуем именно здесь, чтобы толщины линий были одинаковыми
+                            f_rect = QRectF(0, 0, r1*2, r1*2)
+                            f_rect.moveCenter(c1)
+                            painter.drawEllipse(f_rect)
 
                     else:
 

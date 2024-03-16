@@ -420,7 +420,7 @@ class ElementsMixin(ElementsTransformMixin):
             element.calc_local_data()
             element.element_position = QPointF(background_pixmap.width()/2, background_pixmap.height()/2)
         else:
-            
+
             ROWS = 2
             COLS = 8
             background_pixmap = QPixmap.fromImage(self.source_pixels)
@@ -1871,7 +1871,7 @@ class ElementsMixin(ElementsTransformMixin):
                 capture_height
             )
         else:
-            
+
             capture_region_rect = element.get_canvas_space_selection_area().boundingRect()
             self.elementsUpdateFinalPicture(
                 capture_region_rect=capture_region_rect,
@@ -1981,7 +1981,7 @@ class ElementsMixin(ElementsTransformMixin):
         is_event = is_event and event.key() != Qt.Key_Escape
         is_event = is_event and bool(event.text()) or (event.key() in [Qt.Key_Left, Qt.Key_Right])
         is_event = is_event and (not event.modifiers() or (event.modifiers() == Qt.ControlModifier and check_scancode_for(event, "V")))
-        return is_event 
+        return is_event
 
     def elementsCreateTextbox(self, elem):
         text_doc = QTextDocument()
@@ -2164,7 +2164,7 @@ class ElementsMixin(ElementsTransformMixin):
                 offset_translation.translate(-offset_x, -offset_y)
 
             element_transform = element.get_transform_obj(canvas=self)
-            if element.text_doc is not None:            
+            if element.text_doc is not None:
                 element_transform = offset_translation * element_transform
             element.draw_transform = element_transform
             painter.setTransform(element_transform)
@@ -2280,7 +2280,7 @@ class ElementsMixin(ElementsTransformMixin):
             if special_case:
                 # заменяем пока не нарисованный второй элемент на превью
                 self._te.element_position = output_pos
-                self._te.calc_local_data_finish(f_element)                
+                self._te.calc_local_data_finish(f_element)
                 s_element = self._te
 
             if element.second or special_case:
@@ -2417,7 +2417,7 @@ class ElementsMixin(ElementsTransformMixin):
             for bg in backgrounds:
                 sa = bg.get_selection_area(canvas=self)
                 painter.drawPolygon(sa)
-            painter.restore()        
+            painter.restore()
 
     def elementsDrawMainBackgroundOnlyNotFinal(self, painter):
         self.elementsDrawMain(painter, final=False, draw_background_only=True)

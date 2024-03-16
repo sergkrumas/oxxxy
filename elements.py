@@ -1343,7 +1343,13 @@ class ElementsMixin(ElementsTransformMixin):
         special_case = special_case and ms and not len(ms.elements) == 2
         return special_case
 
-    def elementsRetrieveElementsFromElementGroup(self, visible_elements, group_id):
+    def elementsRetrieveElementsFromGroup(self, visible_elements, group_id):
+        if group_id is None:
+            return []
+        else:
+            return [el for el in visible_elements if el.group_id == group_id]
+
+    def elementsRetrieveElementsFromUniformGroup(self, visible_elements, group_id):
         if group_id is not None:
             first_element = None
             second_element = None
@@ -1708,6 +1714,8 @@ class ElementsMixin(ElementsTransformMixin):
             element.end_point = event_pos + QPointF(200, 50)
             element.calc_local_data()
             element.arrow.calc_local_data()
+            element.arrow.group_id = element.unique_index
+            element.group_id = element.unique_index
             a = element.arrow
             if QVector2D(a.end_point-a.start_point).length() < 100.0:
                 self.elements.remove(a)
@@ -1751,6 +1759,11 @@ class ElementsMixin(ElementsTransformMixin):
                             elif el.type == [ToolID.zoom_in_region, ToolID.copypaste]:
                                 if not el.second:
                                     self.elementsSetCopiedPixmap(el)
+
+                    if self.selected_items:
+                        for el in self.selected_items:
+                            if el.type in [ToolID.arrow, ToolID.text]:
+                                self.elementsFixArrowStartPositionIfNeeded(el)
 
                 if not alt and not self.translation_ongoing and not self.rotation_ongoing and not self.scaling_ongoing:
                     self.canvas_selection_callback(event.modifiers() == Qt.ShiftModifier)
@@ -2012,6 +2025,41 @@ class ElementsMixin(ElementsTransformMixin):
         text_doc.setTextWidth(200)
         elem.text_doc_cursor_pos = 0
 
+    def elementsFixArrowStartPositionIfNeeded(self, element):
+        ve = self.elementsFilter()
+        elements_in_group = self.elementsRetrieveElementsFromGroup(ve, element.group_id)
+        if elements_in_group.__len__() > 1:
+            arrow_element = None
+            text_element = None
+            if element.type == ToolID.text:
+                elements_in_group.remove(element)
+                arrow_element = elements_in_group[0]
+                text_element = element
+            elif element.type == ToolID.arrow:
+                arrow_element = element
+                elements_in_group.remove(element)
+                text_element = elements_in_group[0]
+            if arrow_element and text_element:
+                # все вычисления проводим в canvas space
+                text_rect = text_element.get_size_rect(scaled=True)
+                text_rect.moveCenter(QPointF(0, 0))
+                text_transform = QTransform()
+                text_transform.rotate(text_element.element_rotation)
+                p1 = text_transform.map(text_rect.bottomLeft())
+                p2 = text_transform.map(text_rect.topLeft())
+                p3 = text_transform.map(text_rect.topRight())
+                p4 = text_transform.map(text_rect.bottomRight())
+
+                p1 += text_element.element_position
+                p2 += text_element.element_position
+                p3 += text_element.element_position
+                p4 += text_element.element_position
+
+                modified_start_point = get_nearest_point_on_rect(p1, p2, p3, p4, arrow_element.end_point)
+                arrow_element.start_point = modified_start_point
+                arrow_element.calc_local_data()
+                arrow_element.recalc_local_data_for_straight_objects()
+
     def elementsDrawDarkening(self, painter, prepare_pixmap=False):
         if self.capture_region_rect:
             darkening_value = 0.0
@@ -2241,7 +2289,7 @@ class ElementsMixin(ElementsTransformMixin):
 
             painter.setBrush(Qt.NoBrush)
 
-            f_element, s_element = self.elementsRetrieveElementsFromElementGroup(ve, element.group_id)
+            f_element, s_element = self.elementsRetrieveElementsFromUniformGroup(ve, element.group_id)
 
             if s_element is None:
                 output_pos = self.elementsMapFromViewportToCanvas(QCursor().pos())

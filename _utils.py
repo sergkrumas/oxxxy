@@ -357,10 +357,10 @@ def build_valid_rectF(p1, p2):
 def dot(p1, p2):
     return p1.x()*p2.x() + p1.y()*p2.y()
 
-def get_nearest_point_on_rect(r, cursor):
+def get_nearest_point_on_rect(p1, p2, p3, p4, cursor):
     def distance_length(a, b):
         return QVector2D(a - b).length()
-    def create_points(a, b):
+    def create_points_on_line(a, b):
         a = QPointF(a)
         b = QPointF(b)
         ps = []
@@ -373,11 +373,11 @@ def get_nearest_point_on_rect(r, cursor):
             ps.append(p)
         return ps
     points = []
-    points.extend(create_points(r.topLeft(), r.bottomLeft()))
-    points.extend(create_points(r.topRight(), r.topLeft()))
-    points.extend(create_points(r.bottomRight(), r.topRight()))
-    points.extend(create_points(r.bottomLeft(), r.bottomRight()))
-    nearest_point = QPoint(0, 0)
+    points.extend(create_points_on_line(p1, p2))
+    points.extend(create_points_on_line(p2, p3))
+    points.extend(create_points_on_line(p3, p4))
+    points.extend(create_points_on_line(p4, p1))
+    nearest_point = QPointF(0, 0)
     l = 100000.0
     for p in points:
         delta_length = distance_length(cursor, p)

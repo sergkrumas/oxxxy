@@ -2227,7 +2227,7 @@ class ToolsWindow(QWidget):
 
     def change_ui_text(self, _type):
         if _type == ToolID.zoom_in_region:
-            self.chb_toolbool.setText("Линии")
+            self.chb_toolbool.setText("Кружки")
         elif _type == ToolID.text:
             self.chb_toolbool.setText("Подложка")
         elif _type == ToolID.blurring:

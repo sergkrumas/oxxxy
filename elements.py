@@ -2296,14 +2296,17 @@ class ElementsMixin(ElementsTransformMixin):
                 output_rect.moveCenter(pos)
 
 
-                painter.setClipping(True)
-                path = QPainterPath()
-                r = squarize_rect(element.get_size_rect(scaled=False))
-                r.moveCenter(QPointF(0, 0))
-                path.addEllipse(r)
-                painter.setClipPath(path)
-                painter.drawPixmap(output_rect, f_element.pixmap, QRectF(f_element.pixmap.rect()))
-                painter.setClipping(False)
+                if apply_circle_mask:
+                    painter.setClipping(True)
+                    path = QPainterPath()
+                    r = squarize_rect(element.get_size_rect(scaled=False))
+                    r.moveCenter(QPointF(0, 0))
+                    path.addEllipse(r)
+                    painter.setClipPath(path)
+                    painter.drawPixmap(output_rect, f_element.pixmap, QRectF(f_element.pixmap.rect()))
+                    painter.setClipping(False)
+                else:
+                    painter.drawPixmap(output_rect, f_element.pixmap, QRectF(f_element.pixmap.rect()))                    
 
                 if el_type == ToolID.zoom_in_region:
                     if apply_circle_mask:

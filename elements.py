@@ -1752,15 +1752,15 @@ class ElementsMixin(ElementsTransformMixin):
 
                 if any((self.translation_ongoing, self.scaling_ongoing, self.rotation_ongoing)):
                     if self.selected_items:
-                        for el in self.elements:
-                            if el.type == ToolID.blurring:
-                                el.finished = True
-                                self.elementsSetBlurredPixmap(el)
-                            elif el.type == [ToolID.zoom_in_region, ToolID.copypaste]:
-                                if not el.second:
-                                    self.elementsSetCopiedPixmap(el)
+                        if any([el for el in self.selected_items if el.background_image]):
+                            for el in self.elements:
+                                if el.type == ToolID.blurring:
+                                    el.finished = True
+                                    self.elementsSetBlurredPixmap(el)
+                                elif el.type == [ToolID.zoom_in_region, ToolID.copypaste]:
+                                    if not el.second:
+                                        self.elementsSetCopiedPixmap(el)
 
-                    if self.selected_items:
                         for el in self.selected_items:
                             if el.type in [ToolID.arrow, ToolID.text]:
                                 self.elementsFixArrowStartPositionIfNeeded(el)

@@ -2266,8 +2266,10 @@ class ElementsMixin(ElementsTransformMixin):
                         f_element.local_end_point
                     )
                     if apply_circle_mask and el_type == ToolID.zoom_in_region:
-                        capture_rect = squarize_rect(capture_rect)
-                        painter.drawEllipse(capture_rect)
+                        if not element.finished:
+                            # отрисовка только при нанесении, потом отрисовка будет происходить через второй элемент
+                            capture_rect = squarize_rect(capture_rect)
+                            painter.drawEllipse(capture_rect)
                     else:
                         painter.drawRect(capture_rect)
                 painter.resetTransform()
@@ -2319,11 +2321,11 @@ class ElementsMixin(ElementsTransformMixin):
 
                     def map_point(point_pos):
                         point_pos = f_canvas_transform.map(point_pos)
-                        t = s_canvas_transform.inverted()
-                        if not t[1]:
-                            raise Exception('inverted matrix doesn\'t exist!')
-                        s_canvas_transform_inverted = t[0]
-                        point_pos = s_canvas_transform_inverted.map(point_pos)
+                        sc_inv, status = s_canvas_transform.inverted()
+                        if not status:
+                            # inverted matrix doesn't exist!
+                            return None
+                        point_pos = sc_inv.map(point_pos)
                         return point_pos
 
                     if apply_circle_mask:
@@ -2334,6 +2336,13 @@ class ElementsMixin(ElementsTransformMixin):
                         r1 = QVector2D(c1 - radius_length).length()
                         r2 = min(size_rect_local.width(), size_rect_local.height())/2
                         tangent_lines_points = calculate_tangent_points(c1, r1, c2, r2)
+
+                        # рисуем кружок первой пометки
+                        # рисуем именно здесь, чтобы толщины линий были одинаковыми
+                        f_rect = QRectF(0, 0, r1*2, r1*2)
+                        f_rect.moveCenter(c1)
+                        painter.drawEllipse(f_rect)
+
                     else:
 
                         size_rect = f_element.get_size_rect(scaled=False)
@@ -2365,6 +2374,9 @@ class ElementsMixin(ElementsTransformMixin):
                     if tangent_lines_points:
                         for line in tangent_lines_points:
                             painter.drawLine(line[0], line[1])
+
+
+
                 painter.resetTransform()
 
             painter.resetTransform()

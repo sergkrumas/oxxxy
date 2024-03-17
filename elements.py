@@ -1093,17 +1093,25 @@ class ElementsMixin(ElementsTransformMixin):
             for candidat in self.selected_items:
                 if candidat.type == ToolID.removing:
                     continue
-
+                # для удаления стрелки, которая наносилась вместе с текстом (если она ещё не удалена)
+                if candidat.type in [ToolID.text]:
+                    elements_pair = self.elementsRetrieveElementsFromGroup(ve, candidat.group_id)
+                    if len(elements_pair) == 2:
+                        for el in elements_pair:
+                            if el is candidat:
+                                continue
+                            elif el not in self.selected_items:
+                                el._selected = False
+                                source_indexes.append(el.unique_index)
                 # для пар взаимозависимых пометок
                 if candidat.type in [ToolID.zoom_in_region, ToolID.copypaste]:
                     elements_pair = self.elementsRetrieveElementsFromUniformGroup(ve, candidat.group_id)
                     for el in elements_pair:
                         if el is candidat:
                             continue
-                        else:
-                            if el not in self.selected_items:
-                                el._selected = False
-                                source_indexes.append(el.unique_index)
+                        elif el not in self.selected_items:
+                            el._selected = False
+                            source_indexes.append(el.unique_index)
                 candidat._selected = False
                 source_indexes.append(candidat.unique_index)
             if source_indexes:

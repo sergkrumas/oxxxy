@@ -50,7 +50,7 @@ from _utils import (convex_hull, check_scancode_for, SettingsJson, calculate_tan
 from elements_transform import ElementsTransformMixin
 
 
-ZOOM_IN_REGION_DAFULT_SCALE = 1.5
+ZOOM_IN_REGION_DAFAULT_SCALE = 1.5
 
 class ToolID():
     none = "none"
@@ -189,8 +189,11 @@ class Element():
         self.element_height = first_element.element_height
         # с предувеличением
         if self.type in [ToolID.zoom_in_region]:
-            self.element_scale_y = ZOOM_IN_REGION_DAFULT_SCALE
-            self.element_scale_x = ZOOM_IN_REGION_DAFULT_SCALE
+            self.element_scale_y = ZOOM_IN_REGION_DAFAULT_SCALE
+            self.element_scale_x = ZOOM_IN_REGION_DAFAULT_SCALE
+        else:
+            self.element_scale_y = 1.0
+            self.element_scale_x = 1.0            
 
     def calc_local_data_path(self):
         bb = self.path.boundingRect()
@@ -2334,6 +2337,7 @@ class ElementsMixin(ElementsTransformMixin):
             if special_case:
                 # заменяем пока не нарисованный второй элемент на превью
                 self._te.element_position = output_pos
+                self._te.type = element.type
                 self._te.calc_local_data_finish(f_element)
                 s_element = self._te
 
@@ -2343,14 +2347,16 @@ class ElementsMixin(ElementsTransformMixin):
                 if s_element is None:
                     pos = output_pos - f_element.element_position
                     if el_type in [ToolID.zoom_in_region]:
-                        s = ZOOM_IN_REGION_DAFULT_SCALE
-                        output_rect = QRectF(0, 0, output_rect.width()*s, output_rect.height()*s)
+                        s = ZOOM_IN_REGION_DAFAULT_SCALE
+                    else:
+                        s = 1.0
+                    output_rect = QRectF(0, 0, output_rect.width()*s, output_rect.height()*s)
                 else:
                     pos = output_pos - s_element.element_position
                 output_rect.moveCenter(pos)
 
 
-                if apply_circle_mask:
+                if apply_circle_mask and el_type not in [self.ToolID.copypaste]:
                     painter.setClipping(True)
                     path = QPainterPath()
                     r = squarize_rect(element.get_size_rect(scaled=False))

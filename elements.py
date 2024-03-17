@@ -1087,13 +1087,28 @@ class ElementsMixin(ElementsTransformMixin):
     def elementsRemoveSelectedElements(self):
         if not self.elementsModificationSlotsFilter():
             return
-        removing_element = self.elementsCreateNew(ToolID.removing)
+        ve = self.elementsFilter()
         if self.selected_items:
+            source_indexes = []
             for candidat in self.selected_items:
                 if candidat.type == ToolID.removing:
                     continue
-                candidat.selected = False
-                removing_element.source_indexes.append(candidat.unique_index)
+
+                # для пар взаимозависимых пометок
+                if candidat.type in [ToolID.zoom_in_region, ToolID.copypaste]:
+                    elements_pair = self.elementsRetrieveElementsFromUniformGroup(ve, candidat.group_id)
+                    for el in elements_pair:
+                        if el is candidat:
+                            continue
+                        else:
+                            if el not in self.selected_items:
+                                el._selected = False
+                                source_indexes.append(el.unique_index)
+                candidat._selected = False
+                source_indexes.append(candidat.unique_index)
+            if source_indexes:
+                removing_element = self.elementsCreateNew(ToolID.removing)
+                removing_element.source_indexes = source_indexes
             self.elementsSetSelected(None)
         self.update()
 

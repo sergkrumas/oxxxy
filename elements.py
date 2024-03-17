@@ -1745,7 +1745,7 @@ class ElementsMixin(ElementsTransformMixin):
                 element.ms.elements.remove(a)
                 a.ms = None
             element.arrow = None
-            del element.arrow
+            del element.arrow # чтобы не было проблем при сохранении файла
             self.elementsCreateTextbox(element)
         elif tool in [ToolID.blurring, ToolID.darkening]:
             element.equilateral = bool(event.modifiers() & Qt.ShiftModifier)

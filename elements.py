@@ -193,7 +193,7 @@ class Element():
             self.element_scale_x = ZOOM_IN_REGION_DAFAULT_SCALE
         else:
             self.element_scale_y = 1.0
-            self.element_scale_x = 1.0            
+            self.element_scale_x = 1.0
 
     def calc_local_data_path(self):
         bb = self.path.boundingRect()

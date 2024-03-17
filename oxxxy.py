@@ -305,8 +305,10 @@ class StylizedUIBase():
     """
     info_label_style_settings = """
         font-size: 17px;
-        color: yellow;
+        color: rgb(200, 50, 50);
         margin: 2px;
+        background: rgb(40, 40, 40);
+        color: rgb(100, 200, 200);
         text-align: center;
     """
 
@@ -558,15 +560,14 @@ class SettingsWindow(QWidget, StylizedUIBase):
             layout_2.addWidget(_label)
             layout_2.addWidget(_field, alignment=Qt.AlignCenter)
         #######################################################################
-        chbx_21 = QCheckBox("Также через Print Screen\nвызывать скриншот фрагмента")
+        chbx_21 = QCheckBox("Также вызывать скриншот фрагмента\n через клавишу Print Screen")
         chbx_21.setStyleSheet(self.settings_checkbox)
         chbx_21.setChecked(Globals.USE_PRINT_KEY)
         chbx_21.stateChanged.connect(lambda: self.handle_print_screen_for_fragment(chbx_21))
         layout_2.addWidget(chbx_21, alignment=Qt.AlignCenter)
         #######################################################################
-        chbx_22 = QCheckBox(("Блокировать срабатывание\n"
-                                "комбинаций клавиш\n"
-                                "после первого срабатывания\n"
+        chbx_22 = QCheckBox(("Блокировать срабатывание комбинаций\n"
+                                "клавиш после первого срабатывания\n"
                                 "и до сохранения скриншота"))
         chbx_22.setStyleSheet(self.settings_checkbox)
         chbx_22.setChecked(Globals.BLOCK_KEYSEQ_HANDLING_AFTER_FIRST_CALL)
@@ -576,7 +577,7 @@ class SettingsWindow(QWidget, StylizedUIBase):
 
         label_3 = QLabel("<b>➜ АВТОМАТИЧЕСКИЙ ЗАПУСК</b>")
         label_3.setStyleSheet(self.info_label_style_settings)
-        chbx_3 = QCheckBox("Запускать при старте Windows")
+        chbx_3 = QCheckBox("Запускать Oxxxy при старте Windows")
         chbx_3.setStyleSheet(self.settings_checkbox)
         chbx_3.setChecked(is_app_in_startup(self.STARTUP_CONFIG[0]))
         chbx_3.stateChanged.connect(lambda: self.handle_windows_startup_chbx(chbx_3))

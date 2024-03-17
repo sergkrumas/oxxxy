@@ -167,10 +167,16 @@ class Element():
         object_orientation_degrees = math.degrees(math.atan2(diff.y(), diff.x()))
         diff_angle = default_45_degrees - object_orientation_degrees
 
+        # актуальная поправочка, чтобы код действительно работал для всех направлений и углов
+        diff_angle = object_orientation_degrees + 45
+
         rot.rotate(-diff_angle)
+        self.element_prerotation = diff_angle
 
         self.local_start_point = rot.map(self.local_start_point)
         self.local_end_point = rot.map(self.local_end_point)
+        self.start_point = self.local_start_point + self.element_position
+        self.end_point = self.local_end_point + self.element_position
 
         self.element_rotation = diff_angle
 

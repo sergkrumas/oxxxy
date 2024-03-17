@@ -1740,10 +1740,17 @@ class ElementsMixin(ElementsTransformMixin):
             element.arrow.group_id = element.unique_index
             element.group_id = element.unique_index
             a = element.arrow
+            arrow_included = True
             if QVector2D(a.end_point-a.start_point).length() < 100.0:
                 self.elements.remove(a)
                 element.ms.elements.remove(a)
                 a.ms = None
+                arrow_included = False
+            ms = self.elementsGetLastModSlot()
+            if arrow_included:
+                ms.content_type = 'text with arrow'
+            else:
+                ms.content_type = 'text'
             element.arrow = None
             del element.arrow # чтобы не было проблем при сохранении файла
             self.elementsCreateTextbox(element)

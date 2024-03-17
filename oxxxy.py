@@ -70,8 +70,8 @@ class Globals():
     DEBUG_ELEMENTS = False
     DEBUG_ELEMENTS_PICTURE_FRAMING = True
     DEBUG_ELEMENTS_COLLAGE = False
-    CRASH_SIMULATOR = False
     DEBUG_UNCAPTURED_ZONES = False
+    CRASH_SIMULATOR = False
 
     DEBUG_VIZ = False
     DEBUG_ANALYSE_CORNERS_SPACES = False
@@ -88,6 +88,8 @@ class Globals():
     BLOCK_KEYSEQ_HANDLING_AFTER_FIRST_CALL = True
     SCREENSHOT_FOLDER_PATH = ""
     USE_PRINT_KEY = True
+
+    ANTIALIASING_AND_SMOOTH_PIXMAP_TRANSFORM = True
 
     DEFAULT_FRAGMENT_KEYSEQ = "Ctrl+Print"
     DEFAULT_FULLSCREEN_KEYSEQ = "Ctrl+Shift+Print"
@@ -4117,6 +4119,10 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         Globals.close_editor_on_done = not Globals.close_editor_on_done
         self.update()
 
+    def toggle_antialiasing(self):
+        Globals.ANTIALIASING_AND_SMOOTH_PIXMAP_TRANSFORM = not Globals.ANTIALIASING_AND_SMOOTH_PIXMAP_TRANSFORM
+        self.update()
+
     def contextMenuEvent(self, event):
         if self.cancel_context_menu:
             self.cancel_context_menu = False
@@ -4177,6 +4183,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             ("Затемнять после отрисовки пометок", self.dark_pictures, self.toggle_dark_pictures),
             ("Закрывать редактор после нажатия кнопки «Готово»", Globals.close_editor_on_done, self.toggle_close_on_done),
             ("Показывать дебаг-отрисовку для виджета трансформации", self.canvas_debug_transform_widget, self.toggle_transform_widget_debug_mode),
+            ("Антиальясинг и сглаживание пиксмапов", Globals.ANTIALIASING_AND_SMOOTH_PIXMAP_TRANSFORM, self.toggle_antialiasing),
             ("DEBUG", Globals.DEBUG, self.toggle_debug_mode),
         )
 

@@ -2534,9 +2534,10 @@ class ElementsMixin(ElementsTransformMixin):
             painter.restore()
 
     def elementsDrawMain(self, painter, final=False, draw_background_only=False, prepare_darkening=False):
-        painter.setRenderHint(QPainter.HighQualityAntialiasing, True)
-        painter.setRenderHint(QPainter.Antialiasing, True)
-        painter.setRenderHint(QPainter.SmoothPixmapTransform, True)
+        if final or self.Globals.ANTIALIASING_AND_SMOOTH_PIXMAP_TRANSFORM:
+            painter.setRenderHint(QPainter.HighQualityAntialiasing, True)
+            painter.setRenderHint(QPainter.Antialiasing, True)
+            painter.setRenderHint(QPainter.SmoothPixmapTransform, True)
         painter.save()
         # draw elements
         if not prepare_darkening:

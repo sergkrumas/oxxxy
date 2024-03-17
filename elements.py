@@ -2023,7 +2023,9 @@ class ElementsMixin(ElementsTransformMixin):
         is_event = is_event and event.key() != Qt.Key_Escape
         is_event = is_event and event.key() not in [Qt.Key_Delete, Qt.Key_Insert, Qt.Key_Home, Qt.Key_End, Qt.Key_PageDown, Qt.Key_PageUp]
         is_event = is_event and (bool(event.text()) or (event.key() in [Qt.Key_Left, Qt.Key_Right]))
-        is_event = is_event and (not event.modifiers() or (event.modifiers() == Qt.ControlModifier and check_scancode_for(event, "V")))
+        is_event = is_event and ((not event.modifiers()) or \
+                    (Qt.ShiftModifier == event.modifiers()) or \
+                    (event.modifiers() == Qt.ControlModifier and check_scancode_for(event, "V"))) 
         return is_event
 
     def elementsCreateTextbox(self, elem):

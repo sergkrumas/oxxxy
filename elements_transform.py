@@ -385,7 +385,13 @@ class ElementsTransformMixin():
         if self.start_translation_pos:
             delta = QPointF(self.elementsMapFromViewportToCanvas(event_pos)) - self.start_translation_pos
             if not self.translation_ongoing:
-                if abs(delta.x()) > 0 or abs(delta.y()) > 0:
+                mouse_moved = abs(delta.x()) > 0 or abs(delta.y()) > 0
+                mouse_under_selected_element = False
+                for el in self.selected_items:
+                    mouse_under_selected_element = el.get_selection_area(canvas=self).containsPoint(event_pos, Qt.WindingFill)
+                    if mouse_under_selected_element:
+                        break
+                if mouse_moved and mouse_under_selected_element:
                     self.translation_ongoing = True
 
     def canvas_DO_selected_elements_TRANSLATION(self, event_pos):

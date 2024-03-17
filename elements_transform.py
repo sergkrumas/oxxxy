@@ -620,6 +620,14 @@ class ElementsTransformMixin():
         y_factor = QPointF.dotProduct(y_axis_normalized, vector)/y_axis_length
         return x_factor, y_factor
 
+    def canvas_CHECK_selected_item_for_proportional_editing(self):
+        if len(self.selected_items) == 1:
+            el = self.selected_items[0]
+            # toolbool означает кружки
+            if el.type in [self.ToolID.zoom_in_region] and el.second and el.toolbool:
+                return True
+        return False
+
     def canvas_DO_selected_elements_SCALING(self, event_pos):
         self.start_translation_pos = None
 
@@ -627,7 +635,7 @@ class ElementsTransformMixin():
         alt_mod = QApplication.queryKeyboardModifiers() & Qt.AltModifier
         shift_mod = QApplication.queryKeyboardModifiers() & Qt.ShiftModifier
         center_is_pivot = alt_mod
-        proportional_scaling = multi_element_mode or shift_mod
+        proportional_scaling = multi_element_mode or shift_mod or self.canvas_CHECK_selected_item_for_proportional_editing()
 
         # отключаем модификатор alt для группы выделенных айтемов
         center_is_pivot = center_is_pivot and not multi_element_mode

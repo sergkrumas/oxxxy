@@ -4526,8 +4526,8 @@ class ScreenshotWindow(QWidget, ElementsMixin):
                 self.update()
                 self.tools_window.update()
         if key == Qt.Key_Delete:
-            if self.elements:
-                self.elementsRemoveElement()
+            if self.selected_items:
+                self.elementsRemoveSelectedElements()
                 if self.tools_window:
                     self.tools_window.forwards_backwards_update()
         if check_scancode_for(event, "H"):

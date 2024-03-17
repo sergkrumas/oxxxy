@@ -1084,18 +1084,16 @@ class ElementsMixin(ElementsTransformMixin):
             tools_window.set_current_tool(ToolID.transform)
         self.update()
 
-    def elementsRemoveElement(self):
+    def elementsRemoveSelectedElements(self):
         if not self.elementsModificationSlotsFilter():
             return
-        create_new_slot = True
+        removing_element = self.elementsCreateNew(ToolID.removing)
         if self.selected_items:
             for candidat in self.selected_items:
                 if candidat.type == ToolID.removing:
                     continue
                 candidat.selected = False
-                element = self.elementsCreateNew(ToolID.removing, create_new_slot=create_new_slot)
-                create_new_slot = False # first candidat creates new modification slot for all candidates
-                element.source_indexes = [candidat.unique_index]
+                removing_element.source_indexes.append(candidat.unique_index)
             self.elementsSetSelected(None)
         self.update()
 

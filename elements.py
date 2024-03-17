@@ -105,6 +105,7 @@ class Element():
             self.unique_index = Element._counter
 
         self.group_id = None
+        self.source_indexes = []
 
         self.finished = False
         self.preview = False
@@ -415,9 +416,9 @@ class ElementsMixin(ElementsTransformMixin):
                     modification_slot=background_modification_slot,
                 )
                 if unique_index is not None:
-                    # задавая source_index мы удаляем из фильтра прошлое изображение,
+                    # задавая source_indexes мы удаляем из фильтра прошлое изображение,
                     # но оно остаётся в слоте
-                    element.source_index = unique_index
+                    element.source_indexes = [unique_index]
             else:
                 element = self.elementsCreateNew(ToolID.picture, content_type=ToolID.background_picture)
             element.pixmap = background_pixmap
@@ -1091,7 +1092,7 @@ class ElementsMixin(ElementsTransformMixin):
                 candidat.selected = False
                 element = self.elementsCreateNew(ToolID.removing, create_new_slot=create_new_slot)
                 create_new_slot = False # first candidat creates new modification slot for all candidates
-                element.source_index = candidat.unique_index
+                element.source_indexes = [candidat.unique_index]
             self.elementsSetSelected(None)
         self.update()
 
@@ -1303,8 +1304,7 @@ class ElementsMixin(ElementsTransformMixin):
         # или элементы, что были скопированы для внесения изменений в уже существующие
         remove_indexes = []
         for el in visible_elements:
-            if hasattr(el, "source_index"):
-                remove_indexes.append(el.source_index)
+            remove_indexes.extend(el.source_indexes)
         non_deleted_elements = []
         for index, el in enumerate(visible_elements):
             # if index not in remove_indexes:
@@ -2608,8 +2608,8 @@ class ElementsMixin(ElementsTransformMixin):
 
         def get_element_info_into_text(elem):
             info_text = ""
-            if hasattr(elem, "source_index"):
-                info_text += f"[{elem.unique_index}] {elem.type} from [{elem.source_index}]"
+            if elem.source_indexes:
+                info_text += f"[{elem.unique_index}] {elem.type} from [{elem.source_indexes}]"
             else:
                 info_text += f"[{elem.unique_index}] {elem.type}"
             if hasattr(elem, 'toolbool'):
@@ -2801,7 +2801,7 @@ class ElementsMixin(ElementsTransformMixin):
                 create_new_slot=False
             )
             self.elementsCopyElementData(new_element, element)
-            new_element.source_index = element.unique_index
+            new_element.source_indexes = [element.unique_index]
             new_element._modification_stamp = self.modification_stamp
             return new_element
         else:

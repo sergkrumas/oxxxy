@@ -1404,12 +1404,6 @@ class ElementsMixin(ElementsTransformMixin):
 
         event_pos = self.elementsMapFromViewportToCanvas(QPointF(event.pos()))
 
-        ae = self.active_element
-        if ae is not None and ae.type == ToolID.text:
-            if ae.get_selection_area(canvas=self).containsPoint(event.pos(), Qt.WindingFill):
-                self.elementsTextDocSetCursorPosByClick(event)
-                return
-
         self.prev_elements_modification_index = self.elements_modification_index
         isLeftButton = event.buttons() == Qt.LeftButton
         isAltOnly = event.modifiers() == Qt.AltModifier
@@ -1803,6 +1797,12 @@ class ElementsMixin(ElementsTransformMixin):
                                 self.elementsSetCopiedPixmap(se)
                         elif se.type == ToolID.text:
                             se.end_point_modified = True
+
+        ae = self.active_element
+        if ae is not None and ae.type == ToolID.text:
+            if ae.get_selection_area(canvas=self).containsPoint(event.pos(), Qt.WindingFill):
+                self.elementsTextDocSetCursorPosByClick(event)
+                return
 
         self.elementsDeacquireStampForFinishedElementsModification()
 

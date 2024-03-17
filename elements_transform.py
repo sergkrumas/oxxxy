@@ -459,8 +459,10 @@ class ElementsTransformMixin():
                 element.__element_rotation_init = element.element_rotation
                 element.__element_position_init = QPointF(element.element_position)
 
-    def step_rotation(self, rotation_value):
+    def step_rotation(self, rotation_value, prerotation=None):
         interval = 45.0
+        if prerotation is not None:
+            rotation_value -= prerotation
         # формулу подбирал в графическом калькуляторе desmos.com/calculator
         # value = math.floor((rotation_value-interval/2.0)/interval)*interval+interval
         # ниже упрощённый вариант
@@ -495,7 +497,7 @@ class ElementsTransformMixin():
             #     continue
             element.element_rotation = element.__element_rotation + rotation_delta_degrees
             if not multi_element_mode and ctrl_mod:
-                element.element_rotation = self.step_rotation(element.element_rotation)
+                element.element_rotation = self.step_rotation(element.element_rotation, prerotation=element.element_prerotation)
             # position component
             pos = element.calculate_absolute_position(canvas=self, rel_pos=element.__element_position)
             pos_radius_vector = pos - pivot

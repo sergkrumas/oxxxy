@@ -128,6 +128,7 @@ class Element():
         self.element_scale_y = 1.0
         self.element_position = QPointF()
         self.element_rotation = 0
+        self.element_prerotation = 0
         self.element_width = None
         self.element_height = None
 

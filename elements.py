@@ -176,8 +176,6 @@ class Element():
 
         self.local_start_point = rot.map(self.local_start_point)
         self.local_end_point = rot.map(self.local_end_point)
-        self.start_point = self.local_start_point + self.element_position
-        self.end_point = self.local_end_point + self.element_position
 
         self.element_rotation = diff_angle
 

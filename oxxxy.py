@@ -305,10 +305,9 @@ class StylizedUIBase():
     """
     info_label_style_settings = """
         font-size: 17px;
-        color: rgb(200, 50, 50);
         margin: 2px;
-        background: rgb(40, 40, 40);
-        color: rgb(100, 200, 200);
+        background: rgb(230, 230, 230);
+        color: #303940;
         text-align: center;
     """
 

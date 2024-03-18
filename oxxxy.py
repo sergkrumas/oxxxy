@@ -94,6 +94,8 @@ class Globals():
 
     ANTIALIASING_AND_SMOOTH_PIXMAP_TRANSFORM = True
 
+    ICON_PATH = None
+
     DEFAULT_FRAGMENT_KEYSEQ = "Ctrl+Print"
     DEFAULT_FULLSCREEN_KEYSEQ = "Ctrl+Shift+Print"
     DEFAULT_QUICKFULLSCREEN_KEYSEQ = "Shift+Print"
@@ -3764,6 +3766,9 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         self.view_window.show_image(filepath)
         self.view_window.activateWindow()
 
+    def update_sys_tray_icon(self, *args, **kwargs):
+        update_sys_tray_icon(*args, **kwargs)  
+
     def save_screenshot(self, grabbed_image=None, metadata=None):
         close_all_windows()
 
@@ -3782,6 +3787,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             pix = self.elements_final_output
             if Globals.save_to_memory_mode:
                 Globals.images_in_memory.append(pix)
+                update_sys_tray_icon(len(Globals.images_in_memory))
             else:
                 pix.save(filepath)
                 if self.tools_window.chb_add_meta.isChecked():
@@ -4848,6 +4854,31 @@ def get_crashlog_filepath():
     path = os.path.normpath(os.path.join(root, "oxxxy_crash.log"))
     return path
 
+def update_sys_tray_icon(value, reset=False):
+    app = QApplication.instance()
+    stray_icon = app.property("stray_icon")
+    if stray_icon:
+        pixmap = QPixmap(Globals.ICON_PATH)
+        if not reset:
+            painter = QPainter()
+            painter.begin(pixmap)
+            font = painter.font()
+            divider = 1.4
+            height = int(pixmap.height()/divider)
+            font.setPixelSize(height)
+            font.setWeight(1900)
+            painter.setFont(font)
+            value_string = f'{value}'
+            text_rect = painter.boundingRect(QRect(), Qt.AlignLeft, value_string)
+            text_rect.moveTopRight(QPoint(pixmap.width(), 0))
+            painter.setPen(Qt.NoPen)
+            painter.fillRect(text_rect, Qt.black)
+            painter.setPen(QPen(Qt.white))
+            painter.drawText(pixmap.rect(), Qt.AlignRight | Qt.AlignTop, value_string)
+            painter.end()
+        icon = QIcon(pixmap)
+        stray_icon.setIcon(icon)
+
 def excepthook(exc_type, exc_value, exc_tb):
     # пишем инфу о краше
     if isinstance(exc_tb, str):
@@ -4950,8 +4981,8 @@ def _main():
     if os.name == 'nt':
         appid = 'sergei_krumas.oxxxy_screenshoter.client.1'
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(appid)
-    path_icon = os.path.abspath(os.path.join(os.path.dirname(__file__), "icon.png"))
-    icon = QIcon(path_icon)
+    Globals.ICON_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "icon.png"))
+    icon = QIcon(QPixmap(Globals.ICON_PATH))
     app.setProperty("keep_ref_to_icon", icon)
     app.setWindowIcon(icon)
     # tooltip effects

@@ -545,6 +545,7 @@ class ElementsMixin(ElementsTransformMixin):
         self.Globals.save_to_memory_mode = False
         self.request_images_editor_mode(self.Globals.images_in_memory)
         self.Globals.images_in_memory.clear()
+        self.update_sys_tray_icon(None, reset=True)
         self.elementsUpdateUI()
 
     def mapped_cursor_pos(self):

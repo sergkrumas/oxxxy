@@ -109,7 +109,7 @@ class Element():
                 Element._counter = 0
             self.unique_index = Element._counter
 
-        self.pass2_unique_index = self.unique_index
+            self.pass2_unique_index = self.unique_index
 
         self.group_id = None
         self.source_indexes = []
@@ -422,12 +422,29 @@ class ElementsMixin(ElementsTransformMixin):
             bckg_element.calc_local_data()
             bckg_element.element_position = QPointF(background_pixmap.width()/2, background_pixmap.height()/2)
         elif option == self.CreateBackgroundOption.Reshoot:
-            pass
+            # находим все видимые элементы фона
+            ve_b_indexes = [el.unique_index for el in self.elementsFilter() if el.background_image]
+            # создаём основу для нового фона
+            background_slot = self.elementsFindBackgroundSlot()
+            bckg_element = self.elementsCreateNew(ToolID.picture,
+                create_new_slot=False,
+                modification_slot=background_slot,
+            )
+            # оставляем запись в истории действий
+            rmv_element = self.elementsCreateNew(ToolID.removing)
+            rmv_element.source_indexes = ve_b_indexes
+            rmv_element.allowed_indexes = [bckg_element.pass2_unique_index]
+            bckg_element.pass_through_filter_only_if_allowed = True
+            # заправляем данными
+            new_background_pixmap = QPixmap.fromImage(self.source_pixels)
+            bckg_element.pixmap = new_background_pixmap
+            bckg_element.background_image = True
+            bckg_element.calc_local_data()
+            bckg_element.element_position = QPointF(new_background_pixmap.width()/2, new_background_pixmap.height()/2)
+
 
 
         elif option == self.CreateBackgroundOption.ContentToBackground:
-            # ve_b_indexes = [el.unique_index for el in self.elementsFilter() if el.background_image]
-            # bckg_element.source_indexes = ve_b_indexes
 
             pass
 

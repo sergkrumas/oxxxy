@@ -111,6 +111,8 @@ class Element():
 
         self.group_id = None
         self.source_indexes = []
+        self.pass_through_filter_only_if_allowed = False
+        self.allowed_indexes = []
 
         self.finished = False
         self.preview = False
@@ -1280,12 +1282,23 @@ class ElementsMixin(ElementsTransformMixin):
         remove_indexes = []
         for el in visible_elements:
             remove_indexes.extend(el.source_indexes)
-        non_deleted_elements = []
-        for index, el in enumerate(visible_elements):
-            # if index not in remove_indexes:
+        PASS1_elements = []
+        for el in visible_elements:
             if el.unique_index not in remove_indexes:
-                non_deleted_elements.append(el)
-        return non_deleted_elements
+                PASS1_elements.append(el)
+        # ещё один тип фильтрации: элементы с этими индексами проходят фильтрацию
+        # только если элемент, который содержит их индексы, прошёл первоначальную фильтрацию
+        PASS2_elements = []
+        allowed_indexes = []
+        for el in PASS1_elements:
+            allowed_indexes.extend(el.allowed_indexes)
+        for el in PASS1_elements:
+            if el.pass_through_filter_only_if_allowed:
+                if el.unique_index in allowed_indexes:
+                    PASS2_elements.append(el)
+            else:
+                PASS2_elements.append(el)
+        return PASS2_elements
 
     def elementsGetElementsUnderMouse(self, cursor_pos):
         elements_under_mouse = []

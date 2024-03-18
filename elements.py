@@ -129,6 +129,7 @@ class Element():
         self.color_slider_value = 0.1
         self.color_slider_palette_index = 0
         self.toolbool = False
+        self.plain_text = ''
 
         self.text_doc = None
         self.draw_transform = None
@@ -749,10 +750,10 @@ class ElementsMixin(ElementsTransformMixin):
                     elif isinstance(attr_value, QColor):
                         attr_data = attr_value.getRgbF()
 
-                    elif attr_value is None or attr_name in ["textbox"]:
+                    elif attr_value is None or attr_name in ["text_doc"]:
                         attr_data = None
 
-                    elif isinstance(attr_value, ElementsModificationSlot):
+                    elif isinstance(attr_value, (ElementsModificationSlot, QTransform)):
                         continue
 
                     else:
@@ -961,14 +962,17 @@ class ElementsMixin(ElementsTransformMixin):
                         attr_value = QColor()
                         attr_value.setRgbF(*attr_data)
 
-                    elif attr_type in ['NoneType'] or attr_name in ["textbox"]:
+                    elif attr_type in ['NoneType'] or attr_name in ["text_doc"]:
                         attr_value = None
 
                     else:
-                        status = f"name: '{attr_name}' type: '{attr_type}' value: '{attr_data}'"
+                        status = f"name: '{attr_name}' type: '{attr_type}' value: '{attr_data}' element: {element}"
                         raise Exception(f"Unable to handle attribute, {status}")
 
                     setattr(element, attr_name, attr_value)
+
+                if element.type == ToolID.text:
+                    self.elementsCreateTextDoc(element)
 
         #  приготовление UI
         self.tools_window.forwards_backwards_update()
@@ -2073,6 +2077,7 @@ class ElementsMixin(ElementsTransformMixin):
 
         # text_line = self.currentTextLine(_cursor)
         # print('text_line', text_line.lineNumber())
+        ae.plain_text = ae.text_doc.toPlainText()
         self.update()
 
     def currentTextLine(self, cursor):
@@ -2110,7 +2115,7 @@ class ElementsMixin(ElementsTransformMixin):
         text_doc = QTextDocument()
         elem.text_doc = text_doc
         # elem.text_doc.setDefaultFont(self.Globals.SEVEN_SEGMENT_FONT)
-        text_doc.setPlainText('')
+        text_doc.setPlainText(elem.plain_text)
         self.elementsTextDocInit(elem)
 
     def elementsTextDocSetFont(self, element):

@@ -2981,7 +2981,30 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             self.draw_analyse_corners(painter)
             self.elementsDrawDebugInfo(painter, QRectF(viewport_input_rect))
 
+            self.draw_warning_deactivated(painter)
+
         painter.end()
+
+    def draw_warning_deactivated(self, painter):
+
+        deactivated = not self.isActiveWindow()
+        if self.tools_window:
+            deactivated = deactivated and not self.tools_window.isActiveWindow()
+
+        if deactivated:
+            painter.save()
+            font = painter.font()
+            font.setPixelSize(40)
+            painter.setFont(font)
+            painter.setPen(QPen(Qt.white))
+            desktop = QDesktopWidget()
+            painter.fillRect(self.rect(), QColor(80, 80, 80))
+            painter.setBrush(self.checkerboard_brush)
+            painter.drawRect(self.rect())
+            for i in range(0, desktop.screenCount()):
+                r = desktop.screenGeometry(screen=i)
+                painter.drawText(r, Qt.AlignHCenter | Qt.AlignVCenter, "Редактор потерял фокус ввода!\nНадо щёлкнуть левой или правой кнопкой мыши")
+            painter.restore()
 
     def draw_checkerboard(self, painter):
         painter.save()

@@ -3229,7 +3229,7 @@ class ElementsMixin(ElementsTransformMixin):
             pixmap = QPixmap().fromImage(mdata.imageData())
         return pixmap
 
-    def elementsUpdateAfterReshot(self):
+    def elementsUpdateDependentElementsAfterReshot(self):
         # updating dependent elements
         for element in self.elements:
             if element.type in [ToolID.blurring]:

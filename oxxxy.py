@@ -4260,7 +4260,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
                 self.tools_window.hide()
             self.source_pixels = make_screenshot_pyqt()
             self.elementsCreateBackgroundPictures(update=True)
-            self.elementsUpdateAfterReshot()
+            self.elementsUpdateDependentElementsAfterReshot()
             self.show()
             if self.tools_window:
                 self.tools_window.show()

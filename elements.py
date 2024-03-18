@@ -510,7 +510,8 @@ class ElementsMixin(ElementsTransformMixin):
                 self.elementsFramePicture(element=bckg_el,
                     frame_rect=frame_rect,
                     frame_info=frame_info,
-                    pixmap=bckg_el.pixmap
+                    pixmap=bckg_el.pixmap,
+                    set_selected=False,
                 )
                 bckg_el.backup_pixmap = None # зануляем, чтобы сохрание в файл не растягивалось на 100 лет
 
@@ -1043,7 +1044,7 @@ class ElementsMixin(ElementsTransformMixin):
             if hasattr(element, 'second') and not element.second:
                 self.elementsSetCopiedPixmap(element)
 
-    def elementsFramePicture(self, element=None, frame_rect=None, frame_info=None, pixmap=None):
+    def elementsFramePicture(self, element=None, frame_rect=None, frame_info=None, pixmap=None, set_selected=True):
         if element is not None:
             ae = element
         else:
@@ -1063,7 +1064,8 @@ class ElementsMixin(ElementsTransformMixin):
         ae.calc_local_data()
         ae.element_scale_x = 1.0
         ae.element_scale_y = 1.0
-        self.elementsSetSelected(ae)
+        if set_selected:
+            self.elementsSetSelected(ae)
 
     def elementsSetPixmapFromMagazin(self):
         if not self.Globals.dasPictureMagazin and \

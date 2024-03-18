@@ -512,7 +512,6 @@ class ElementsMixin(ElementsTransformMixin):
                     frame_rect=frame_rect,
                     frame_info=frame_info,
                     pixmap=bckg_el.pixmap,
-                    set_selected=False,
                 )
                 bckg_el.backup_pixmap = None # зануляем, чтобы сохрание в файл не растягивалось на 100 лет
 
@@ -1230,7 +1229,9 @@ class ElementsMixin(ElementsTransformMixin):
             tw.color_slider.palette_index = el.color_slider_palette_index
             tw.size_slider.value = el.size
             tw.opacity_slider.value = el.opacity
+            tw.chb_toolbool.blockSignals(True)
             tw.chb_toolbool.setChecked(el.toolbool)
+            tw.chb_toolbool.blockSignals(False)            
             if el.type == ToolID.text:
                 self.elementsActivateTextElement(el)
             tw.set_ui_on_toolchange(element_type=el.type)

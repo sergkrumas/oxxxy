@@ -2316,7 +2316,9 @@ class ToolsWindow(QWidget):
                                                                 DEFAULT_COLOR_SLIDER_PALETTE_INDEX)
         self.size_slider.value = data.get("size_slider_value", DEFAULT_SIZE_SLIDER_VALUE)
         self.opacity_slider.value = data.get("opacity_slider_value", DEFAULT_OPACITY_SLIDER_VALUE)
+        self.chb_toolbool.blockSignals(True)
         self.chb_toolbool.setChecked(data.get("toolbool", DEFAULT_TOOLBOOL_VALUE))
+        self.chb_toolbool.blockSignals(False)
         if self.current_tool == ToolID.picture:
             main_window = self.parent()
             DEFAULT_PICTURE_ID = main_window.current_picture_id

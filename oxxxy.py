@@ -4518,7 +4518,11 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         if not event.isAutoRepeat():
             # сюда попадём только когда отпускается клавиша,
             # во вне условия будет срабатывать постоянно пока зажата клавиша
-            self.elementsDeacquireStampForFinishedElementsModification()
+            if not (self.translation_ongoing or self.rotation_ongoing or self.scaling_ongoing):
+                # если не сделать эту проверку, то приложение
+                # будет крашится при отпускании клавиш-модификаторов
+                # во время переноса, вращения и масштабирования 
+                self.elementsDeacquireStampForFinishedElementsModification()
 
     def keyPressEvent(self, event):
         key = event.key()

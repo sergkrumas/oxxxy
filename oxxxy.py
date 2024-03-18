@@ -4210,15 +4210,31 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             set_image_frame = add_item("Обрезать выделенное изображение")
             contextMenu.addSeparator()
 
+        capture_is_set = self.capture_region_rect is not None
+
         render_elements_to_background = add_item("Нарисовать содержимое на фоне и удалить содержимое")
+        render_elements_to_background.setEnabled(capture_is_set)
+
         slice_background = add_item("Нарезать фон на куски")
-        special_tool = add_item(Globals.icon_multiframing, "Активировать инструмент мультикадрирования")
+        
+        activate_multifraing_tool = add_item(Globals.icon_multiframing, "Активировать инструмент мультикадрирования")
+        activate_multifraing_tool.setEnabled(capture_is_set)
+
         reshot = add_item(Globals.icon_refresh, "Переснять скриншот")
+
         autocollage = add_item("Автоколлаж")
+        autocollage.setEnabled(capture_is_set)
+
         fit_images_to_size = add_item("Подогнать все картинки по размеру под одну")
+        fit_images_to_size.setEnabled(capture_is_set)
+
         get_toolwindow_in_view = add_item("Подтянуть панель инструментов")
-        autocapturezone = add_item("Задать область захвата")
+        get_toolwindow_in_view.setEnabled(capture_is_set)
+
+        autocapturezone = add_item("Задать область захвата по содержимому")
+
         reset_capture = add_item("Сбросить область захвата")
+        reset_capture.setEnabled(capture_is_set)
 
         contextMenu.addSeparator()
 
@@ -4236,6 +4252,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
 
         open_project = add_item("Открыть проект...")
         save_project = add_item("Сохранить проект")
+        save_project.setEnabled(capture_is_set)
 
         contextMenu.addSeparator()
 
@@ -4319,7 +4336,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             self.elementsResetCapture()
         elif action == minimize:
             self.showMinimized()
-        elif action == special_tool:
+        elif action == activate_multifraing_tool:
             if self.tools_window:
                 self.tools_window.set_current_tool(ToolID.multiframing)
         elif action == cancel:

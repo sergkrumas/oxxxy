@@ -415,14 +415,17 @@ class ElementsMixin(ElementsTransformMixin):
 
     def elementsCreateBackgroundPictures(self, option):
         if option == self.CreateBackgroundOption.Initial:
+
             background_pixmap = QPixmap.fromImage(self.source_pixels)
             bckg_element = self.elementsCreateNew(ToolID.picture, content_type=ToolID.background_picture)
             bckg_element.pixmap = background_pixmap
             bckg_element.background_image = True
             bckg_element.calc_local_data()
             bckg_element.element_position = QPointF(background_pixmap.width()/2, background_pixmap.height()/2)
+
         elif option == self.CreateBackgroundOption.Reshoot:
-            # находим все видимые элементы фона
+
+            # записываем индексы всех видимых элементов фона
             ve_b_indexes = [el.unique_index for el in self.elementsFilter() if el.background_image]
             # создаём основу для нового фона
             background_slot = self.elementsFindBackgroundSlot()
@@ -442,11 +445,27 @@ class ElementsMixin(ElementsTransformMixin):
             bckg_element.calc_local_data()
             bckg_element.element_position = QPointF(new_background_pixmap.width()/2, new_background_pixmap.height()/2)
 
-
-
         elif option == self.CreateBackgroundOption.ContentToBackground:
 
-            pass
+            # записываем индексы всех видимых элементов, даже фоновых
+            ve_indexes = [el.unique_index for el in self.elementsFilter()]
+            # создаём основу для нового фона
+            background_slot = self.elementsFindBackgroundSlot()
+            bckg_element = self.elementsCreateNew(ToolID.picture,
+                create_new_slot=False,
+                modification_slot=background_slot,
+            )
+            # оставляем запись в истории действий
+            rmv_element = self.elementsCreateNew(ToolID.removing)
+            rmv_element.source_indexes = ve_indexes
+            rmv_element.allowed_indexes = [bckg_element.pass2_unique_index]
+            bckg_element.pass_through_filter_only_if_allowed = True
+            # заправляем данными
+            new_background_pixmap = QPixmap.fromImage(self.source_pixels)
+            bckg_element.pixmap = new_background_pixmap
+            bckg_element.background_image = True
+            bckg_element.calc_local_data()
+            bckg_element.element_position = QPointF(new_background_pixmap.width()/2, new_background_pixmap.height()/2)
 
     def elementsSliceBackgroundsIntoPieces(self):
 
@@ -3065,7 +3084,7 @@ class ElementsMixin(ElementsTransformMixin):
             self.elementsUpdateFinalPicture(
                     capture_region_rect=QRectF(0, 0, new_width, new_height), clean=True)
 
-        # заменяем картинку
+        # заменяем картинку и пишем в историю с удалением содержимого
         self.source_pixels = self.elements_final_output.toImage()
         self.elementsCreateBackgroundPictures(self.CreateBackgroundOption.ContentToBackground)
 

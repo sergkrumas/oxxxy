@@ -4143,7 +4143,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             set_image_frame = add_item("Обрезать выделенное изображение")
             contextMenu.addSeparator()
 
-        render_elements_to_background = add_item("Нарисовать содержимое на фоне")
+        render_elements_to_background = add_item("Нарисовать содержимое на фоне и удалить содержимое")
         special_tool = add_item(Globals.icon_multiframing, "Активировать инструмент мультикадрирования")
         reshot = add_item(Globals.icon_refresh, "Переснять скриншот")
         autocollage = add_item("Автоколлаж")

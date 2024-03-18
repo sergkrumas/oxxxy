@@ -687,7 +687,7 @@ class ElementsMixin(ElementsTransformMixin):
 
         slots_to_store = list()
         # сохранение слотов
-        for n, slot in enumerate(self.modification_slots):
+        for slot in self.modification_slots:
 
             slot_base = list()
             slots_to_store.append(slot_base)
@@ -731,7 +731,7 @@ class ElementsMixin(ElementsTransformMixin):
                         attr_data = attr_value
 
                     elif isinstance(attr_value, QPainterPath):
-                        filename = f"path_{attr_name}_{n:04}.data"
+                        filename = f"path_{attr_name}_{element.unique_index:04}.data"
                         filepath = os.path.join(folder_path, filename)
                         file_handler = QFile(filepath)
                         file_handler.open(QIODevice.WriteOnly)
@@ -740,7 +740,7 @@ class ElementsMixin(ElementsTransformMixin):
                         attr_data = filename
 
                     elif isinstance(attr_value, QPixmap):
-                        filename = f"pixmap_{attr_name}_{n:04}.png"
+                        filename = f"pixmap_{attr_name}_{element.unique_index:04}.png"
                         filepath = os.path.join(folder_path, filename)
                         attr_value.save(filepath)
                         attr_data = filename

@@ -3504,7 +3504,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         }
         QMenu::item:disabled {
             background-color: #303940;
-            color: white;
+            color: black;
             border-left: 2px dashed #303940;
         }
         QMenu::separator {

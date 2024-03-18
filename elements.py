@@ -469,8 +469,9 @@ class ElementsMixin(ElementsTransformMixin):
 
     def elementsSliceBackgroundsIntoPieces(self):
 
-        ROWS = 2
-        COLS = 8
+        ROWS = self.Globals.SLICE_ROWS
+        COLS = self.Globals.SLICE_COLS
+
         background_pixmap = QPixmap.fromImage(self.source_pixels)
         create_new_slot = True
         col_width = background_pixmap.width()/COLS

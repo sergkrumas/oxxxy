@@ -40,7 +40,7 @@ from pyqtkeybind import keybinder
 
 from PyQt5.QtWidgets import (QSystemTrayIcon, QWidget, QMessageBox, QMenu, QFileDialog,
     QHBoxLayout, QCheckBox, QVBoxLayout, QTextEdit, QGridLayout, QWidgetAction,
-    QPushButton, QLabel, QApplication, QScrollArea, QDesktopWidget, QActionGroup)
+    QPushButton, QLabel, QApplication, QScrollArea, QDesktopWidget, QActionGroup, QSpinBox)
 from PyQt5.QtCore import (pyqtSignal, QPoint, QPointF, pyqtSlot, QRect, QEvent,
     QTimer, Qt, QSize, QSizeF, QRectF, QThread, QAbstractNativeEventFilter,
     QAbstractEventDispatcher, QFile, QDataStream, QIODevice)
@@ -81,6 +81,9 @@ class Globals():
     FULL_STOP = False
 
     ELEMENT_SIZE_RANGE_OFFSET = 0.5
+
+    SLICE_ROWS = 1
+    SLICE_COLS = 2
 
     # saved settings
     ENABLE_FLAT_EDITOR_UI = False
@@ -4094,6 +4097,39 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         self.define_regions_rects_and_set_cursor()
         self.update()
 
+    def slice_background_menu(self):
+        menu = QMenu()
+
+        spinboxes = (
+            ('Количество по вертикали', 'SLICE_ROWS'),
+            ('Количество по горизонтали', 'SLICE_COLS'),
+        )
+
+        def callback(sb, attr):
+            setattr(self.Globals, attr, sb.value())
+
+        for title, attr in spinboxes:
+            wa = QWidgetAction(menu)
+            sb = QSpinBox()
+            sb.setToolTip(title)
+
+            sb.setValue(getattr(self.Globals, attr))
+            sb.valueChanged.connect(partial(callback, sb, attr))
+            wa.setDefaultWidget(sb)
+            menu.addAction(wa)
+
+        menu.addSeparator()
+        do_action = menu.addAction('Нарезать')
+        cancel_action = menu.addAction('Отмена')
+
+        action = menu.exec_(QCursor().pos())
+        if action == None:
+            pass
+        elif action == do_action:
+            self.elementsSliceBackgroundsIntoPieces()
+        elif action == cancel_action:
+            pass
+
     def toggle_show_background(self):
         self.show_background = not self.show_background
         self.update()
@@ -4144,6 +4180,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             contextMenu.addSeparator()
 
         render_elements_to_background = add_item("Нарисовать содержимое на фоне и удалить содержимое")
+        slice_background = add_item("Нарезать фон на куски")
         special_tool = add_item(Globals.icon_multiframing, "Активировать инструмент мультикадрирования")
         reshot = add_item(Globals.icon_refresh, "Переснять скриншот")
         autocollage = add_item("Автоколлаж")
@@ -4209,6 +4246,8 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             pass
         elif action == save_project:
             self.save_project()
+        elif action == slice_background:
+            self.slice_background_menu()
         elif action == reset_panzoom:
             self.elementsResetPanZoom()
         elif action == reset_pan:

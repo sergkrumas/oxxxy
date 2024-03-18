@@ -3574,7 +3574,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         self.current_picture_id = None
         self.current_picture_angle = 0
         self.elementsInit()
-        self.elementsCreateBackgroundPictures()
+        self.elementsCreateBackgroundPictures(self.CreateBackgroundOption.Initial)
         self.hex_mask = False
 
         self.setMouseTracking(True)
@@ -4259,7 +4259,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             if self.tools_window:
                 self.tools_window.hide()
             self.source_pixels = make_screenshot_pyqt()
-            self.elementsCreateBackgroundPictures(update=True)
+            self.elementsCreateBackgroundPictures(self.CreateBackgroundOption.Reshoot)
             self.elementsUpdateDependentElementsAfterReshot()
             self.show()
             if self.tools_window:

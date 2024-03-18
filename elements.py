@@ -85,6 +85,11 @@ class SelectionFilter():
     content_only = "content_only"
     background_only = "background_only"
 
+class CreateBackgroundOption():
+    Initial = 1
+    Reshoot = 2
+    ContentToBackground = 3
+
 class Element():
 
     def __init__(self, element_type, elements_list, skip=False):
@@ -341,6 +346,8 @@ class ElementsMixin(ElementsTransformMixin):
 
     ToolID = ToolID #для поддержки миксина
 
+    CreateBackgroundOption = CreateBackgroundOption
+
     def elementsInit(self):
         self.current_tool = ToolID.none
         self.drag_capture_zone = False
@@ -402,7 +409,14 @@ class ElementsMixin(ElementsTransformMixin):
                 return slot
         return None
 
-    def elementsCreateBackgroundPictures(self, update=False):
+    def elementsCreateBackgroundPictures(self, option):
+        if option == self.CreateBackgroundOption.ContentToBackground:
+            pass
+        elif option == self.CreateBackgroundOption.Initial:
+            pass
+        elif option == self.CreateBackgroundOption.Reshoot:
+            pass
+
         in_one_picture = False
         if in_one_picture:
             background_pixmap = QPixmap.fromImage(self.source_pixels)
@@ -3035,7 +3049,7 @@ class ElementsMixin(ElementsTransformMixin):
 
         # заменяем картинку
         self.source_pixels = self.elements_final_output.toImage()
-        self.elementsCreateBackgroundPictures(update=True)
+        self.elementsCreateBackgroundPictures(self.CreateBackgroundOption.ContentToBackground)
 
         # обновляем рамку, если по ней производилась обрезка
         if action == action_crop:

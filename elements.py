@@ -1212,7 +1212,7 @@ class ElementsMixin(ElementsTransformMixin):
             if attr_name == "text_doc" and attr_value is not None:
                 element.text_doc = type_class(attr_value)
                 element.text_doc.setPlainText(attr_value.toPlainText())
-                self.elementsTextBoxInit(element)
+                self.elementsTextDocInit(element)
             else:
                 setattr(element, attr_name, final_value)
 
@@ -1824,7 +1824,7 @@ class ElementsMixin(ElementsTransformMixin):
                 ms.content_type = 'text'
             element.arrow = None
             del element.arrow # чтобы не было проблем при сохранении файла
-            self.elementsCreateTextbox(element)
+            self.elementsCreateTextDoc(element)
         elif tool in [ToolID.blurring, ToolID.darkening]:
             element.equilateral = bool(event.modifiers() & Qt.ShiftModifier)
             if element.equilateral:
@@ -2106,12 +2106,12 @@ class ElementsMixin(ElementsTransformMixin):
                     (event.modifiers() == Qt.ControlModifier and check_scancode_for(event, "V")))
         return is_event
 
-    def elementsCreateTextbox(self, elem):
+    def elementsCreateTextDoc(self, elem):
         text_doc = QTextDocument()
         elem.text_doc = text_doc
         # elem.text_doc.setDefaultFont(self.Globals.SEVEN_SEGMENT_FONT)
         text_doc.setPlainText('')
-        self.elementsTextBoxInit(elem)
+        self.elementsTextDocInit(elem)
 
     def elementsTextDocSetFont(self, element):
         font = QFont()
@@ -2129,7 +2129,7 @@ class ElementsMixin(ElementsTransformMixin):
                 text_cursor_pos = ae.text_doc.documentLayout().hitTest(pos, Qt.FuzzyHit)
                 ae.text_doc_cursor_pos = text_cursor_pos
 
-    def elementsTextBoxInit(self, elem):
+    def elementsTextDocInit(self, elem):
         text_doc = elem.text_doc
         self.elementsTextDocSetFont(elem)
         text_doc.setTextWidth(200)

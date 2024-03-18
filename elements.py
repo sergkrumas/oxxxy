@@ -1526,7 +1526,7 @@ class ElementsMixin(ElementsTransformMixin):
         elif self.current_tool == ToolID.text:
             arrow_element = self.elementsCreateNew(ToolID.arrow, start_drawing=True)
             arrow_element._modified = False
-            arrow_element.color = Qt.red
+            arrow_element.color = QColor(Qt.red)
             arrow_element.size = 0.5
             element = self.elementsCreateNew(self.current_tool, create_new_slot=False)
             self.elementsSetElementParameters(element)

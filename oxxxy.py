@@ -3755,7 +3755,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             # copy_image_file_to_clipboard(filepath)
             save_meta_info(metadata, filepath)
         else:
-            self.elementsUpdateFinalPicture()
+            self.elementsUpdateFinalPicture(force_no_datetime_stamp=Globals.save_to_memory_mode)
             pix = self.elements_final_output
             if Globals.save_to_memory_mode:
                 Globals.images_in_memory.append(pix)

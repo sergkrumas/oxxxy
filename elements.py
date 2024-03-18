@@ -2822,7 +2822,8 @@ class ElementsMixin(ElementsTransformMixin):
             painter.restore()
 
     def elementsUpdateFinalPicture(self, capture_region_rect=None,
-                draw_background_only=False, no_multiframing=False, prepare_darkening=False, clean=False):
+                draw_background_only=False, no_multiframing=False, prepare_darkening=False, clean=False,
+                force_no_datetime_stamp=False):
         if self.capture_region_rect:
             specials = [el for el in self.elementsFilter() if el.type == ToolID.multiframing]
             any_multiframing_element = any(specials)
@@ -2889,7 +2890,7 @@ class ElementsMixin(ElementsTransformMixin):
                 if not clean and self.tools_window and self.tools_window.chb_masked.isChecked():
                     self.elements_final_output = self.circle_mask_image(self.elements_final_output)
 
-                if not clean:
+                if (not clean) and not force_no_datetime_stamp:
                     # datetime stamp
                     painter = QPainter()
                     painter.begin(self.elements_final_output)

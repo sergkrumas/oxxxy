@@ -2998,7 +2998,6 @@ class ElementsMixin(ElementsTransformMixin):
         # cleaning
         self.elementsSetSelected(None)
 
-        self.elements_modification_index = 1 # 1, а не 0, потому что оставляем слот с фоном
         if self.tools_window:
             self.tools_window.forwards_backwards_update()
 

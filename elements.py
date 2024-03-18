@@ -424,6 +424,50 @@ class ElementsMixin(ElementsTransformMixin):
             # bckg_element.source_indexes = ve_b_indexes
             pass
 
+    def elementsSliceBackgroundsIntoPieces(self):
+
+        ROWS = 2
+        COLS = 8
+        background_pixmap = QPixmap.fromImage(self.source_pixels)
+        create_new_slot = True
+        col_width = background_pixmap.width()/COLS
+        row_height = background_pixmap.height()/ROWS
+
+        for row in range(ROWS):
+            for col in range(COLS):
+
+              element = self.elementsCreateNew(ToolID.picture,
+                  content_type=ToolID.background_picture,
+                  create_new_slot=create_new_slot
+              )
+              create_new_slot = False
+              element.pixmap = background_pixmap
+              element.background_image = True
+              element.calc_local_data()
+              x1 = col_width*col
+              y1 = row_height*row
+              x2 = x1 + col_width
+              y2 = y1 + row_height
+              frame_rect = QRectF(QPointF(x1, y1), QPointF(x2, y2)).toRect()
+              frame_info = (
+                  x1/background_pixmap.width(),
+                  y1/background_pixmap.height(),
+                  x2/background_pixmap.width(),
+                  y2/background_pixmap.height(),
+              )
+
+              self.elementsFramePicture(element=element,
+                  frame_rect=frame_rect,
+                  frame_info=frame_info,
+                  pixmap=element.pixmap
+              )
+              element.backup_pixmap = None # зануляем, чтобы сохрание в файл не растягивалось на 100 лет
+
+              pos_x = x1 + col_width/2
+              pos_y = y1 + row_height/2
+              element.element_position = QPointF(pos_x, pos_y)
+
+        self.elementsSetSelected(None)
 
     def elementsUpdateUI(self):
         self.update()

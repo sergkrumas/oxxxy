@@ -109,6 +109,8 @@ class Element():
                 Element._counter = 0
             self.unique_index = Element._counter
 
+        self.pass2_unique_index = self.unique_index
+
         self.group_id = None
         self.source_indexes = []
         self.pass_through_filter_only_if_allowed = False
@@ -1343,7 +1345,7 @@ class ElementsMixin(ElementsTransformMixin):
             allowed_indexes.extend(el.allowed_indexes)
         for el in PASS1_elements:
             if el.pass_through_filter_only_if_allowed:
-                if el.unique_index in allowed_indexes:
+                if el.pass2_unique_index in allowed_indexes:
                     PASS2_elements.append(el)
             else:
                 PASS2_elements.append(el)

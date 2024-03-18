@@ -413,15 +413,15 @@ class ElementsMixin(ElementsTransformMixin):
 
     def elementsCreateBackgroundPictures(self, option):
         if option == self.CreateBackgroundOption.Initial:
-            ve_b_indexes = [el.unique_index for el in self.elementsFilter() if el.background_image]
             background_pixmap = QPixmap.fromImage(self.source_pixels)
             bckg_element = self.elementsCreateNew(ToolID.picture, content_type=ToolID.background_picture)
-            bckg_element.source_indexes = ve_b_indexes
             bckg_element.pixmap = background_pixmap
             bckg_element.background_image = True
             bckg_element.calc_local_data()
             bckg_element.element_position = QPointF(background_pixmap.width()/2, background_pixmap.height()/2)
         elif option == [self.CreateBackgroundOption.Reshoot, self.CreateBackgroundOption.ContentToBackground]:
+            # ve_b_indexes = [el.unique_index for el in self.elementsFilter() if el.background_image]
+            # bckg_element.source_indexes = ve_b_indexes
             pass
 
 

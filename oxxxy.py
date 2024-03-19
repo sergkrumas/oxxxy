@@ -92,6 +92,8 @@ class Globals():
     SCREENSHOT_FOLDER_PATH = ""
     USE_PRINT_KEY = True
 
+    USE_PIXMAP_PROXY_FOR_TEXT_ELEMENTS = True
+
     ANTIALIASING_AND_SMOOTH_PIXMAP_TRANSFORM = True
 
     ICON_PATH = None
@@ -4190,6 +4192,10 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         Globals.ANTIALIASING_AND_SMOOTH_PIXMAP_TRANSFORM = not Globals.ANTIALIASING_AND_SMOOTH_PIXMAP_TRANSFORM
         self.update()
 
+    def toggle_pixmap_proxy(self):
+        Globals.USE_PIXMAP_PROXY_FOR_TEXT_ELEMENTS = not Globals.USE_PIXMAP_PROXY_FOR_TEXT_ELEMENTS        
+        self.update()
+
     def contextMenuEvent(self, event):
         if self.cancel_context_menu:
             self.cancel_context_menu = False
@@ -4269,6 +4275,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             ("Закрывать редактор после нажатия кнопки «Готово»", Globals.close_editor_on_done, self.toggle_close_on_done),
             ("Показывать дебаг-отрисовку для виджета трансформации", self.canvas_debug_transform_widget, self.toggle_transform_widget_debug_mode),
             ("Антиальясинг и сглаживание пиксмапов", Globals.ANTIALIASING_AND_SMOOTH_PIXMAP_TRANSFORM, self.toggle_antialiasing),
+            ("Pixmap-прокси для пометок типа «Текст»", Globals.USE_PIXMAP_PROXY_FOR_TEXT_ELEMENTS, self.toggle_pixmap_proxy),            
             ("DEBUG", Globals.DEBUG, self.toggle_debug_mode),
         )
 

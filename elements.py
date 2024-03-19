@@ -133,6 +133,7 @@ class Element():
 
         self.text_doc = None
         self.draw_transform = None
+        self.proxy_pixmap = None
 
         # element attributes for canvas
         self.element_scale_x = 1.0
@@ -1740,6 +1741,10 @@ class ElementsMixin(ElementsTransformMixin):
                 for element in self.selected_items[:]:
                     mod_element = self.elementsPrepareElementCopyForModifications(element)
                     new_elements.append(mod_element)
+
+                    if mod_element.type == ToolID.text:
+                        self.elementsTextDocUpdateProxyPixmap(mod_element)
+
                 self.elementsSetSelected(new_elements, update_panel=False, update_widget=False)
 
             if self.transform_cancelled:
@@ -1873,6 +1878,8 @@ class ElementsMixin(ElementsTransformMixin):
                         for el in self.selected_items:
                             if el.type in [ToolID.arrow, ToolID.text]:
                                 self.elementsFixArrowStartPositionIfNeeded(el)
+                                if el.type == ToolID.text:
+                                    self.elementsTextDocUpdateProxyPixmap(el)
 
                 if not alt and not self.translation_ongoing and not self.rotation_ongoing and not self.scaling_ongoing:
                     self.canvas_selection_callback(event.modifiers() == Qt.ShiftModifier)
@@ -2082,7 +2089,41 @@ class ElementsMixin(ElementsTransformMixin):
         # text_line = self.currentTextLine(_cursor)
         # print('text_line', text_line.lineNumber())
         ae.plain_text = ae.text_doc.toPlainText()
+        if self.Globals.USE_PIXMAP_PROXY_FOR_TEXT_ELEMENTS:
+            self.elementsTextDocUpdateProxyPixmap(ae)
         self.update()
+
+    def elementsTextDocDraw(self, painter, element):
+
+        def tweakedDrawContents(text_document, _painter_, rect):
+            # дефолтный drawContents не поддерживает изменение текста
+            _painter_.save()
+            ctx = QAbstractTextDocumentLayout.PaintContext()
+            ctx.palette.setColor(QPalette.Text, _painter_.pen().color())
+            # у нас всегда отображается всё, поэтому смысла в этом нет
+            # if rect.isValid():
+            #     _painter_.setClipRect(rect)
+            #     ctx.clip = rect
+            text_document.documentLayout().draw(_painter_, ctx)
+            _painter_.restore()
+
+        pen, color, size = self.elementsGetPenFromElement(element)
+        painter.setPen(pen)
+        painter.setBrush(QBrush(color))
+
+        text_doc = element.text_doc
+        # рисуем сам текст
+        tweakedDrawContents(text_doc, painter, None) # text_doc.drawContents(painter, QRectF())
+
+
+
+    def elementsTextDocUpdateProxyPixmap(self, element):
+        element.proxy_pixmap = QPixmap(element.text_doc.size().toSize())
+        element.proxy_pixmap.fill(Qt.transparent)
+        p = QPainter()
+        p.begin(element.proxy_pixmap)
+        self.elementsTextDocDraw(p, element)
+        p.end()
 
     def currentTextLine(self, cursor):
         block = cursor.block()
@@ -2302,17 +2343,6 @@ class ElementsMixin(ElementsTransformMixin):
             painter.resetTransform()
         elif el_type == ToolID.text:
 
-            def tweakedDrawContents(text_document, _painter_, rect):
-                # дефолтный drawContents не поддерживает изменение текста
-                _painter_.save()
-                ctx = QAbstractTextDocumentLayout.PaintContext()
-                ctx.palette.setColor(QPalette.Text, _painter_.pen().color())
-                # у нас всегда отображается всё, поэтому смысла в этом нет
-                # if rect.isValid():
-                #     _painter_.setClipRect(rect)
-                #     ctx.clip = rect
-                text_document.documentLayout().draw(_painter_, ctx)
-                _painter_.restore()
 
             if element.text_doc is not None:
                 text_doc = element.text_doc
@@ -2352,10 +2382,15 @@ class ElementsMixin(ElementsTransformMixin):
                     painter.fillPath(path, QBrush(QColor(200, 200, 200)))
                     painter.restore()
 
-                # сам текст
-                tweakedDrawContents(text_doc, painter, None) # text_doc.drawContents(painter, QRectF())
+                # текст и курсор
+                if self.Globals.USE_PIXMAP_PROXY_FOR_TEXT_ELEMENTS:
+                    if element.proxy_pixmap is None:
+                        self.elementsTextDocUpdateProxyPixmap(element)
+                    painter.drawPixmap(QPoint(0, 0), element.proxy_pixmap)
+                else:
+                    self.elementsTextDocDraw(painter, element)
 
-                # курсор
+                # рисуем курсор
                 doc_layout = text_doc.documentLayout()
                 cursor_pos = element.text_doc_cursor_pos
                 block = text_doc.begin()
@@ -2366,9 +2401,7 @@ class ElementsMixin(ElementsTransformMixin):
                     if self.active_element is element:
                         if block.contains(cursor_pos):
                             block.layout().drawCursor(painter, QPointF(0,0), cursor_pos, 1)
-
                     block = block.next()
-
 
             painter.restore()
             painter.resetTransform()

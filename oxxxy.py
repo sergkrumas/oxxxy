@@ -4571,17 +4571,18 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             self.show_help_hint = not self.show_help_hint
             self.update()
         if check_scancode_for(event, "C") and event.modifiers() & Qt.ControlModifier:
-            color = self.color_at_pixel
-            _hex = color.name()
-            _r = color.red()
-            _g = color.green()
-            _b = color.blue()
-            _rgb = f"rgb({_r}, {_g}, {_b})"
-            color_repr = f"{_hex} {_rgb}"
-            self.colors_values_copied.append((color, color_repr))
-            color_reprs = [t[1] for t in self.colors_values_copied]
-            self.set_clipboard("\n".join(color_reprs))
-            self.update()
+            if self.capture_region_rect is None:
+                color = self.color_at_pixel
+                _hex = color.name()
+                _r = color.red()
+                _g = color.green()
+                _b = color.blue()
+                _rgb = f"rgb({_r}, {_g}, {_b})"
+                color_repr = f"{_hex} {_rgb}"
+                self.colors_values_copied.append((color, color_repr))
+                color_reprs = [t[1] for t in self.colors_values_copied]
+                self.set_clipboard("\n".join(color_reprs))
+                self.update()
         if check_scancode_for(event, "Z"):
             mods = event.modifiers()
             ctrl = mods & Qt.ControlModifier

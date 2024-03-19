@@ -2181,10 +2181,29 @@ class ElementsMixin(ElementsTransformMixin):
                 text_cursor_pos = ae.text_doc.documentLayout().hitTest(pos, Qt.FuzzyHit)
                 ae.text_doc_cursor_pos = text_cursor_pos
 
+    def elementsTextDocUpdateTextWidthAndSize(self, element):
+        pass
+        # text_doc.setTextWidth(element.get_size_rect(scaled=True).width())
+        # text_doc.setTextWidth(-1)
+
+              # size = tb.document().size().toSize()
+              # # correcting height
+              # new_height = size.height()+elem.margin_value*2
+              # tb.setFixedHeight(int(new_height))
+              # # correcting width
+              # max_width_limit = int(max(20, self.capture_region_rect.right() - elem.end_point.x()))
+              # H, W = 100, max_width_limit+10
+              # pixmap = QPixmap(H, W)
+              # r = QRect(0, 0, H, W)
+              # p.setFont(font)
+              # brect = p.drawText(r.x(), r.y(), r.width(), r.height(), Qt.AlignCenter, tb.toPlainText())
+              # new_width = min(max_width_limit, brect.width()+elem.margin_value*2+font_pixel_size*1.5)
+              # tb.setFixedWidth(int(new_width))
+
     def elementsTextDocInit(self, elem):
         text_doc = elem.text_doc
         self.elementsTextDocSetFont(elem)
-        text_doc.setTextWidth(200)
+        text_doc.setTextWidth(-1)
         elem.text_doc_cursor_pos = 0
 
     def elementsFixArrowStartPositionIfNeeded(self, element):
@@ -2348,7 +2367,6 @@ class ElementsMixin(ElementsTransformMixin):
 
             if element.text_doc is not None:
                 text_doc = element.text_doc
-                text_doc.setTextWidth(element.get_size_rect(scaled=True).width())
 
                 size_obj = text_doc.size().toSize()
                 height = size_obj.height()

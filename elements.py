@@ -418,7 +418,10 @@ class ElementsMixin(ElementsTransformMixin):
                 return slot
         return None
 
-    def elementsCreateBackgroundPictures(self, option):
+    def elementsCreateBackgroundPictures(self, option, offset=None):
+        if offset is None:
+            offset = QPointF(0, 0)
+
         if option == self.CreateBackgroundOption.Initial:
 
             background_pixmap = QPixmap.fromImage(self.source_pixels)
@@ -470,7 +473,7 @@ class ElementsMixin(ElementsTransformMixin):
             bckg_element.pixmap = new_background_pixmap
             bckg_element.background_image = True
             bckg_element.calc_local_data()
-            bckg_element.element_position = QPointF(new_background_pixmap.width()/2, new_background_pixmap.height()/2)
+            bckg_element.element_position = QPointF(new_background_pixmap.width()/2, new_background_pixmap.height()/2) + offset
 
     def elementsSliceBackgroundsIntoPieces(self):
 
@@ -3181,11 +3184,15 @@ class ElementsMixin(ElementsTransformMixin):
                 self.elementsUpdateFinalPicture(capture_region_rect=r, clean=True)
             elif action == action_extend:
                 self.elementsUpdateFinalPicture(
-                        capture_region_rect=QRectF(0, 0, new_width, new_height), clean=True)
+                        capture_region_rect=content_rect, clean=True)
 
         # заменяем картинку и пишем в историю с удалением содержимого
         self.source_pixels = self.elements_final_output.toImage()
-        self.elementsCreateBackgroundPictures(self.CreateBackgroundOption.ContentToBackground)
+        if action == action_extend:
+            offset = content_rect.topLeft()
+        else:
+            offset = None
+        self.elementsCreateBackgroundPictures(self.CreateBackgroundOption.ContentToBackground, offset=offset)
 
         # обновляем рамку, если по ней производилась обрезка
         if action == action_crop:

@@ -4072,39 +4072,6 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             screen_rect = desktop.screenGeometry(screen=screen)
             return screen_rect.center(), screen_rect
 
-    def change_tools_params(self, delta_value, modifiers):
-        tools_window = self.tools_window
-        if self.active_element and tools_window.current_tool == ToolID.transform and \
-                not self.active_element in self.elementsGetElementsUnderMouse(event.pos()):
-            return
-        delta_value = delta_value / 24000.0
-        if self.tools_window:
-            if modifiers == Qt.NoModifier:
-                value = self.tools_window.size_slider.value
-                value += delta_value * 10.0
-                value = min(max(value, 0.0), 1.0)
-                self.tools_window.size_slider.value = value
-            elif modifiers & Qt.ShiftModifier and not modifiers & Qt.ControlModifier:
-                if self.tools_window.color_slider.type == "COLOR":
-                    value = self.tools_window.color_slider.value
-                    value += delta_value * 2.6
-                    value = min(max(value, 0.0), 1.0)
-                    self.tools_window.color_slider.value = value
-            elif modifiers & Qt.ControlModifier:
-                value = self.current_picture_angle
-                if delta_value < 0.0:
-                    delta_value = -1
-                else:
-                    delta_value = 1
-                if modifiers & Qt.ShiftModifier:
-                    delta_value *= 10
-                value += delta_value
-                self.current_picture_angle = value
-            self.tools_window.on_parameters_changed()
-            self.tools_window.update()
-            # здесь ещё должна быть запись параметров в словарь!
-                # TODO: кстати, а где она, блядь?!
-
     def wheelEvent(self, event):
         delta_value = event.angleDelta().y()
 

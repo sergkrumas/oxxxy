@@ -112,7 +112,7 @@ class Globals():
     handle_global_hotkeys = True
     registred_key_seqs = []
 
-    VERSION_INFO = "v0.93"
+    VERSION_INFO = "v0.94"
     AUTHOR_INFO = "by Sergei Krumas"
 
     background_threads = []

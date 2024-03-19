@@ -3769,7 +3769,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         self.view_window.activateWindow()
 
     def update_sys_tray_icon(self, *args, **kwargs):
-        update_sys_tray_icon(*args, **kwargs)  
+        update_sys_tray_icon(*args, **kwargs)
 
     def save_screenshot(self, grabbed_image=None, metadata=None):
         close_all_windows()
@@ -4216,7 +4216,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         render_elements_to_background.setEnabled(capture_is_set)
 
         slice_background = add_item("Нарезать фон на куски")
-        
+
         activate_multifraing_tool = add_item(Globals.icon_multiframing, "Активировать инструмент мультикадрирования")
         activate_multifraing_tool.setEnabled(capture_is_set)
 
@@ -4521,7 +4521,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             if not (self.translation_ongoing or self.rotation_ongoing or self.scaling_ongoing):
                 # если не сделать эту проверку, то приложение
                 # будет крашится при отпускании клавиш-модификаторов
-                # во время переноса, вращения и масштабирования 
+                # во время переноса, вращения и масштабирования
                 self.elementsDeacquireStampForFinishedElementsModification()
 
     def keyPressEvent(self, event):

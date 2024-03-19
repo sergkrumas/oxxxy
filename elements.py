@@ -392,8 +392,9 @@ class ElementsMixin(ElementsTransformMixin):
         if self.modification_stamp is None:
             self.modification_stamp = time.time()
             self.modification_slot = self.elementsCreateNewSlot(_type)
-        else:
-            raise Exception('Attempting to acquire new stamp, but the current is not deacquired!')
+        # хуйня, срабатывает при зажатых клавишах-стрелка
+        # else:
+        #     raise Exception('Attempting to acquire new stamp, but the current is not deacquired!')
 
     def elementsDeacquireStampForFinishedElementsModification(self):
         if self.modification_stamp is not None:

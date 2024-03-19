@@ -4524,8 +4524,10 @@ class ScreenshotWindow(QWidget, ElementsMixin):
                 # во время переноса, вращения и масштабирования
 
                 # по идее тут ещё надо проверять на клавиши вверх, вниз, влево и вправо,
-                # чтобы точно быть уверенным в правильности вызова 
-                self.elementsDeacquireStampForFinishedElementsModification()
+                # чтобы точно быть уверенным в правильности вызова
+                arrow_keys = [Qt.Key_Up, Qt.Key_Down, Qt.Key_Right, Qt.Key_Left]
+                if event.key() in arrow_keys:
+                    self.elementsDeacquireStampForFinishedElementsModification()
 
     def keyPressEvent(self, event):
         key = event.key()

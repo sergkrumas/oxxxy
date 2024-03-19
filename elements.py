@@ -1233,7 +1233,7 @@ class ElementsMixin(ElementsTransformMixin):
             tw.opacity_slider.value = el.opacity
             tw.chb_toolbool.blockSignals(True)
             tw.chb_toolbool.setChecked(el.toolbool)
-            tw.chb_toolbool.blockSignals(False)            
+            tw.chb_toolbool.blockSignals(False)
             if el.type == ToolID.text:
                 self.elementsActivateTextElement(el)
             tw.set_ui_on_toolchange(element_type=el.type)

@@ -4522,6 +4522,9 @@ class ScreenshotWindow(QWidget, ElementsMixin):
                 # если не сделать эту проверку, то приложение
                 # будет крашится при отпускании клавиш-модификаторов
                 # во время переноса, вращения и масштабирования
+
+                # по идее тут ещё надо проверять на клавиши вверх, вниз, влево и вправо,
+                # чтобы точно быть уверенным в правильности вызова 
                 self.elementsDeacquireStampForFinishedElementsModification()
 
     def keyPressEvent(self, event):

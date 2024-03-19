@@ -2096,6 +2096,20 @@ class ElementsMixin(ElementsTransformMixin):
         ae.plain_text = ae.text_doc.toPlainText()
         if self.Globals.USE_PIXMAP_PROXY_FOR_TEXT_ELEMENTS:
             self.elementsTextDocUpdateProxyPixmap(ae)
+
+        # обновление габаритов виджета трансформации
+        s = ae.text_doc.size()
+        width = s.width()
+        height = s.height()
+        content_rect = QRectF(QPointF(0, 0), s)
+        content_rect.moveCenter(ae.element_position)
+        ae.start_point = content_rect.topLeft()
+        ae.end_point = content_rect.bottomRight()
+        ae.element_scale_x = 1.0
+        ae.element_scale_y = 1.0
+        ae.calc_local_data()
+        self.update_selection_bouding_box()
+
         self.update()
 
     def elementsTextDocDraw(self, painter, element):
@@ -2119,8 +2133,6 @@ class ElementsMixin(ElementsTransformMixin):
         text_doc = element.text_doc
         # рисуем сам текст
         tweakedDrawContents(text_doc, painter, None) # text_doc.drawContents(painter, QRectF())
-
-
 
     def elementsTextDocUpdateProxyPixmap(self, element):
         element.proxy_pixmap = QPixmap(element.text_doc.size().toSize())

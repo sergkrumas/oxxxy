@@ -4083,7 +4083,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
 
         stamp_size_change_activated = event.buttons() == Qt.RightButton and self.current_tool == ToolID.picture
 
-        if ctrl:
+        if ctrl and self.capture_region_rect is None:
             self.change_magnifier_size(delta_value)
         elif stamp_size_change_activated:
             self.current_picture_angle += delta_value/10

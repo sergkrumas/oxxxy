@@ -4193,7 +4193,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         self.update()
 
     def toggle_pixmap_proxy(self):
-        Globals.USE_PIXMAP_PROXY_FOR_TEXT_ELEMENTS = not Globals.USE_PIXMAP_PROXY_FOR_TEXT_ELEMENTS        
+        Globals.USE_PIXMAP_PROXY_FOR_TEXT_ELEMENTS = not Globals.USE_PIXMAP_PROXY_FOR_TEXT_ELEMENTS
         self.update()
 
     def contextMenuEvent(self, event):
@@ -4275,7 +4275,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             ("Закрывать редактор после нажатия кнопки «Готово»", Globals.close_editor_on_done, self.toggle_close_on_done),
             ("Показывать дебаг-отрисовку для виджета трансформации", self.canvas_debug_transform_widget, self.toggle_transform_widget_debug_mode),
             ("Антиальясинг и сглаживание пиксмапов", Globals.ANTIALIASING_AND_SMOOTH_PIXMAP_TRANSFORM, self.toggle_antialiasing),
-            ("Pixmap-прокси для пометок типа «Текст»", Globals.USE_PIXMAP_PROXY_FOR_TEXT_ELEMENTS, self.toggle_pixmap_proxy),            
+            ("Pixmap-прокси для пометок типа «Текст»", Globals.USE_PIXMAP_PROXY_FOR_TEXT_ELEMENTS, self.toggle_pixmap_proxy),
             ("DEBUG", Globals.DEBUG, self.toggle_debug_mode),
         )
 

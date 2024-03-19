@@ -477,6 +477,8 @@ class ElementsMixin(ElementsTransformMixin):
         ROWS = self.Globals.SLICE_ROWS
         COLS = self.Globals.SLICE_COLS
 
+        content_rect = self.elementsDoRenderToBackground(for_slicing=True)
+        content_offset = content_rect.topLeft()
         background_pixmap = QPixmap.fromImage(self.source_pixels)
 
         col_width = background_pixmap.width()/COLS
@@ -521,7 +523,7 @@ class ElementsMixin(ElementsTransformMixin):
 
                 pos_x = x1 + col_width/2
                 pos_y = y1 + row_height/2
-                bckg_el.element_position = QPointF(pos_x, pos_y)
+                bckg_el.element_position = QPointF(pos_x, pos_y) + content_offset
 
                 # история действий
                 allowed_indexes.append(bckg_el.pass2_unique_index)
@@ -3102,7 +3104,7 @@ class ElementsMixin(ElementsTransformMixin):
             self.input_POINT2, self.input_POINT1 = get_bounding_pointsF(points)
             self.capture_region_rect = build_valid_rectF(self.input_POINT1, self.input_POINT2)
 
-    def elementsDoRenderToBackground(self):
+    def elementsDoRenderToBackground(self, for_slicing=False):
         subMenu = QMenu()
         subMenu.setStyleSheet(self.context_menu_stylesheet)
         action_extend = subMenu.addAction("Расширить картинку-фон, если контент будет превосходить её размеры")
@@ -3110,8 +3112,11 @@ class ElementsMixin(ElementsTransformMixin):
         action_crop = subMenu.addAction("Обрезать по рамке захвата")
         action_cancel = subMenu.addAction("Отмена")
 
-        pos = self.mapFromGlobal(QCursor().pos())
-        action = subMenu.exec_(pos)
+        if for_slicing:
+            action = action_extend
+        else:
+            pos = self.mapFromGlobal(QCursor().pos())
+            action = subMenu.exec_(pos)
 
         if action == None or action == action_cancel:
             return
@@ -3121,7 +3126,13 @@ class ElementsMixin(ElementsTransformMixin):
             pass
         elif action == action_extend:
             points = []
-            for element in self.elementsFilter():
+
+            elements = self.elementsFilter()
+
+            if for_slicing:
+                elements = [el for el in elements if el.background_image]
+
+            for element in elements:
                 sel_area = element.get_canvas_space_selection_area()
                 br = sel_area.boundingRect()
 
@@ -3135,17 +3146,24 @@ class ElementsMixin(ElementsTransformMixin):
             new_width = max(self.source_pixels.width(), content_rect.width())
             new_height = max(self.source_pixels.height(), content_rect.height())
 
-
+        draw_background_only = for_slicing
         # рендер картинки
-        if action == action_crop:
-            self.elementsUpdateFinalPicture(clean=True)
-        elif action == action_keep:
-            hs = self.modification_slots[0]
-            r = QRectF(QPointF(0, 0), QSizeF(hs.elements[0].pixmap.size()))
-            self.elementsUpdateFinalPicture(capture_region_rect=r, clean=True)
-        elif action == action_extend:
-            self.elementsUpdateFinalPicture(
-                    capture_region_rect=QRectF(0, 0, new_width, new_height), clean=True)
+        if for_slicing:
+            self.elementsUpdateFinalPicture(capture_region_rect=content_rect, clean=True,
+                                                                        draw_background_only=True)
+            self.source_pixels = self.elements_final_output.toImage()
+            return content_rect
+
+        else:
+            if action == action_crop:
+                self.elementsUpdateFinalPicture(clean=True)
+            elif action == action_keep:
+                hs = self.modification_slots[0]
+                r = QRectF(QPointF(0, 0), QSizeF(hs.elements[0].pixmap.size()))
+                self.elementsUpdateFinalPicture(capture_region_rect=r, clean=True)
+            elif action == action_extend:
+                self.elementsUpdateFinalPicture(
+                        capture_region_rect=QRectF(0, 0, new_width, new_height), clean=True)
 
         # заменяем картинку и пишем в историю с удалением содержимого
         self.source_pixels = self.elements_final_output.toImage()

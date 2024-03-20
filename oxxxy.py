@@ -3050,7 +3050,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             self.draw_analyse_corners(painter)
             self.elementsDrawDebugInfo(painter, QRectF(viewport_input_rect))
 
-            self.draw_warning_deactivated(painter)
+            # self.draw_warning_deactivated(painter)
 
         painter.end()
 

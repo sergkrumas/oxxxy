@@ -70,6 +70,7 @@ class ToolID():
     background_picture = 'background'
     zoom_in_region = "zoom_in_region"
     copypaste = "copypaste"
+    arrowstree = "arrowstree"
 
     multiframing = "multiframing"
     removing = "removing"

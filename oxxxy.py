@@ -67,7 +67,7 @@ class Globals():
     DEBUG = True
     DEBUG_SETTINGS_WINDOW = False
     DEBUG_TRAY_MENU_WINDOW = False
-    DEBUG_ELEMENTS = False
+    DEBUG_ELEMENTS = True
     DEBUG_ELEMENTS_PICTURE_FRAMING = True
     DEBUG_ELEMENTS_COLLAGE = False
     DEBUG_UNCAPTURED_ZONES = False
@@ -1717,6 +1717,62 @@ class CustomPushButton(QPushButton):
             painter.drawText(QPoint(2, 25), "COPY")
             painter.drawText(QPoint(5, 36), "PASTE")
 
+        elif tool_id == ToolID.arrowstree:
+
+            painter.setPen(Qt.NoPen)
+            painter.setBrush(main_color)
+
+            path = QPainterPath()
+
+            path.moveTo(QPointF(5, 5))
+            path.lineTo(QPointF(30, 12))
+            path.lineTo(QPointF(19, 15))
+
+            ep = QPointF(25, 45)
+            c1 = QPointF(22, 20)
+            c2 = QPointF(32, 25)
+            path.cubicTo(c1, c2, ep)
+            path.lineTo(10, 45)
+
+            ep = QPointF(15, 19)
+            c1 = QPointF(25, 35)
+            c2 = QPointF(20, 25)
+            path.cubicTo(c1, c2, ep)
+
+            path.lineTo(QPointF(12, 30))
+            path.lineTo(QPointF(5, 5))
+
+            painter.drawPath(path)
+
+            # при редактировании координат
+            # pen = QPen(main_color, 1)
+            # painter.setPen(pen)
+            # painter.setBrush(Qt.NoBrush)
+
+            path = QPainterPath()
+
+            path.moveTo(QPointF(45, 20))
+            path.lineTo(QPointF(40, 35))
+            path.lineTo(QPointF(37, 30))
+
+            c1 = QPointF(29, 38)
+            c2 = QPointF(29, 38)
+
+            ep = QPointF(25, 45)
+            path.cubicTo(c1, c2, ep)
+            path.lineTo(10, 45)
+
+            c1 = QPointF(20, 35)
+            c2 = QPointF(20, 35)
+
+            ep = QPointF(34, 27)
+            path.cubicTo(c1, c2, ep)
+
+            path.lineTo(QPointF(29, 24))
+            path.lineTo(QPointF(45, 20))
+
+            painter.drawPath(path)
+
 class PictureSelectButton(QPushButton):
     def __init__(self, picture_data, button_size, main_window, *args):
         super().__init__(*args)
@@ -2454,7 +2510,10 @@ class ToolsWindow(QWidget):
                                                  " необходимой области изображения в любом месте"],
 
             [ToolID.copypaste, "Копипейст", "Копирует область изображения"
-                                                        " в любое место без увеличения"]
+                                                        " в любое место без увеличения"],
+
+            [ToolID.arrowstree, "Горыныч (Дерево стрелок)", "Рисует изогнутые"
+                                                        "срастающиеся между собой стрелки"],
         ]
 
         self.drag_flag = False

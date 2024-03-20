@@ -162,6 +162,20 @@ class Element():
     def __repr__(self):
         return f'{self.unique_index} {self.type}'
 
+    def get_parameters_info(self):
+        info_text = ""
+        if self.source_indexes:
+            info_text += f"[{self.unique_index}] {self.type} from [{self.source_indexes}]"
+        else:
+            info_text += f"[{self.unique_index}] {self.type}"
+        if hasattr(self, 'toolbool'):
+            info_text += f" (tb: {self.toolbool})"
+        if hasattr(self, 'opacity'):
+            info_text += f' (opacity: {self.opacity})'
+        if self.group_id is not None:
+            info_text += f' (group_id: {self.group_id})'
+        return info_text
+
     def calc_local_data_default(self):
         self.element_position = (self.start_point + self.end_point)/2.0
         self.local_start_point = self.start_point - self.element_position
@@ -2791,15 +2805,6 @@ class ElementsMixin(ElementsTransformMixin):
             pos_left = r.bottomLeft()
         visible_elements = self.elementsFilter()
 
-        def get_element_info_into_text(elem):
-            info_text = ""
-            if elem.source_indexes:
-                info_text += f"[{elem.unique_index}] {elem.type} from [{elem.source_indexes}]"
-            else:
-                info_text += f"[{elem.unique_index}] {elem.type}"
-            if hasattr(elem, 'toolbool'):
-                info_text += f" {elem.toolbool}"
-            return info_text
 
         # левая сторона
         painter.save()
@@ -2814,7 +2819,7 @@ class ElementsMixin(ElementsTransformMixin):
 
         pos_left += QPointF(-10, -10)
         for element in self.elements:
-            element.debug_text = get_element_info_into_text(element)
+            element.debug_text = element.get_parameters_info()
             max_width = max(max_width, painter.boundingRect(QRect(), Qt.AlignLeft, element.debug_text).width())
 
         for n, element in enumerate(self.elements):
@@ -2833,13 +2838,14 @@ class ElementsMixin(ElementsTransformMixin):
 
         # правая сторона, под линией
         if self.active_element is not None:
-            info = get_element_info_into_text(self.active_element)
+            info = f'active element: ' + self.active_element.get_parameters_info()
         else:
             info = f'No active element: {self.active_element}'
-        info += f"\n self.modification_stamp = {self.modification_stamp}"
+        info += f"\nself.modification_stamp = {self.modification_stamp}"
 
         r = painter.boundingRect(QRect(), Qt.AlignLeft, info)
-        right_underground = pos_right + QPointF(0, r.height())
+        right_underground = QRectF(r)
+        right_underground.moveTopLeft(pos_right)
         painter.drawText(right_underground, info)
 
 
@@ -2854,6 +2860,11 @@ class ElementsMixin(ElementsTransformMixin):
             painter.save()
             painter.setPen(Qt.white)
             slot_info_text = f'[slot {index}] {ms.content_type}'
+            if index == self.elements_modification_index-1:
+                pointer = '➜'
+            else:
+                pointer = '   '
+            slot_info_text = f'{pointer} {slot_info_text}'
             font = painter.font()
             pixel_height = 25
             if ms not in visible_slots:
@@ -2880,7 +2891,7 @@ class ElementsMixin(ElementsTransformMixin):
                 if self.selected_items and elem in self.selected_items:
                     painter.setPen(QPen(Qt.green))
 
-                info_text = get_element_info_into_text(elem)
+                info_text = elem.get_parameters_info()
 
                 y = -vertical_offset*pixel_height + pixel_height*(i+1)
                 pos_right = info_rect.bottomLeft() + QPointF(100, y)

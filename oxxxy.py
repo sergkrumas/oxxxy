@@ -2552,7 +2552,7 @@ class ToolsWindow(QWidget):
             tools.addSpacing(5)
 
         self.done_button = CustomPushButton("Готово", self, tool_id=ToolID.DONE)
-        self.done_button.mousePressEvent = self.on_done_clicked
+        self.done_button.mousePressEvent = self.onDoneButtonMousePressEvent
         self.done_button.setAccessibleName("done_button")
         self.done_button.setCursor(QCursor(Qt.PointingHandCursor))
         self.done_button.setToolTip("Готово")
@@ -2764,12 +2764,15 @@ class ToolsWindow(QWidget):
                 self.set_current_tool(ToolID.picture)
         self.update()
 
-    def on_done_clicked(self, event):
+    def onDoneButtonMousePressEvent(self, event):
         # calling save_screenshot of main window
         # event = QKeyEvent(QEvent.KeyPress, Qt.Key_Return, Qt.NoModifier, 0, 0, 0)
         # app = QApplication.instance()
         # app.sendEvent(self.parent(), event)
-        self.parent().editing_ready.emit(None)
+        if event.button() == Qt.LeftButton:
+            self.parent().editing_ready.emit(None)
+        elif event.buttons() == Qt.RightButton:
+            self.parent().save_current_editing.emit()
 
     def mousePressEvent(self, event):
         self.old_cursor_pos = event.globalPos()
@@ -2915,6 +2918,7 @@ class ToolsWindow(QWidget):
 class ScreenshotWindow(QWidget, ElementsMixin):
 
     editing_ready = pyqtSignal(object)
+    save_current_editing = pyqtSignal()
 
     # для поддержки миксинов
     Globals = Globals
@@ -3670,6 +3674,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
 
         self.setMouseTracking(True)
         self.editing_ready.connect(self.editing_is_done_handler)
+        self.save_current_editing.connect(self.save_current_editing_handler)
 
         # для временного отображения текста в левом верхнем углу
         self.uncapture_mode_label_tstamp = time.time()
@@ -3832,8 +3837,9 @@ class ScreenshotWindow(QWidget, ElementsMixin):
     def update_sys_tray_icon(self, *args, **kwargs):
         update_sys_tray_icon(*args, **kwargs)
 
-    def save_screenshot(self, grabbed_image=None, metadata=None):
-        close_all_windows()
+    def save_screenshot(self, grabbed_image=None, metadata=None, restart=True):
+        if restart:
+            close_all_windows()
 
         # задание папки для скриншота
         SettingsWindow.set_screenshot_folder_path()
@@ -3856,9 +3862,11 @@ class ScreenshotWindow(QWidget, ElementsMixin):
                 if self.tools_window.chb_add_meta.isChecked():
                     save_meta_info(self.metadata, filepath)
                 copy_image_file_to_clipboard(filepath)
-        # restart
-        if grabbed_image or not Globals.save_to_memory_mode:
-            restart_app_in_notification_mode(filepath)
+                return filepath
+        if restart:
+            # restart
+            if grabbed_image or not Globals.save_to_memory_mode:
+                restart_app_in_notification_mode(filepath)
 
     def create_tools_window_if_needed(self):
         if not self.tools_window:
@@ -4547,6 +4555,11 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         if not Globals.close_editor_on_done:
             if self.tools_window:
                 self.tools_window.done_button.setEnabled(True)
+
+    def save_current_editing_handler(self):
+        filepath = self.save_screenshot(restart=False)
+        msg_text = f'Файл сохранён и доступен по этому пути:\n{filepath}'
+        self.show_notify_dialog(msg_text)
 
     def keyReleaseEvent(self, event):
         if not event.isAutoRepeat():

@@ -4289,12 +4289,13 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         contextMenu.addSeparator()
 
         if Globals.images_in_memory:
-            finish_save_to_memory_mode = add_item("Разложить на холсте все готовые изображения из памяти")
+            count = len(Globals.images_in_memory)
+            finish_save_to_memory_mode = add_item(f"Разложить на холсте все изображения из лукошка ({count})")
         else:
             finish_save_to_memory_mode = None
 
         checkboxes = (
-            ("Сохранить результат в память", Globals.save_to_memory_mode, self.elementsStartSaveToMemoryMode),
+            ("Сохранить результат в лукошко", Globals.save_to_memory_mode, self.elementsStartSaveToMemoryMode),
             ("Виджет области захвата", self.capture_region_widget_enabled, self.toggle_capture_region_widget),
             ("Фон", self.show_background, self.toggle_show_background),
             ("Затемнять после отрисовки пометок", self.dark_pictures, self.toggle_dark_pictures),

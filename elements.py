@@ -1011,20 +1011,20 @@ class ElementsMixin(ElementsTransformMixin):
         msg = f'Файл загружен, формат {project_format}'
         self.show_notify_dialog(msg)
 
-    def elementsMapFromViewportToCanvas(self, viewport_pos):
+    def elementsMapToCanvas(self, viewport_pos):
         delta = QPointF(viewport_pos - self.canvas_origin)
         canvas_pos = QPointF(delta.x()/self.canvas_scale_x, delta.y()/self.canvas_scale_y)
         return canvas_pos
 
-    def elementsMapFromCanvasToViewport(self, canvas_pos):
+    def elementsMapToViewport(self, canvas_pos):
         scaled_rel_pos = QPointF(canvas_pos.x()*self.canvas_scale_x, canvas_pos.y()*self.canvas_scale_y)
         viewport_pos = self.canvas_origin + scaled_rel_pos
         return viewport_pos
 
-    def elementsMapFromCanvasToViewportRectF(self, rect):
+    def elementsMapToViewportRectF(self, rect):
         rect = QRectF(
-            self.elementsMapFromCanvasToViewport(rect.topLeft()),
-            self.elementsMapFromCanvasToViewport(rect.bottomRight())
+            self.elementsMapToViewport(rect.topLeft()),
+            self.elementsMapToViewport(rect.bottomRight())
         )
         return rect
 
@@ -1448,7 +1448,7 @@ class ElementsMixin(ElementsTransformMixin):
         return elements_under_mouse
 
     def elementsMousePressEventDefault(self, element, event, reversed=False):
-        event_pos = self.elementsMapFromViewportToCanvas(QPointF(event.pos()))
+        event_pos = self.elementsMapToCanvas(QPointF(event.pos()))
         if element.type == ToolID.line and event.modifiers() & Qt.ControlModifier:
             last_element = self.elementsGetLastElement1()
             if last_element and last_element.type == ToolID.line:
@@ -1524,7 +1524,7 @@ class ElementsMixin(ElementsTransformMixin):
     def elementsMousePressEvent(self, event):
         tool = self.current_tool
 
-        event_pos = self.elementsMapFromViewportToCanvas(QPointF(event.pos()))
+        event_pos = self.elementsMapToCanvas(QPointF(event.pos()))
 
         self.prev_elements_modification_index = self.elements_modification_index
         isLeftButton = event.buttons() == Qt.LeftButton
@@ -1688,7 +1688,7 @@ class ElementsMixin(ElementsTransformMixin):
         self.input_POINT2 = self.capture_region_rect.bottomRight()
 
     def elementsMouseMoveEvent(self, event):
-        event_pos = self.elementsMapFromViewportToCanvas(QPointF(event.pos()))
+        event_pos = self.elementsMapToCanvas(QPointF(event.pos()))
 
         tool = self.current_tool
         isLeftButton = event.buttons() == Qt.LeftButton
@@ -1789,7 +1789,7 @@ class ElementsMixin(ElementsTransformMixin):
         self.update()
 
     def elementsMouseReleaseEvent(self, event):
-        event_pos = self.elementsMapFromViewportToCanvas(QPointF(event.pos()))
+        event_pos = self.elementsMapToCanvas(QPointF(event.pos()))
 
 
         tool = self.current_tool
@@ -2494,7 +2494,7 @@ class ElementsMixin(ElementsTransformMixin):
             f_element, s_element = self.elementsRetrieveElementsFromUniformGroup(ve, element.group_id)
 
             if s_element is None:
-                output_pos = self.elementsMapFromViewportToCanvas(QCursor().pos())
+                output_pos = self.elementsMapToCanvas(QCursor().pos())
                 apply_circle_mask = f_element.toolbool
                 color = f_element.color
             else:
@@ -2791,14 +2791,14 @@ class ElementsMixin(ElementsTransformMixin):
 
     def elementsDrawSystemCursor(self, painter):
         if self.tools_window and self.tools_window.chb_draw_cursor.isChecked():
-            screenshot_cursor_position = self.elementsMapFromCanvasToViewport(self.screenshot_cursor_position)
+            screenshot_cursor_position = self.elementsMapToViewport(self.screenshot_cursor_position)
             painter.drawPixmap(screenshot_cursor_position, self.cursor_pixmap)
 
     def elementsDrawDebugInfo(self, painter, viewport_input_rect):
         if self.capture_region_rect:
             r = self.capture_region_rect
-            pos_right = self.elementsMapFromCanvasToViewport(r.bottomRight())
-            pos_left = self.elementsMapFromCanvasToViewport(r.bottomLeft())
+            pos_right = self.elementsMapToViewport(r.bottomRight())
+            pos_left = self.elementsMapToViewport(r.bottomLeft())
         else:
             r = viewport_input_rect
             pos_right = r.bottomRight()
@@ -3476,7 +3476,7 @@ class ElementsMixin(ElementsTransformMixin):
         if use_selection:
             content_pos = self.selection_bounding_box.boundingRect().center() - self.canvas_origin
         elif use_capture_region:
-            mapped_capture = self.elementsMapFromCanvasToViewportRectF(self.capture_region_rect)
+            mapped_capture = self.elementsMapToViewportRectF(self.capture_region_rect)
             mapped_capture_center = mapped_capture.center()
             content_pos = mapped_capture_center - self.canvas_origin
         else:

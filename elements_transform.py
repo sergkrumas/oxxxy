@@ -756,9 +756,8 @@ class ElementsTransformMixin():
     def elementsDrawSelectedElementsDottedOutlines(self, painter):
         painter.save()
         painter.setBrush(Qt.NoBrush)
-        pen = QPen(Qt.white, 1, Qt.DashLine)
+        pen = QPen(Qt.magenta, 1, Qt.DashLine)
         painter.setPen(pen)
-        painter.setCompositionMode(QPainter.RasterOp_NotDestination) #RasterOp_SourceXorDestination
         for element in self.selected_items:
             sa = element.get_selection_area(self)
             painter.drawPolygon(sa)

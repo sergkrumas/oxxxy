@@ -2580,8 +2580,8 @@ class ToolsWindow(QWidget):
 
         def set_callbacks_for_sliders(widget):
             widget.value_changed.connect(self.on_parameters_changed)
-            widget.value_changing_initiated.connect(partial(self.parent().elementsAcquireStampForOngoingElementsModification, 'sliders'))
-            widget.value_changing_finished.connect(self.parent().elementsDeacquireStampForFinishedElementsModification)
+            widget.value_changing_initiated.connect(partial(self.parent().elementsStartModificationProcess, 'sliders'))
+            widget.value_changing_finished.connect(self.parent().elementsStopModificationProcess)
 
         # для пометок
         if Globals.USE_COLOR_PALETTE:
@@ -3948,9 +3948,9 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         click_handler(action)
 
     def special_change_handler(self, callback):
-        self.elementsAcquireStampForOngoingElementsModification('checkbox')
+        self.elementsStartModificationProcess('checkbox')
         callback()
-        self.elementsDeacquireStampForFinishedElementsModification()
+        self.elementsStopModificationProcess()
 
     def update_saved_capture(self):
         ts = self.tools_settings
@@ -4575,7 +4575,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
                 # чтобы точно быть уверенным в правильности вызова
                 arrow_keys = [Qt.Key_Up, Qt.Key_Down, Qt.Key_Right, Qt.Key_Left]
                 if event.key() in arrow_keys:
-                    self.elementsDeacquireStampForFinishedElementsModification()
+                    self.elementsStopModificationProcess()
 
     def keyPressEvent(self, event):
         key = event.key()

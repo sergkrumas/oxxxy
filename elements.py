@@ -3036,6 +3036,14 @@ class ElementsMixin(ElementsTransformMixin):
         else:
             return element
 
+    def elementsMakeElementCopy(self, element, mod_slot=None):
+        el_copy = self.elementsCreateNew(ToolID.TEMPORARY_TYPE_NOT_DEFINED,
+            modification_slot=mod_slot,
+            create_new_slot=False
+        )
+        self.elementsCopyElementData(el_copy, element)
+        return el_copy
+
     def elementsParametersChanged(self):
         tw = self.tools_window
         if tw:
@@ -3389,6 +3397,22 @@ class ElementsMixin(ElementsTransformMixin):
             self.elementsArrangePictures(elements, max_width, max_height)
 
         self.update()
+
+    def elementsPasteSelectedItems(self):
+        canvas_selection_center = self.elementsMapToCanvas(self.selection_bounding_box.boundingRect().center())
+        canvas_cursor_pos = self.elementsMapToCanvas(self.mapped_cursor_pos())
+        if self.selected_items:
+            copies = []
+            ms = self.elementsCreateNewSlot('Ctrl+C, Ctrl+V')
+            for element in self.selected_items:
+                element._selected = False
+                element_copy = self.elementsMakeElementCopy(element, mod_slot=ms)
+                copies.append(element_copy)
+                delta = element_copy.element_position - canvas_selection_center
+                element_copy.element_position = canvas_cursor_pos + delta
+                element_copy._selected = True
+            self.elementsSetSelected(None)
+            self.elementsSetSelected(copies)
 
     def elementsGetImageFromBuffer(self):
         app = QApplication.instance()

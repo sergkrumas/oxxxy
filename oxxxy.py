@@ -118,6 +118,8 @@ class Globals():
 
     background_threads = []
 
+    COPY_SELECTED_CANVAS_ITEMS_STR = '~#~OXXXY:SCREENSHOTER:COPY:SELECTED:CANVAS:ITEMS~#~'
+
     @classmethod
     def load_fonts(cls):
         folder_path = os.path.dirname(__file__)
@@ -4527,6 +4529,19 @@ class ScreenshotWindow(QWidget, ElementsMixin, EditorAutotestMixin):
         msg_text = f'Файл сохранён и доступен по этому пути:\n{filepath}'
         self.show_notify_dialog(msg_text)
 
+    def copy_magnifier_color_to_clipboard(self):
+        color = self.color_at_pixel
+        _hex = color.name()
+        _r = color.red()
+        _g = color.green()
+        _b = color.blue()
+        _rgb = f"rgb({_r}, {_g}, {_b})"
+        color_repr = f"{_hex} {_rgb}"
+        self.colors_values_copied.append((color, color_repr))
+        color_reprs = [t[1] for t in self.colors_values_copied]
+        self.set_clipboard("\n".join(color_reprs))
+        self.update()
+
     def keyReleaseEvent(self, event):
         if not event.isAutoRepeat():
             # сюда попадём только когда отпускается клавиша,
@@ -4611,17 +4626,20 @@ class ScreenshotWindow(QWidget, ElementsMixin, EditorAutotestMixin):
             self.update()
         if check_scancode_for(event, "C") and event.modifiers() & Qt.ControlModifier:
             if self.capture_region_rect is None:
-                color = self.color_at_pixel
-                _hex = color.name()
-                _r = color.red()
-                _g = color.green()
-                _b = color.blue()
-                _rgb = f"rgb({_r}, {_g}, {_b})"
-                color_repr = f"{_hex} {_rgb}"
-                self.colors_values_copied.append((color, color_repr))
-                color_reprs = [t[1] for t in self.colors_values_copied]
-                self.set_clipboard("\n".join(color_reprs))
-                self.update()
+                self.copy_magnifier_color_to_clipboard()
+            elif self.selected_items:
+                cb = QApplication.clipboard()
+                cb.clear(mode=cb.Clipboard)
+                cb.setText(Globals.COPY_SELECTED_CANVAS_ITEMS_STR, mode=cb.Clipboard)
+        if check_scancode_for(event, "V") and event.modifiers() & Qt.ControlModifier:
+            app = QApplication.instance()
+            cb = app.clipboard()
+            text = cb.text()
+            mdata = cb.mimeData()
+            if text and text == Globals.COPY_SELECTED_CANVAS_ITEMS_STR:
+                self.elementsPasteSelectedItems()
+            else:
+                self.elementsPasteImageFromBuffer(event)
         if check_scancode_for(event, "Z"):
             mods = event.modifiers()
             ctrl = mods & Qt.ControlModifier
@@ -4654,8 +4672,6 @@ class ScreenshotWindow(QWidget, ElementsMixin, EditorAutotestMixin):
         if check_scancode_for(event, "P"):
             if self.capture_region_rect is not None:
                 self.show_view_window(self.get_final_picture)
-        if check_scancode_for(event, "V") and event.modifiers() & Qt.ControlModifier:
-            self.elementsPasteImageFromBuffer(event)
         if check_scancode_for(event, "A") and event.modifiers() & Qt.ControlModifier:
             self.elementsSelectDeselectAll()
         if check_scancode_for(event, "F"):

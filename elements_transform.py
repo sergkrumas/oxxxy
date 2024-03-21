@@ -361,7 +361,7 @@ class ElementsTransformMixin():
 
 
     def canvas_START_selected_elements_TRANSLATION(self, event_pos, viewport_zoom_changed=False):
-        self.start_translation_pos = self.elementsMapFromViewportToCanvas(event_pos)
+        self.start_translation_pos = self.elementsMapToCanvas(event_pos)
         if viewport_zoom_changed:
             for element in self.elementsFilter():
                 element.element_position = element.__element_position
@@ -383,7 +383,7 @@ class ElementsTransformMixin():
 
     def canvas_ALLOW_selected_elements_TRANSLATION(self, event_pos):
         if self.start_translation_pos:
-            delta = QPointF(self.elementsMapFromViewportToCanvas(event_pos)) - self.start_translation_pos
+            delta = QPointF(self.elementsMapToCanvas(event_pos)) - self.start_translation_pos
             if not self.translation_ongoing:
                 mouse_moved = abs(delta.x()) > 0 or abs(delta.y()) > 0
                 mouse_under_selected_element = False
@@ -396,7 +396,7 @@ class ElementsTransformMixin():
 
     def canvas_DO_selected_elements_TRANSLATION(self, event_pos):
         if self.start_translation_pos:
-            delta = QPointF(self.elementsMapFromViewportToCanvas(event_pos)) - self.start_translation_pos
+            delta = QPointF(self.elementsMapToCanvas(event_pos)) - self.start_translation_pos
             if self.translation_ongoing:
                 for element in self.elementsFilter():
                     if element._selected:

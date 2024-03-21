@@ -1865,6 +1865,7 @@ class ElementsMixin(ElementsTransformMixin):
             del element.arrow # чтобы не было проблем при сохранении файла
             self.elementsCreateTextDoc(element)
             if arrow_included:
+                self.elementsTextElementRecalculateGabarit(element)
                 self.elementsFixArrowStartPositionIfNeeded(element)
         elif tool in [ToolID.blurring, ToolID.darkening]:
             element.equilateral = bool(event.modifiers() & Qt.ShiftModifier)
@@ -2120,20 +2121,23 @@ class ElementsMixin(ElementsTransformMixin):
         if self.Globals.USE_PIXMAP_PROXY_FOR_TEXT_ELEMENTS:
             self.elementsTextDocUpdateProxyPixmap(ae)
 
-        # обновление габаритов виджета трансформации
-        s = ae.text_doc.size()
-        width = s.width()
-        height = s.height()
-        content_rect = QRectF(QPointF(0, 0), s)
-        content_rect.moveCenter(ae.element_position)
-        ae.start_point = content_rect.topLeft()
-        ae.end_point = content_rect.bottomRight()
-        ae.element_scale_x = 1.0
-        ae.element_scale_y = 1.0
-        ae.calc_local_data()
+        self.elementsTextElementRecalculateGabarit(ae)
         self.update_selection_bouding_box()
         self.elementsFixArrowStartPositionIfNeeded(ae)
         self.update()
+
+    def elementsTextElementRecalculateGabarit(self, element):
+        # обновление габаритов виджета трансформации
+        s = element.text_doc.size()
+        width = s.width()
+        height = s.height()
+        content_rect = QRectF(QPointF(0, 0), s)
+        content_rect.moveCenter(element.element_position)
+        element.start_point = content_rect.topLeft()
+        element.end_point = content_rect.bottomRight()
+        element.element_scale_x = 1.0
+        element.element_scale_y = 1.0
+        element.calc_local_data()
 
     def elementsTextDocDraw(self, painter, element):
 

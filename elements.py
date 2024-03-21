@@ -1865,7 +1865,7 @@ class ElementsMixin(ElementsTransformMixin):
             del element.arrow # чтобы не было проблем при сохранении файла
             self.elementsCreateTextDoc(element)
             if arrow_included:
-                self.elementsFixArrowStartPositionIfNeeded(element)            
+                self.elementsFixArrowStartPositionIfNeeded(element)
         elif tool in [ToolID.blurring, ToolID.darkening]:
             element.equilateral = bool(event.modifiers() & Qt.ShiftModifier)
             if element.equilateral:

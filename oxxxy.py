@@ -3862,7 +3862,8 @@ class ScreenshotWindow(QWidget, ElementsMixin):
                 if self.tools_window.chb_add_meta.isChecked():
                     save_meta_info(self.metadata, filepath)
                 copy_image_file_to_clipboard(filepath)
-                return filepath
+                if not restart:
+                    return filepath
         if restart:
             # restart
             if grabbed_image or not Globals.save_to_memory_mode:

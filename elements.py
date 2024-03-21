@@ -2806,6 +2806,14 @@ class ElementsMixin(ElementsTransformMixin):
             screenshot_cursor_position = self.elementsMapToViewport(self.screenshot_cursor_position)
             painter.drawPixmap(screenshot_cursor_position, self.cursor_pixmap)
 
+    def elementsGetDrawOffsetAndZoomTransform(self, offset):
+        translation = QTransform()
+        global_scaling = QTransform()
+        translation.translate(offset.x(), offset.y())
+        global_scaling.scale(self.canvas_scale_x, self.canvas_scale_y)
+        transform = global_scaling * translation
+        return transform
+
     def elementsDrawDebugInfo(self, painter, viewport_input_rect):
         if self.capture_region_rect:
             r = self.capture_region_rect
@@ -2820,6 +2828,10 @@ class ElementsMixin(ElementsTransformMixin):
 
         # левая сторона
         painter.save()
+        # для соблюдения зума вьюпорта задаём эти трансформации
+        painter.setTransform(self.elementsGetDrawOffsetAndZoomTransform(pos_left))
+        pos_left = QPointF(0, 0)
+
         info_rect = build_valid_rectF(pos_left, self.rect().topLeft())
         info_rect.setWidth(300)
         info_rect.moveBottomRight(pos_left)
@@ -2847,7 +2859,10 @@ class ElementsMixin(ElementsTransformMixin):
             painter.drawText(p, element.debug_text)
         painter.restore()
 
-
+        painter.save()
+        # для соблюдения зума вьюпорта задаём эти трансформации
+        painter.setTransform(self.elementsGetDrawOffsetAndZoomTransform(pos_right))
+        pos_right = QPointF(0, 0)
         # правая сторона, под линией
         if self.active_element is not None:
             info = f'active element: ' + self.active_element.get_parameters_info()
@@ -2922,6 +2937,7 @@ class ElementsMixin(ElementsTransformMixin):
                 painter.drawRect(color_rect)
                 painter.restore()
             painter.restore()
+        painter.restore()
 
     def elementsUpdateFinalPicture(self, capture_region_rect=None,
                 draw_background_only=False, no_multiframing=False, prepare_darkening=False, clean=False,

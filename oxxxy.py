@@ -62,6 +62,7 @@ from _utils import (convex_hull, check_scancode_for, SettingsJson,
 from _sliders import (CustomSlider,)
 from on_windows_startup import is_app_in_startup, add_to_startup, remove_from_startup
 from elements import ElementsMixin, ToolID
+from editor_autotest import EditorAutotestMixin
 
 class Globals():
     DEBUG = True
@@ -2915,7 +2916,7 @@ class ToolsWindow(QWidget):
             y_value = screenshot_rect.bottom() - self.height()
         self.move(int(x_value), int(y_value))
 
-class ScreenshotWindow(QWidget, ElementsMixin):
+class ScreenshotWindow(QWidget, ElementsMixin, EditorAutotestMixin):
 
     editing_ready = pyqtSignal(object)
     save_current_editing = pyqtSignal()
@@ -3678,48 +3679,6 @@ class ScreenshotWindow(QWidget, ElementsMixin):
 
         # для временного отображения текста в левом верхнем углу
         self.uncapture_mode_label_tstamp = time.time()
-
-
-    def animated_tool_drawing(self, tool_id, a, b, randomize=True):
-        if self.tools_window.current_tool != tool_id:
-            self.tools_window.set_current_tool(tool_id)
-
-        points = []
-        count = 10
-        delta = b - a
-        for n in range(count+1):
-            ratio = n/count
-            pos = a + delta*ratio
-            points.append(self.elementsMapToViewport(pos))
-
-        for n, pos in enumerate(points):
-            time.sleep(0.01)
-            if n == 0:
-                self.mousePressEvent(QMouseEvent(QEvent.MouseButtonPress, pos, Qt.LeftButton, Qt.LeftButton, Qt.NoModifier))
-            if randomize:
-                value_x = 50-100*random.random()
-                value_y = 50-100*random.random()
-                pos += QPointF(value_x, value_y)
-            self.mouseMoveEvent(QMouseEvent(QEvent.MouseMove, pos, Qt.LeftButton, Qt.LeftButton, Qt.NoModifier))
-            self.update()
-            app = QApplication.instance()
-            app.processEvents()
-        self.mouseReleaseEvent(QMouseEvent(QEvent.MouseButtonRelease, pos, Qt.LeftButton, Qt.LeftButton, Qt.NoModifier))
-        self.update()
-
-    def animated_debug_drawing(self):
-        if self.tools_window:
-
-            tl = self.capture_region_rect.topLeft()
-            rb = self.capture_region_rect.bottomRight()
-
-            a = tl + QPointF(20, 20)
-            b = rb
-            self.animated_tool_drawing(ToolID.line, a, b)
-
-            a = tl + QPointF(20, 20)
-            b = rb
-            self.animated_tool_drawing(ToolID.marker, a, b)
 
     def set_saved_capture_frame(self):
         if self.tools_settings.get("savecaptureframe", False):
@@ -4700,7 +4659,6 @@ class ScreenshotWindow(QWidget, ElementsMixin):
                 self.elementsFitSelectedItemsOnScreen()
         if key == (Qt.Key_F2):
             self.animated_debug_drawing()
-
 
 
 class WinEventFilter(QAbstractNativeEventFilter):

@@ -57,7 +57,7 @@ from _utils import (convex_hull, check_scancode_for, SettingsJson,
      find_browser_exe_file, open_link_in_browser, open_in_google_chrome, save_meta_info,
      make_screenshot_pyqt, webRGBA, generate_gradient, draw_shadow, draw_cyberpunk,
      get_bounding_points, load_svg, is_webp_file_animated, apply_blur_effect,
-     get_bounding_pointsF, generate_datetime_stamp)
+     get_bounding_pointsF, generate_datetime_stamp, get_work_area_rect)
 
 from _sliders import (CustomSlider,)
 from on_windows_startup import is_app_in_startup, add_to_startup, remove_from_startup
@@ -2982,8 +2982,13 @@ class ScreenshotWindow(QWidget, ElementsMixin, EditorAutotestMixin):
             right = max(r.right(), right)
             top = min(r.top(), top)
             bottom = max(r.bottom(), bottom)
-        self.move(0,0)
-        self.resize(right-left+1, bottom-top+1)
+        if self.working_area_rect is not None:
+            war = self.working_area_rect
+            self.move(war.left(), war.top())
+            self.resize(right-left+1-war.left(), war.height())
+        else:
+            self.move(0, 0)
+            self.resize(right-left+1, bottom-top+1)
         self._all_monitors_rect = QRect(QPoint(left, top), QPoint(right+1, bottom+1))
 
     def is_point_set(self, p):
@@ -3526,7 +3531,8 @@ class ScreenshotWindow(QWidget, ElementsMixin, EditorAutotestMixin):
 
     def __init__(self, screenshot_image, metadata, datetime_stamp, parent=None):
         super().__init__()
-        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.WindowMinimizeButtonHint)
+        self.working_area_rect = get_work_area_rect()
         self.set_size_and_position()
 
         self.setWindowTitle(f"Oxxxy Screenshoter {Globals.VERSION_INFO} {Globals.AUTHOR_INFO}")

@@ -107,7 +107,22 @@ __all__ = (
     'squarize_rect',
     'calculate_tangent_points',
     'get_rect_corners',
+
+    'get_work_area_rect',
 )
+
+def get_work_area_rect():
+    os = platform.system()
+    if os == 'Windows':
+        SPI_GETWORKAREA = 48
+        SM_CYSCREEN = 1
+        SystemParametersInfo = ctypes.windll.user32.SystemParametersInfoA
+        work_area = ctypes.wintypes.RECT()
+        if (SystemParametersInfo(SPI_GETWORKAREA, 0, ctypes.byref(work_area), 0)):
+            GetSystemMetrics = ctypes.windll.user32.GetSystemMetrics
+            return QRect(work_area.left, work_area.top, work_area.right, work_area.bottom)
+    elif os == 'Linux':
+        return None
 
 # Python3 program to find convex hull of a set of points. Refer
 # https://www.geeksforgeeks.org/orientation-3-ordered-points/

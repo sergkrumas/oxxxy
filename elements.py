@@ -404,7 +404,10 @@ class ElementsMixin(ElementsTransformMixin):
         self.show_background = True
         self.dark_pictures = True
 
-    def elementsAcquireStampForOngoingElementsModification(self, _type):
+    def elementsStartModificationProcess(self, _type):
+        """
+            Acquires modification stamp for ongoing elements modification
+        """
         if self.modification_stamp is None:
             self.modification_stamp = time.time()
             self.modification_slot = self.elementsCreateNewSlot(_type)
@@ -412,7 +415,10 @@ class ElementsMixin(ElementsTransformMixin):
         # else:
         #     raise Exception('Attempting to acquire new stamp, but the current is not deacquired!')
 
-    def elementsDeacquireStampForFinishedElementsModification(self):
+    def elementsStopModificationProcess(self):
+        """
+            Deacquires modification stamp after finished elements modification
+        """
         if self.modification_stamp is not None:
             self.modification_stamp = None
             if len(self.modification_slot.elements) == 0:
@@ -1606,15 +1612,15 @@ class ElementsMixin(ElementsTransformMixin):
             self.elementsDeactivateTextElements()
 
             if self.is_over_scaling_activation_area(event.pos()):
-                self.elementsAcquireStampForOngoingElementsModification('mouse; scaling')
+                self.elementsStartModificationProcess('mouse; scaling')
                 self.canvas_START_selected_elements_SCALING(event)
 
             elif self.is_over_rotation_activation_area(event.pos()):
-                self.elementsAcquireStampForOngoingElementsModification('mouse; rotation')
+                self.elementsStartModificationProcess('mouse; rotation')
                 self.canvas_START_selected_elements_ROTATION(event.pos())
 
             elif self.any_element_area_under_mouse(event.modifiers() & Qt.ShiftModifier):
-                self.elementsAcquireStampForOngoingElementsModification('mouse; translation')
+                self.elementsStartModificationProcess('mouse; translation')
                 self.canvas_START_selected_elements_TRANSLATION(event.pos())
                 self.update_selection_bouding_box()
 
@@ -1649,7 +1655,7 @@ class ElementsMixin(ElementsTransformMixin):
         self.update()
 
     def elementsMoveElement(self, event):
-        self.elementsAcquireStampForOngoingElementsModification('arrows')
+        self.elementsStartModificationProcess('arrows')
         modifiers = QApplication.queryKeyboardModifiers()
         value = 1
         if modifiers & Qt.ShiftModifier:
@@ -1939,7 +1945,7 @@ class ElementsMixin(ElementsTransformMixin):
                 self.elementsTextDocSetCursorPosByClick(event)
                 return
 
-        self.elementsDeacquireStampForFinishedElementsModification()
+        self.elementsStopModificationProcess()
 
         self.elementsAutoDeleteInvisibleElement(element)
         self.tools_window.forwards_backwards_update()
@@ -3276,9 +3282,9 @@ class ElementsMixin(ElementsTransformMixin):
         pos = QPointF(0, 0)
         for source_element in elements:
 
-            self.elementsAcquireStampForOngoingElementsModification('arranging')
+            self.elementsStartModificationProcess('arranging')
             element = self.elementsPrepareElementCopyForModifications(source_element)
-            self.elementsDeacquireStampForFinishedElementsModification()
+            self.elementsStopModificationProcess()
 
             start_br = element.get_canvas_space_selection_area().boundingRect()
 

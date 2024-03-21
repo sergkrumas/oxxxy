@@ -3012,8 +3012,8 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         painter.setFont(font)
 
         cursor_pos = self.mapFromGlobal(QCursor().pos())
-        canvas_input_rect = self.build_input_rectF(self.elementsMapFromViewportToCanvas(cursor_pos))
-        viewport_input_rect = self.elementsMapFromCanvasToViewportRectF(canvas_input_rect)
+        canvas_input_rect = self.build_input_rectF(self.elementsMapToCanvas(cursor_pos))
+        viewport_input_rect = self.elementsMapToViewportRectF(canvas_input_rect)
 
         self.draw_checkerboard(painter)
 
@@ -3099,7 +3099,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         self._ted.type = self.current_tool
         self._ted.color = self.tools_window.color_slider.get_color()
         self._ted.size = self.tools_window.size_slider.value
-        self._ted.element_position = self.elementsMapFromViewportToCanvas(cursor_pos)
+        self._ted.element_position = self.elementsMapToCanvas(cursor_pos)
         self._ted.start_point = self._ted.element_position
         self._ted.end_point = self._ted.element_position
         self._ted.straight = True
@@ -3123,13 +3123,13 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             # и активирован этот тулз
             return
         crr_canvas = self.capture_region_rect
-        crr_viewport = self.elementsMapFromCanvasToViewportRectF(crr_canvas)
+        crr_viewport = self.elementsMapToViewportRectF(crr_canvas)
         if not crr_viewport.contains(cursor_pos):
             return
 
         self._tei.element_rotation = self.current_picture_angle
         self._tei.pixmap = self.current_picture_pixmap
-        self._tei.element_position = self.elementsMapFromViewportToCanvas(cursor_pos)
+        self._tei.element_position = self.elementsMapToCanvas(cursor_pos)
         self._tei.calc_local_data()
         # нет смысла в этом задании размера здесь,
         # потому что слайдер ограничен диапазоном 0.5 до 1.5
@@ -3383,7 +3383,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         # и после неё габариты получившегося изображения уже не равны
         # габаритам скриншота монитора(ов)
         self_rect = QRectF(self.source_pixels.rect()) # self_rect = QRectF(self.rect())
-        self_rect = self.elementsMapFromCanvasToViewportRectF(self_rect)
+        self_rect = self.elementsMapToViewportRectF(self_rect)
         if step == 1:
             if opacity_type == LayerOpacity.FullTransparent: # full transparent
                 self.elementsDrawBackgroundGhost(painter, self_rect)
@@ -3462,7 +3462,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
 
     def draw_wrapper_shadow(self, painter):
         if self.capture_region_rect:
-            capture_region_rect = self.elementsMapFromCanvasToViewportRectF(self.capture_region_rect)
+            capture_region_rect = self.elementsMapToViewportRectF(self.capture_region_rect)
             draw_shadow(
                 painter,
                 capture_region_rect, 50,
@@ -3473,7 +3473,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
     def draw_wrapper_cyberpunk(self, painter):
         tw = self.tools_window
         if tw and tw.chb_draw_thirds.isChecked() and self.capture_region_rect:
-            capture_region_rect = self.elementsMapFromCanvasToViewportRectF(self.capture_region_rect)
+            capture_region_rect = self.elementsMapToViewportRectF(self.capture_region_rect)
             draw_cyberpunk(painter, capture_region_rect)
 
     def draw_vertical_horizontal_lines(self, painter, cursor_pos):
@@ -3483,8 +3483,8 @@ class ScreenshotWindow(QWidget, ElementsMixin):
 
         if self.is_input_points_set():
             painter.setPen(line_pen)
-            input_POINT1 = self.elementsMapFromCanvasToViewport(self.input_POINT1)
-            input_POINT2 = self.elementsMapFromCanvasToViewport(self.input_POINT2)
+            input_POINT1 = self.elementsMapToViewport(self.input_POINT1)
+            input_POINT2 = self.elementsMapToViewport(self.input_POINT2)
             left = input_POINT1.x()
             top = input_POINT1.y()
             right = input_POINT2.x()
@@ -3690,7 +3690,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         for n in range(count+1):
             ratio = n/count
             pos = a + delta*ratio
-            points.append(self.elementsMapFromCanvasToViewport(pos))
+            points.append(self.elementsMapToViewport(pos))
 
         for n, pos in enumerate(points):
             time.sleep(0.01)
@@ -3888,7 +3888,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
 
     def autopos_tools_window(self):
         if self.tools_window and self.capture_region_rect:
-            capture_region_rect = self.elementsMapFromCanvasToViewportRectF(self.capture_region_rect)
+            capture_region_rect = self.elementsMapToViewportRectF(self.capture_region_rect)
             self.tools_window.do_autopositioning(capture_region_rect)
 
     def selection_filter_menu(self, main_menu=None):
@@ -3988,7 +3988,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
         elif event.buttons() == Qt.LeftButton:
             if not self.is_rect_defined:
                 # для первичного задания области захвата
-                event_pos = self.elementsMapFromViewportToCanvas(event.pos())
+                event_pos = self.elementsMapToCanvas(event.pos())
                 if not self.is_point_set(self.input_POINT1):
                     self.user_input_started = True
                     self.input_POINT1 = event_pos
@@ -4010,7 +4010,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
                                                          and self.capture_region_widget_enabled:
                 # для изменения области захвата после первичного задания
                 self.is_rect_being_redefined = True
-                delta = self.elementsMapFromViewportToCanvas(QPointF(event.pos())) - self.start_cursor_position
+                delta = self.elementsMapToCanvas(QPointF(event.pos())) - self.start_cursor_position
                 set_func_attr = self.undermouse_region_info.setter
                 data_id = self.undermouse_region_info.coords
                 get_func_attr = self.undermouse_region_info.getter
@@ -4069,7 +4069,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
                                                 and not self.capture_region_widget_enabled
 
         if event.button() == Qt.LeftButton:
-            self.start_cursor_position = self.elementsMapFromViewportToCanvas(QPointF(event.pos()))
+            self.start_cursor_position = self.elementsMapToCanvas(QPointF(event.pos()))
             self.capture_redefine_start_value = None
             self.get_region_info()
             if self.undermouse_region_info is None:
@@ -4464,7 +4464,7 @@ class ScreenshotWindow(QWidget, ElementsMixin):
             9: QCursor(Qt.SizeFDiagCursor)
         }
 
-        crr = self.elementsMapFromCanvasToViewportRectF(self.capture_region_rect)
+        crr = self.elementsMapToViewportRectF(self.capture_region_rect)
         amr = self._all_monitors_rect
         regions = {
             1: QRectF(QPointF(0, 0), crr.topLeft()),

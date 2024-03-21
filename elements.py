@@ -1864,6 +1864,8 @@ class ElementsMixin(ElementsTransformMixin):
             element.arrow = None
             del element.arrow # чтобы не было проблем при сохранении файла
             self.elementsCreateTextDoc(element)
+            if arrow_included:
+                self.elementsFixArrowStartPositionIfNeeded(element)            
         elif tool in [ToolID.blurring, ToolID.darkening]:
             element.equilateral = bool(event.modifiers() & Qt.ShiftModifier)
             if element.equilateral:
@@ -2130,7 +2132,7 @@ class ElementsMixin(ElementsTransformMixin):
         ae.element_scale_y = 1.0
         ae.calc_local_data()
         self.update_selection_bouding_box()
-
+        self.elementsFixArrowStartPositionIfNeeded(ae)
         self.update()
 
     def elementsTextDocDraw(self, painter, element):

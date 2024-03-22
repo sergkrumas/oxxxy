@@ -28,7 +28,8 @@ from functools import partial
 from PyQt5.QtWidgets import (QWidget, QMessageBox, QMenu, QFileDialog, QHBoxLayout, QCheckBox,
                                     QVBoxLayout, QPushButton, QLabel, QApplication, QDesktopWidget)
 from PyQt5.QtCore import (QPoint, QRect, QTimer, Qt, QSize, QRectF)
-from PyQt5.QtGui import (QPainterPath, QColor, QBrush, QPainter, QPen, QCursor, QVector2D)
+from PyQt5.QtGui import (QPainterPath, QColor, QBrush, QPainter, QPen, QCursor, QVector2D,
+                                                                                    QFontMetrics)
 
 from _utils import (SettingsJson, get_creation_date, open_link_in_browser, open_in_google_chrome)
 
@@ -828,7 +829,11 @@ class NotifyDialog(QWidget, StylizedUIBase):
         self.label = QLabel()
         self.label.setText(label_text)
         self.label.setStyleSheet(self.title_label_style)
-        self.label.setFixedWidth(self.WIDTH - self.CLOSE_BUTTON_RADIUS)
+        font = self.label.font()
+        font.setPixelSize(18) # according to css rule in self.title_label_style
+        fm = QFontMetrics(font)
+        text_rect = fm.boundingRect(QRect(), Qt.AlignLeft | Qt.AlignTop, label_text)
+        self.label.setFixedWidth(text_rect.width()+200)
         self.label.setWordWrap(True)
 
         self.timer = QTimer()
@@ -838,7 +843,8 @@ class NotifyDialog(QWidget, StylizedUIBase):
         main_layout.addWidget(self.label)
         main_layout.addWidget(self.button)
         self.setLayout(main_layout)
-        self.resize(self.WIDTH, 200)
+
+        self.resize(min(self.WIDTH, text_rect.width()+200), 200)
         self.setMouseTracking(True)
 
     def yes_handler(self):
@@ -911,3 +917,11 @@ class QuitDialog(QWidget, StylizedUIBase):
     def mouseReleaseEvent(self, event):
         if self.inside_close_button():
             self.close()
+
+
+
+# для запуска программы прямо из этого файла при разработке и отладке
+if __name__ == '__main__':
+    import subprocess
+    subprocess.Popen([sys.executable, "-u", "oxxxy.py"])
+    sys.exit()

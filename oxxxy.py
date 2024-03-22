@@ -2322,6 +2322,12 @@ def read_settings_file():
 
 SettingsWindow.Globals = Globals
 NotificationOrMenu.Globals = Globals
+NotificationOrMenu.RequestType = RequestType
+NotificationOrMenu.gl = type('global', (), {})
+NotificationOrMenu.gl.invoke_screenshot_editor = invoke_screenshot_editor
+NotificationOrMenu.gl._restart_app = _restart_app
+NotificationOrMenu.gl.show_crash_log = show_crash_log
+NotificationOrMenu.gl.get_crashlog_filepath = get_crashlog_filepath
 NotifyDialog.Globals = Globals
 QuitDialog.Globals = Globals
 

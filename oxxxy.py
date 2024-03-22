@@ -231,7 +231,7 @@ class RequestType(Enum):
     QuickFullscreen = 2
     Editor = 3
 
-class ScreenshotWindow(QWidget, ElementsMixin, EditorAutotestMixin):
+class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
 
     editing_ready = pyqtSignal(object)
     save_current_editing = pyqtSignal()
@@ -2155,41 +2155,41 @@ def invoke_screenshot_editor(request_type=None, filepaths=None):
     datetime_stamp = generate_datetime_stamp()
     # started_time = time.time()
 
-    ScreenshotWindow.screenshot_cursor_position = QCursor().pos()
+    CanvasEditor.screenshot_cursor_position = QCursor().pos()
     cursor_filepath = os.path.join(os.path.dirname(__file__), 'resources', 'cursor.png')
-    ScreenshotWindow.cursor_pixmap = QPixmap(cursor_filepath).scaled(25, 25, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+    CanvasEditor.cursor_pixmap = QPixmap(cursor_filepath).scaled(25, 25, Qt.KeepAspectRatio, Qt.SmoothTransformation)
 
     screenshot_image = make_screenshot_pyqt()
     if request_type == RequestType.Fragment:
         # print("^^^^^^", time.time() - started_time)
         if Globals.DEBUG and Globals.DEBUG_ELEMENTS and not Globals.DEBUG_ELEMENTS_COLLAGE:
-            Globals.screenshot_editor = ScreenshotWindow(screenshot_image, metadata, datetime_stamp)
-            Globals.screenshot_editor.set_saved_capture_frame()
-            Globals.screenshot_editor.show()
-            Globals.screenshot_editor.request_elements_debug_mode()
+            Globals._canvas_editor = CanvasEditor(screenshot_image, metadata, datetime_stamp)
+            Globals._canvas_editor.set_saved_capture_frame()
+            Globals._canvas_editor.show()
+            Globals._canvas_editor.request_elements_debug_mode()
         elif Globals.DEBUG and Globals.DEBUG_ELEMENTS_COLLAGE:
             path = SettingsJson().get_data("SCREENSHOT_FOLDER_PATH")
             if not path:
                 path = ""
             filepaths = get_filepaths_dialog(path=path)
-            Globals.screenshot_editor = ScreenshotWindow(screenshot_image, metadata, datetime_stamp)
-            Globals.screenshot_editor.request_images_editor_mode(filepaths)
-            Globals.screenshot_editor.show()
+            Globals._canvas_editor = CanvasEditor(screenshot_image, metadata, datetime_stamp)
+            Globals._canvas_editor.request_images_editor_mode(filepaths)
+            Globals._canvas_editor.show()
         else:
-            Globals.screenshot_editor = ScreenshotWindow(screenshot_image, metadata, datetime_stamp)
-            Globals.screenshot_editor.set_saved_capture_frame()
-            Globals.screenshot_editor.show()
+            Globals._canvas_editor = CanvasEditor(screenshot_image, metadata, datetime_stamp)
+            Globals._canvas_editor.set_saved_capture_frame()
+            Globals._canvas_editor.show()
         # чтобы activateWindow точно сработал и взял фокус ввода
         QApplication.instance().processEvents()
-        Globals.screenshot_editor.activateWindow()
+        Globals._canvas_editor.activateWindow()
 
     if request_type == RequestType.Fullscreen:
-        Globals.screenshot_editor = ScreenshotWindow(screenshot_image, metadata, datetime_stamp)
-        Globals.screenshot_editor.request_fullscreen_capture_region()
-        Globals.screenshot_editor.show()
+        Globals._canvas_editor = CanvasEditor(screenshot_image, metadata, datetime_stamp)
+        Globals._canvas_editor.request_fullscreen_capture_region()
+        Globals._canvas_editor.show()
         # чтобы activateWindow точно сработал и взял фокус ввода
         QApplication.instance().processEvents()
-        Globals.screenshot_editor.activateWindow()
+        Globals._canvas_editor.activateWindow()
 
     if request_type == RequestType.Editor:
         if not filepaths:
@@ -2198,17 +2198,17 @@ def invoke_screenshot_editor(request_type=None, filepaths=None):
                 path = ""
             filepaths = get_filepaths_dialog(path=path)
         if filepaths:
-            Globals.screenshot_editor = ScreenshotWindow(screenshot_image, metadata, datetime_stamp)
-            Globals.screenshot_editor.request_images_editor_mode(filepaths)
-            Globals.screenshot_editor.show()
+            Globals._canvas_editor = CanvasEditor(screenshot_image, metadata, datetime_stamp)
+            Globals._canvas_editor.request_images_editor_mode(filepaths)
+            Globals._canvas_editor.show()
             # чтобы activateWindow точно сработал и взял фокус ввода
             QApplication.instance().processEvents()
-            Globals.screenshot_editor.activateWindow()
+            Globals._canvas_editor.activateWindow()
 
 
 
     if request_type == RequestType.QuickFullscreen:
-        ScreenshotWindow.save_screenshot(None, grabbed_image=screenshot_image, metadata=metadata)
+        CanvasEditor.save_screenshot(None, grabbed_image=screenshot_image, metadata=metadata)
         if not Globals.save_to_memory_mode:
             app = QApplication.instance()
             app.exit()

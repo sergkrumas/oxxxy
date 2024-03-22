@@ -35,6 +35,7 @@ from _utils import (SettingsJson, get_creation_date, open_link_in_browser, open_
 from key_seq_edit import KeySequenceEdit
 from on_windows_startup import (add_to_startup, remove_from_startup)
 
+
 __all__ = (
     'SettingsWindow',
     'NotificationOrMenu',
@@ -301,11 +302,11 @@ class SettingsWindow(QWidget, StylizedUIBase):
             return "  Путь не задан!"
 
     def show(self):
-        # register_settings_window_global_hotkeys()
+        # self.gf.register_settings_window_global_hotkeys()
         super().show()
 
     def hide(self):
-        register_user_global_hotkeys()
+        self.gf.register_user_global_hotkeys()
         super().hide()
 
     def __init__(self, menu=False, notification=False, filepath=None):
@@ -639,7 +640,7 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
             screenshot_fragment_btn.clicked.connect(self.start_screenshot_editor_fragment)
             screenshot_fullscreens_btn.clicked.connect(self.start_screenshot_editor_fullscreen)
             open_settings_btn.clicked.connect(self.open_settings_window)
-            show_crashlog_btn.clicked.connect(show_crash_log)
+            show_crashlog_btn.clicked.connect(self.gl.show_crash_log)
             quit_btn.clicked.connect(self.app_quit)
             btn_list = [
                 screenshot_fragment_btn,
@@ -706,7 +707,7 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
         if action is None:
             pass
         elif action == restart_app:
-            _restart_app()
+            self.gl._restart_app()
             self.app_quit()
         elif action == crash_app:
             result = 1/0
@@ -719,7 +720,7 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
         if self.isVisible():
             self.hide()
         if self.widget_type == "menu":
-            if os.path.exists(get_crashlog_filepath()):
+            if os.path.exists(self.gl.get_crashlog_filepath()):
                 self.show_crashlog_btn.setVisible(True)
             else:
                 self.show_crashlog_btn.setVisible(False)
@@ -767,15 +768,15 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
 
     def start_screenshot_editor_fragment(self):
         self.hide()
-        invoke_screenshot_editor(request_type=RequestType.Fragment)
+        self.gl.invoke_screenshot_editor(request_type=self.RequestType.Fragment)
 
     def start_screenshot_editor_fullscreen(self):
         self.hide()
-        invoke_screenshot_editor(request_type=RequestType.Fullscreen)
+        self.gl.invoke_screenshot_editor(request_type=self.RequestType.Fullscreen)
 
     def start_editor_in_compile_mode(self, filepaths=None):
         self.hide()
-        invoke_screenshot_editor(request_type=RequestType.Editor, filepaths=filepaths)
+        self.gl.invoke_screenshot_editor(request_type=self.RequestType.Editor, filepaths=filepaths)
 
     def open_folder(self):
         SettingsWindow.set_screenshot_folder_path(get_only=True)

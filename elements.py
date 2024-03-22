@@ -1132,8 +1132,8 @@ class ElementsMixin(ElementsTransformMixin):
 
         tw = self.tools_window
         if tw and tw.current_tool == ToolID.picture:
-                self.Globals.dasPictureMagazin = pictures
-                self.elementsSetPixmapFromMagazin()
+            self.Globals.dasPictureMagazin = pictures
+            self.elementsSetPixmapFromMagazin()
 
         else:
             pos = self.capture_region_rect.topLeft()
@@ -3360,7 +3360,7 @@ class ElementsMixin(ElementsTransformMixin):
         elements = []
         for element in self.elementsFilterElementsForSelection():
             if element.type == ToolID.picture:
-                    elements.append(element)
+                elements.append(element)
         return elements
 
     def elementsSortPicturesByXPosition(self, elements):

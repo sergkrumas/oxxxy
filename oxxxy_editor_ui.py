@@ -54,6 +54,7 @@ from _utils import (convex_hull, check_scancode_for, SettingsJson,
      get_bounding_points, load_svg, is_webp_file_animated, apply_blur_effect,
      get_bounding_pointsF, generate_datetime_stamp, get_work_area_rect)
 
+from elements import ToolID
 
 __all__ = (
     'PictureInfo',
@@ -155,7 +156,7 @@ class CustomPushButton(QPushButton):
             self._draw_checked = self.isChecked()
             self.draw_button(painter)
         elif tool_id in [ToolID.DONE]:
-            # это нужно здесь для поддержки измеенения цвета в режиме Globals.save_to_memory_mode
+            # это нужно здесь для поддержки измеенения цвета в режиме self.Globals.save_to_memory_mode
             self._draw_checked = self.underMouse()
             self.draw_button(painter)
         else:
@@ -187,7 +188,7 @@ class CustomPushButton(QPushButton):
         if tool_id == ToolID.DONE:
             y_base = QColor(253, 203, 54)
             y_secondary = QColor(220, 142, 3)
-            if Globals.save_to_memory_mode:
+            if self.Globals.save_to_memory_mode:
                 b_base = QColor(227, 72, 43)
                 b_secondary = QColor(175, 48, 25)
             else:
@@ -201,7 +202,7 @@ class CustomPushButton(QPushButton):
                 gradient.setColorAt(0, b_base)
 
             painter.setPen(Qt.NoPen)
-            if Globals.ENABLE_FLAT_EDITOR_UI:
+            if self.Globals.ENABLE_FLAT_EDITOR_UI:
                 if self._draw_checked:
                     brush = QBrush(y_base)
                 else:
@@ -214,7 +215,7 @@ class CustomPushButton(QPushButton):
             gradient.setColorAt(0, QColor(82, 82, 82))
             gradient.setColorAt(1, c)
             painter.setPen(Qt.NoPen)
-            if Globals.ENABLE_FLAT_EDITOR_UI:
+            if self.Globals.ENABLE_FLAT_EDITOR_UI:
                 brush = QBrush(c)
             else:
                 brush = QBrush(gradient)
@@ -999,7 +1000,7 @@ class PreviewsThread(QThread):
     update_signal = pyqtSignal(object)
     def __init__(self, pictures, select_window):
         QThread.__init__(self)
-        Globals.background_threads.append(self)
+        self.Globals.background_threads.append(self)
         self.pictures = pictures
         self.update_signal.connect(lambda data: select_window.content.update())
 
@@ -1212,7 +1213,7 @@ class ToolsWindow(QWidget):
         path = QPainterPath()
         path.addRoundedRect(QRectF(main_rect), RADIUS, RADIUS)
         painter.fillPath(path, QColor("#303940"))
-        if not Globals.ENABLE_FLAT_EDITOR_UI:
+        if not self.Globals.ENABLE_FLAT_EDITOR_UI:
             # bevel
             main_rect = self.button_layout.contentsRect()
             main_rect.adjust(-4, -4, 4, 4)
@@ -1235,7 +1236,7 @@ class ToolsWindow(QWidget):
         main_rect.adjust(0, 0, -75, 0) # only for Done button
         path = QPainterPath()
         path.addRoundedRect(QRectF(main_rect), RADIUS, RADIUS)
-        if Globals.ENABLE_FLAT_EDITOR_UI:
+        if self.Globals.ENABLE_FLAT_EDITOR_UI:
             painter.fillPath(path, QBrush(QColor(235, 235, 235)))
         else:
             gradient = QLinearGradient(main_rect.topLeft(), main_rect.bottomLeft())
@@ -1541,11 +1542,11 @@ class ToolsWindow(QWidget):
             widget.value_changing_finished.connect(self.parent().elementsStopModificationProcess)
 
         # для пометок
-        if Globals.USE_COLOR_PALETTE:
+        if self.Globals.USE_COLOR_PALETTE:
             _type = "PALETTE"
         else:
             _type = "COLOR"
-        self.color_slider = CustomSlider(_type, 400, 0.01, Globals.ENABLE_FLAT_EDITOR_UI)
+        self.color_slider = CustomSlider(_type, 400, 0.01, self.Globals.ENABLE_FLAT_EDITOR_UI)
         set_callbacks_for_sliders(self.color_slider)
         self.color_slider.installEventFilter(self)
         self.color_slider.setToolTip("Слайдер цвета")
@@ -1559,13 +1560,13 @@ class ToolsWindow(QWidget):
         self.chb_toolbool.stateChanged.connect(partial(self.parent().special_change_handler, self.on_parameters_changed))
         first_row.addWidget(self.chb_toolbool)
 
-        self.size_slider = CustomSlider("SCALAR", 180, 0.2, Globals.ENABLE_FLAT_EDITOR_UI)
+        self.size_slider = CustomSlider("SCALAR", 180, 0.2, self.Globals.ENABLE_FLAT_EDITOR_UI)
         set_callbacks_for_sliders(self.size_slider)
         self.size_slider.installEventFilter(self)
         self.size_slider.setToolTip("Слайдер размера")
         first_row.addWidget(self.size_slider)
 
-        self.opacity_slider = CustomSlider("SCALAR", 180, 1.0, Globals.ENABLE_FLAT_EDITOR_UI)
+        self.opacity_slider = CustomSlider("SCALAR", 180, 1.0, self.Globals.ENABLE_FLAT_EDITOR_UI)
         set_callbacks_for_sliders(self.opacity_slider)
         self.opacity_slider.installEventFilter(self)
         self.opacity_slider.setToolTip("Слайдер прозрачности")
@@ -1774,7 +1775,7 @@ class ToolsWindow(QWidget):
         self.draw_datetimestamp = self.chb_datetimestamp.isChecked()
         if self.chb_savecaptureframe.isChecked():
             self.parent().update_saved_capture()
-        if Globals.DEBUG:
+        if self.Globals.DEBUG:
             self.parent().save_tools_settings()
         self.parent().update()
 
@@ -1787,7 +1788,7 @@ class ToolsWindow(QWidget):
         values.update({self.current_tool: self.tool_data_dict_from_ui()})
         ts.update({"values": values})
         self.parent().update()
-        if Globals.DEBUG:
+        if self.Globals.DEBUG:
             self.parent().save_tools_settings()
 
     def keyPressEvent(self, event):

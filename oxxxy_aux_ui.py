@@ -493,23 +493,23 @@ class SettingsWindow(QWidget, StylizedUIBase):
 
     def handle_block_option(self, sender):
         SettingsJson().set_data("BLOCK_KEYSEQ_HANDLING_AFTER_FIRST_CALL", sender.isChecked())
-        Globals.BLOCK_KEYSEQ_HANDLING_AFTER_FIRST_CALL = sender.isChecked()
+        self.Globals.BLOCK_KEYSEQ_HANDLING_AFTER_FIRST_CALL = sender.isChecked()
 
     def handle_print_screen_for_fragment(self, sender):
         SettingsJson().set_data("USE_PRINT_KEY", sender.isChecked())
-        Globals.USE_PRINT_KEY = sender.isChecked()
+        self.Globals.USE_PRINT_KEY = sender.isChecked()
 
     def handle_palette_chbx(self, sender):
         SettingsJson().set_data("USE_COLOR_PALETTE", sender.isChecked())
-        Globals.USE_COLOR_PALETTE = sender.isChecked()
+        self.Globals.USE_COLOR_PALETTE = sender.isChecked()
 
     def handle_ui_style_chbx(self, sender):
         SettingsJson().set_data("ENABLE_FLAT_EDITOR_UI", sender.isChecked())
-        Globals.ENABLE_FLAT_EDITOR_UI = sender.isChecked()
+        self.Globals.ENABLE_FLAT_EDITOR_UI = sender.isChecked()
 
     def handle_cbor2_chbx(self, sender):
         SettingsJson().set_data("ENABLE_CBOR2", sender.isChecked())
-        Globals.ENABLE_CBOR2 = sender.isChecked()
+        self.Globals.ENABLE_CBOR2 = sender.isChecked()
 
     def handle_windows_startup_chbx(self, sender):
         if sender.isChecked():
@@ -529,7 +529,7 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
 
         NotificationOrMenu.instance = self
 
-        self.setWindowTitle(f"Oxxxy Screenshoter {Globals.VERSION_INFO} {Globals.AUTHOR_INFO}")
+        self.setWindowTitle(f"Oxxxy Screenshoter {self.Globals.VERSION_INFO} {self.Globals.AUTHOR_INFO}")
         self.show_at_center = False
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
         self.setAttribute(Qt.WA_TranslucentBackground, True)
@@ -592,7 +592,7 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
             self.setAcceptDrops(True)
 
             self.label = QLabel()
-            self.label.setText(f"Oxxxy {Globals.VERSION_INFO}")
+            self.label.setText(f"Oxxxy {self.Globals.VERSION_INFO}")
             self.label.setStyleSheet(self.title_label_style)
             self.label.setFixedWidth(self.WIDTH - self.CLOSE_BUTTON_RADIUS)
 
@@ -711,7 +711,7 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
                     pass
                     # url = url.url()
                     # download_file(url)
-            if Globals.DEBUG:
+            if self.Globals.DEBUG:
                 to_print = f'Drop Event Data Local Paths: {paths}'
                 print(to_print)
             self.start_editor_in_compile_mode(filepaths=paths)
@@ -751,7 +751,7 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
 
         recent_filepath = None
         timestamp = 0.0
-        _path = Globals.SCREENSHOT_FOLDER_PATH
+        _path = self.Globals.SCREENSHOT_FOLDER_PATH
         if _path and os.path.exists(_path):
             for file_name in os.listdir(_path):
                 filepath = os.path.join(_path, file_name)
@@ -800,10 +800,10 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
 
     def open_folder(self):
         SettingsWindow.set_screenshot_folder_path(get_only=True)
-        args = ["explorer.exe", '{}'.format(Globals.SCREENSHOT_FOLDER_PATH)]
+        args = ["explorer.exe", '{}'.format(self.Globals.SCREENSHOT_FOLDER_PATH)]
         # QMessageBox.critical(None, "Debug info", "{}".format(args))
         subprocess.Popen(args)
-        # os.system("start {}".format(Globals.SCREENSHOT_FOLDER_PATH))
+        # os.system("start {}".format(self.Globals.SCREENSHOT_FOLDER_PATH))
         self.close_notification_window_and_quit()
 
     def countdown_handler(self):
@@ -825,7 +825,7 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
             self.close_notification_window_and_quit()
 
     def app_quit(self):
-        Globals.FULL_STOP = True
+        self.Globals.FULL_STOP = True
         app = QApplication.instance()
         app.quit()
 
@@ -843,7 +843,7 @@ class NotifyDialog(QWidget, StylizedUIBase):
         self.button.setStyleSheet(self.button_style)
         self.button.clicked.connect(self.yes_handler)
 
-        self.setWindowTitle(f"Oxxxy Screenshoter {Globals.VERSION_INFO}")
+        self.setWindowTitle(f"Oxxxy Screenshoter {self.Globals.VERSION_INFO}")
 
         self.label = QLabel()
         self.label.setText(label_text)
@@ -894,7 +894,7 @@ class QuitDialog(QWidget, StylizedUIBase):
         self.button.setStyleSheet(self.button_style)
         self.button.clicked.connect(self.yes_handler)
 
-        self.setWindowTitle(f"Oxxxy Screenshoter {Globals.VERSION_INFO}")
+        self.setWindowTitle(f"Oxxxy Screenshoter {self.Globals.VERSION_INFO}")
 
         self.label = QLabel()
         self.label.setText("Вы действительно хотите выйти без сохранения скриншота?")

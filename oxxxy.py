@@ -65,9 +65,11 @@ from image_viewer_lite import ViewerWindow
 from oxxxy_aux_ui import (SettingsWindow, NotificationOrMenu, NotifyDialog, QuitDialog)
 from oxxxy_editor_ui import (PictureInfo, ToolsWindow)
 
+
+
 class Globals():
     DEBUG = True
-    DEBUG_SETTINGS_WINDOW = True
+    DEBUG_SETTINGS_WINDOW = False
     DEBUG_TRAY_MENU_WINDOW = False
     DEBUG_ELEMENTS = True
     DEBUG_ELEMENTS_PICTURE_FRAMING = True
@@ -2339,6 +2341,7 @@ SettingsWindow.gf.register_user_global_hotkeys = register_user_global_hotkeys
 SettingsWindow.gf.is_app_in_startup = is_app_in_startup
 
 
+ToolsWindow.ToolID = ToolID
 
 
 

@@ -31,7 +31,7 @@ from PyQt5.QtGui import (QPainterPath, QColor, QKeyEvent, QBrush, QPixmap, QPain
                                                 QPolygon, QTransform, QPen, QLinearGradient, QCursor)
 from _utils import (build_valid_rectF, apply_blur_effect)
 
-from elements import (ToolID,) 
+from elements import (ToolID,)
 from _sliders import (CustomSlider,)
 
 __all__ = (

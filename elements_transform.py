@@ -761,6 +761,21 @@ class ElementsTransformMixin():
         for element in self.selected_items:
             sa = element.get_selection_area(self)
             painter.drawPolygon(sa)
+        ae = self.active_element
+        pen = QPen(Qt.magenta, 1, Qt.DotLine)
+        painter.setPen(pen)
+        painter.setOpacity(.5)
+        if ae is not None:
+            sa = ae.get_selection_area(self)
+            c = sa.boundingRect().center()
+            to_zero = QTransform()
+            scaling = QTransform()
+            back_to_place = QTransform()
+            to_zero.translate(-c.x(), -c.y())
+            scaling.scale(1.1, 1.1)
+            back_to_place.translate(c.x(), c.y())
+            transform = to_zero * scaling * back_to_place
+            painter.drawPolygon(transform.map(sa))
         painter.restore()
 
     def elementsDrawSelectionTransformBox(self, painter):

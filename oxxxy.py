@@ -30,34 +30,25 @@ import itertools
 import traceback
 import locale
 import argparse
-import importlib.util
-import math
-import random
-import json
+
+
 from functools import partial
 
 from pyqtkeybind import keybinder
 from key_seq_edit import KeySequenceEdit
 
 from PyQt5.QtWidgets import (QSystemTrayIcon, QWidget, QMessageBox, QMenu, QFileDialog,
-    QHBoxLayout, QCheckBox, QVBoxLayout, QTextEdit, QGridLayout, QWidgetAction,
-    QPushButton, QLabel, QApplication, QScrollArea, QDesktopWidget, QActionGroup, QSpinBox)
+    QCheckBox, QWidgetAction, QApplication, QDesktopWidget, QActionGroup, QSpinBox)
 from PyQt5.QtCore import (pyqtSignal, QPoint, QPointF, pyqtSlot, QRect, QEvent,
-    QTimer, Qt, QSize, QSizeF, QRectF, QThread, QAbstractNativeEventFilter,
-    QAbstractEventDispatcher, QFile, QDataStream, QIODevice)
+    Qt, QSize, QRectF, QAbstractNativeEventFilter, QAbstractEventDispatcher)
 from PyQt5.QtGui import (QPainterPath, QColor, QKeyEvent, QMouseEvent, QBrush, QPixmap,
-    QPaintEvent, QPainter, QWindow, QPolygon, QImage, QTransform, QPen, QLinearGradient,
-    QIcon, QFont, QCursor, QPolygonF, QVector2D, QFontDatabase)
+    QPainter, QWindow, QImage, QPen, QIcon, QFont, QCursor, QPolygonF, QFontDatabase)
 
-from _utils import (convex_hull, check_scancode_for, SettingsJson,
-     generate_metainfo, build_valid_rect, build_valid_rectF, dot,
-     get_creation_date, copy_image_file_to_clipboard, get_nearest_point_on_rect,
-     find_browser_exe_file, open_link_in_browser, open_in_google_chrome, save_meta_info,
-     make_screenshot_pyqt, webRGBA, generate_gradient, draw_shadow, draw_cyberpunk,
-     get_bounding_points, load_svg, is_webp_file_animated, apply_blur_effect,
-     get_bounding_pointsF, generate_datetime_stamp, get_work_area_rect)
+from _utils import (check_scancode_for, SettingsJson, generate_metainfo, build_valid_rect,
+    build_valid_rectF, copy_image_file_to_clipboard, open_link_in_browser, save_meta_info,
+    make_screenshot_pyqt, webRGBA, draw_shadow, draw_cyberpunk, get_bounding_pointsF,
+    generate_datetime_stamp, get_work_area_rect)
 
-from on_windows_startup import (is_app_in_startup, add_to_startup, remove_from_startup)
 from elements import ElementsMixin, ToolID
 from editor_autotest import EditorAutotestMixin
 from image_viewer_lite import ViewerWindow
@@ -2338,7 +2329,6 @@ QuitDialog.Globals = Globals
 SettingsWindow.gf = type('global_functions', (), {})
 SettingsWindow.gf.register_settings_window_global_hotkeys = register_settings_window_global_hotkeys
 SettingsWindow.gf.register_user_global_hotkeys = register_user_global_hotkeys
-SettingsWindow.gf.is_app_in_startup = is_app_in_startup
 
 
 ToolsWindow.Globals = Globals

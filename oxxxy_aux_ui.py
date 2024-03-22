@@ -18,22 +18,11 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
-from collections import namedtuple
-from enum import Enum
-import datetime
 import sys
 import os
 import subprocess
 import time
-import ctypes
-import itertools
-import traceback
-import locale
-import argparse
-import importlib.util
 import math
-import random
-import json
 from functools import partial
 
 from PyQt5.QtWidgets import (QSystemTrayIcon, QWidget, QMessageBox, QMenu, QFileDialog,
@@ -46,16 +35,10 @@ from PyQt5.QtGui import (QPainterPath, QColor, QKeyEvent, QMouseEvent, QBrush, Q
     QPaintEvent, QPainter, QWindow, QPolygon, QImage, QTransform, QPen, QLinearGradient,
     QIcon, QFont, QCursor, QPolygonF, QVector2D, QFontDatabase)
 
-from _utils import (convex_hull, check_scancode_for, SettingsJson,
-     generate_metainfo, build_valid_rect, build_valid_rectF, dot,
-     get_creation_date, copy_image_file_to_clipboard, get_nearest_point_on_rect,
-     find_browser_exe_file, open_link_in_browser, open_in_google_chrome, save_meta_info,
-     make_screenshot_pyqt, webRGBA, generate_gradient, draw_shadow, draw_cyberpunk,
-     get_bounding_points, load_svg, is_webp_file_animated, apply_blur_effect,
-     get_bounding_pointsF, generate_datetime_stamp, get_work_area_rect)
+from _utils import (SettingsJson, get_creation_date, open_link_in_browser, open_in_google_chrome)
 
 from key_seq_edit import KeySequenceEdit
-from on_windows_startup import (is_app_in_startup, add_to_startup, remove_from_startup)
+from on_windows_startup import (add_to_startup, remove_from_startup)
 
 __all__ = (
     'SettingsWindow',

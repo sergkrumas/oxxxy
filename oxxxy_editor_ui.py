@@ -28,7 +28,7 @@ from PyQt5.QtWidgets import (QWidget, QFileDialog, QHBoxLayout, QCheckBox, QVBox
                                     QGridLayout, QPushButton, QApplication, QScrollArea, QSpinBox)
 from PyQt5.QtCore import (pyqtSignal, QPoint, QPointF, QRect, QTimer, Qt, QRectF, QThread)
 from PyQt5.QtGui import (QPainterPath, QColor, QKeyEvent, QBrush, QPixmap, QPaintEvent, QPainter,
-                                                QPolygon, Transform, QPen, QLinearGradient, QCursor)
+                                                QPolygon, QTransform, QPen, QLinearGradient, QCursor)
 
 from _utils import (check_scancode_for, build_valid_rectF, generate_gradient, apply_blur_effect,
                                 get_bounding_pointsF, generate_datetime_stamp, get_work_area_rect)

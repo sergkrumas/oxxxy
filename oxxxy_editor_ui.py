@@ -768,7 +768,7 @@ class PictureSelectButton(QPushButton):
                 main_window.current_picture_pixmap = self.picture_data.pixmap
             main_window.current_picture_id = self.picture_data.id
             main_window.current_picture_angle = 0
-            tools_window.on_parameters_changed()
+            # tools_window.on_parameters_changed()  # закоменчено, чтобы не делало модификации пометок
             tools_window.select_window.hide()
             main_window.activateWindow()
 
@@ -1348,13 +1348,13 @@ class ToolsWindow(QWidget):
                     main_window.current_picture_pixmap = picture_info.pixmap
                     main_window.current_picture_id = picture_info.id
                     main_window.current_picture_angle = data.get("picture_angle", DEFAULT_PICTURE_ANGLE)
-                    self.on_parameters_changed()
+                    # self.on_parameters_changed() # закоменчено, чтобы не делало модификации пометок
                 else:
                     # для случаев, когда pixmap генерируется на лету, а потом при перезапуске генерация уже не существует
                     main_window.current_picture_pixmap = PictureInfo.PIXMAP_BROKEN
                     main_window.current_picture_id = PictureInfo.TYPE_STAMP
                     main_window.current_picture_angle = 0
-                    self.on_parameters_changed()
+                    # self.on_parameters_changed() # закоменчено, чтобы не делало модификации пометок
         self.parent().disable_callbacks = False
         self.update() #обязательно!
 
@@ -1719,6 +1719,7 @@ class ToolsWindow(QWidget):
             PictureInfo.create_default_pixmaps()
             pictures = PictureInfo.scan()
             self.select_window = PictureSelectWindow(main_window, pictures=pictures)
+            PreviewsThread.Globals = self.Globals
             PreviewsThread(pictures, self.select_window).start()
         else:
             self.select_window.show_at()

@@ -180,7 +180,7 @@ class StylizedUIBase():
 
     def mouseReleaseEvent(self, event):
         if self.inside_close_button():
-            if Globals.DEBUG:
+            if self.Globals.DEBUG:
                 sys.exit()
             else:
                 self.hide()
@@ -385,8 +385,8 @@ class SettingsWindow(QWidget, StylizedUIBase):
             default_keyseq = getattr(self.Globals, f'DEFAULT_{attr_name}')
             _field = KeySequenceEdit(current_keyseq, default_keyseq,
                     partial(on_changed_callback, attr_name[:]),
-                    register_settings_window_global_hotkeys,
-                    register_user_global_hotkeys
+                    self.gf.register_settings_window_global_hotkeys,
+                    self.gf.register_user_global_hotkeys
             )
             _field.setStyleSheet(self.edit_style_white)
             _field.setFixedWidth(200)
@@ -412,7 +412,7 @@ class SettingsWindow(QWidget, StylizedUIBase):
         label_3.setStyleSheet(self.info_label_style_settings)
         chbx_3 = QCheckBox("Запускать Oxxxy при старте Windows")
         chbx_3.setStyleSheet(self.settings_checkbox)
-        chbx_3.setChecked(is_app_in_startup(self.STARTUP_CONFIG[0]))
+        chbx_3.setChecked(self.gf.is_app_in_startup(self.STARTUP_CONFIG[0]))
         chbx_3.stateChanged.connect(lambda: self.handle_windows_startup_chbx(chbx_3))
         layout_3 = QVBoxLayout()
         layout_3.setAlignment(Qt.AlignCenter)

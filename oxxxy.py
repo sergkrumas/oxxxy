@@ -224,11 +224,6 @@ class Globals():
         def get_screenshot_filepath(params):
             return os.path.join(Globals.SCREENSHOT_FOLDER_PATH, f"{params}.png")
 
-SettingsWindow.Globals = Globals
-NotificationOrMenu.Globals = Globals
-NotifyDialog.Globals = Globals
-QuitDialog.Globals = Globals
-
 
 RegionInfo = namedtuple('RegionInfo', 'setter coords getter')
 
@@ -2008,6 +2003,12 @@ class ScreenshotWindow(QWidget, ElementsMixin, EditorAutotestMixin):
             self.animated_debug_drawing()
 
 
+
+
+
+
+
+
 class WinEventFilter(QAbstractNativeEventFilter):
     def __init__(self, kb):
         self.keybinder = kb
@@ -2322,6 +2323,25 @@ def read_settings_file():
     Globals.QUICKFULLSCREEN_KEYSEQ = SJ.get_data("QUICKFULLSCREEN_KEYSEQ",
                                                             Globals.DEFAULT_QUICKFULLSCREEN_KEYSEQ)
     SJ.set_reading_file_on_getting_value(True)
+
+
+
+
+
+SettingsWindow.Globals = Globals
+NotificationOrMenu.Globals = Globals
+NotifyDialog.Globals = Globals
+QuitDialog.Globals = Globals
+
+SettingsWindow.gf = type('global_functions', (), {})
+SettingsWindow.gf.register_settings_window_global_hotkeys = register_settings_window_global_hotkeys
+SettingsWindow.gf.register_user_global_hotkeys = register_user_global_hotkeys
+SettingsWindow.gf.is_app_in_startup = is_app_in_startup
+
+
+
+
+
 
 def _main():
 

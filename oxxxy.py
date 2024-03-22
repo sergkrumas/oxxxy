@@ -2146,7 +2146,6 @@ def hide_all_windows():
         SettingsWindow.instance.hide()
 
 def invoke_screenshot_editor(request_type=None, filepaths=None):
-    global screenshot_editor
     if request_type is None:
         raise Exception("Unknown request type")
     # если было открыто окно-меню около трея - прячем его
@@ -2164,33 +2163,33 @@ def invoke_screenshot_editor(request_type=None, filepaths=None):
     if request_type == RequestType.Fragment:
         # print("^^^^^^", time.time() - started_time)
         if Globals.DEBUG and Globals.DEBUG_ELEMENTS and not Globals.DEBUG_ELEMENTS_COLLAGE:
-            screenshot_editor = ScreenshotWindow(screenshot_image, metadata, datetime_stamp)
-            screenshot_editor.set_saved_capture_frame()
-            screenshot_editor.show()
-            screenshot_editor.request_elements_debug_mode()
+            Globals.screenshot_editor = ScreenshotWindow(screenshot_image, metadata, datetime_stamp)
+            Globals.screenshot_editor.set_saved_capture_frame()
+            Globals.screenshot_editor.show()
+            Globals.screenshot_editor.request_elements_debug_mode()
         elif Globals.DEBUG and Globals.DEBUG_ELEMENTS_COLLAGE:
             path = SettingsJson().get_data("SCREENSHOT_FOLDER_PATH")
             if not path:
                 path = ""
             filepaths = get_filepaths_dialog(path=path)
-            screenshot_editor = ScreenshotWindow(screenshot_image, metadata, datetime_stamp)
-            screenshot_editor.request_images_editor_mode(filepaths)
-            screenshot_editor.show()
+            Globals.screenshot_editor = ScreenshotWindow(screenshot_image, metadata, datetime_stamp)
+            Globals.screenshot_editor.request_images_editor_mode(filepaths)
+            Globals.screenshot_editor.show()
         else:
-            screenshot_editor = ScreenshotWindow(screenshot_image, metadata, datetime_stamp)
-            screenshot_editor.set_saved_capture_frame()
-            screenshot_editor.show()
+            Globals.screenshot_editor = ScreenshotWindow(screenshot_image, metadata, datetime_stamp)
+            Globals.screenshot_editor.set_saved_capture_frame()
+            Globals.screenshot_editor.show()
         # чтобы activateWindow точно сработал и взял фокус ввода
         QApplication.instance().processEvents()
-        screenshot_editor.activateWindow()
+        Globals.screenshot_editor.activateWindow()
 
     if request_type == RequestType.Fullscreen:
-        screenshot_editor = ScreenshotWindow(screenshot_image, metadata, datetime_stamp)
-        screenshot_editor.request_fullscreen_capture_region()
-        screenshot_editor.show()
+        Globals.screenshot_editor = ScreenshotWindow(screenshot_image, metadata, datetime_stamp)
+        Globals.screenshot_editor.request_fullscreen_capture_region()
+        Globals.screenshot_editor.show()
         # чтобы activateWindow точно сработал и взял фокус ввода
         QApplication.instance().processEvents()
-        screenshot_editor.activateWindow()
+        Globals.screenshot_editor.activateWindow()
 
     if request_type == RequestType.Editor:
         if not filepaths:
@@ -2199,12 +2198,12 @@ def invoke_screenshot_editor(request_type=None, filepaths=None):
                 path = ""
             filepaths = get_filepaths_dialog(path=path)
         if filepaths:
-            screenshot_editor = ScreenshotWindow(screenshot_image, metadata, datetime_stamp)
-            screenshot_editor.request_images_editor_mode(filepaths)
-            screenshot_editor.show()
+            Globals.screenshot_editor = ScreenshotWindow(screenshot_image, metadata, datetime_stamp)
+            Globals.screenshot_editor.request_images_editor_mode(filepaths)
+            Globals.screenshot_editor.show()
             # чтобы activateWindow точно сработал и взял фокус ввода
             QApplication.instance().processEvents()
-            screenshot_editor.activateWindow()
+            Globals.screenshot_editor.activateWindow()
 
 
 

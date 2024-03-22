@@ -33,7 +33,7 @@ from PyQt5.QtGui import (QPainterPath, QColor, QBrush, QPainter, QPen, QCursor, 
 from _utils import (SettingsJson, get_creation_date, open_link_in_browser, open_in_google_chrome)
 
 from key_seq_edit import KeySequenceEdit
-from on_windows_startup import (add_to_startup, remove_from_startup)
+from on_windows_startup import (add_to_startup, is_app_in_startup, remove_from_startup)
 
 
 __all__ = (
@@ -392,7 +392,7 @@ class SettingsWindow(QWidget, StylizedUIBase):
         label_3.setStyleSheet(self.info_label_style_settings)
         chbx_3 = QCheckBox("Запускать Oxxxy при старте Windows")
         chbx_3.setStyleSheet(self.settings_checkbox)
-        chbx_3.setChecked(self.gf.is_app_in_startup(self.STARTUP_CONFIG[0]))
+        chbx_3.setChecked(is_app_in_startup(self.STARTUP_CONFIG[0]))
         chbx_3.stateChanged.connect(lambda: self.handle_windows_startup_chbx(chbx_3))
         layout_3 = QVBoxLayout()
         layout_3.setAlignment(Qt.AlignCenter)

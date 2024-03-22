@@ -54,7 +54,7 @@ from _utils import (convex_hull, check_scancode_for, SettingsJson,
      get_bounding_points, load_svg, is_webp_file_animated, apply_blur_effect,
      get_bounding_pointsF, generate_datetime_stamp, get_work_area_rect)
 
-
+from key_seq_edit import KeySequenceEdit
 
 __all__ = (
     'SettingsWindow',
@@ -293,31 +293,31 @@ class SettingsWindow(QWidget, StylizedUIBase):
     @classmethod
     def set_screenshot_folder_path_dialog(cls):
         msg = "Выберите папку, в которую будут складываться скриншоты"
-        path = QFileDialog.getExistingDirectory(None, msg, Globals.SCREENSHOT_FOLDER_PATH)
+        path = QFileDialog.getExistingDirectory(None, msg, cls.Globals.SCREENSHOT_FOLDER_PATH)
         path = str(path)
         if path:
-            Globals.SCREENSHOT_FOLDER_PATH = path
-            SettingsJson().set_data("SCREENSHOT_FOLDER_PATH", Globals.SCREENSHOT_FOLDER_PATH)
+            cls.Globals.SCREENSHOT_FOLDER_PATH = path
+            SettingsJson().set_data("SCREENSHOT_FOLDER_PATH", cls.Globals.SCREENSHOT_FOLDER_PATH)
         if hasattr(cls, 'instance'):
             cls.instance.label_1_path.setText(cls.get_path_for_label())
 
     @classmethod
     def set_screenshot_folder_path(cls, get_only=False):
-        if not Globals.SCREENSHOT_FOLDER_PATH:
+        if not cls.Globals.SCREENSHOT_FOLDER_PATH:
             npath = os.path.normpath
             sj_path = SettingsJson().get_data("SCREENSHOT_FOLDER_PATH")
             if sj_path:
-                Globals.SCREENSHOT_FOLDER_PATH = npath(sj_path)
+                cls.Globals.SCREENSHOT_FOLDER_PATH = npath(sj_path)
         if get_only:
             return
-        while not Globals.SCREENSHOT_FOLDER_PATH:
+        while not cls.Globals.SCREENSHOT_FOLDER_PATH:
             cls.set_screenshot_folder_path_dialog()
 
     @classmethod
     def get_path_for_label(cls):
         cls.set_screenshot_folder_path(get_only=True)
-        if os.path.exists(Globals.SCREENSHOT_FOLDER_PATH):
-            return f" Текущий путь: {Globals.SCREENSHOT_FOLDER_PATH}"
+        if os.path.exists(cls.Globals.SCREENSHOT_FOLDER_PATH):
+            return f" Текущий путь: {cls.Globals.SCREENSHOT_FOLDER_PATH}"
         else:
             return "  Путь не задан!"
 
@@ -340,7 +340,7 @@ class SettingsWindow(QWidget, StylizedUIBase):
         STYLE = "color: white; font-size: 18px;"
 
         self.show_at_center = False
-        title = f"Oxxxy Settings {Globals.VERSION_INFO}"
+        title = f"Oxxxy Settings {self.Globals.VERSION_INFO}"
         self.setWindowTitle(title)
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
         self.setAttribute(Qt.WA_TranslucentBackground, True)
@@ -375,14 +375,14 @@ class SettingsWindow(QWidget, StylizedUIBase):
             ("быстрый скриншот всего экрана", "QUICKFULLSCREEN_KEYSEQ"),
         ]
         def on_changed_callback(attr_name, value):
-            setattr(Globals, attr_name, value)
+            setattr(self.Globals, attr_name, value)
             SettingsJson().set_data(attr_name, value)
         for text, attr_name in keyseq_data:
             _label = QLabel("<center>%s</center>" % text)
             _label.setStyleSheet(self.info_label_style_white)
             _label.setWordWrap(True)
-            current_keyseq = getattr(Globals, attr_name)
-            default_keyseq = getattr(Globals, f'DEFAULT_{attr_name}')
+            current_keyseq = getattr(self.Globals, attr_name)
+            default_keyseq = getattr(self.Globals, f'DEFAULT_{attr_name}')
             _field = KeySequenceEdit(current_keyseq, default_keyseq,
                     partial(on_changed_callback, attr_name[:]),
                     register_settings_window_global_hotkeys,
@@ -395,7 +395,7 @@ class SettingsWindow(QWidget, StylizedUIBase):
         #######################################################################
         chbx_21 = QCheckBox("Также вызывать скриншот фрагмента\n через клавишу Print Screen")
         chbx_21.setStyleSheet(self.settings_checkbox)
-        chbx_21.setChecked(Globals.USE_PRINT_KEY)
+        chbx_21.setChecked(self.Globals.USE_PRINT_KEY)
         chbx_21.stateChanged.connect(lambda: self.handle_print_screen_for_fragment(chbx_21))
         layout_2.addWidget(chbx_21, alignment=Qt.AlignCenter)
         #######################################################################
@@ -403,7 +403,7 @@ class SettingsWindow(QWidget, StylizedUIBase):
                                 "клавиш после первого срабатывания\n"
                                 "и до сохранения скриншота"))
         chbx_22.setStyleSheet(self.settings_checkbox)
-        chbx_22.setChecked(Globals.BLOCK_KEYSEQ_HANDLING_AFTER_FIRST_CALL)
+        chbx_22.setChecked(self.Globals.BLOCK_KEYSEQ_HANDLING_AFTER_FIRST_CALL)
         chbx_22.stateChanged.connect(lambda: self.handle_block_option(chbx_22))
         layout_2.addWidget(chbx_22, alignment=Qt.AlignCenter)
         #######################################################################

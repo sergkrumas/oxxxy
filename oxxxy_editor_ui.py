@@ -55,6 +55,11 @@ from _utils import (convex_hull, check_scancode_for, SettingsJson,
      get_bounding_pointsF, generate_datetime_stamp, get_work_area_rect)
 
 
+__all__ = (
+    'PictureInfo',
+    'ToolsWindow',
+)
+
 class CheckBoxCustom(QCheckBox):
 
     def __init__(self, *args):
@@ -1190,3 +1195,679 @@ class DragQLabel(QWidget):
         painter.setPen(Qt.NoPen)
         painter.drawRect(self.rect())
         painter.end()
+
+
+
+
+
+class ToolsWindow(QWidget):
+    def paintEvent(self, event):
+        painter = QPainter()
+        painter.begin(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        # dark rect
+        RADIUS = 4
+        main_rect = self.rect()
+        main_rect.adjust(0, 0, -75, 0)
+        path = QPainterPath()
+        path.addRoundedRect(QRectF(main_rect), RADIUS, RADIUS)
+        painter.fillPath(path, QColor("#303940"))
+        if not Globals.ENABLE_FLAT_EDITOR_UI:
+            # bevel
+            main_rect = self.button_layout.contentsRect()
+            main_rect.adjust(-4, -4, 4, 4)
+            main_rect.adjust(0, 0, 0, 4)
+            main_rect.adjust(0, 0, -75, 0) # only for Done button
+            path = QPainterPath()
+            path.addRoundedRect(QRectF(main_rect), RADIUS, RADIUS)
+            painter.fillPath(path, QColor(50, 50, 50))
+            main_rect = self.button_layout.contentsRect()
+            main_rect.adjust(-4, -4, 4, 4)
+            main_rect.adjust(0, 0, 0, 1)
+            main_rect.adjust(0, 0, -75, 0) # only for Done button
+            path = QPainterPath()
+            path.addRoundedRect(QRectF(main_rect), RADIUS, RADIUS)
+            painter.fillPath(path, QColor(Qt.white))
+        # bright rect
+        main_rect = self.button_layout.contentsRect()
+        main_rect.setHeight(main_rect.height())
+        main_rect.adjust(-4, -4, 4, 4)
+        main_rect.adjust(0, 0, -75, 0) # only for Done button
+        path = QPainterPath()
+        path.addRoundedRect(QRectF(main_rect), RADIUS, RADIUS)
+        if Globals.ENABLE_FLAT_EDITOR_UI:
+            painter.fillPath(path, QBrush(QColor(235, 235, 235)))
+        else:
+            gradient = QLinearGradient(main_rect.topLeft(), main_rect.bottomLeft())
+            gradient.setColorAt(1, QColor(174, 174, 174))
+            gradient.setColorAt(0, QColor(235, 235, 235))
+            painter.fillPath(path, gradient)
+        painter.end()
+
+    def wheelEvent(self, event):
+        self.parent().wheelEvent(event)
+
+    def change_ui_text(self, _type):
+        if _type == ToolID.zoom_in_region:
+            self.chb_toolbool.setText("Кружки")
+        elif _type == ToolID.text:
+            self.chb_toolbool.setText("Подложка")
+        elif _type == ToolID.blurring:
+            self.chb_toolbool.setText("Пикселизация")
+        else:
+            self.chb_toolbool.setText("?")
+
+    def set_ui_on_toolchange(self, element_type=None, hide=False):
+        if hide:
+            self.chb_toolbool.setEnabled(False)
+            self.color_slider.setEnabled(False)
+            self.size_slider.setEnabled(False)
+            self.opacity_slider.setEnabled(False)
+            return
+        _type = element_type or self.current_tool
+        self.chb_toolbool.setEnabled(False)
+        self.color_slider.setEnabled(True)
+        self.size_slider.setEnabled(True)
+        self.opacity_slider.setEnabled(False)
+        if _type in [ToolID.blurring, ToolID.darkening]:
+            self.color_slider.setEnabled(False)
+            if _type in [ToolID.blurring]:
+                self.chb_toolbool.setEnabled(True)
+        if _type in [ToolID.text, ToolID.zoom_in_region]:
+            self.chb_toolbool.setEnabled(True)
+        if _type in [ToolID.copypaste, ToolID.none]:
+            self.color_slider.setEnabled(False)
+            self.size_slider.setEnabled(False)
+            self.chb_toolbool.setEnabled(False)
+        if _type in [ToolID.transform, ToolID.picture]:
+            self.opacity_slider.setEnabled(True)
+            self.size_slider.setEnabled(False)
+        self.change_ui_text(_type)
+        self.parent().update()
+
+    def tool_data_dict_from_ui(self):
+        if self.current_tool in [ToolID.text, ToolID.zoom_in_region]:
+            data =  {
+                "color_slider_value": self.color_slider.value,
+                "color_slider_palette_index": self.color_slider.palette_index,
+                "size_slider_value": self.size_slider.value,
+                "toolbool": self.chb_toolbool.isChecked(),
+            }
+        elif self.current_tool == ToolID.blurring:
+            data = {
+                "size_slider_value": self.size_slider.value,
+                "toolbool": self.chb_toolbool.isChecked(),
+            }
+        elif self.current_tool == ToolID.picture:
+            data =  {
+                "picture_id": self.parent().current_picture_id,
+                "picture_angle": self.parent().current_picture_angle,
+                "opacity_slider_value": self.opacity_slider.value,
+            }
+        else:
+            data =  {
+                "color_slider_value": self.color_slider.value,
+                "color_slider_palette_index": self.color_slider.palette_index,
+                "size_slider_value": self.size_slider.value,
+                "opacity_slider_value": self.opacity_slider.value,
+            }
+        return data
+
+    def tool_data_dict_to_ui(self, data):
+        DEFAULT_COLOR_SLIDER_VALUE = 0.01
+        DEFAULT_COLOR_SLIDER_PALETTE_INDEX = 0
+        DEFAULT_OPACITY_SLIDER_VALUE = 1.0
+        if self.current_tool in [ToolID.oval, ToolID.rect, ToolID.numbering]:
+            DEFAULT_SIZE_SLIDER_VALUE = 0.07
+        else:
+            DEFAULT_SIZE_SLIDER_VALUE = 0.4
+        if self.current_tool in [ToolID.blurring]:
+            DEFAULT_TOOLBOOL_VALUE = False
+        else:
+            DEFAULT_TOOLBOOL_VALUE = True
+        self.parent().disable_callbacks = True
+        self.color_slider.value = data.get("color_slider_value", DEFAULT_COLOR_SLIDER_VALUE)
+        self.color_slider.palette_index = data.get("color_slider_palette_index",
+                                                                DEFAULT_COLOR_SLIDER_PALETTE_INDEX)
+        self.size_slider.value = data.get("size_slider_value", DEFAULT_SIZE_SLIDER_VALUE)
+        self.opacity_slider.value = data.get("opacity_slider_value", DEFAULT_OPACITY_SLIDER_VALUE)
+        self.chb_toolbool.blockSignals(True)
+        self.chb_toolbool.setChecked(data.get("toolbool", DEFAULT_TOOLBOOL_VALUE))
+        self.chb_toolbool.blockSignals(False)
+        if self.current_tool == ToolID.picture:
+            main_window = self.parent()
+            DEFAULT_PICTURE_ID = main_window.current_picture_id
+            DEFAULT_PICTURE_ANGLE = main_window.current_picture_angle
+            if main_window.current_picture_pixmap is None:
+                picture_id = data.get("picture_id", DEFAULT_PICTURE_ID)
+                picture_info = PictureInfo.load_from_id(picture_id)
+                if picture_info:
+                    picture_info.load_from_file()
+                    main_window.current_picture_pixmap = picture_info.pixmap
+                    main_window.current_picture_id = picture_info.id
+                    main_window.current_picture_angle = data.get("picture_angle", DEFAULT_PICTURE_ANGLE)
+                    self.on_parameters_changed()
+                else:
+                    # для случаев, когда pixmap генерируется на лету, а потом при перезапуске генерация уже не существует
+                    main_window.current_picture_pixmap = PictureInfo.PIXMAP_BROKEN
+                    main_window.current_picture_id = PictureInfo.TYPE_STAMP
+                    main_window.current_picture_angle = 0
+                    self.on_parameters_changed()
+        self.parent().disable_callbacks = False
+        self.update() #обязательно!
+
+    def set_tool_data(self):
+        ts = self.parent().tools_settings
+        # сохранить текущие настройки (дубликат в обработчике каждого элемента)
+        values = ts.get("values", {})
+        if not self.tool_init:
+            values.update({self.current_tool: self.tool_data_dict_from_ui()})
+            ts.update({"values": values})
+        self.tool_init = False
+        # задаём новую тулзу
+        old_tool = self.current_tool
+        tb = self.sender()
+        if tb.isChecked():
+            self.current_tool = tb.property("tool_id")
+            for but in self.tools_buttons:
+                if but is not tb:
+                    but.setChecked(False)
+        else:
+            # условие нужно, чтобы после выбора штампа из меню
+            # не деактивировался инструмент штамп
+            if self.current_tool != ToolID.picture:
+                self.current_tool = ToolID.none
+        transform_tool_activated = False
+        if old_tool != ToolID.transform and self.current_tool == ToolID.transform:
+            transform_tool_activated = True
+            self.parent().elementsOnTransformToolActivated()
+        if old_tool == ToolID.transform and self.current_tool != ToolID.transform:
+            self.parent().elementsSetSelected(None)
+        self.parent().elementsMakeSureTheresNoUnfinishedElement()
+        if self.initialization:
+            self.initialization = False
+        elif self.current_tool == ToolID.picture and self.parent().current_picture_pixmap is None:
+            self.show_picture_menu(do_ending=False)
+        # tb.setChecked(True)
+        self.parent().current_tool = self.current_tool
+        # загрузить настройки для текущего инструмента
+        if not transform_tool_activated:
+            self.tool_data_dict_to_ui(values.get(self.current_tool, {}))
+        ts.update({"active_tool": self.current_tool})
+        if self.current_tool != ToolID.transform:
+            self.set_ui_on_toolchange()
+
+    def update_timer_handler(self):
+        for but in self.tools_buttons:
+            but.update()
+
+    def __init__(self, *args):
+        super().__init__(*args)
+
+        tooltip_style = """QToolTip {
+            background-color: #303940;
+            color: white;
+            border: black solid 1px;
+        }"""
+        self.setStyleSheet(tooltip_style)
+
+        checkbox_style = """
+            QCheckBox {
+                color: rgb(220, 220, 220);
+                font-size: 17px;
+                height: 35px;
+                padding: 0px 10px;
+                background: transparent;
+            }
+            QCheckBox::checked {
+                color: orange;
+            }
+            QCheckBox::indicator:checked {
+                color: orange;
+            }
+        """
+
+        editor_buttons_data = [
+            [ToolID.transform, "Выделение\nи трасформации", "Активируется через <b>Пробел</b><br>"
+                        "<b>Правая кнопка мыши</b> ➜ изменение фильтрации для выделения<br>"
+                        "<b>Масштабирование</b><br>"
+                        "<b>+Alt</b> ➜ Относительно центра<br>"
+                        "<b>+Shift</b> ➜ Пропорционально<br>"
+                        "<b>Вращение<br>"
+                        "<b>+Alt</b> ➜ Вращение вокруг противоположного угла<br>"
+                        "<b>+Ctrl</b> ➜ Шаговое вращение по 45°"],
+
+            [ToolID.pen, "Карандаш", "<b>+Shift</b> ➜ Рисует прямую"],
+            [ToolID.marker, "Маркер", "<b>+Shift</b> ➜ Рисует прямую"],
+
+            [ToolID.line, "Линия", "<b>+Shift</b> ➜ Рисует линию под углом 45°<br>"
+                                "<b>+Ctrl</b> ➜ Рисует ломанную линию"],
+            [ToolID.arrow, "Стрелка", "<b>+Shift</b> ➜ Рисует под углом в 45°"],
+
+            [ToolID.text, "Текст", "Если после выбора инструмента нажать левую кнопку мыши<br>"
+                    "и двигать курсор, удерживая её, автоматически будет<br>нарисована стрелка,"
+                    " которая свяжет текст и описываемый объект."
+                    "<br>+F5/F6 ➜ вращение текста"],
+            [ToolID.oval, "Овал", "<b>+Shift</b> ➜ круг<br><b>+Ctrl</b> ➜ закрашивает овал"],
+            [ToolID.rect, "Прямоугольник", "<b>+Shift</b> ➜ квадрат<br><b>+Ctrl</b> ➜ рисует "
+                                                                                    "закрашенный"],
+
+            [ToolID.numbering, "Нумерация", "Нумерация"],
+            [ToolID.blurring, "Размытие", "Размытие"],
+            [ToolID.darkening, "Затемнение", "Затемнение"],
+
+            [ToolID.picture, "Картинка (ранее Штамп)", "Помогает разместить картинку или штамп.<br>"
+                        "Чтобы выбрать нужную картинку или штамп, "
+                        "нажмите правую кнопку мыши<br>"
+                        "<b>Колесо мыши</b> ➜ задать размер<br>"
+                        "<b>Ctrl</b> + <b>Колесо мыши</b> ➜ поворот на 1°<br>"
+                        "<b>Ctrl</b>+<b>Shift</b> + <b>Колесо мыши</b> ➜ поворот на 10°"],
+
+            [ToolID.zoom_in_region, "Лупа", "Размещает увеличенную копию"
+                                                 " необходимой области изображения в любом месте"],
+
+            [ToolID.copypaste, "Копипейст", "Копирует область изображения"
+                                                        " в любое место без увеличения"],
+
+            [ToolID.arrowstree, "Горыныч (Дерево стрелок)", "Рисует изогнутые"
+                                                        "срастающиеся между собой стрелки"],
+        ]
+
+        self.drag_flag = False
+        self.auto_positioning = True
+        self.current_tool = ToolID.none
+
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool)
+        self.setAttribute(Qt.WA_TranslucentBackground, True)
+
+        main_layout = QVBoxLayout()
+        tools = QHBoxLayout()
+        self.button_layout = tools
+        first_row = QHBoxLayout()
+        second_row = QHBoxLayout()
+
+        self.drag_placeholder = DragQLabel(self)
+        tools.addWidget(self.drag_placeholder)
+        # tools.addSpacing(30)
+        tools.addSpacing(10)
+
+        self.tools_buttons = []
+        for ID, name, tip in editor_buttons_data:
+            button = CustomPushButton(name, self, tool_id=ID, checkable=True, checked=False)
+            self.tools_buttons.append(button)
+            tooltip = f"<b>{name}</b><br>{tip}"
+            button.setToolTip(tooltip)
+            button.setCursor(QCursor(Qt.PointingHandCursor))
+            button.setParent(self)
+            button.installEventFilter(self)
+            button.clicked.connect(self.set_tool_data)
+            if ID == ToolID.picture:
+                button.right_clicked.connect(self.show_picture_menu)
+            if ID == ToolID.transform:
+                button.right_clicked.connect(self.parent().selection_filter_menu)
+            tools.addWidget(button)
+            tools.addSpacing(5)
+
+        self.done_button = CustomPushButton("Готово", self, tool_id=ToolID.DONE)
+        self.done_button.mousePressEvent = self.onDoneButtonMousePressEvent
+        self.done_button.setAccessibleName("done_button")
+        self.done_button.setCursor(QCursor(Qt.PointingHandCursor))
+        self.done_button.setToolTip("Готово")
+        self.done_button.installEventFilter(self)
+        tools.addSpacing(10)
+        tools.addWidget(self.done_button)
+
+        backwards_btn = CustomPushButton("Шаг\nназад", self, tool_id=ToolID.BACKWARDS)
+        forwards_btn = CustomPushButton("Шаг\nвперёд", self, tool_id=ToolID.FORWARDS)
+        self.backwards_btn = backwards_btn
+        self.forwards_btn = forwards_btn
+        for hb in [backwards_btn, forwards_btn]:
+            hb.setCursor(QCursor(Qt.PointingHandCursor))
+            first_row.addWidget(hb)
+            hb.setEnabled(False)
+            hb.installEventFilter(self)
+        self.backwards_btn.installEventFilter(self)
+        self.forwards_btn.installEventFilter(self)
+        forwards_btn.clicked.connect(self.on_forwards_clicked)
+        backwards_btn.clicked.connect(self.on_backwars_clicked)
+        forwards_btn.setToolTip("<b>Накатить шаг обратно</b><br>Ctrl+Shift+Z")
+        backwards_btn.setToolTip("<b>Откатиться на шаг назад</b><br>Ctrl+Z")
+
+
+
+        def set_callbacks_for_sliders(widget):
+            widget.value_changed.connect(self.on_parameters_changed)
+            widget.value_changing_initiated.connect(partial(self.parent().elementsStartModificationProcess, 'sliders'))
+            widget.value_changing_finished.connect(self.parent().elementsStopModificationProcess)
+
+        # для пометок
+        if Globals.USE_COLOR_PALETTE:
+            _type = "PALETTE"
+        else:
+            _type = "COLOR"
+        self.color_slider = CustomSlider(_type, 400, 0.01, Globals.ENABLE_FLAT_EDITOR_UI)
+        set_callbacks_for_sliders(self.color_slider)
+        self.color_slider.installEventFilter(self)
+        self.color_slider.setToolTip("Слайдер цвета")
+        first_row.addWidget(self.color_slider)
+
+        self.chb_toolbool = CheckBoxCustom("Подложка")
+        self.chb_toolbool.setStyleSheet(checkbox_style)
+        self.chb_toolbool.setEnabled(False)
+        self.chb_toolbool.installEventFilter(self)
+
+        self.chb_toolbool.stateChanged.connect(partial(self.parent().special_change_handler, self.on_parameters_changed))
+        first_row.addWidget(self.chb_toolbool)
+
+        self.size_slider = CustomSlider("SCALAR", 180, 0.2, Globals.ENABLE_FLAT_EDITOR_UI)
+        set_callbacks_for_sliders(self.size_slider)
+        self.size_slider.installEventFilter(self)
+        self.size_slider.setToolTip("Слайдер размера")
+        first_row.addWidget(self.size_slider)
+
+        self.opacity_slider = CustomSlider("SCALAR", 180, 1.0, Globals.ENABLE_FLAT_EDITOR_UI)
+        set_callbacks_for_sliders(self.opacity_slider)
+        self.opacity_slider.installEventFilter(self)
+        self.opacity_slider.setToolTip("Слайдер прозрачности")
+
+
+
+        # общие для скриншота
+        tools_settings = self.parent().tools_settings
+
+        self.chb_datetimestamp = CheckBoxCustom("ДатаВремя")
+        self.chb_datetimestamp.setToolTip((
+            "<b>Отобразить дату в правом нижнем углу</b>"
+        ))
+        self.chb_datetimestamp.setStyleSheet(checkbox_style)
+        self.chb_datetimestamp.installEventFilter(self)
+        self.chb_datetimestamp.setChecked(tools_settings.get('datetimestamp', False))
+        self.chb_datetimestamp.stateChanged.connect(self.on_screenshot_parameters_changed)
+        self.parent().draw_datetimestamp = tools_settings.get('datetimestamp', False)
+        second_row.addWidget(self.chb_datetimestamp)
+
+
+        self.chb_savecaptureframe = CheckBoxCustom("Запомнить")
+        self.chb_savecaptureframe.setToolTip((
+            "<b>Запоминает положение и размеры области захвата</b>"
+        ))
+        self.chb_savecaptureframe.setStyleSheet(checkbox_style)
+        self.chb_savecaptureframe.installEventFilter(self)
+        self.chb_savecaptureframe.setChecked(tools_settings.get('savecaptureframe', False))
+        self.chb_savecaptureframe.stateChanged.connect(self.on_screenshot_parameters_changed)
+        second_row.addWidget(self.chb_savecaptureframe)
+
+        self.chb_masked = CheckBoxCustom("Маска")
+        self.chb_masked.setToolTip((
+            "<b>Применить маску к скриншоту</b><br>"
+            "<b>Клавиша H</b> ➜ сменить круглую маску на гексагональную и наоборот"
+        ))
+        self.chb_masked.setStyleSheet(checkbox_style)
+        self.chb_masked.installEventFilter(self)
+        self.chb_masked.setChecked(tools_settings.get("masked", False))
+        self.chb_masked.stateChanged.connect(self.on_screenshot_parameters_changed)
+        self.parent().hex_mask = tools_settings.get("hex_mask", False)
+        second_row.addWidget(self.chb_masked)
+
+        self.chb_draw_thirds = CheckBoxCustom("Трети")
+        self.chb_draw_thirds.setToolTip("<b>Отображать трети в области захвата для режима"
+                                                                        " редактирования</b>")
+        self.chb_draw_thirds.setStyleSheet(checkbox_style)
+        self.chb_draw_thirds.installEventFilter(self)
+        self.chb_draw_thirds.setChecked(tools_settings.get("draw_thirds", False))
+        self.chb_draw_thirds.stateChanged.connect(self.on_screenshot_parameters_changed)
+        second_row.addWidget(self.chb_draw_thirds)
+
+        self.chb_add_meta = CheckBoxCustom("Мета")
+        self.chb_add_meta.setToolTip("<b>Добавить название заголовка активного окна в метатеги"
+                                                                            " скриншота</b>")
+        self.chb_add_meta.setStyleSheet(checkbox_style)
+        self.chb_add_meta.installEventFilter(self)
+        self.chb_add_meta.setChecked(tools_settings.get("add_meta", False))
+        if os.name == 'nt':
+            self.chb_add_meta.stateChanged.connect(self.on_screenshot_parameters_changed)
+            second_row.addWidget(self.chb_add_meta)
+
+        self.chb_draw_cursor = CheckBoxCustom("Курсор")
+        self.chb_draw_cursor.setToolTip("<b>Отображать курсор на скриншоте</b>")
+        self.chb_draw_cursor.setStyleSheet(checkbox_style)
+        self.chb_draw_cursor.installEventFilter(self)
+        self.chb_draw_cursor.setChecked(tools_settings.get("draw_cursor", False))
+        self.chb_draw_cursor.stateChanged.connect(self.on_screenshot_parameters_changed)
+        second_row.addWidget(self.chb_draw_cursor)
+
+        # добавлять его надо здесь, после чекбоксов. не переносить выше!
+        second_row.addWidget(self.opacity_slider)
+
+
+        spacing = 2
+        cms = 2
+        tools.setSpacing(spacing)
+        tools.setContentsMargins(cms, cms, cms, cms)
+        main_layout.setSpacing(spacing)
+        main_layout.setContentsMargins(cms, cms, cms, cms)
+        first_row.setSpacing(spacing)
+        cms = 0
+        first_row.setContentsMargins(cms, cms, cms, cms)
+        second_row.setSpacing(spacing)
+        second_row.setContentsMargins(cms, cms, cms, cms)
+        second_row.setAlignment(Qt.AlignRight)
+
+        main_layout.addLayout(tools)
+        main_layout.addLayout(first_row)
+        main_layout.addLayout(second_row)
+
+        first_row.addSpacing(75)
+        second_row.addSpacing(75)
+
+        self.setLayout(main_layout)
+
+        self.update_timer = QTimer()
+        self.update_timer.timeout.connect(self.update_timer_handler)
+        self.update_timer.setInterval(100)
+        self.update_timer.start()
+
+        tool_id = tool_id_default = ToolID.pen
+        if tools_settings:
+            tool_id = tools_settings.get("active_tool", tool_id_default)
+        self.initialization = True
+        self.set_current_tool(tool_id)
+
+        self.select_window = None
+
+        self.installEventFilter(self)
+
+        #pylint
+        self.tool_init = True
+        self.old_cursor_pos = QCursor().pos()
+
+    def eventFilter(self, obj, event):
+        # print(event.__class__.__name__, obj.__class__.__name__)
+        parent = self.parent()
+        blocking = parent.elementsIsSpecialCase(parent.elementsGetLastElement())
+        # блокировка событий для кнопок панели управления,
+        # если не завершён процесс нанесения меток
+        if obj.parent() == self and blocking and not isinstance(event, (QPaintEvent, QKeyEvent)):
+            return True
+        return False
+
+    def set_current_tool(self, tool_name):
+        if tool_name == ToolID.multiframing:
+            # deactivate current tool
+            for btn in self.tools_buttons:
+                if btn.property("tool_id") == self.current_tool:
+                    btn.click()
+        self.current_tool = tool_name
+        self.tool_init = True
+        self.parent().current_tool = tool_name
+        for btn in self.tools_buttons:
+            if btn.property("tool_id") == self.current_tool:
+                btn.click() # calls set_tool_data
+                self.initialization = False
+                break
+
+    def show_picture_menu(self, do_ending=True):
+        main_window = self.parent()
+        tools_window = self
+        if not self.select_window:
+            PictureInfo.create_default_pixmaps()
+            pictures = PictureInfo.scan()
+            self.select_window = PictureSelectWindow(main_window, pictures=pictures)
+            PreviewsThread(pictures, self.select_window).start()
+        else:
+            self.select_window.show_at()
+        if self.parent().current_tool != ToolID.picture:
+            if do_ending:
+                self.set_current_tool(ToolID.picture)
+        self.update()
+
+    def onDoneButtonMousePressEvent(self, event):
+        # calling save_screenshot of main window
+        # event = QKeyEvent(QEvent.KeyPress, Qt.Key_Return, Qt.NoModifier, 0, 0, 0)
+        # app = QApplication.instance()
+        # app.sendEvent(self.parent(), event)
+        if event.button() == Qt.LeftButton:
+            self.parent().editing_ready.emit(None)
+        elif event.buttons() == Qt.RightButton:
+            self.parent().save_current_editing.emit()
+
+    def mousePressEvent(self, event):
+        self.old_cursor_pos = event.globalPos()
+        self.drag_flag = self.drag_placeholder.rect().contains(event.pos())
+        self.auto_positioning = False
+
+    def mouseMoveEvent(self, event):
+        if self.drag_flag:
+            delta = QPoint(event.globalPos() - self.old_cursor_pos)
+            self.move(self.x() + delta.x(), self.y() + delta.y())
+            self.old_cursor_pos = event.globalPos()
+
+    def mouseReleaseEvent(self, event):
+        self.drag_flag = False
+
+    def forwards_backwards_update(self):
+        f, b = self.parent().elementsUpdateEditHistoryButtonsStatus()
+        self.forwards_btn.setEnabled(f)
+        self.backwards_btn.setEnabled(b)
+        self.update()
+        self.parent().update()
+
+    def on_forwards_clicked(self):
+        self.parent().elementsEditHistoryForwards()
+        self.forwards_backwards_update()
+
+    def on_backwars_clicked(self):
+        self.parent().elementsEditHistoryBackwards()
+        self.forwards_backwards_update()
+
+    def on_screenshot_parameters_changed(self):
+        ts = self.parent().tools_settings
+        ts.update({
+            "masked": self.chb_masked.isChecked(),
+            "draw_thirds": self.chb_draw_thirds.isChecked(),
+            "add_meta": self.chb_add_meta.isChecked(),
+            "hex_mask": getattr(self.parent(), 'hex_mask', False),
+            "savecaptureframe": self.chb_savecaptureframe.isChecked(),
+            "draw_cursor": self.chb_draw_cursor.isChecked(),
+            "datetimestamp": self.chb_datetimestamp.isChecked(),
+        })
+        self.draw_datetimestamp = self.chb_datetimestamp.isChecked()
+        if self.chb_savecaptureframe.isChecked():
+            self.parent().update_saved_capture()
+        if Globals.DEBUG:
+            self.parent().save_tools_settings()
+        self.parent().update()
+
+    def on_parameters_changed(self):
+        self.parent().elementsParametersChanged()
+        # обновление параметров инструментов
+        ts = self.parent().tools_settings
+        # инструменты и их параметры
+        values = ts.get("values", {})
+        values.update({self.current_tool: self.tool_data_dict_from_ui()})
+        ts.update({"values": values})
+        self.parent().update()
+        if Globals.DEBUG:
+            self.parent().save_tools_settings()
+
+    def keyPressEvent(self, event):
+        # это делается для того, чтобы после использования окна редактора
+        # программа нужным образом реагировала на нажатие Esc и Enter
+        app = QApplication.instance()
+        app.sendEvent(self.parent(), event)
+
+    def do_autopositioning(self, screenshot_rect):
+        if not self.auto_positioning:
+            return
+        if not screenshot_rect:
+            return
+        #                |   reserved    |
+        #                |   corner 4    |
+        #        --------d---------------f------------
+        #                |               |
+        #     reserved   |  screenshot   |    reserved
+        #     corner 3   |  zone         |    corner 2
+        #                |               |
+        #        --------k-------------- m -----------
+        #                                |
+        #                   default      |    reserved
+        #                   corner       |    corner 1
+        #                                |
+        all_rect = self.parent()._all_monitors_rect
+        m_corner = screenshot_rect.bottomRight()
+        k_corner = screenshot_rect.bottomLeft()
+        d_corner = screenshot_rect.topLeft()
+        offset = 10
+        default_corner_space = build_valid_rectF(m_corner + QPointF(-offset, offset),
+            all_rect.bottomLeft())
+        reserved_corner_1_space = build_valid_rectF(m_corner + QPointF(offset, offset),
+            all_rect.bottomRight())
+        reserved_corner_2_space = build_valid_rectF(m_corner + QPointF(offset, -offset),
+            all_rect.topRight())
+        reserved_corner_3_space = build_valid_rectF(k_corner + QPointF(-offset, -offset),
+            QPointF(0, 0))
+        reserved_corner_4_space = build_valid_rectF(d_corner + QPointF(offset, -offset),
+            QPointF(screenshot_rect.right(), 0))
+        # для отрисовки в специальном отладочном режиме
+        self.parent().default_corner_space = default_corner_space
+        self.parent().reserved_corner_1_space = reserved_corner_1_space
+        self.parent().reserved_corner_2_space = reserved_corner_2_space
+        self.parent().reserved_corner_3_space = reserved_corner_3_space
+        self.parent().reserved_corner_4_space = reserved_corner_4_space
+        self.parent().debug_tools_space = self.frameGeometry()
+        # проверка на то, влезает ли окно в определяемую область или нет
+        def check_rect(rect):
+            # Проверять нужно именно так, иначе в результате проверки на вхождение всех точек
+            # прямоугольника в другой прямоугольник через qrect.contains(self.frameGeometry())
+            # будет баг с залипанием в ненужных местах.
+            # Всё из-за того, что прямоугольник самого окна не является актуальным
+            # по разным причинам,
+            # например, когда мышка перемещается очень быстро.
+            # Визуально это можно видеть, если выставить DEBUG_ANALYSE_CORNERS_SPACES в True
+            # Позднее замечание: скорее всего это было из-за того,
+            # что координаты мышки раньше брались через таймер, а не в mouseMoveEvent
+            return (rect.width() > self.width()) and (rect.height() > self.height())
+        fits_to_default_corner = check_rect(default_corner_space)
+        fits_to_reserved_corner_1 = check_rect(reserved_corner_1_space)
+        fits_to_reserved_corner_2 = check_rect(reserved_corner_2_space)
+        fits_to_reserved_corner_3 = check_rect(reserved_corner_3_space)
+        fits_to_reserved_corner_4 = check_rect(reserved_corner_4_space)
+        if fits_to_default_corner:
+            x_value = screenshot_rect.right() - self.width()
+            y_value = screenshot_rect.bottom()
+        elif fits_to_reserved_corner_1:
+            x_value = screenshot_rect.right()
+            y_value = screenshot_rect.bottom()
+        elif fits_to_reserved_corner_2:
+            x_value = screenshot_rect.right()
+            y_value = screenshot_rect.bottom() - self.height()
+        elif fits_to_reserved_corner_3:
+            x_value = screenshot_rect.left() - self.width()
+            y_value = screenshot_rect.bottom() - self.height()
+        elif fits_to_reserved_corner_4:
+            x_value = screenshot_rect.left()
+            y_value = screenshot_rect.top() - self.height()
+        else: #screenshot zone
+            x_value = screenshot_rect.right() - self.width()
+            y_value = screenshot_rect.bottom() - self.height()
+        self.move(int(x_value), int(y_value))

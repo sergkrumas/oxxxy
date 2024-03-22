@@ -28,8 +28,7 @@ from functools import partial
 from PyQt5.QtWidgets import (QWidget, QMessageBox, QMenu, QFileDialog, QHBoxLayout, QCheckBox,
                                     QVBoxLayout, QPushButton, QLabel, QApplication, QDesktopWidget)
 from PyQt5.QtCore import (QPoint, QRect, QTimer, Qt, QSize, QRectF)
-from PyQt5.QtGui import (QPainterPath, QColor, QBrush, QPainter, QPen, QIcon, QFont, QCursor,
-                                                                                        QVector2D)
+from PyQt5.QtGui import (QPainterPath, QColor, QBrush, QPainter, QPen, QCursor, QVector2D)
 
 from _utils import (SettingsJson, get_creation_date, open_link_in_browser, open_in_google_chrome)
 

@@ -18,19 +18,15 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
-from enum import Enum
 import math
 import datetime
 import sys
 import os
-import itertools
 import json
 import time
 import cbor2
 
-from PyQt5.QtWidgets import (QSystemTrayIcon, QWidget, QMessageBox, QMenu, QGraphicsPixmapItem,
-    QGraphicsScene, QFileDialog, QHBoxLayout, QCheckBox, QVBoxLayout, QTextEdit, QGridLayout,
-    QPushButton, QGraphicsBlurEffect, QLabel, QApplication, QScrollArea, QDesktopWidget)
+from PyQt5.QtWidgets import (QMenu, QFileDialog, QCheckBox, QApplication)
 from PyQt5.QtCore import (QUrl, QMimeData, pyqtSignal, QPoint, QPointF, pyqtSlot, QRect, QEvent,
     QTimer, Qt, QSize, QSizeF, QRectF, QThread, QAbstractNativeEventFilter,
     QAbstractEventDispatcher, QFile, QDataStream, QIODevice, QMarginsF)

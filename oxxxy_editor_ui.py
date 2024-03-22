@@ -1855,3 +1855,11 @@ class ToolsWindow(QWidget):
             x_value = screenshot_rect.right() - self.width()
             y_value = screenshot_rect.bottom() - self.height()
         self.move(int(x_value), int(y_value))
+
+
+
+# для запуска программы прямо из этого файла при разработке и отладке
+if __name__ == '__main__':
+    import subprocess
+    subprocess.Popen([sys.executable, "-u", "oxxxy.py"])
+    sys.exit()

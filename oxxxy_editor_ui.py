@@ -55,6 +55,7 @@ from _utils import (convex_hull, check_scancode_for, SettingsJson,
      get_bounding_pointsF, generate_datetime_stamp, get_work_area_rect)
 
 from elements import ToolID
+from _sliders import (CustomSlider,)
 
 __all__ = (
     'PictureInfo',
@@ -1492,6 +1493,8 @@ class ToolsWindow(QWidget):
         # tools.addSpacing(30)
         tools.addSpacing(10)
 
+        CustomPushButton.Globals = self.Globals
+
         self.tools_buttons = []
         for ID, name, tip in editor_buttons_data:
             button = CustomPushButton(name, self, tool_id=ID, checkable=True, checked=False)
@@ -1540,6 +1543,8 @@ class ToolsWindow(QWidget):
             widget.value_changed.connect(self.on_parameters_changed)
             widget.value_changing_initiated.connect(partial(self.parent().elementsStartModificationProcess, 'sliders'))
             widget.value_changing_finished.connect(self.parent().elementsStopModificationProcess)
+
+        CustomSlider.Globals = self.Globals
 
         # для пометок
         if self.Globals.USE_COLOR_PALETTE:

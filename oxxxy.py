@@ -56,7 +56,7 @@ from _utils import (convex_hull, check_scancode_for, SettingsJson,
      get_bounding_points, load_svg, is_webp_file_animated, apply_blur_effect,
      get_bounding_pointsF, generate_datetime_stamp, get_work_area_rect)
 
-from _sliders import (CustomSlider,)
+
 from on_windows_startup import (is_app_in_startup, add_to_startup, remove_from_startup)
 from elements import ElementsMixin, ToolID
 from editor_autotest import EditorAutotestMixin
@@ -2341,7 +2341,7 @@ SettingsWindow.gf.register_user_global_hotkeys = register_user_global_hotkeys
 SettingsWindow.gf.is_app_in_startup = is_app_in_startup
 
 
-ToolsWindow.ToolID = ToolID
+ToolsWindow.Globals = Globals
 
 
 

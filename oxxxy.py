@@ -213,9 +213,9 @@ class Globals():
         cls.icon_multiframing = QIcon(path)
         cls.icon_refresh = QIcon(bitmap_refresh)
 
-        @staticmethod
-        def get_screenshot_filepath(params):
-            return os.path.join(Globals.SCREENSHOT_FOLDER_PATH, f"{params}.png")
+    @staticmethod
+    def get_screenshot_filepath(params):
+        return os.path.join(Globals.SCREENSHOT_FOLDER_PATH, f"{params}.png")
 
 
 RegionInfo = namedtuple('RegionInfo', 'setter coords getter')

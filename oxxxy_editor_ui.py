@@ -18,43 +18,22 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
-from collections import namedtuple
-from enum import Enum
-import datetime
 import sys
 import os
-import subprocess
-import time
-import ctypes
-import itertools
-import traceback
-import locale
-import argparse
 import importlib.util
 import math
-import random
-import json
 from functools import partial
 
-from PyQt5.QtWidgets import (QSystemTrayIcon, QWidget, QMessageBox, QMenu, QFileDialog,
-    QHBoxLayout, QCheckBox, QVBoxLayout, QTextEdit, QGridLayout, QWidgetAction,
-    QPushButton, QLabel, QApplication, QScrollArea, QDesktopWidget, QActionGroup, QSpinBox)
-from PyQt5.QtCore import (pyqtSignal, QPoint, QPointF, pyqtSlot, QRect, QEvent,
-    QTimer, Qt, QSize, QSizeF, QRectF, QThread, QAbstractNativeEventFilter,
-    QAbstractEventDispatcher, QFile, QDataStream, QIODevice)
-from PyQt5.QtGui import (QPainterPath, QColor, QKeyEvent, QMouseEvent, QBrush, QPixmap,
-    QPaintEvent, QPainter, QWindow, QPolygon, QImage, QTransform, QPen, QLinearGradient,
-    QIcon, QFont, QCursor, QPolygonF, QVector2D, QFontDatabase)
+from PyQt5.QtWidgets import (QWidget, QFileDialog, QHBoxLayout, QCheckBox, QVBoxLayout,
+                                    QGridLayout, QPushButton, QApplication, QScrollArea, QSpinBox)
+from PyQt5.QtCore import (pyqtSignal, QPoint, QPointF, QRect, QTimer, Qt, QRectF, QThread)
+from PyQt5.QtGui import (QPainterPath, QColor, QKeyEvent, QBrush, QPixmap, QPaintEvent, QPainter,
+                                                QPolygon, Transform, QPen, QLinearGradient, QCursor)
 
-from _utils import (convex_hull, check_scancode_for, SettingsJson,
-     generate_metainfo, build_valid_rect, build_valid_rectF, dot,
-     get_creation_date, copy_image_file_to_clipboard, get_nearest_point_on_rect,
-     find_browser_exe_file, open_link_in_browser, open_in_google_chrome, save_meta_info,
-     make_screenshot_pyqt, webRGBA, generate_gradient, draw_shadow, draw_cyberpunk,
-     get_bounding_points, load_svg, is_webp_file_animated, apply_blur_effect,
-     get_bounding_pointsF, generate_datetime_stamp, get_work_area_rect)
+from _utils import (check_scancode_for, build_valid_rectF, generate_gradient, apply_blur_effect,
+                                get_bounding_pointsF, generate_datetime_stamp, get_work_area_rect)
 
-from elements import ToolID
+from elements import (ToolID,) 
 from _sliders import (CustomSlider,)
 
 __all__ = (

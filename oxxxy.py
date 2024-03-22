@@ -1994,6 +1994,8 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
                 self.elementsFitSelectedItemsOnScreen()
         if key == (Qt.Key_F2):
             self.animated_debug_drawing()
+        if key == (Qt.Key_F3):
+            self.show_notify_dialog('Test text.................... !')
 
 
 

@@ -37,7 +37,7 @@ from PyQt5.QtCore import (QUrl, QMimeData, pyqtSignal, QPoint, QPointF, pyqtSlot
 from PyQt5.QtGui import (QPainterPath, QColor, QKeyEvent, QMouseEvent, QBrush, QPixmap,
     QPaintEvent, QPainter, QWindow, QPolygon, QImage, QTransform, QPen, QLinearGradient,
     QIcon, QFont, QCursor, QPolygonF, QVector2D, QTextDocument, QAbstractTextDocumentLayout,
-        QPalette, QTextCursor)
+                                                                QPalette, QTextCursor, QTextLine)
 
 from _utils import (convex_hull, check_scancode_for, SettingsJson, calculate_tangent_points,
     generate_metainfo, build_valid_rect, build_valid_rectF, dot, get_nearest_point_on_rect,
@@ -1148,7 +1148,7 @@ class ElementsMixin(ElementsTransformMixin):
         self.update()
 
     def elementsFramedFinalToImageTool(self, pixmap, frame_rect):
-        self.current_picture_id = PictureInfo.TYPE_STAMP
+        self.current_picture_id = self.PictureInfo.TYPE_STAMP
         self.current_picture_pixmap = pixmap.copy(frame_rect)
         self.current_picture_angle = 0
 

@@ -25,15 +25,11 @@ import time
 import math
 from functools import partial
 
-from PyQt5.QtWidgets import (QSystemTrayIcon, QWidget, QMessageBox, QMenu, QFileDialog,
-    QHBoxLayout, QCheckBox, QVBoxLayout, QTextEdit, QGridLayout, QWidgetAction,
-    QPushButton, QLabel, QApplication, QScrollArea, QDesktopWidget, QActionGroup, QSpinBox)
-from PyQt5.QtCore import (pyqtSignal, QPoint, QPointF, pyqtSlot, QRect, QEvent,
-    QTimer, Qt, QSize, QSizeF, QRectF, QThread, QAbstractNativeEventFilter,
-    QAbstractEventDispatcher, QFile, QDataStream, QIODevice)
-from PyQt5.QtGui import (QPainterPath, QColor, QKeyEvent, QMouseEvent, QBrush, QPixmap,
-    QPaintEvent, QPainter, QWindow, QPolygon, QImage, QTransform, QPen, QLinearGradient,
-    QIcon, QFont, QCursor, QPolygonF, QVector2D, QFontDatabase)
+from PyQt5.QtWidgets import (QWidget, QMessageBox, QMenu, QFileDialog, QHBoxLayout, QCheckBox,
+                                    QVBoxLayout, QPushButton, QLabel, QApplication, QDesktopWidget)
+from PyQt5.QtCore import (QPoint, QRect, QTimer, Qt, QSize, QRectF)
+from PyQt5.QtGui import (QPainterPath, QColor, QBrush, QPainter, QPen, QIcon, QFont, QCursor,
+                                                                                        QVector2D)
 
 from _utils import (SettingsJson, get_creation_date, open_link_in_browser, open_in_google_chrome)
 

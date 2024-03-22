@@ -26,22 +26,17 @@ import json
 import time
 import cbor2
 
-from PyQt5.QtWidgets import (QMenu, QFileDialog, QCheckBox, QApplication)
-from PyQt5.QtCore import (QUrl, QMimeData, pyqtSignal, QPoint, QPointF, pyqtSlot, QRect, QEvent,
-    QTimer, Qt, QSize, QSizeF, QRectF, QThread, QAbstractNativeEventFilter,
-    QAbstractEventDispatcher, QFile, QDataStream, QIODevice, QMarginsF)
-from PyQt5.QtGui import (QPainterPath, QColor, QKeyEvent, QMouseEvent, QBrush, QPixmap,
-    QPaintEvent, QPainter, QWindow, QPolygon, QImage, QTransform, QPen, QLinearGradient,
-    QIcon, QFont, QCursor, QPolygonF, QVector2D, QTextDocument, QAbstractTextDocumentLayout,
+from PyQt5.QtWidgets import (QMenu, QFileDialog, QApplication)
+from PyQt5.QtCore import (QPoint, QPointF, QRect, Qt, QSize, QSizeF, QRectF, QFile, QDataStream,
+                                                                            QIODevice, QMarginsF)
+from PyQt5.QtGui import (QPainterPath, QColor, QBrush, QPixmap, QPainter, QImage, QTransform,
+    QPen, QFont, QCursor, QPolygonF, QVector2D, QTextDocument, QAbstractTextDocumentLayout,
                                                                 QPalette, QTextCursor, QTextLine)
 
-from _utils import (convex_hull, check_scancode_for, SettingsJson, calculate_tangent_points,
-    generate_metainfo, build_valid_rect, build_valid_rectF, dot, get_nearest_point_on_rect,
-    get_creation_date, capture_rotated_rect_from_pixmap, fit_rect_into_rect,
-    find_browser_exe_file, open_link_in_browser, open_in_google_chrome, save_meta_info,
-    make_screenshot_pyqt, webRGBA, generate_gradient, draw_shadow, draw_cyberpunk,
-    constraint45Degree, get_bounding_points, get_bounding_pointsF, load_svg,
-    is_webp_file_animated, apply_blur_effect, squarize_rect, get_rect_corners)
+from _utils import (convex_hull, check_scancode_for, calculate_tangent_points, build_valid_rect,
+    build_valid_rectF, get_nearest_point_on_rect, capture_rotated_rect_from_pixmap, squarize_rect,
+    fit_rect_into_rect, constraint45Degree, get_bounding_pointsF, load_svg, is_webp_file_animated,
+                                                                apply_blur_effect, get_rect_corners)
 
 from elements_transform import ElementsTransformMixin
 

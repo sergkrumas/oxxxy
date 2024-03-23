@@ -127,6 +127,8 @@ class Element():
         self.draw_transform = None
         self.proxy_pixmap = None
 
+        self.selection_path = None
+
         # element attributes for canvas
         self.element_scale_x = 1.0
         self.element_scale_y = 1.0
@@ -1822,6 +1824,15 @@ class ElementsMixin(ElementsTransformMixin):
             element.calc_local_data()
             if element.straight:
                 element.recalc_local_data_for_straight_objects()
+            else:
+                stroker = QPainterPathStroker()
+                amount = 10
+                pen, _, _ = self.elementsGetPenFromElement(element)
+                stroker.setWidth(pen.width())
+                stroker.setJoinStyle(Qt.RoundJoin)
+                selection_path = stroker.createStroke(element.path).simplified()
+                path_center = selection_path.boundingRect().center()
+                element.selection_path = selection_path.translated(-path_center)
         elif tool == ToolID.line:
             element.end_point = event_pos
             if event.modifiers() & Qt.ShiftModifier:

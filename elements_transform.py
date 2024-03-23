@@ -776,6 +776,18 @@ class ElementsTransformMixin():
             back_to_place.translate(c.x(), c.y())
             transform = to_zero * scaling * back_to_place
             painter.drawPolygon(transform.map(sa))
+
+        if self.Globals.DEBUG:
+            for element in self.elementsFilter():
+                if element.selection_path:
+                    painter.setTransform(element.get_transform_obj(canvas=self))
+                    painter.setBrush(Qt.NoBrush)
+                    sp = element.selection_path
+                    pen.setColor(Qt.green)
+                    pen.setWidth(1)
+                    painter.setPen(pen)
+                    painter.drawPath(sp)
+
         painter.restore()
 
     def elementsDrawSelectionTransformBox(self, painter):

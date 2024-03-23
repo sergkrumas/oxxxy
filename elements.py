@@ -3095,7 +3095,7 @@ class ElementsMixin(ElementsTransformMixin):
         self.update()
         self.activateWindow() # чтобы фокус не соскакивал на панель иструментов
 
-    def elementsDrawArrow(self, painter, start_point, tip_point, size, sharp):
+    def elementsGetArrowPath(self, start_point, tip_point, size, sharp):
         dist_delta = start_point - tip_point
         radians_angle = math.atan2(dist_delta.y(), dist_delta.x())
         arrow_length = QVector2D(dist_delta).length()
@@ -3189,6 +3189,10 @@ class ElementsMixin(ElementsTransformMixin):
         transform.rotate(deg_angle)
         path = path.translated(-path.boundingRect().center())
         path = transform.map(path)
+        return path
+
+    def elementsDrawArrow(self, painter, start_point, tip_point, size, sharp):
+        path = self.elementsGetArrowPath(start_point, tip_point, size, sharp)
         painter.drawPath(path)
 
     def elementsEditHistoryForwards(self):

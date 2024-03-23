@@ -1872,7 +1872,7 @@ class ElementsMixin(ElementsTransformMixin):
                 element.end_point = constraint45Degree(element.start_point, element.end_point)
             element.calc_local_data()
             element.recalc_local_data_for_straight_objects()
-            element.construct_selection_path(self)            
+            element.construct_selection_path(self)
         # где-то здесь надо удалять элементы, если начальная и конечная точки совпадают
         elif tool in [ToolID.oval, ToolID.rect, ToolID.numbering, ToolID.multiframing]:
             if element.equilateral:
@@ -2380,7 +2380,6 @@ class ElementsMixin(ElementsTransformMixin):
             painter.setTransform(element.get_transform_obj(canvas=self))
             painter.setPen(Qt.NoPen)
             self.elementsDrawArrow(painter, element.local_start_point, element.local_end_point, size, True)
-            painter.setPen(QPen(Qt.green, 5))
             painter.resetTransform()
         elif el_type in [ToolID.pen, ToolID.marker]:
             painter.setTransform(element.get_transform_obj(canvas=self))

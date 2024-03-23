@@ -335,7 +335,8 @@ class Element():
         elif self.type in [ToolID.line]:
             path = from_local_data()
         elif self.type in [ToolID.arrow]:
-            pass
+            _, _, size = canvas.elementsGetPenFromElement(self)
+            self.selection_path = canvas.elementsGetArrowPath(self.local_start_point, self.local_end_point, size, True)
         if path:
             selection_path = stroker.createStroke(path).simplified()
             path_center = selection_path.boundingRect().center()
@@ -1849,6 +1850,7 @@ class ElementsMixin(ElementsTransformMixin):
                 element.end_point = constraint45Degree(element.start_point, element.end_point)
             element.calc_local_data()
             element.recalc_local_data_for_straight_objects()
+            element.construct_selection_path(self)
         elif tool in [ToolID.zoom_in_region, ToolID.copypaste]:
             self.elementsAdvancedInputMoveEvent(event, event_pos, element, finish=True)
         elif tool == ToolID.picture:

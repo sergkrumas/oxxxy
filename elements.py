@@ -313,6 +313,25 @@ class Element():
         )
         return transform.map(self.selection_path)
 
+    def construct_selection_path(self, canvas):
+        stroker = QPainterPathStroker()
+        amount = 10
+        pen, _, _ = canvas.elementsGetPenFromElement(self)
+        stroker.setWidth(max(pen.width(), 10))
+        stroker.setJoinStyle(Qt.RoundJoin)
+        path = None
+        if self.type in [ToolID.pen, ToolID.marker]:
+            if self.straight:
+                path = QPainterPath()
+                path.moveTo(self.local_start_point)
+                path.lineTo(self.local_end_point)
+            else:
+                path = self.path
+        if path:
+            selection_path = stroker.createStroke(path).simplified()
+            path_center = selection_path.boundingRect().center()
+            self.selection_path = selection_path.translated(-path_center)
+
     def get_transform_obj(self, canvas=None, apply_local_scale=True, apply_translation=True, apply_global_scale=True):
         local_scaling = QTransform()
         rotation = QTransform()
@@ -1837,15 +1856,7 @@ class ElementsMixin(ElementsTransformMixin):
             element.calc_local_data()
             if element.straight:
                 element.recalc_local_data_for_straight_objects()
-            else:
-                stroker = QPainterPathStroker()
-                amount = 10
-                pen, _, _ = self.elementsGetPenFromElement(element)
-                stroker.setWidth(pen.width())
-                stroker.setJoinStyle(Qt.RoundJoin)
-                selection_path = stroker.createStroke(element.path).simplified()
-                path_center = selection_path.boundingRect().center()
-                element.selection_path = selection_path.translated(-path_center)
+            element.construct_selection_path(self)
         elif tool == ToolID.line:
             element.end_point = event_pos
             if event.modifiers() & Qt.ShiftModifier:

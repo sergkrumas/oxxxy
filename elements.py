@@ -2324,7 +2324,7 @@ class ElementsMixin(ElementsTransformMixin):
                 arrow_element.start_point = modified_start_point
                 arrow_element.calc_local_data()
                 arrow_element.recalc_local_data_for_straight_objects()
-                arrow_element.construct_selection_path(self)                
+                arrow_element.construct_selection_path(self)
 
     def elementsDrawDarkening(self, painter, prepare_pixmap=False):
         if self.capture_region_rect:
@@ -3094,6 +3094,7 @@ class ElementsMixin(ElementsTransformMixin):
                 el = self.elementsPrepareElementCopyForModifications(element)
                 self.elementsSetSelected(el, update_panel=False)
                 self.elementsSetElementParameters(el)
+                el.construct_selection_path(self)
         self.update()
         self.activateWindow() # чтобы фокус не соскакивал на панель иструментов
 

@@ -320,13 +320,22 @@ class Element():
         stroker.setWidth(max(pen.width(), 10))
         stroker.setJoinStyle(Qt.RoundJoin)
         path = None
+        def from_path():
+            return self.path
+        def from_local_data():
+            path = QPainterPath()
+            path.moveTo(self.local_start_point)
+            path.lineTo(self.local_end_point)
+            return path
         if self.type in [ToolID.pen, ToolID.marker]:
             if self.straight:
-                path = QPainterPath()
-                path.moveTo(self.local_start_point)
-                path.lineTo(self.local_end_point)
+                path = from_local_data()
             else:
-                path = self.path
+                path = from_path()
+        elif self.type in [ToolID.line]:
+            path = from_local_data()
+        elif self.type in [ToolID.arrow]:
+            pass
         if path:
             selection_path = stroker.createStroke(path).simplified()
             path_center = selection_path.boundingRect().center()
@@ -1863,6 +1872,7 @@ class ElementsMixin(ElementsTransformMixin):
                 element.end_point = constraint45Degree(element.start_point, element.end_point)
             element.calc_local_data()
             element.recalc_local_data_for_straight_objects()
+            element.construct_selection_path(self)            
         # где-то здесь надо удалять элементы, если начальная и конечная точки совпадают
         elif tool in [ToolID.oval, ToolID.rect, ToolID.numbering, ToolID.multiframing]:
             if element.equilateral:

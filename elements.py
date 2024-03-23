@@ -2371,6 +2371,8 @@ class ElementsMixin(ElementsTransformMixin):
                     painter.drawLine(element.local_start_point, element.local_end_point)
                 else:
                     p = element.path
+                    # хоть это и некрасиво, но путь надо корректировать только тут,
+                    # иначе будут баги с отрисовкой в процессе нанесения
                     path = p.translated(-p.boundingRect().center())
                     painter.drawPath(path)
             painter.resetTransform()

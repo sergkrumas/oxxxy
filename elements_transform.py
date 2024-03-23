@@ -189,8 +189,7 @@ class ElementsTransformMixin():
         for element in elements:
             if element.type in [self.ToolID.removing]:
                 continue
-            element_selection_area = element.get_selection_area(canvas=self)
-            is_under_mouse = element_selection_area.containsPoint(pos, Qt.WindingFill)
+            is_under_mouse = element.is_selection_contains_pos(pos, canvas=self)
             if is_under_mouse:
                 undermouse_elements.append(element)
         return undermouse_elements
@@ -206,8 +205,7 @@ class ElementsTransformMixin():
         for element in reversed(elements):
             if element.type in [self.ToolID.removing]:
                 continue
-            element_selection_area = element.get_selection_area(canvas=self)
-            is_under_mouse = element_selection_area.containsPoint(self.mapped_cursor_pos(), Qt.WindingFill)
+            is_under_mouse = element.is_selection_contains_pos(self.mapped_cursor_pos(), canvas=self)
             if is_under_mouse and element._selected:
                 self.active_element = element
                 return True
@@ -227,11 +225,18 @@ class ElementsTransformMixin():
         if self.selection_rect is not None:
             # выделение через рамку выделения
             selection_rect_area = QPolygonF(self.selection_rect)
+            selection_rect_path = QPainterPath()
+            selection_rect_path.addPolygon(selection_rect_area)
             for element in elements:
                 if element.type in [self.ToolID.removing]:
                     continue
-                element_selection_area = element.get_selection_area(canvas=self)
-                if element_selection_area.intersects(selection_rect_area):
+                if element.selection_path:
+                    sp = element.get_selection_path(canvas=self)
+                    intersects = selection_rect_path.intersects(sp)
+                else:
+                    sa = element.get_selection_area(canvas=self)
+                    intersects = selection_rect_area.intersects(sa)
+                if intersects:
                     element._selected = True
                 else:
                     if add_to_selection and element._selected:
@@ -249,8 +254,7 @@ class ElementsTransformMixin():
                 for element in reversed(elements):
                     if element.type in [self.ToolID.removing]:
                         continue
-                    item_selection_area = element.get_selection_area(canvas=self)
-                    is_under_mouse = item_selection_area.containsPoint(self.mapped_cursor_pos(), Qt.WindingFill)
+                    is_under_mouse = element.is_selection_contains_pos(self.mapped_cursor_pos(), canvas=self)
                     if add_to_selection and element._selected:
                         # subtract element from selection!
                         if is_under_mouse and not self.prevent_item_deselection:
@@ -272,8 +276,7 @@ class ElementsTransformMixin():
         elements = self.elementsFilterElementsForSelection()
         undermouse_elements = []
         for element in elements:
-            sa = element.get_selection_area(canvas=self)
-            is_cursor_over_element = sa.containsPoint(self.mapped_cursor_pos(), Qt.WindingFill)
+            is_cursor_over_element = element.is_selection_contains_pos(self.mapped_cursor_pos(), canvas=self)
             if is_cursor_over_element:
                 undermouse_elements.append(element)
 
@@ -350,8 +353,7 @@ class ElementsTransformMixin():
 
     def is_over_translation_activation_area(self, position):
         for element in self.selected_items:
-            sa = element.get_selection_area(canvas=self)
-            if sa.containsPoint(position, Qt.WindingFill):
+            if element.is_selection_contains_pos(position, canvas=self):
                 return True
         return False
 

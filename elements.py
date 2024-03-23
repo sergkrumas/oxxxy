@@ -300,6 +300,19 @@ class Element():
         transform = self.get_transform_obj(canvas=canvas, apply_global_scale=apply_global_scale, apply_translation=apply_translation)
         return transform.map(polygon)
 
+    def is_selection_contains_pos(self, pos, canvas=None):
+        if self.selection_path:
+            return self.get_selection_path(canvas=canvas).contains(pos)
+        else:
+            return self.get_selection_area(canvas=canvas).containsPoint(pos, Qt.WindingFill)
+
+    def get_selection_path(self, canvas=None):
+        transform = self.get_transform_obj(canvas=canvas,
+            apply_global_scale=True,
+            apply_translation=True
+        )
+        return transform.map(self.selection_path)
+
     def get_transform_obj(self, canvas=None, apply_local_scale=True, apply_translation=True, apply_global_scale=True):
         local_scaling = QTransform()
         rotation = QTransform()

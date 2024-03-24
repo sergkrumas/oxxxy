@@ -1831,6 +1831,8 @@ class ElementsMixin(ElementsTransformMixin):
                     self.selection_rect = build_valid_rectF(self.selection_start_point, self.selection_end_point)
                     self.canvas_selection_callback(event.modifiers() == Qt.ShiftModifier)
 
+            self.elementsUpdateDependentElementsOnTransforms()
+
         self.update()
 
     def elementsMouseReleaseEvent(self, event):
@@ -1973,16 +1975,8 @@ class ElementsMixin(ElementsTransformMixin):
                     self.selection_rect = None
                     self.selection_ongoing = False
 
-                if self.selected_items:
-                    for se in self.selected_items:
-                        if se.type == ToolID.blurring:
-                            se.finished = True
-                            self.elementsSetBlurredPixmap(se)
-                        elif se.type in [ToolID.zoom_in_region, ToolID.copypaste]:
-                            if not se.second:
-                                self.elementsSetCopiedPixmap(se)
-                        elif se.type == ToolID.text:
-                            se.end_point_modified = True
+                self.elementsUpdateDependentElementsOnTransforms()
+
 
         ae = self.active_element
         if ae is not None and ae.type == ToolID.text:
@@ -1995,6 +1989,18 @@ class ElementsMixin(ElementsTransformMixin):
         self.elementsAutoDeleteInvisibleElement(element)
         self.tools_window.forwards_backwards_update()
         self.update()
+
+    def elementsUpdateDependentElementsOnTransforms(self):
+        if self.selected_items:
+            for se in self.selected_items:
+                if se.type == ToolID.blurring:
+                    se.finished = True
+                    self.elementsSetBlurredPixmap(se)
+                elif se.type in [ToolID.zoom_in_region, ToolID.copypaste]:
+                    if not se.second:
+                        self.elementsSetCopiedPixmap(se)
+                elif se.type == ToolID.text:
+                    se.end_point_modified = True
 
     def elementsAutoDeleteInvisibleElement(self, element):
         tool = self.current_tool

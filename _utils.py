@@ -809,86 +809,22 @@ def apply_blur_effect(src_pix, pix, blur_radius=5):
 def capture_rotated_rect_from_pixmap(pixmap, capture_pos, capture_rotation,
                                                                 capture_width, capture_height):
 
-    # При плавном изменении угла от 0 до 360 заметно подёргивание картинки.
-    # можно избавиться от этого, избавившись от отрисовки во вспомогательном middle_pixmap,
-    # потому что размеры этого middle_pixmap выражены всегда целыми числами.
-    # Но мне анимация здесь ни к чему, поэтому оставлю как есть.
-    # Избавится от вспомогательного middle_pixmap можно
-    # если повернуть pixmap на угол относительно capture_pos
-
-    orig_capture_height = capture_height
-    orig_capture_width = capture_width
-    # для полноценного копирования необходимо сфоромировать квадрат
-    capture_width = capture_height = max(capture_width, capture_height)
-
-    capture_size = QRectF(0, 0, capture_width, capture_height)
-    capture_size.moveCenter(QPointF(0, 0))
-    tr = QTransform()
-    tr.translate(capture_pos.x(), capture_pos.y() )
-    tr.rotate(capture_rotation)
-    capture_polygon = tr.map(QPolygonF(capture_size))
-
-    # для отладки в пейнтере виджета
-    # painter.drawPolygon(capture_polygon)
-    # painter.setBrush(Qt.NoBrush)
-
-    cpbr = capture_polygon.boundingRect()
-    # для отладки в пейнтере виджета
-    # painter.drawRect(cpbr)
-
-    cpbr_size = cpbr.size()
-    middle_pixmap = QPixmap(
-        math.ceil(cpbr_size.width()),
-        math.ceil(cpbr_size.height()),
-    )
-    middle_pixmap.fill(Qt.transparent)
-
-    mp = QPainter()
-    mp.begin(middle_pixmap)
-    mp.setRenderHint(QPainter.HighQualityAntialiasing, True)
-    mp.setRenderHint(QPainter.Antialiasing, True)
-    mp.setRenderHint(QPainter.SmoothPixmapTransform, True)
-    cpbr_source = QRectF(cpbr)
-    cpbr_source.moveCenter(capture_pos)
-    cpbr_dest = QRectF(cpbr)
-    cpbr_dest.moveTopLeft(QPointF(
-                -cpbr.width()/2,
-                -cpbr.height()/2
-    ))
-    draw_transform = QTransform()
-    draw_transform.translate(cpbr.width()/2, cpbr.height()/2)
-    draw_transform.rotate(-capture_rotation)
-    mp.setTransform(draw_transform)
-    mp.drawPixmap(cpbr_dest, pixmap, cpbr_source)
-    mp.end()
-
-    # для отладки в пейнтере виджета
-    # painter.drawPixmap(QPointF(300, 300), middle_pixmap)
-    # output_rect = QRectF(QPointF(300, 300), cpbr.size())
-    # painter.drawRect(output_rect)
-
-    # для отладки в пейнтере виджета
-    # output_small_rect = QRectF(capture_size)
-    # ppp = QPointF(300, 300) + QPointF(middle_pixmap.width()/2, middle_pixmap.height()/2)
-    # output_small_rect.moveCenter(ppp)
-    # для отладки в пейнтере виджета
-    # painter.drawRect(output_small_rect)
-
-    source_rect = QRectF(capture_size)
-    source_rect.moveCenter(QPointF(middle_pixmap.width()/2, middle_pixmap.height()/2))
-    dest_rect = QRectF(QPointF(500, 500), capture_size.size())
-
-    # для отладки в пейнтере виджета
-    # painter.drawPixmap(dest_rect, middle_pixmap, source_rect)
-
-    output_pixmap = QPixmap(int(orig_capture_width), int(orig_capture_height))
+    # при плавном изменении угла от 0 до 360 заметно подёргивание картинки,
+    # и, наверное, проблема не только в этой функции, но и в коде отрисовки
+    w = math.ceil(capture_width)
+    h = math.ceil(capture_height)
+    output_pixmap = QPixmap(w, h)
     output_pixmap.fill(Qt.transparent)
-    op = QPainter()
-    op.begin(output_pixmap)
-    dest_rect = QRectF(QPointF(0, 0), capture_size.size())
-    dest_rect.moveCenter(QPointF(orig_capture_width/2, orig_capture_height/2))
-    op.drawPixmap(dest_rect, middle_pixmap, source_rect)
-    op.end()
+    capture_pos
+    pr = QPainter()
+    pr.begin(output_pixmap)
+    pr.setRenderHint(QPainter.HighQualityAntialiasing, True)
+    pr.setRenderHint(QPainter.Antialiasing, True)
+    pr.setRenderHint(QPainter.SmoothPixmapTransform, True)
+    pr.translate(w/2, h/2)
+    pr.rotate(-capture_rotation)
+    pr.drawPixmap(-capture_pos, pixmap)
+    pr.end()
 
     return output_pixmap
 

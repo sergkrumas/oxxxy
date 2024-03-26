@@ -1477,10 +1477,6 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         elif action == cancel_action:
             pass
 
-    def toggle_dark_pictures(self):
-        self.dark_pictures = not self.dark_pictures
-        self.update()
-
     def contextMenuEvent(self, event):
         if self.cancel_context_menu:
             self.cancel_context_menu = False
@@ -1561,7 +1557,7 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
             ("Сохранить результат в лукошко", Globals.save_to_memory_mode, self.elementsStartSaveToMemoryMode),
             ("Виджет области захвата", self.capture_region_widget_enabled, partial(toggle_boolean_var_generic, self, 'capture_region_widget_enabled')),
             ("Фон", self.show_background, partial(toggle_boolean_var_generic, self, 'show_background')),
-            ("Затемнять после отрисовки пометок", self.dark_pictures, self.toggle_dark_pictures),
+            ("Затемнять после отрисовки пометок", self.dark_pictures, partial(toggle_boolean_var_generic, self, 'dark_pictures')),
             ("Закрывать редактор после нажатия кнопки «Готово»", Globals.close_editor_on_done, partial(toggle_boolean_var_generic, Globals, 'close_editor_on_done')),
             ("Показывать дебаг-отрисовку для виджета трансформации", self.canvas_debug_transform_widget, partial(toggle_boolean_var_generic, self, 'canvas_debug_transform_widget')),
             ("Антиальясинг и сглаживание пиксмапов", Globals.ANTIALIASING_AND_SMOOTH_PIXMAP_TRANSFORM, partial(toggle_boolean_var_generic, Globals, 'ANTIALIASING_AND_SMOOTH_PIXMAP_TRANSFORM')),

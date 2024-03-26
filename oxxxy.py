@@ -1509,6 +1509,10 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         Globals.USE_PIXMAP_PROXY_FOR_TEXT_ELEMENTS = not Globals.USE_PIXMAP_PROXY_FOR_TEXT_ELEMENTS
         self.update()
 
+    def toggle_boolean_var_generic(self, obj, attr_name):
+        setattr(obj, attr_name, not getattr(obj, attr_name))
+        self.update()
+
     def contextMenuEvent(self, event):
         if self.cancel_context_menu:
             self.cancel_context_menu = False

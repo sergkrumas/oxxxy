@@ -1485,10 +1485,6 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         Globals.close_editor_on_done = not Globals.close_editor_on_done
         self.update()
 
-    def toggle_antialiasing(self):
-        Globals.ANTIALIASING_AND_SMOOTH_PIXMAP_TRANSFORM = not Globals.ANTIALIASING_AND_SMOOTH_PIXMAP_TRANSFORM
-        self.update()
-
     def contextMenuEvent(self, event):
         if self.cancel_context_menu:
             self.cancel_context_menu = False
@@ -1572,7 +1568,7 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
             ("Затемнять после отрисовки пометок", self.dark_pictures, self.toggle_dark_pictures),
             ("Закрывать редактор после нажатия кнопки «Готово»", Globals.close_editor_on_done, self.toggle_close_on_done),
             ("Показывать дебаг-отрисовку для виджета трансформации", self.canvas_debug_transform_widget, partial(toggle_boolean_var_generic, self, 'canvas_debug_transform_widget')),
-            ("Антиальясинг и сглаживание пиксмапов", Globals.ANTIALIASING_AND_SMOOTH_PIXMAP_TRANSFORM, self.toggle_antialiasing),
+            ("Антиальясинг и сглаживание пиксмапов", Globals.ANTIALIASING_AND_SMOOTH_PIXMAP_TRANSFORM, partial(toggle_boolean_var_generic, Globals, 'ANTIALIASING_AND_SMOOTH_PIXMAP_TRANSFORM')),
             ("Pixmap-прокси для пометок типа «Текст»", Globals.USE_PIXMAP_PROXY_FOR_TEXT_ELEMENTS, partial(toggle_boolean_var_generic, Globals, 'USE_PIXMAP_PROXY_FOR_TEXT_ELEMENTS')),
             ("DEBUG", Globals.DEBUG, partial(toggle_boolean_var_generic, Globals, 'DEBUG')),
         )

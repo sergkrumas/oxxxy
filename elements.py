@@ -1195,10 +1195,6 @@ class ElementsMixin(ElementsTransformMixin):
         self.update()
         tools_window.update()
 
-    def get_final_picture(self):
-        self.elementsRenderFinal()
-        return self.elements_final_output
-
     def elementsActivateTransformTool(self):
         if not self.elements:
             return

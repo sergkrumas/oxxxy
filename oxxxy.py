@@ -1982,7 +1982,7 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
                 self.elementsActivateTransformTool()
         if check_scancode_for(event, "P"):
             if self.capture_region_rect is not None:
-                self.show_view_window(self.get_final_picture)
+                self.show_view_window(self.elementsRenderFinal)
         if check_scancode_for(event, "A") and event.modifiers() & Qt.ControlModifier:
             self.elementsSelectDeselectAll()
         if check_scancode_for(event, "F"):

@@ -1196,7 +1196,7 @@ class ElementsMixin(ElementsTransformMixin):
         tools_window.update()
 
     def get_final_picture(self):
-        self.elementsUpdateFinalPicture()
+        self.elementsRenderFinal()
         return self.elements_final_output
 
     def elementsActivateTransformTool(self):
@@ -2030,7 +2030,7 @@ class ElementsMixin(ElementsTransformMixin):
             )
         else:
             capture_region_rect = element.get_canvas_space_selection_area().boundingRect()
-            self.elementsUpdateFinalPicture(
+            self.elementsRenderFinal(
                 capture_region_rect=capture_region_rect,
                 draw_background_only=True,
                 no_multiframing=True,
@@ -2085,7 +2085,7 @@ class ElementsMixin(ElementsTransformMixin):
         else:
 
             capture_region_rect = element.get_canvas_space_selection_area().boundingRect()
-            self.elementsUpdateFinalPicture(
+            self.elementsRenderFinal(
                 capture_region_rect=capture_region_rect,
                 draw_background_only=True,
                 no_multiframing=True,
@@ -2989,7 +2989,7 @@ class ElementsMixin(ElementsTransformMixin):
             painter.restore()
         painter.restore()
 
-    def elementsUpdateFinalPicture(self, capture_region_rect=None,
+    def elementsRenderFinal(self, capture_region_rect=None,
                 draw_background_only=False, no_multiframing=False, prepare_darkening=False, clean=False,
                 force_no_datetime_stamp=False):
         if self.capture_region_rect:
@@ -3285,20 +3285,20 @@ class ElementsMixin(ElementsTransformMixin):
         draw_background_only = for_slicing
         # рендер картинки
         if for_slicing:
-            self.elementsUpdateFinalPicture(capture_region_rect=content_rect, clean=True,
+            self.elementsRenderFinal(capture_region_rect=content_rect, clean=True,
                                                                         draw_background_only=True)
             self.source_pixels = self.elements_final_output.toImage()
             return content_rect
 
         else:
             if action == action_crop:
-                self.elementsUpdateFinalPicture(clean=True)
+                self.elementsRenderFinal(clean=True)
             elif action == action_keep:
                 hs = self.modification_slots[0]
                 r = QRectF(QPointF(0, 0), QSizeF(hs.elements[0].pixmap.size()))
-                self.elementsUpdateFinalPicture(capture_region_rect=r, clean=True)
+                self.elementsRenderFinal(capture_region_rect=r, clean=True)
             elif action == action_extend:
-                self.elementsUpdateFinalPicture(
+                self.elementsRenderFinal(
                         capture_region_rect=content_rect, clean=True)
 
         # заменяем картинку и пишем в историю с удалением содержимого

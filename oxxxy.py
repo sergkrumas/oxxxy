@@ -1132,7 +1132,7 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
             # copy_image_file_to_clipboard(filepath)
             save_meta_info(metadata, filepath)
         else:
-            self.elementsUpdateFinalPicture(force_no_datetime_stamp=Globals.save_to_memory_mode)
+            self.elementsRenderFinal(force_no_datetime_stamp=Globals.save_to_memory_mode)
             pix = self.elements_final_output
             if Globals.save_to_memory_mode:
                 Globals.images_in_memory.append(pix)
@@ -1496,7 +1496,7 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
 
     def toggle_dark_pictures(self):
         self.dark_pictures = not self.dark_pictures
-        self.elementsUpdateFinalPicture()
+        self.elementsRenderFinal()
         self.update()
 
     def toggle_close_on_done(self):

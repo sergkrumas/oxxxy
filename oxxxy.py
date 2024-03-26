@@ -1132,8 +1132,7 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
             # copy_image_file_to_clipboard(filepath)
             save_meta_info(metadata, filepath)
         else:
-            self.elementsRenderFinal(force_no_datetime_stamp=Globals.save_to_memory_mode)
-            pix = self.elements_final_output
+            pix = self.elementsRenderFinal(force_no_datetime_stamp=Globals.save_to_memory_mode)
             if Globals.save_to_memory_mode:
                 Globals.images_in_memory.append(pix)
                 update_sys_tray_icon(len(Globals.images_in_memory))

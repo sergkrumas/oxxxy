@@ -1477,10 +1477,6 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         elif action == cancel_action:
             pass
 
-    def toggle_transform_widget_debug_mode(self):
-        self.canvas_debug_transform_widget = not self.canvas_debug_transform_widget
-        self.update()
-
     def toggle_dark_pictures(self):
         self.dark_pictures = not self.dark_pictures
         self.update()
@@ -1579,7 +1575,7 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
             ("Фон", self.show_background, partial(toggle_boolean_var_generic, self, 'show_background')),
             ("Затемнять после отрисовки пометок", self.dark_pictures, self.toggle_dark_pictures),
             ("Закрывать редактор после нажатия кнопки «Готово»", Globals.close_editor_on_done, self.toggle_close_on_done),
-            ("Показывать дебаг-отрисовку для виджета трансформации", self.canvas_debug_transform_widget, self.toggle_transform_widget_debug_mode),
+            ("Показывать дебаг-отрисовку для виджета трансформации", self.canvas_debug_transform_widget, partial(toggle_boolean_var_generic, self, 'canvas_debug_transform_widget')),
             ("Антиальясинг и сглаживание пиксмапов", Globals.ANTIALIASING_AND_SMOOTH_PIXMAP_TRANSFORM, self.toggle_antialiasing),
             ("Pixmap-прокси для пометок типа «Текст»", Globals.USE_PIXMAP_PROXY_FOR_TEXT_ELEMENTS, self.toggle_pixmap_proxy),
             ("DEBUG", Globals.DEBUG, partial(toggle_boolean_var_generic, Globals, 'DEBUG')),

@@ -1481,10 +1481,6 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         self.canvas_debug_transform_widget = not self.canvas_debug_transform_widget
         self.update()
 
-    def toggle_debug_mode(self):
-        Globals.DEBUG = not Globals.DEBUG
-        self.update()
-
     def toggle_dark_pictures(self):
         self.dark_pictures = not self.dark_pictures
         self.update()
@@ -1500,7 +1496,6 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
     def toggle_pixmap_proxy(self):
         Globals.USE_PIXMAP_PROXY_FOR_TEXT_ELEMENTS = not Globals.USE_PIXMAP_PROXY_FOR_TEXT_ELEMENTS
         self.update()
-
 
     def contextMenuEvent(self, event):
         if self.cancel_context_menu:
@@ -1587,7 +1582,7 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
             ("Показывать дебаг-отрисовку для виджета трансформации", self.canvas_debug_transform_widget, self.toggle_transform_widget_debug_mode),
             ("Антиальясинг и сглаживание пиксмапов", Globals.ANTIALIASING_AND_SMOOTH_PIXMAP_TRANSFORM, self.toggle_antialiasing),
             ("Pixmap-прокси для пометок типа «Текст»", Globals.USE_PIXMAP_PROXY_FOR_TEXT_ELEMENTS, self.toggle_pixmap_proxy),
-            ("DEBUG", Globals.DEBUG, self.toggle_debug_mode),
+            ("DEBUG", Globals.DEBUG, partial(toggle_boolean_var_generic, Globals, 'DEBUG')),
         )
 
         for title, value, callback in checkboxes:

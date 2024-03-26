@@ -1489,10 +1489,6 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         Globals.ANTIALIASING_AND_SMOOTH_PIXMAP_TRANSFORM = not Globals.ANTIALIASING_AND_SMOOTH_PIXMAP_TRANSFORM
         self.update()
 
-    def toggle_pixmap_proxy(self):
-        Globals.USE_PIXMAP_PROXY_FOR_TEXT_ELEMENTS = not Globals.USE_PIXMAP_PROXY_FOR_TEXT_ELEMENTS
-        self.update()
-
     def contextMenuEvent(self, event):
         if self.cancel_context_menu:
             self.cancel_context_menu = False
@@ -1577,7 +1573,7 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
             ("Закрывать редактор после нажатия кнопки «Готово»", Globals.close_editor_on_done, self.toggle_close_on_done),
             ("Показывать дебаг-отрисовку для виджета трансформации", self.canvas_debug_transform_widget, partial(toggle_boolean_var_generic, self, 'canvas_debug_transform_widget')),
             ("Антиальясинг и сглаживание пиксмапов", Globals.ANTIALIASING_AND_SMOOTH_PIXMAP_TRANSFORM, self.toggle_antialiasing),
-            ("Pixmap-прокси для пометок типа «Текст»", Globals.USE_PIXMAP_PROXY_FOR_TEXT_ELEMENTS, self.toggle_pixmap_proxy),
+            ("Pixmap-прокси для пометок типа «Текст»", Globals.USE_PIXMAP_PROXY_FOR_TEXT_ELEMENTS, partial(toggle_boolean_var_generic, Globals, 'USE_PIXMAP_PROXY_FOR_TEXT_ELEMENTS')),
             ("DEBUG", Globals.DEBUG, partial(toggle_boolean_var_generic, Globals, 'DEBUG')),
         )
 

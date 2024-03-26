@@ -437,8 +437,6 @@ class ElementsMixin(ElementsTransformMixin):
 
         self.modification_stamp = None
 
-        self.elements_final_output = None
-
         self.capture_region_widget_enabled = True
         self.show_background = True
         self.dark_pictures = True

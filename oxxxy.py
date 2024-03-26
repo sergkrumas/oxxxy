@@ -1496,7 +1496,6 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
 
     def toggle_dark_pictures(self):
         self.dark_pictures = not self.dark_pictures
-        self.elementsRenderFinal()
         self.update()
 
     def toggle_close_on_done(self):

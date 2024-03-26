@@ -1485,10 +1485,6 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         Globals.DEBUG = not Globals.DEBUG
         self.update()
 
-    def toggle_capture_region_widget(self):
-        self.capture_region_widget_enabled = not self.capture_region_widget_enabled
-        self.update()
-
     def toggle_dark_pictures(self):
         self.dark_pictures = not self.dark_pictures
         self.update()
@@ -1584,7 +1580,7 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
 
         checkboxes = (
             ("Сохранить результат в лукошко", Globals.save_to_memory_mode, self.elementsStartSaveToMemoryMode),
-            ("Виджет области захвата", self.capture_region_widget_enabled, self.toggle_capture_region_widget),
+            ("Виджет области захвата", self.capture_region_widget_enabled, partial(toggle_boolean_var_generic, self, 'capture_region_widget_enabled')),
             ("Фон", self.show_background, partial(toggle_boolean_var_generic, self, 'show_background')),
             ("Затемнять после отрисовки пометок", self.dark_pictures, self.toggle_dark_pictures),
             ("Закрывать редактор после нажатия кнопки «Готово»", Globals.close_editor_on_done, self.toggle_close_on_done),

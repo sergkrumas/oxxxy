@@ -1481,10 +1481,6 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         self.dark_pictures = not self.dark_pictures
         self.update()
 
-    def toggle_close_on_done(self):
-        Globals.close_editor_on_done = not Globals.close_editor_on_done
-        self.update()
-
     def contextMenuEvent(self, event):
         if self.cancel_context_menu:
             self.cancel_context_menu = False
@@ -1566,7 +1562,7 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
             ("Виджет области захвата", self.capture_region_widget_enabled, partial(toggle_boolean_var_generic, self, 'capture_region_widget_enabled')),
             ("Фон", self.show_background, partial(toggle_boolean_var_generic, self, 'show_background')),
             ("Затемнять после отрисовки пометок", self.dark_pictures, self.toggle_dark_pictures),
-            ("Закрывать редактор после нажатия кнопки «Готово»", Globals.close_editor_on_done, self.toggle_close_on_done),
+            ("Закрывать редактор после нажатия кнопки «Готово»", Globals.close_editor_on_done, partial(toggle_boolean_var_generic, Globals, 'close_editor_on_done')),
             ("Показывать дебаг-отрисовку для виджета трансформации", self.canvas_debug_transform_widget, partial(toggle_boolean_var_generic, self, 'canvas_debug_transform_widget')),
             ("Антиальясинг и сглаживание пиксмапов", Globals.ANTIALIASING_AND_SMOOTH_PIXMAP_TRANSFORM, partial(toggle_boolean_var_generic, Globals, 'ANTIALIASING_AND_SMOOTH_PIXMAP_TRANSFORM')),
             ("Pixmap-прокси для пометок типа «Текст»", Globals.USE_PIXMAP_PROXY_FOR_TEXT_ELEMENTS, partial(toggle_boolean_var_generic, Globals, 'USE_PIXMAP_PROXY_FOR_TEXT_ELEMENTS')),

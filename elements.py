@@ -2990,6 +2990,7 @@ class ElementsMixin(ElementsTransformMixin):
     def elementsRenderFinal(self, capture_region_rect=None,
                 draw_background_only=False, no_multiframing=False, prepare_darkening=False, clean=False,
                 force_no_datetime_stamp=False):
+        FINAL_PIXMAP = None
         if self.capture_region_rect:
             specials = [el for el in self.elementsFilter() if el.type == ToolID.multiframing]
             any_multiframing_element = any(specials)
@@ -3016,9 +3017,9 @@ class ElementsMixin(ElementsTransformMixin):
                     total_height += el.height
                 max_width = int(max_width)
                 total_height = int(total_height)
-                self.elements_final_output = QPixmap(QSize(max_width, total_height))
+                FINAL_PIXMAP = QPixmap(QSize(max_width, total_height))
                 painter = QPainter()
-                painter.begin(self.elements_final_output)
+                painter.begin(FINAL_PIXMAP)
                 cur_pos = QPointF(0, 0)
                 for el in specials:
                     dst_rect = QRectF(cur_pos, QSizeF(max_width, el.height))
@@ -3033,10 +3034,10 @@ class ElementsMixin(ElementsTransformMixin):
                     capture_region_rect = self.capture_region_rect
 
                 # draw elements
-                self.elements_final_output = QPixmap(capture_region_rect.size().toSize())
-                self.elements_final_output.fill(Qt.transparent)
+                FINAL_PIXMAP = QPixmap(capture_region_rect.size().toSize())
+                FINAL_PIXMAP.fill(Qt.transparent)
                 painter = QPainter()
-                painter.begin(self.elements_final_output)
+                painter.begin(FINAL_PIXMAP)
                 self._canvas_origin = QPointF(self.canvas_origin)
                 self._canvas_scale_x = self.canvas_scale_x
                 self._canvas_scale_y = self.canvas_scale_y
@@ -3054,16 +3055,16 @@ class ElementsMixin(ElementsTransformMixin):
 
                 # mask
                 if not clean and self.tools_window and self.tools_window.chb_masked.isChecked():
-                    self.elements_final_output = self.circle_mask_image(self.elements_final_output)
+                    FINAL_PIXMAP = self.circle_mask_image(FINAL_PIXMAP)
 
                 if (not clean) and not force_no_datetime_stamp:
                     # datetime stamp
                     painter = QPainter()
-                    painter.begin(self.elements_final_output)
-                    efo = self.elements_final_output
-                    pos = QPoint(efo.width(), efo.height())
+                    painter.begin(FINAL_PIXMAP)
+                    pos = QPoint(FINAL_PIXMAP.width(), FINAL_PIXMAP.height())
                     self.elementsDrawDateTime(painter, pos=pos)
                     painter.end()
+        return FINAL_PIXMAP
 
     def elementsPrepareElementCopyForModifications(self, element):
         if self.modification_stamp is None:

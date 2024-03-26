@@ -1477,10 +1477,6 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         elif action == cancel_action:
             pass
 
-    def toggle_show_background(self):
-        self.show_background = not self.show_background
-        self.update()
-
     def toggle_transform_widget_debug_mode(self):
         self.canvas_debug_transform_widget = not self.canvas_debug_transform_widget
         self.update()
@@ -1509,14 +1505,15 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         Globals.USE_PIXMAP_PROXY_FOR_TEXT_ELEMENTS = not Globals.USE_PIXMAP_PROXY_FOR_TEXT_ELEMENTS
         self.update()
 
-    def toggle_boolean_var_generic(self, obj, attr_name):
-        setattr(obj, attr_name, not getattr(obj, attr_name))
-        self.update()
 
     def contextMenuEvent(self, event):
         if self.cancel_context_menu:
             self.cancel_context_menu = False
             return
+
+        def toggle_boolean_var_generic(obj, attr_name):
+            setattr(obj, attr_name, not getattr(obj, attr_name))
+            self.update()
 
         contextMenu = QMenu()
         contextMenu.setStyleSheet(self.context_menu_stylesheet)
@@ -1588,7 +1585,7 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         checkboxes = (
             ("Сохранить результат в лукошко", Globals.save_to_memory_mode, self.elementsStartSaveToMemoryMode),
             ("Виджет области захвата", self.capture_region_widget_enabled, self.toggle_capture_region_widget),
-            ("Фон", self.show_background, self.toggle_show_background),
+            ("Фон", self.show_background, partial(toggle_boolean_var_generic, self, 'show_background')),
             ("Затемнять после отрисовки пометок", self.dark_pictures, self.toggle_dark_pictures),
             ("Закрывать редактор после нажатия кнопки «Готово»", Globals.close_editor_on_done, self.toggle_close_on_done),
             ("Показывать дебаг-отрисовку для виджета трансформации", self.canvas_debug_transform_widget, self.toggle_transform_widget_debug_mode),

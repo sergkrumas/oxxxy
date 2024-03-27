@@ -1295,8 +1295,6 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin):
             tw.chb_toolbool.blockSignals(True)
             tw.chb_toolbool.setChecked(el.toolbool)
             tw.chb_toolbool.blockSignals(False)
-            if el.type == ToolID.text:
-                self.elementsActivateTextElement(el)
             tw.set_ui_on_toolchange(element_type=el.type)
             tw.update()
         else:

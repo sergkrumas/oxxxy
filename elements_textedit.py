@@ -22,7 +22,7 @@ class ElementsTextEditElementMixin():
             if self.active_element.type == self.ToolID.text:
                 self.active_element = None
                 # не нужно вызывать здесь self.elementsSetSelected(None),
-                # потому что elementsDeactivateTextField вызывается 
+                # потому что elementsDeactivateTextField вызывается
                 # в начале работы инструмента «выделение и перемещение»
                 self.update()
                 return True

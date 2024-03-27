@@ -22,6 +22,17 @@ class ElementsTextEditElementMixin():
             if element.type == self.ToolID.text:
                 pass
 
+    def elementsDeactivateTextField(self):
+        if self.active_element:
+            if self.active_element.type == self.ToolID.text:
+                self.active_element = None
+                # не нужно вызывать здесь self.elementsSetSelected(None),
+                # потому что elementsDeactivateTextField вызывается 
+                # в начале работы инструмента «выделение и перемещение»
+                self.update()
+                return True
+        return False
+
     def elementsTextDocSetParameters(self, elem):
         if elem.text_doc is not None:
             self.elementsTextDocSetFont(elem)
@@ -128,15 +139,6 @@ class ElementsTextEditElementMixin():
 
         relativePos = cursor.position() - block.position()
         return layout.lineForTextPosition(relativePos)
-
-    def elementsDeactivateTextField(self):
-        if self.active_element:
-            if self.active_element.type == self.ToolID.text:
-                self.active_element = None
-                self.elementsSetSelected(None)
-                self.update()
-                return True
-        return False
 
     def elementsIsTextFieldInputEvent(self, event):
         is_event = self.active_element is not None and self.active_element.type == self.ToolID.text

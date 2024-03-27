@@ -1632,7 +1632,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin):
                 element.finished = False
         elif tool == ToolID.transform:
 
-            self.elementsDeactivateTextElements()
+            self.elementsDeactivateTextField()
 
             if self.is_over_scaling_activation_area(event.pos()):
                 self.elementsStartModificationProcess('mouse; scaling')
@@ -3014,13 +3014,13 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin):
         painter.drawPath(path)
 
     def elementsEditHistoryForwards(self):
-        self.elementsDeactivateTextElements()
+        self.elementsDeactivateTextField()
         if self.elements_modification_index < len(self.modification_slots):
             self.elements_modification_index += 1
         self.elementsSetSelected(None)
 
     def elementsEditHistoryBackwards(self):
-        self.elementsDeactivateTextElements()
+        self.elementsDeactivateTextField()
         if self.elements_modification_index > 0:
             self.elements_modification_index -= 1
         self.elementsSetSelected(None)

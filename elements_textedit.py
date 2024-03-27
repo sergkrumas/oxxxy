@@ -17,11 +17,6 @@ from _utils import (convex_hull, check_scancode_for, calculate_tangent_points, b
 
 class ElementsTextEditElementMixin():
 
-    def elementsDeactivateTextElements(self):
-        for element in self.elementsFilter():
-            if element.type == self.ToolID.text:
-                pass
-
     def elementsDeactivateTextField(self):
         if self.active_element:
             if self.active_element.type == self.ToolID.text:

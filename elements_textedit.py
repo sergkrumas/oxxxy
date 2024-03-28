@@ -23,7 +23,7 @@ class ElementsTextEditElementMixin():
                 return True
         return False
 
-    def elementsTextDocSetParameters(self, elem):
+    def elementsTextElementSetParameters(self, elem):
         if elem.text_doc is not None:
             self.elementsTextDocSetFont(elem)
 

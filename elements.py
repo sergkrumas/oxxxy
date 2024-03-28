@@ -1107,7 +1107,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin):
             element.color_slider_palette_index = 0
             element.toolbool = False
         if element.type == ToolID.text:
-            self.elementsTextDocSetParameters(element)
+            self.elementsTextElementSetParameters(element)
         if element.type == ToolID.blurring:
             self.elementsSetBlurredPixmap(element)
         if element.type in [ToolID.copypaste, ToolID.zoom_in_region]:

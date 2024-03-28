@@ -18,14 +18,16 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
-from _utils import (dot, )
-import sys
 import math
+import sys
+
 
 from PyQt5.QtWidgets import (QVBoxLayout, QWidget, QApplication)
 from PyQt5.QtCore import (QRectF, QPoint, pyqtSignal, QSizeF, Qt, QPointF, QSize, QRect)
 from PyQt5.QtGui import (QPixmap, QBrush, QRegion, QRadialGradient, QColor,
                                         QPen, QPainterPath, QPolygon, QLinearGradient, QPainter)
+
+from _utils import (dot, )
 
 __all__ = (
     'CustomSlider',

@@ -30,13 +30,12 @@ from PyQt5.QtWidgets import (QMenu, QFileDialog, QApplication)
 from PyQt5.QtCore import (QPoint, QPointF, QRect, Qt, QSize, QSizeF, QRectF, QFile, QDataStream,
                                                                             QIODevice, QMarginsF)
 from PyQt5.QtGui import (QPainterPath, QColor, QBrush, QPixmap, QPainter, QImage, QTransform,
-    QPen, QFont, QCursor, QPolygonF, QVector2D, QTextDocument, QAbstractTextDocumentLayout,
-                                            QPalette, QTextCursor, QTextLine, QPainterPathStroker)
+                                QPen, QFont, QCursor, QPolygonF, QVector2D, QPainterPathStroker)
 
-from _utils import (convex_hull, check_scancode_for, calculate_tangent_points, build_valid_rect,
-    build_valid_rectF, get_nearest_point_on_rect, capture_rotated_rect_from_pixmap, squarize_rect,
-    fit_rect_into_rect, constraint45Degree, get_bounding_pointsF, load_svg, is_webp_file_animated,
-                                                                apply_blur_effect, get_rect_corners)
+from _utils import (convex_hull, calculate_tangent_points, build_valid_rect, build_valid_rectF,
+    get_nearest_point_on_rect, capture_rotated_rect_from_pixmap, squarize_rect, fit_rect_into_rect,
+    constraint45Degree, get_bounding_pointsF, load_svg, is_webp_file_animated,
+                                                            apply_blur_effect, get_rect_corners)
 
 from elements_transform import ElementsTransformMixin
 from elements_textedit import ElementsTextEditElementMixin

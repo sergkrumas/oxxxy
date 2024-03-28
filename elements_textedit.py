@@ -64,7 +64,7 @@ class ElementsTextEditElementMixin():
             ae.text_doc_cursor_pos += len(text)
             _cursor.endEditBlock()
 
-        # text_line = self.currentTextLine(_cursor)
+        # text_line = self.elementsTextElementCurrentTextLine(_cursor)
         # print('text_line', text_line.lineNumber())
         ae.plain_text = ae.text_doc.toPlainText()
         if self.Globals.USE_PIXMAP_PROXY_FOR_TEXT_ELEMENTS:
@@ -118,7 +118,7 @@ class ElementsTextEditElementMixin():
         self.elementsTextElementDraw(p, element)
         p.end()
 
-    def currentTextLine(self, cursor):
+    def elementsTextElementCurrentTextLine(self, cursor):
         block = cursor.block()
         if not block.isValid():
             return QTextLine()

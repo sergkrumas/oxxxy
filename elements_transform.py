@@ -28,9 +28,8 @@ import functools
 
 from PyQt5.QtWidgets import (QApplication,)
 from PyQt5.QtCore import (QPointF, Qt, QRectF)
-from PyQt5.QtGui import (QPainterPath, QColor, QKeyEvent, QMouseEvent, QBrush, QPixmap,
-    QPaintEvent, QPainter, QWindow, QPolygon, QImage, QTransform, QPen, QLinearGradient,
-    QIcon, QFont, QCursor, QPolygonF, QVector2D)
+from PyQt5.QtGui import (QPainterPath, QColor, QBrush, QPixmap, QPainter, QTransform, QPen,
+                                                                    QCursor, QPolygonF, QVector2D)
 
 from _utils import (convex_hull, check_scancode_for, SettingsJson, generate_metainfo,
      build_valid_rect, build_valid_rectF, dot, get_nearest_point_on_rect, get_creation_date,

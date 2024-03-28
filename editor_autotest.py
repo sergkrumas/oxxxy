@@ -1,4 +1,6 @@
 
+import time
+import random
 
 from PyQt5.QtWidgets import (QApplication,)
 from PyQt5.QtCore import (QPointF, QEvent, Qt)
@@ -7,8 +9,6 @@ from PyQt5.QtGui import (QMouseEvent,)
 
 from elements import ToolID
 
-import time
-import random
 
 class EditorAutotestMixin():
 

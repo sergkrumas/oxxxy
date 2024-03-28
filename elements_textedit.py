@@ -1,8 +1,7 @@
 
 
-from PyQt5.QtWidgets import (QMenu, QFileDialog, QApplication)
-from PyQt5.QtCore import (QPoint, QPointF, QRect, Qt, QSize, QSizeF, QRectF, QFile, QDataStream,
-                                                                            QIODevice, QMarginsF)
+from PyQt5.QtWidgets import (QApplication,)
+from PyQt5.QtCore import (QPoint, QPointF, QRect, Qt, QRectF)
 from PyQt5.QtGui import (QPainterPath, QColor, QBrush, QPixmap, QPainter, QImage, QTransform,
     QPen, QFont, QCursor, QPolygonF, QVector2D, QTextDocument, QAbstractTextDocumentLayout,
                                             QPalette, QTextCursor, QTextLine, QPainterPathStroker)

@@ -88,7 +88,7 @@ class ElementsTextEditElementMixin():
         element.element_scale_y = 1.0
         element.calc_local_data()
 
-    def elementsTextDocDraw(self, painter, element):
+    def elementsTextElementDraw(self, painter, element):
 
         def tweakedDrawContents(text_document, _painter_, rect):
             # дефолтный drawContents не поддерживает изменение текста
@@ -115,7 +115,7 @@ class ElementsTextEditElementMixin():
         element.proxy_pixmap.fill(Qt.transparent)
         p = QPainter()
         p.begin(element.proxy_pixmap)
-        self.elementsTextDocDraw(p, element)
+        self.elementsTextElementDraw(p, element)
         p.end()
 
     def currentTextLine(self, cursor):
@@ -169,7 +169,7 @@ class ElementsTextEditElementMixin():
         text_doc.setTextWidth(-1)
         elem.text_doc_cursor_pos = 0
 
-    def elementsTextDocDrawOnCanvas(self, painter, element, final):
+    def elementsTextElementDrawOnCanvas(self, painter, element, final):
         if element.text_doc is not None:
             text_doc = element.text_doc
 
@@ -213,7 +213,7 @@ class ElementsTextEditElementMixin():
                     self.elementsTextDocUpdateProxyPixmap(element)
                 painter.drawPixmap(QPoint(0, 0), element.proxy_pixmap)
             else:
-                self.elementsTextDocDraw(painter, element)
+                self.elementsTextElementDraw(painter, element)
 
             # рисуем курсор
             doc_layout = text_doc.documentLayout()

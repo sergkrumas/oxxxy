@@ -211,3 +211,4 @@
 pylint _utils.py --disable=E0611,C0115,C0103,C0116
 pylint oxxxy.py --disable=E0611,C0115,C0103,C0116
 ```
+26 марта 2024 был добавлен специальный скрипт `pylint_scanner.py`, который засовывает все python-файлы в pylint, в том числе во вложенных папках.

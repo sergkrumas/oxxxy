@@ -37,7 +37,7 @@ from PyQt5.QtWidgets import (QMessageBox, QDesktopWidget, QApplication,
                                         QGraphicsBlurEffect, QGraphicsPixmapItem, QGraphicsScene)
 from PyQt5.QtCore import (QRectF, QPoint, QSizeF, Qt, QPointF, QRect, QMimeData, QUrl)
 from PyQt5.QtGui import (QPixmap, QImage, QRadialGradient, QColor, QGuiApplication, QPen,
-                        QLinearGradient, QPainter, QImageReader, QTransform, QPolygonF, QVector2D)
+                        QLinearGradient, QPainter, QImageReader, QVector2D)
 from PyQt5.QtSvg import  QSvgRenderer
 
 win32process = None

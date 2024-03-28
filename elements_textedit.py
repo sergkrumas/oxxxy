@@ -25,7 +25,7 @@ class ElementsTextEditElementMixin():
 
     def elementsTextElementSetParameters(self, elem):
         if elem.text_doc is not None:
-            self.elementsTextDocSetFont(elem)
+            self.elementsTextElementSetFont(elem)
 
     def elementsTextElementGetFontPixelSize(self, elem):
         return int(20+10*elem.size)
@@ -147,7 +147,7 @@ class ElementsTextEditElementMixin():
         text_doc.setPlainText(elem.plain_text)
         self.elementsTextDocInit(elem)
 
-    def elementsTextDocSetFont(self, element):
+    def elementsTextElementSetFont(self, element):
         font = QFont()
         font_pixel_size = self.elementsTextElementGetFontPixelSize(element)
         font.setPixelSize(font_pixel_size)
@@ -165,7 +165,7 @@ class ElementsTextEditElementMixin():
 
     def elementsTextDocInit(self, elem):
         text_doc = elem.text_doc
-        self.elementsTextDocSetFont(elem)
+        self.elementsTextElementSetFont(elem)
         text_doc.setTextWidth(-1)
         elem.text_doc_cursor_pos = 0
 

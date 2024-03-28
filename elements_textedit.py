@@ -30,7 +30,7 @@ class ElementsTextEditElementMixin():
     def elementsTextElementGetFontPixelSize(self, elem):
         return int(20+10*elem.size)
 
-    def elementsTextFieldInputEvent(self, event):
+    def elementsTextElementInputEvent(self, event):
         ae = self.active_element
         if ae is None or ae.type != self.ToolID.text:
             return

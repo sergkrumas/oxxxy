@@ -23,7 +23,6 @@ import sys
 import time
 import math
 from collections import namedtuple
-import time
 
 from PyQt5.QtWidgets import (QApplication, QMenu, QFileDialog, QWidget, QDesktopWidget)
 from PyQt5.QtCore import (QTimer, Qt, QRect, QRectF, QPoint, QPointF, QSize)

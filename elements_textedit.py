@@ -27,7 +27,7 @@ class ElementsTextEditElementMixin():
         if elem.text_doc is not None:
             self.elementsTextDocSetFont(elem)
 
-    def elementsGetFontPixelSize(self, elem):
+    def elementsTextElementGetFontPixelSize(self, elem):
         return int(20+10*elem.size)
 
     def elementsTextFieldInputEvent(self, event):
@@ -149,7 +149,7 @@ class ElementsTextEditElementMixin():
 
     def elementsTextDocSetFont(self, element):
         font = QFont()
-        font_pixel_size = self.elementsGetFontPixelSize(element)
+        font_pixel_size = self.elementsTextElementGetFontPixelSize(element)
         font.setPixelSize(font_pixel_size)
         element.text_doc.setDefaultFont(font)
 

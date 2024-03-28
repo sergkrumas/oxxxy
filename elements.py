@@ -2624,14 +2624,16 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin):
 
         # левая сторона
         painter.save()
-        # для соблюдения зума вьюпорта задаём эти трансформации
-        painter.setTransform(self.elementsGetDrawOffsetAndZoomTransform(pos_left))
-        pos_left = QPointF(0, 0)
-
         info_rect = build_valid_rectF(pos_left, self.rect().topLeft())
         info_rect.setWidth(300)
         info_rect.moveBottomRight(pos_left)
         painter.fillRect(info_rect, QColor(0, 0, 0, 180))
+
+        # для соблюдения зума вьюпорта задаём эти трансформации
+        painter.setTransform(self.elementsGetDrawOffsetAndZoomTransform(pos_left))
+        pos_left = QPointF(0, 0)
+
+
         font = painter.font()
         pixel_height = 25
         font.setPixelSize(20)
@@ -2655,10 +2657,18 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin):
             painter.drawText(p, element.debug_text)
         painter.restore()
 
+        painter.resetTransform()
+        info_rect = build_valid_rectF(pos_right, self.rect().topRight())
+        info_rect.setWidth(800)
+        painter.fillRect(info_rect, QColor(0, 0, 0, 180))
+
         painter.save()
         # для соблюдения зума вьюпорта задаём эти трансформации
         painter.setTransform(self.elementsGetDrawOffsetAndZoomTransform(pos_right))
         pos_right = QPointF(0, 0)
+        info_rect = build_valid_rectF(pos_right, self.rect().topRight())
+        info_rect.setWidth(800)
+        info_rect.moveBottomLeft(QPointF(10, -10) + info_rect.bottomLeft())
         # правая сторона, под линией
         if self.active_element is not None:
             info = f'active element: ' + self.active_element.get_parameters_info()
@@ -2671,12 +2681,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin):
         right_underground.moveTopLeft(pos_right)
         painter.drawText(right_underground, info)
 
-
         # правая сторона, над линией
-        info_rect = build_valid_rectF(pos_right, self.rect().topRight())
-        info_rect.setWidth(800)
-        painter.fillRect(info_rect, QColor(0, 0, 0, 180))
-        info_rect.moveBottomLeft(QPointF(10, -10) + info_rect.bottomLeft())
         vertical_offset = 0
         visible_slots = self.elementsModificationSlotsFilter()
         for index, ms in list(enumerate(self.modification_slots)):

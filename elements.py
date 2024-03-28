@@ -1791,7 +1791,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin):
                     new_elements.append(mod_element)
 
                     if mod_element.type == ToolID.text:
-                        self.elementsTextDocUpdateProxyPixmap(mod_element)
+                        self.elementsTextElementUpdateProxyPixmap(mod_element)
 
                 self.elementsSetSelected(new_elements, update_panel=False, update_widget=False)
 
@@ -1935,7 +1935,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin):
                             if el.type in [ToolID.arrow, ToolID.text]:
                                 self.elementsFixArrowStartPositionIfNeeded(el)
                                 if el.type == ToolID.text:
-                                    self.elementsTextDocUpdateProxyPixmap(el)
+                                    self.elementsTextElementUpdateProxyPixmap(el)
 
                 if not alt and not self.translation_ongoing and not self.rotation_ongoing and not self.scaling_ongoing:
                     self.canvas_selection_callback(event.modifiers() == Qt.ShiftModifier)

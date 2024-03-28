@@ -68,7 +68,7 @@ class ElementsTextEditElementMixin():
         # print('text_line', text_line.lineNumber())
         ae.plain_text = ae.text_doc.toPlainText()
         if self.Globals.USE_PIXMAP_PROXY_FOR_TEXT_ELEMENTS:
-            self.elementsTextDocUpdateProxyPixmap(ae)
+            self.elementsTextElementUpdateProxyPixmap(ae)
 
         self.elementsTextElementRecalculateGabarit(ae)
         self.update_selection_bouding_box()
@@ -110,7 +110,7 @@ class ElementsTextEditElementMixin():
         # рисуем сам текст
         tweakedDrawContents(text_doc, painter, None) # text_doc.drawContents(painter, QRectF())
 
-    def elementsTextDocUpdateProxyPixmap(self, element):
+    def elementsTextElementUpdateProxyPixmap(self, element):
         element.proxy_pixmap = QPixmap(element.text_doc.size().toSize())
         element.proxy_pixmap.fill(Qt.transparent)
         p = QPainter()
@@ -210,7 +210,7 @@ class ElementsTextEditElementMixin():
             # текст и курсор
             if self.Globals.USE_PIXMAP_PROXY_FOR_TEXT_ELEMENTS:
                 if element.proxy_pixmap is None:
-                    self.elementsTextDocUpdateProxyPixmap(element)
+                    self.elementsTextElementUpdateProxyPixmap(element)
                 painter.drawPixmap(QPoint(0, 0), element.proxy_pixmap)
             else:
                 self.elementsTextElementDraw(painter, element)

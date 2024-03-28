@@ -29,7 +29,8 @@ from PyQt5.QtCore import (QTimer, Qt, QRect, QRectF, QPoint, QPointF, QSize)
 from PyQt5.QtGui import (QPixmap, QPainterPath, QPainter, QCursor, QBrush, QPen, QColor,
                                              QTransform, QMovie, QPolygonF, QRegion, QVector2D)
 
-# from _utils import *
+from _utils import (build_valid_rect, load_image_respect_orientation, is_webp_file_animated, fit,
+    interpolate_values, draw_shadow, webRGBA, draw_thirds, check_scancode_for, fit_rect_into_rect)
 
 __all__ = (
     'ViewerWindow',

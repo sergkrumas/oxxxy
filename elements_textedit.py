@@ -2,9 +2,8 @@
 
 from PyQt5.QtWidgets import (QApplication,)
 from PyQt5.QtCore import (QPoint, QPointF, QRect, Qt, QRectF)
-from PyQt5.QtGui import (QPainterPath, QColor, QBrush, QPixmap, QPainter, QImage, QTransform,
-    QPen, QFont, QCursor, QPolygonF, QVector2D, QTextDocument, QAbstractTextDocumentLayout,
-                                            QPalette, QTextCursor, QTextLine, QPainterPathStroker)
+from PyQt5.QtGui import (QPainterPath, QColor, QBrush, QPixmap, QPainter, QTransform, QFont,
+                    QTextDocument, QAbstractTextDocumentLayout, QPalette, QTextCursor, QTextLine)
 
 from _utils import (convex_hull, check_scancode_for, calculate_tangent_points, build_valid_rect,
     build_valid_rectF, get_nearest_point_on_rect, capture_rotated_rect_from_pixmap, squarize_rect,

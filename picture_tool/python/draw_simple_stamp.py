@@ -23,7 +23,14 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 
-import sys, os, random, string, time, ctypes, subprocess, datetime
+import sys
+import os
+import random
+import string
+import time
+import ctypes
+import subprocess
+import datetime
 
 def menu_items():
     items = (

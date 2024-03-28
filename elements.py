@@ -2262,7 +2262,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin):
                                                                         str(element.number))
             painter.resetTransform()
         elif el_type == ToolID.text:
-            self.elementsTextDocDrawOnCanvas(painter, element)
+            self.elementsTextDocDrawOnCanvas(painter, element, final)
         elif el_type in [ToolID.blurring, ToolID.darkening]:
             painter.setTransform(element.get_transform_obj(canvas=self))
             rect = build_valid_rectF(element.local_start_point, element.local_end_point)

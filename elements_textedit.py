@@ -169,7 +169,7 @@ class ElementsTextEditElementMixin():
         text_doc.setTextWidth(-1)
         elem.text_doc_cursor_pos = 0
 
-    def elementsTextDocDrawOnCanvas(self, painter, element):
+    def elementsTextDocDrawOnCanvas(self, painter, element, final):
         if element.text_doc is not None:
             text_doc = element.text_doc
 
@@ -223,7 +223,7 @@ class ElementsTextEditElementMixin():
             while block != end:
                 # block_rect = doc_layout.blockBoundingRect(block)
                 # painter.drawRect(block_rect)
-                if self.active_element is element:
+                if self.active_element is element and not final:
                     if block.contains(cursor_pos):
                         block.layout().drawCursor(painter, QPointF(0,0), cursor_pos, 1)
                 block = block.next()

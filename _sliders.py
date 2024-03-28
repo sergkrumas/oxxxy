@@ -28,7 +28,7 @@ from PyQt5.QtGui import (QWindow, QPixmap, QBrush, QRegion, QImage, QRadialGradi
                     QGuiApplication, QPen, QPainterPath, QPolygon, QLinearGradient, QPainter)
 
 __all__ = (
-    'CustomSlider'
+    'CustomSlider',
 )
 
 class CustomSlider(QWidget):

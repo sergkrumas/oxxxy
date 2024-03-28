@@ -22,7 +22,7 @@ from _utils import (dot, )
 import sys
 import math
 
-from PyQt5.QtWidgets import (QHBoxLayout, QVBoxLayout, QWidget, QMessageBox, QDesktopWidget, QApplication, QRadioButton)
+from PyQt5.QtWidgets import (QVBoxLayout, QWidget, QApplication)
 from PyQt5.QtCore import (QRectF, QPoint, pyqtSignal, QSizeF, Qt, QPointF, QSize, QRect)
 from PyQt5.QtGui import (QWindow, QPixmap, QBrush, QRegion, QImage, QRadialGradient, QColor,
                     QGuiApplication, QPen, QPainterPath, QPolygon, QLinearGradient, QPainter)

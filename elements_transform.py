@@ -31,11 +31,6 @@ from PyQt5.QtCore import (QPointF, Qt, QRectF)
 from PyQt5.QtGui import (QPainterPath, QColor, QBrush, QPixmap, QPainter, QTransform, QPen,
                                                                     QCursor, QPolygonF, QVector2D)
 
-from _utils import (convex_hull, check_scancode_for, SettingsJson, generate_metainfo,
-     build_valid_rect, build_valid_rectF, dot, get_nearest_point_on_rect, get_creation_date,
-     find_browser_exe_file, open_link_in_browser, open_in_google_chrome, save_meta_info,
-     make_screenshot_pyqt, webRGBA, generate_gradient, draw_shadow, draw_cyberpunk,
-     get_bounding_points, load_svg, is_webp_file_animated)
 
 
 class ElementsTransformMixin():

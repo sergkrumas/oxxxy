@@ -12,12 +12,12 @@ from _utils import (check_scancode_for,)
 
 class ElementsTextEditElementMixin():
 
-    def elementsDeactivateTextField(self):
+    def elementsDeactivateTextElement(self):
         if self.active_element:
             if self.active_element.type == self.ToolID.text:
                 self.active_element = None
                 # не нужно вызывать здесь self.elementsSetSelected(None),
-                # потому что elementsDeactivateTextField вызывается
+                # потому что elementsDeactivateTextElement вызывается
                 # в начале работы инструмента «выделение и перемещение»
                 self.update()
                 return True

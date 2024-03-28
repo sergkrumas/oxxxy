@@ -1,9 +1,7 @@
 
 
 from PyQt5.QtWidgets import (QApplication,)
-from PyQt5.QtCore import (pyqtSignal, QPoint, QPointF, pyqtSlot, QRect, QEvent,
-    QTimer, Qt, QSize, QSizeF, QRectF, QThread, QAbstractNativeEventFilter,
-    QAbstractEventDispatcher, QFile, QDataStream, QIODevice)
+from PyQt5.QtCore import (QPointF, QEvent, Qt)
 from PyQt5.QtGui import (QPainterPath, QColor, QKeyEvent, QMouseEvent, QBrush, QPixmap,
     QPaintEvent, QPainter, QWindow, QPolygon, QImage, QTransform, QPen, QLinearGradient,
     QIcon, QFont, QCursor, QPolygonF, QVector2D, QFontDatabase)

@@ -27,9 +27,9 @@ from collections import namedtuple
 from PyQt5.QtWidgets import (QApplication, QMenu, QFileDialog, QWidget, QDesktopWidget)
 from PyQt5.QtCore import (QTimer, Qt, QRect, QRectF, QPoint, QPointF, QSize)
 from PyQt5.QtGui import (QPixmap, QPainterPath, QPainter, QCursor, QBrush, QPen, QColor,
-                                 QTransform, QMovie, QPolygonF, QRegion, QImageReader, QVector2D)
+                                             QTransform, QMovie, QPolygonF, QRegion, QVector2D)
 
-from _utils import *
+# from _utils import *
 
 __all__ = (
     'ViewerWindow',

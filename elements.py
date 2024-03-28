@@ -1037,7 +1037,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin):
                     setattr(element, attr_name, attr_value)
 
                 if element.type == ToolID.text:
-                    self.elementsCreateTextDoc(element)
+                    self.elementsImplantTextElement(element)
 
         #  приготовление UI
         self.tools_window.forwards_backwards_update()
@@ -1890,7 +1890,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin):
                 ms.content_type = 'text'
             element.arrow = None
             del element.arrow # чтобы не было проблем при сохранении файла
-            self.elementsCreateTextDoc(element)
+            self.elementsImplantTextElement(element)
             if arrow_included:
                 self.elementsTextElementRecalculateGabarit(element)
                 self.elementsFixArrowStartPositionIfNeeded(element)

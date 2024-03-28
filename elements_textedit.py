@@ -140,7 +140,7 @@ class ElementsTextEditElementMixin():
                     (event.modifiers() == Qt.ControlModifier and check_scancode_for(event, "V")))
         return is_event
 
-    def elementsCreateTextDoc(self, elem):
+    def elementsImplantTextElement(self, elem):
         text_doc = QTextDocument()
         elem.text_doc = text_doc
         # elem.text_doc.setDefaultFont(self.Globals.SEVEN_SEGMENT_FONT)

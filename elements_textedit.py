@@ -130,7 +130,7 @@ class ElementsTextEditElementMixin():
         relativePos = cursor.position() - block.position()
         return layout.lineForTextPosition(relativePos)
 
-    def elementsIsTextFieldInputEvent(self, event):
+    def elementsTextElementIsInputEvent(self, event):
         is_event = self.active_element is not None and self.active_element.type == self.ToolID.text
         is_event = is_event and event.key() != Qt.Key_Escape
         is_event = is_event and event.key() not in [Qt.Key_Delete, Qt.Key_Insert, Qt.Key_Home, Qt.Key_End, Qt.Key_PageDown, Qt.Key_PageUp]

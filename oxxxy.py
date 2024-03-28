@@ -1842,7 +1842,7 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
 
     def keyPressEvent(self, event):
         key = event.key()
-        if self.elementsIsTextFieldInputEvent(event):
+        if self.elementsTextElementIsInputEvent(event):
             self.elementsTextElementInputEvent(event)
             return
         arrow_keys = [Qt.Key_Up, Qt.Key_Down, Qt.Key_Right, Qt.Key_Left]

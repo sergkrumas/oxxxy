@@ -145,7 +145,7 @@ class ElementsTextEditElementMixin():
         elem.text_doc = text_doc
         # elem.text_doc.setDefaultFont(self.Globals.SEVEN_SEGMENT_FONT)
         text_doc.setPlainText(elem.plain_text)
-        self.elementsTextDocInit(elem)
+        self.elementsTextElementInit(elem)
 
     def elementsTextElementSetFont(self, element):
         font = QFont()
@@ -163,7 +163,7 @@ class ElementsTextEditElementMixin():
                 text_cursor_pos = ae.text_doc.documentLayout().hitTest(pos, Qt.FuzzyHit)
                 ae.text_doc_cursor_pos = text_cursor_pos
 
-    def elementsTextDocInit(self, elem):
+    def elementsTextElementInit(self, elem):
         text_doc = elem.text_doc
         self.elementsTextElementSetFont(elem)
         text_doc.setTextWidth(-1)

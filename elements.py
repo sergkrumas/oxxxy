@@ -1277,7 +1277,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin):
             if attr_name == "text_doc" and attr_value is not None:
                 element.text_doc = type_class(attr_value)
                 element.text_doc.setPlainText(attr_value.toPlainText())
-                self.elementsTextDocInit(element)
+                self.elementsTextElementInit(element)
             else:
                 setattr(element, attr_name, final_value)
 

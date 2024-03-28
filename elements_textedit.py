@@ -153,7 +153,7 @@ class ElementsTextEditElementMixin():
         font.setPixelSize(font_pixel_size)
         element.text_doc.setDefaultFont(font)
 
-    def elementsTextDocSetCursorPosByClick(self, event):
+    def elementsTextElementSetCursorPosByClick(self, event):
         ae = self.active_element
         if ae.draw_transform is not None:
             viewport_cursor_pos = event.pos()

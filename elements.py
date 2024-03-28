@@ -1964,7 +1964,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin):
         ae = self.active_element
         if ae is not None and ae.type == ToolID.text:
             if ae.get_selection_area(canvas=self).containsPoint(event.pos(), Qt.WindingFill):
-                self.elementsTextDocSetCursorPosByClick(event)
+                self.elementsTextElementSetCursorPosByClick(event)
                 return
 
         self.elementsStopModificationProcess()

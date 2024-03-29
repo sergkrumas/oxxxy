@@ -2589,10 +2589,16 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
                         pictures_first.append(element)
                 else:
                     all_the_rest.append(element)
+
+        all_the_rest = [e for e in all_the_rest if e.type != self.ToolID.arrowstree]
+
         for element in pictures_first:
             self.elementsDrawMainElement(painter, element, final, all_visible_elements)
         for element in all_the_rest:
             self.elementsDrawMainElement(painter, element, final, all_visible_elements)
+
+        self.elementsDrawArrowTrees(painter, final)
+        self.elementsDrawArrowTreesTech(painter)
 
         if not draw_background_only:
             self.elementsDrawSystemCursor(painter)

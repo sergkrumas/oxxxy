@@ -98,17 +98,19 @@ class Elements2024ToolsMixin():
     def elementsDrawArrowTrees(self, painter, final):
         els = self.elementsGetArrowsTrees()
         index_elements = {el.pass2_unique_index:el for el in els}
-        for node1_index, node2_index in self.arrows_trees_edges:
 
-            node1 = index_elements.get(node1_index, None)
-            node2 = index_elements.get(node2_index, None)
-            if node1 and node2:
-                painter.setPen(QPen(Qt.red, 5))
-                a = node1.element_position
-                b = node2.element_position
-                a = self.elementsMapToViewport(a)
-                b = self.elementsMapToViewport(b)
-                painter.drawLine(a, b)
+        if False:
+            for node1_index, node2_index in self.arrows_trees_edges:
+
+                node1 = index_elements.get(node1_index, None)
+                node2 = index_elements.get(node2_index, None)
+                if node1 and node2:
+                    painter.setPen(QPen(Qt.red, 5))
+                    a = node1.element_position
+                    b = node2.element_position
+                    a = self.elementsMapToViewport(a)
+                    b = self.elementsMapToViewport(b)
+                    painter.drawLine(a, b)
 
         painter.setPen(QPen(Qt.green, 1))
         painter.setBrush(Qt.NoBrush)

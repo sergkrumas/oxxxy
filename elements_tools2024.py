@@ -19,6 +19,7 @@
 # ##### END GPL LICENSE BLOCK #####
 
 import sys
+import math
 
 from _utils import (build_valid_rectF,)
 
@@ -71,6 +72,19 @@ class Elements2024ToolsMixin():
                 distances[el] = QVector2D(cursor_pos-el.element_position).length()
             nearest_element = sorted(at_ve, key=lambda x: distances[x])[0]
             self.elementsAddArrowsTreeEdge(new_element, nearest_element)
+            new_element.orient_to_element = nearest_element
+
+    def elementsArrowsTreeNodeOrientToEdgeNeighbor(self, element):
+        if hasattr(element, 'orient_to_element'):
+            pos1 = element.orient_to_element.element_position
+            pos2 = element.element_position
+            direction = QVector2D(pos2 - pos1)
+            angle_deg = math.degrees(math.atan2(direction.y(), direction.x()))
+            element.element_rotation = angle_deg + 90
+
+    def elementsArrowsTreeNodeClearInputData(self, element):
+        if hasattr(element, 'orient_to_element'):
+            del element.orient_to_element
 
     def elementsAddArrowsTreeEdge(self, el1, el2):
         self.arrows_trees_edges.append((el1.pass2_unique_index, el2.pass2_unique_index))

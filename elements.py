@@ -1756,6 +1756,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
         elif tool == ToolID.arrowstree:
             element.end_point = event_pos
             element.calc_local_data()
+            self.elementsArrowsTreeNodeOrientToEdgeNeighbor(element)
         elif tool in [ToolID.zoom_in_region, ToolID.copypaste]:
             self.elementsAdvancedInputMoveEvent(event, event_pos, element)
         elif tool == ToolID.picture:
@@ -1858,6 +1859,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
         elif tool == ToolID.arrowstree:
             element.end_point = event_pos
             element.calc_local_data()
+            self.elementsArrowsTreeNodeClearInputData(element)
         elif tool in [ToolID.zoom_in_region, ToolID.copypaste]:
             self.elementsAdvancedInputMoveEvent(event, event_pos, element, finish=True)
         elif tool == ToolID.picture:

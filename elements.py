@@ -122,6 +122,7 @@ class Element(Element2024Mixin):
         self.color_slider_palette_index = 0
         self.toolbool = False
         self.plain_text = ''
+        self.subtype = ''
 
         self.text_doc = None
         self.draw_transform = None
@@ -1604,8 +1605,11 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
             element = self.elementsCreateNew(self.current_tool, start_drawing=True)
             self.elementsSetElementParameters(element)
 
-        if element and element.type == ToolID.arrowstree and not event.modifiers() & Qt.ControlModifier:
-            self.elementsCreateEdgeWithNearestNode(element)
+        if element and element.type == ToolID.arrowstree:
+            if not event.modifiers() & Qt.ControlModifier:
+                self.elementsCreateEdgeWithNearestNode(element)
+            else:
+                self.elementsMarkRoot(element)
 
         self.active_element = element
         # #######

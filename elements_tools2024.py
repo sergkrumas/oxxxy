@@ -23,7 +23,7 @@ import math
 
 from _utils import (build_valid_rectF,)
 
-from PyQt5.QtCore import (Qt, QPointF, QLineF)
+from PyQt5.QtCore import (Qt, QPointF, QLineF, QRectF)
 from PyQt5.QtGui import (QPen, QColor, QCursor, QVector2D)
 
 
@@ -73,6 +73,8 @@ class Elements2024ToolsMixin():
             nearest_element = sorted(at_ve, key=lambda x: distances[x])[0]
             self.elementsAddArrowsTreeEdge(new_element, nearest_element)
             new_element.orient_to_element = nearest_element
+        else:
+            self.elementsMarkRoot(new_element)
 
     def elementsArrowsTreeNodeOrientToEdgeNeighbor(self, element):
         if hasattr(element, 'orient_to_element'):
@@ -88,6 +90,9 @@ class Elements2024ToolsMixin():
 
     def elementsAddArrowsTreeEdge(self, el1, el2):
         self.arrows_trees_edges.append((el1.pass2_unique_index, el2.pass2_unique_index))
+
+    def elementsMarkRoot(self, element):
+        element.subtype = 'root'
 
     def elementsDrawArrowTrees(self, painter, final):
         els = self.elementsGetArrowsTrees()
@@ -105,9 +110,14 @@ class Elements2024ToolsMixin():
                 painter.drawLine(a, b)
 
         painter.setPen(QPen(Qt.green, 1))
+        painter.setBrush(Qt.NoBrush)
 
         for el in els:
 
+            if el.subtype == 'root':
+                rect = QRectF(0, 0, 50, 50)
+                rect.moveCenter(self.elementsMapToViewport(el.element_position))
+                painter.drawEllipse(rect)
 
             neighbors = []
 

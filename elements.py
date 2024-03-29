@@ -1604,7 +1604,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
             element = self.elementsCreateNew(self.current_tool, start_drawing=True)
             self.elementsSetElementParameters(element)
 
-        if element and element.type == ToolID.arrowstree: # and not event.modifiers() & Qt.ControlModifier:
+        if element and element.type == ToolID.arrowstree and not event.modifiers() & Qt.ControlModifier:
             self.elementsCreateEdgeWithNearestNode(element)
 
         self.active_element = element

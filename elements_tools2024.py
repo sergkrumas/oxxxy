@@ -39,7 +39,7 @@ class Elements2024Mixin():
             painter.drawRect(capture_rect)
 
             a = QPointF(0, -100)
-            b = QPointF(0, 100) 
+            b = QPointF(0, 100)
             a1 = QPointF(-20, 35)
             a2 = QPointF(20, 35)
             painter.drawLine(a, b)

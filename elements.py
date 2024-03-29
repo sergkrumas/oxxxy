@@ -39,6 +39,7 @@ from _utils import (convex_hull, calculate_tangent_points, build_valid_rect, bui
 
 from elements_transform import ElementsTransformMixin
 from elements_textedit import ElementsTextEditElementMixin
+from elements_tools2024 import Elements2024Mixin
 
 ZOOM_IN_REGION_DAFAULT_SCALE = 1.5
 
@@ -406,7 +407,7 @@ class ElementsModificationSlot():
         self.elements = list()
         self.content_type = content_type
 
-class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin):
+class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elements2024Mixin):
 
     ToolID = ToolID #для поддержки миксина
 
@@ -2312,6 +2313,8 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin):
         elif el_type == ToolID.removing:
             if self.Globals.CRASH_SIMULATOR:
                 1 / 0
+        elif el_type == ToolID.arrowstree:
+            self.elementsDrawArrowsTreeNode(painter, element, final)
         elif el_type in [ToolID.zoom_in_region, ToolID.copypaste]:
 
             painter.setBrush(Qt.NoBrush)

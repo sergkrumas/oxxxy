@@ -223,6 +223,13 @@ class Element():
         self.element_width = self.pixmap.width()
         self.element_height = self.pixmap.height()
 
+    def calc_local_data_arrowstree(self):
+        self.element_position = self.end_point
+        self.element_width = 100
+        self.element_height = 100
+        self.local_start_point = QPointF(-50, -50)
+        self.local_end_point = QPointF(50, 50)
+
     def calc_local_data(self):
         if self.type in [ToolID.line]:
             self.calc_local_data_default()
@@ -243,6 +250,8 @@ class Element():
             self.calc_local_data_default()
         elif self.type in [ToolID.text]:
             self.calc_local_data_default()
+        elif self.type in [ToolID.arrowstree]:
+            self.calc_local_data_arrowstree()
         else:
             raise Exception('calc_local_data', self.type)
 
@@ -1597,6 +1606,8 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin):
         # #######
         if tool == ToolID.arrow:
             self.elementsMousePressEventDefault(element, event)
+        elif tool == ToolID.arrowstree:
+            self.elementsMousePressEventDefault(element, event)
         elif tool in [ToolID.zoom_in_region, ToolID.copypaste]:
             self.elementsAdvancedInputPressEvent(event, event_pos, element)
         elif tool == ToolID.picture:
@@ -1737,6 +1748,9 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin):
             if event.modifiers() & Qt.ShiftModifier:
                 element.end_point = constraint45Degree(element.start_point, element.end_point)
             element.calc_local_data()
+        elif tool == ToolID.arrowstree:
+            element.end_point = event_pos
+            element.calc_local_data()            
         elif tool in [ToolID.zoom_in_region, ToolID.copypaste]:
             self.elementsAdvancedInputMoveEvent(event, event_pos, element)
         elif tool == ToolID.picture:
@@ -1836,6 +1850,9 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin):
             element.calc_local_data()
             element.recalc_local_data_for_straight_objects()
             element.construct_selection_path(self)
+        elif tool == ToolID.arrowstree:
+            element.end_point = event_pos
+            element.calc_local_data()            
         elif tool in [ToolID.zoom_in_region, ToolID.copypaste]:
             self.elementsAdvancedInputMoveEvent(event, event_pos, element, finish=True)
         elif tool == ToolID.picture:

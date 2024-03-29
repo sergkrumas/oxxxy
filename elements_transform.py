@@ -246,7 +246,9 @@ class ElementsTransformMixin():
                         # subtract element from selection!
                         if is_under_mouse and not self.prevent_item_deselection:
                             element._selected = False
-                            self.active_element = None
+                            # пришлось закомментировать, чтобы активный элемент не пропадал
+                            # во время смены инструментов и при нанесении следующего элемента
+                            # self.active_element = None
                     else:
                         if min_area_element is not element:
                             element._selected = False

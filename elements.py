@@ -1378,7 +1378,9 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
     def _elementsSetSelectedPreReset(self):
         for __el in self.elements:
             __el._selected = False
-        self.active_element = None
+        # пришлось закомментировать, чтобы активный элемент не пропадал
+        # во время смены инструментов и при нанесении следующего элемента
+        # self.active_element = None
 
     def elementsSetSelected(self, arg, update_panel=True, update_widget=True):
         els = None

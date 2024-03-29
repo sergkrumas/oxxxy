@@ -39,7 +39,7 @@ from _utils import (convex_hull, calculate_tangent_points, build_valid_rect, bui
 
 from elements_transform import ElementsTransformMixin
 from elements_textedit import ElementsTextEditElementMixin
-from elements_tools2024 import Elements2024Mixin
+from elements_tools2024 import Elements2024ToolsMixin, Element2024Mixin
 
 ZOOM_IN_REGION_DAFAULT_SCALE = 1.5
 
@@ -82,7 +82,7 @@ class CreateBackgroundOption():
     Reshoot = 2
     ContentToBackground = 3
 
-class Element():
+class Element(Element2024Mixin):
 
     def __init__(self, element_type, elements_list, skip=False):
         self.type = element_type
@@ -223,13 +223,6 @@ class Element():
     def calc_local_data_picture(self):
         self.element_width = self.pixmap.width()
         self.element_height = self.pixmap.height()
-
-    def calc_local_data_arrowstree(self):
-        self.element_position = self.end_point
-        self.element_width = 100
-        self.element_height = 100
-        self.local_start_point = QPointF(-50, -50)
-        self.local_end_point = QPointF(50, 50)
 
     def calc_local_data(self):
         if self.type in [ToolID.line]:
@@ -407,7 +400,7 @@ class ElementsModificationSlot():
         self.elements = list()
         self.content_type = content_type
 
-class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elements2024Mixin):
+class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elements2024ToolsMixin):
 
     ToolID = ToolID #для поддержки миксина
 

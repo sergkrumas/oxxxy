@@ -25,7 +25,17 @@ from _utils import (build_valid_rectF,)
 from PyQt5.QtCore import (Qt, QPointF)
 from PyQt5.QtGui import (QPen, QColor)
 
-class Elements2024Mixin():
+
+class Element2024Mixin():
+
+    def calc_local_data_arrowstree(self):
+        self.element_position = self.end_point
+        self.element_width = 100
+        self.element_height = 100
+        self.local_start_point = QPointF(-50, -50)
+        self.local_end_point = QPointF(50, 50)
+
+class Elements2024ToolsMixin():
 
     def init2024Tools(self):
         self.arrows_trees_edges = []

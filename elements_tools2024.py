@@ -23,7 +23,7 @@ import sys
 from _utils import (build_valid_rectF,)
 
 from PyQt5.QtCore import (Qt, QPointF)
-from PyQt5.QtGui import (QPen, QColor)
+from PyQt5.QtGui import (QPen, QColor, QCursor, QVector2D)
 
 
 class Element2024Mixin():
@@ -60,6 +60,17 @@ class Elements2024ToolsMixin():
             painter.drawLine(a, a+a2)
 
             painter.resetTransform()
+
+    def elementsCreateEdgeWithNearestNode(self, new_element):
+        at_ve = self.elementsGetArrowsTrees()
+        at_ve.remove(new_element)
+        cursor_pos = self.elementsMapToCanvas(QCursor().pos())
+        distances = dict()
+        if at_ve:
+            for el in at_ve:
+                distances[el] = QVector2D(cursor_pos-el.element_position).length()
+            nearest_element = sorted(at_ve, key=lambda x: distances[x])[0]
+            self.elementsAddArrowsTreeEdge(new_element, nearest_element)
 
     def elementsAddArrowsTreeEdge(self, el1, el2):
         self.arrows_trees_edges.append((el1.pass2_unique_index, el2.pass2_unique_index))

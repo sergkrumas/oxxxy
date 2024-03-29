@@ -52,13 +52,14 @@ class Elements2024ToolsMixin():
             painter.setPen(QPen(color, 1))
             painter.drawRect(capture_rect)
 
-            a = QPointF(0, -100)
-            b = QPointF(0, 100)
-            a1 = QPointF(-20, 35)
-            a2 = QPointF(20, 35)
-            painter.drawLine(a, b)
-            painter.drawLine(a, a+a1)
-            painter.drawLine(a, a+a2)
+            if element.subtype != 'root':
+                a = QPointF(0, -100)
+                b = QPointF(0, 100)
+                a1 = QPointF(-20, 35)
+                a2 = QPointF(20, 35)
+                painter.drawLine(a, b)
+                painter.drawLine(a, a+a1)
+                painter.drawLine(a, a+a2)
 
             painter.resetTransform()
 
@@ -112,6 +113,8 @@ class Elements2024ToolsMixin():
         painter.setPen(QPen(Qt.green, 1))
         painter.setBrush(Qt.NoBrush)
 
+        HALF_WIDTH = 10
+
         for el in els:
 
             if el.subtype == 'root':
@@ -145,45 +148,88 @@ class Elements2024ToolsMixin():
 
             node_root_pos = self.elementsMapToViewport(el.element_position)
 
-            angles_per_dir = dict()
-            for direction_line in local_directions:
-                p2 = direction_line.p2()
-                angles_per_dir[id(direction_line)] = math.atan2(p2.y(), p2.x())
-            ordered_directions = sorted(local_directions, key=lambda x: angles_per_dir[id(x)])
+            if len(local_directions) == 1:
+
+                rect = QRectF(0, 0, 50, 50)
+                rect.moveCenter(self.elementsMapToViewport(el.element_position))
+
+                # startAngle = (0 -int(el.element_rotation)) * 16
+                # spanAngle = 180 * 16
+                # painter.drawArc(rect, startAngle, spanAngle)
 
 
-            # draw node center
-            HALF_WIDTH = 10
-            ordered_directions.append(ordered_directions[0])
-            for n, direction_line in enumerate(ordered_directions[:-1]):
+                line = local_directions[0]
 
-                line_translated = direction_line.translated(node_root_pos)
-                dir_end1 = line_translated.p2()
-
-                normal_to_dir1 = direction_line.normalVector()
-                vec = -QVector2D(QPointF(normal_to_dir1.p2().x(), normal_to_dir1.p2().y()))
-                end_point1 = dir_end1 + (vec.normalized()*HALF_WIDTH).toPointF()
+                nv = line.normalVector()
+                nv = QVector2D(QPointF(nv.p2().x(), nv.p2().y()))
+                offset = (nv.normalized()*HALF_WIDTH).toPointF()
+                line1 = line.translated(offset)
+                painter.drawLine(line1.translated(node_root_pos))
+                line2 = line.translated(-offset)
+                painter.drawLine(line2.translated(node_root_pos))
 
 
-                next_direction_line = ordered_directions[n+1]
-                other_line_translated = next_direction_line.translated(node_root_pos)
-                dir_end2 = other_line_translated.p2()
+                if el.subtype != 'root':
 
-                normal_to_dir2 = next_direction_line.normalVector()
-                vec = QVector2D(QPointF(normal_to_dir2.p2().x(), normal_to_dir2.p2().y()))
-                end_point2 = dir_end2 + (vec.normalized()*HALF_WIDTH).toPointF()
+                    arrow_line = line.translated(node_root_pos)
+
+                    tip = arrow_line.pointAt(-.5)
+                    tip_start = arrow_line.pointAt(0)
+
+                    direction = QVector2D(tip - tip_start).normalized()
+
+                    p = tip_start + (direction*40).toPointF()
+
+                    p1 = tip_start + offset*3 - (direction*6).toPointF()
+                    painter.drawLine(p, p1)
+
+                    p2 = tip_start + -offset*3 - (direction*6).toPointF()
+                    painter.drawLine(p, p2)
+
+                    painter.drawLine(p2, line2.translated(node_root_pos).p1())
+                    painter.drawLine(p1, line1.translated(node_root_pos).p1())
+
+            else:
 
 
-                ray1 = line_translated.translated(end_point1 - dir_end1)
-                ray2 = other_line_translated.translated(end_point2 - dir_end2)
+                angles_per_dir = dict()
+                for direction_line in local_directions:
+                    p2 = direction_line.p2()
+                    angles_per_dir[id(direction_line)] = math.atan2(p2.y(), p2.x())
+                ordered_directions = sorted(local_directions, key=lambda x: angles_per_dir[id(x)])
 
-                i = ray1.intersects(ray2)
-                if i[0] != QLineF.NoIntersection:
-                    cross_point = i[1]
-                    painter.drawLine(end_point1, cross_point)
-                    painter.drawLine(cross_point, end_point2)
-                else:
-                    painter.drawLine(end_point1, end_point2)
+
+                # draw node center
+                ordered_directions.append(ordered_directions[0])
+                for n, direction_line in enumerate(ordered_directions[:-1]):
+
+                    line_translated = direction_line.translated(node_root_pos)
+                    dir_end1 = line_translated.p2()
+
+                    normal_to_dir1 = direction_line.normalVector()
+                    vec = -QVector2D(QPointF(normal_to_dir1.p2().x(), normal_to_dir1.p2().y()))
+                    end_point1 = dir_end1 + (vec.normalized()*HALF_WIDTH).toPointF()
+
+
+                    next_direction_line = ordered_directions[n+1]
+                    other_line_translated = next_direction_line.translated(node_root_pos)
+                    dir_end2 = other_line_translated.p2()
+
+                    normal_to_dir2 = next_direction_line.normalVector()
+                    vec = QVector2D(QPointF(normal_to_dir2.p2().x(), normal_to_dir2.p2().y()))
+                    end_point2 = dir_end2 + (vec.normalized()*HALF_WIDTH).toPointF()
+
+
+                    ray1 = line_translated.translated(end_point1 - dir_end1)
+                    ray2 = other_line_translated.translated(end_point2 - dir_end2)
+
+                    i = ray1.intersects(ray2)
+                    if i[0] != QLineF.NoIntersection:
+                        cross_point = i[1]
+                        painter.drawLine(end_point1, cross_point)
+                        painter.drawLine(cross_point, end_point2)
+                    else:
+                        painter.drawLine(end_point1, end_point2)
 
     def elementsGetArrowsTrees(self):
         all_visible_elements = self.elementsFilter()

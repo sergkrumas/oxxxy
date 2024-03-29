@@ -450,6 +450,8 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
         self.show_background = True
         self.dark_pictures = True
 
+        self.init2024Tools()
+
     def elementsStartModificationProcess(self, _type):
         """
             Acquires modification stamp for ongoing elements modification
@@ -1582,6 +1584,10 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
             self.tools_window.show_picture_menu()
             return
 
+        # вызов elementsSetElementParameters сбрасывает значение переменной,
+        # поэтому сохраняем значение здесь
+        fixed_active_element = self.active_element
+
         # основная часть
         el = self.elementsGetLastElement()
         if self.current_tool == ToolID.transform:
@@ -1602,6 +1608,9 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
             # default case
             element = self.elementsCreateNew(self.current_tool, start_drawing=True)
             self.elementsSetElementParameters(element)
+
+        if element and element.type == ToolID.arrowstree and fixed_active_element and fixed_active_element.type == ToolID.arrowstree:
+            self.elementsAddArrowsTreeEdge(element, fixed_active_element)
 
         self.active_element = element
         # #######

@@ -27,6 +27,9 @@ from PyQt5.QtGui import (QPen, QColor)
 
 class Elements2024Mixin():
 
+    def init2024Tools(self):
+        self.arrows_trees_edges = []
+
     def elementsDrawArrowsTreeNode(self, painter, element, final):
         if not final:
             painter.setTransform(element.get_transform_obj(canvas=self))
@@ -48,8 +51,23 @@ class Elements2024Mixin():
 
             painter.resetTransform()
 
+    def elementsAddArrowsTreeEdge(self, el1, el2):
+        self.arrows_trees_edges.append((el1.pass2_unique_index, el2.pass2_unique_index))
+
     def elementsDrawArrowTrees(self, painter, final):
-        pass
+        els = self.elementsGetArrowsTrees()
+        index_elements = {el.pass2_unique_index:el for el in els}
+        for node1_index, node2_index in self.arrows_trees_edges:
+
+            node1 = index_elements.get(node1_index, None)
+            node2 = index_elements.get(node2_index, None)
+            if node1 and node2:
+                painter.setPen(QPen(Qt.red, 5))
+                a = node1.element_position
+                b = node2.element_position
+                a = self.elementsMapToViewport(a)
+                b = self.elementsMapToViewport(b)
+                painter.drawLine(a, b)
 
     def elementsGetArrowsTrees(self):
         all_visible_elements = self.elementsFilter()

@@ -51,14 +51,12 @@ class Elements2024Mixin():
     def elementsDrawArrowTrees(self, painter, final):
         pass
 
-
     def elementsGetArrowsTrees(self):
         all_visible_elements = self.elementsFilter()
         at_ve = [e for e in all_visible_elements if e.type == self.ToolID.arrowstree]
         return at_ve
 
     def elementsDrawArrowTreesTech(self, painter):
-
         at_ve = self.elementsGetArrowsTrees()
         for element in at_ve:
             self.elementsDrawArrowsTreeNode(painter, element, False)

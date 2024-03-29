@@ -23,7 +23,7 @@ import math
 
 from _utils import (build_valid_rectF,)
 
-from PyQt5.QtCore import (Qt, QPointF)
+from PyQt5.QtCore import (Qt, QPointF, QLineF)
 from PyQt5.QtGui import (QPen, QColor, QCursor, QVector2D)
 
 
@@ -103,6 +103,77 @@ class Elements2024ToolsMixin():
                 a = self.elementsMapToViewport(a)
                 b = self.elementsMapToViewport(b)
                 painter.drawLine(a, b)
+
+        painter.setPen(QPen(Qt.green, 1))
+
+        for el in els:
+
+
+            neighbors = []
+
+            for node1_index, node2_index in self.arrows_trees_edges:
+                node1 = index_elements.get(node1_index, None)
+                node2 = index_elements.get(node2_index, None)
+                if node1 and node2:
+                    if node1 is el:
+                        other = node2
+                        neighbors.append(other)
+                    elif node2 is el:
+                        other = node1
+                        neighbors.append(other)
+
+
+            local_directions = []
+            for neighbor in neighbors:
+                s = QPointF(0, 0)
+                e = self.elementsMapToViewport(neighbor.element_position) - self.elementsMapToViewport(el.element_position)
+                middle = QLineF(s, e).pointAt(0.5)
+                local_directions.append(QLineF(s, middle))
+
+            if not local_directions:
+                continue
+
+            node_root_pos = self.elementsMapToViewport(el.element_position)
+
+            angles_per_dir = dict()
+            for direction_line in local_directions:
+                p2 = direction_line.p2()
+                angles_per_dir[id(direction_line)] = math.atan2(p2.y(), p2.x())
+            ordered_directions = sorted(local_directions, key=lambda x: angles_per_dir[id(x)])
+
+
+            # draw node center
+            HALF_WIDTH = 10
+            ordered_directions.append(ordered_directions[0])
+            for n, direction_line in enumerate(ordered_directions[:-1]):
+
+                line_translated = direction_line.translated(node_root_pos)
+                dir_end1 = line_translated.p2()
+
+                normal_to_dir1 = direction_line.normalVector()
+                vec = -QVector2D(QPointF(normal_to_dir1.p2().x(), normal_to_dir1.p2().y()))
+                end_point1 = dir_end1 + (vec.normalized()*HALF_WIDTH).toPointF()
+
+
+                next_direction_line = ordered_directions[n+1]
+                other_line_translated = next_direction_line.translated(node_root_pos)
+                dir_end2 = other_line_translated.p2()
+
+                normal_to_dir2 = next_direction_line.normalVector()
+                vec = QVector2D(QPointF(normal_to_dir2.p2().x(), normal_to_dir2.p2().y()))
+                end_point2 = dir_end2 + (vec.normalized()*HALF_WIDTH).toPointF()
+
+
+                ray1 = line_translated.translated(end_point1 - dir_end1)
+                ray2 = other_line_translated.translated(end_point2 - dir_end2)
+
+                i = ray1.intersects(ray2)
+                if i[0] != QLineF.NoIntersection:
+                    cross_point = i[1]
+                    painter.drawLine(end_point1, cross_point)
+                    painter.drawLine(cross_point, end_point2)
+                else:
+                    painter.drawLine(end_point1, end_point2)
 
     def elementsGetArrowsTrees(self):
         all_visible_elements = self.elementsFilter()

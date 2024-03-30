@@ -357,8 +357,9 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         self.draw_vertical_horizontal_lines(painter, cursor_pos)
 
         self.draw_picture_tool(painter, cursor_pos)
-
         self.draw_tool_size_and_color(painter, cursor_pos)
+        self.draw_arrows_tree_tool(painter, cursor_pos)
+
         self.draw_hint(painter, cursor_pos, text_white_pen)
 
         self.draw_uncapture_zones_mode_info(painter)
@@ -407,14 +408,33 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         painter.setPen(pen)
         painter.drawPoint(self.canvas_origin)
 
+    def draw_arrows_tree_tool(self, painter, cursor_pos):
+        if not self.capture_region_rect:
+            return
+        if not self.tools_window:
+            return
+        if not self.capture_region_rect.contains(cursor_pos):
+            return
+        if self.current_tool not in [ToolID.arrowstree]:
+            return
+
+        nearest_node = self.elementsGetNearestArrowsTreeNode(cursor_pos, None)
+        left_button_pressed = QApplication.instance().mouseButtons() & Qt.LeftButton
+
+        if nearest_node and not left_button_pressed:
+            painter.save()
+            painter.setPen(QPen(QColor(200, 50, 50), Qt.DashLine, 2))
+            painter.drawLine(cursor_pos, self.elementsMapToViewport(nearest_node.element_position))
+            painter.restore()
+
     def draw_tool_size_and_color(self, painter, cursor_pos):
         if not self.capture_region_rect:
             return
         if not self.tools_window:
             return
-        if self.current_tool not in [ToolID.line, ToolID.marker, ToolID.pen]:
-            return
         if not self.capture_region_rect.contains(cursor_pos):
+            return
+        if self.current_tool not in [ToolID.line, ToolID.marker, ToolID.pen]:
             return
 
         self._ted.type = self.current_tool

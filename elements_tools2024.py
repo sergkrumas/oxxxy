@@ -64,18 +64,28 @@ class Elements2024ToolsMixin():
             painter.resetTransform()
 
     def elementsCreateEdgeWithNearestNode(self, new_element):
+        nearest_element = self.elementsGetNearestArrowsTreeNode(None, new_element)
+        if nearest_element:
+            self.elementsAddArrowsTreeEdge(new_element, nearest_element)
+            new_element.orient_to_element = nearest_element
+        else:
+            self.elementsMarkRoot(new_element)
+
+    def elementsGetNearestArrowsTreeNode(self, viewport_pos, new_element):
+        if viewport_pos is None:
+            viewport_pos = QCursor().pos()
         at_ve = self.elementsGetArrowsTrees()
-        at_ve.remove(new_element)
-        cursor_pos = self.elementsMapToCanvas(QCursor().pos())
+        if new_element is not None:
+            at_ve.remove(new_element)
+        cursor_pos = self.elementsMapToCanvas(viewport_pos)
         distances = dict()
         if at_ve:
             for el in at_ve:
                 distances[el] = QVector2D(cursor_pos-el.element_position).length()
             nearest_element = sorted(at_ve, key=lambda x: distances[x])[0]
-            self.elementsAddArrowsTreeEdge(new_element, nearest_element)
-            new_element.orient_to_element = nearest_element
+            return nearest_element
         else:
-            self.elementsMarkRoot(new_element)
+            return None
 
     def elementsArrowsTreeNodeOrientToEdgeNeighbor(self, element):
         if hasattr(element, 'orient_to_element'):

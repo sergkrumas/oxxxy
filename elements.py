@@ -2608,7 +2608,8 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
             self.elementsDrawMainElement(painter, element, final, all_visible_elements)
 
         self.elementsDrawArrowTrees(painter, final)
-        self.elementsDrawArrowTreesTech(painter)
+        if not final:
+            self.elementsDrawArrowTreesTech(painter)
 
         if not draw_background_only:
             self.elementsDrawSystemCursor(painter)

@@ -119,7 +119,7 @@ class Elements2024ToolsMixin():
 
         for el in els:
 
-            if el.subtype == 'root':
+            if False and el.subtype == 'root':
                 rect = QRectF(0, 0, 50, 50)
                 rect.moveCenter(self.elementsMapToViewport(el.element_position))
                 painter.drawEllipse(rect)

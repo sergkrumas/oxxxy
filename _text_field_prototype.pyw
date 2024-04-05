@@ -52,11 +52,11 @@ import lorem
 #     const QTextBlock block = cursor.block();
 #     if (!block.isValid())
 #         return QTextLine();
- 
+
 #     const QTextLayout *layout = block.layout();
 #     if (!layout)
 #         return QTextLine();
- 
+
 #     const int relativePos = cursor.position() - block.position();
 #     return layout->lineForTextPosition(relativePos);
 # }
@@ -152,7 +152,7 @@ class QMyWidget(QWidget):
 
         self.cursor_pos = 0
 
-        text = "text " + "text\n " 
+        text = "text " + "text\n "
         # text = "\n\n"
         text = lorem.text().replace("\n\n", "\n - ")
 

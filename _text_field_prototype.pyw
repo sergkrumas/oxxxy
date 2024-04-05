@@ -154,11 +154,19 @@ class QMyWidget(QWidget):
         self.doc.setTextWidth(200)
 
         self.cursor = QTextCursor(self.doc)
-        self.cursor.setPosition(0)
-        self.cursor.beginEditBlock()
+        self.cursor.setPosition(5)
+        self.cursor.setPosition(1, QTextCursor.KeepAnchor)
+        # self.cursor.setPosition(5)
+        # self.cursor.beginEditBlock()
         # self.cursor.insertText("Hello")
         # self.cursor.insertText("World")
-        self.cursor.endEditBlock()
+        # self.cursor.select(QTextCursor.WordUnderCursor)
+        print('s end', self.cursor.selectionEnd(), '\ns start', self.cursor.selectionStart())
+        print(self.cursor.position(), self.cursor.anchor())
+
+        print('selected text:', self.cursor.selectedText())
+
+        # self.cursor.endEditBlock()
         # print('a',  len(self.doc.toPlainText()))
 
         # block = self.doc.begin()
@@ -227,9 +235,7 @@ class QMyWidget(QWidget):
         block = self.doc.begin()
 
         # return
-        borderRects = []
         lastBorderRects = []
-        lastBorder = None
         while block != end:
             if not block.text():
                 block = block.next()
@@ -242,7 +248,6 @@ class QMyWidget(QWidget):
             it = block.begin()
             while not it.atEnd():
                 fragment = it.fragment()
-                fmt = fragment.charFormat()
 
                 blockLayout = block.layout()
                 fragPos = fragment.position() - block.position()
@@ -252,11 +257,7 @@ class QMyWidget(QWidget):
                     if line.isValid():
                         x, _ = line.cursorToX(fragPos)
                         right, lineEnd = line.cursorToX(fragEnd)
-
-                        rect = QRectF(
-                            blockX + x, blockY + line.y(),
-                            right - x, line.height()
-                        )
+                        rect = QRectF(blockX + x, blockY + line.y(), right - x, line.height())
                         lastBorderRects.append(rect)
                         if lineEnd != fragEnd:
                             fragPos = lineEnd
@@ -264,14 +265,11 @@ class QMyWidget(QWidget):
                             break
                     else:
                         break
-
-
                 it += 1
-
             block = block.next()
 
 
-        print(lastBorderRects)
+        # print(lastBorderRects)
         self.lastBorderRects = lastBorderRects
 
 

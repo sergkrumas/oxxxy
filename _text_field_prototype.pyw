@@ -70,6 +70,8 @@ class QMyWidget(QWidget):
         painter = QPainter()
         painter.begin(self)
 
+        # painter.fillRect(self.rect(), QColor(200, 50, 50, 125))
+
         self.doc.drawContents(painter, QRectF(self.rect()))
 
         for rect in self.rects:
@@ -85,6 +87,10 @@ class QMyWidget(QWidget):
 
             block = block.next()
 
+        l = len(self.lastBorderRects)
+        for n, r in enumerate(self.lastBorderRects):
+            painter.fillRect(r, QColor(200, 50, 50, max(20, int(255*n/l) ) ))
+            # painter.fillRect(r, QColor(0.9, 0.15, 0.15, n/l))
 
         painter.end()
 
@@ -125,12 +131,13 @@ class QMyWidget(QWidget):
 
         self.cursor_pos = 0
 
-        text = "text " + "text\n " * 5
+        text = "text " + "text\n " 
         # text = "\n\n"
         text = lorem.text().replace("\n\n", "\n - ")
 
         text = lorem.text().replace("\n\n", "\n")
-        font = QFont('Arial')
+        text = lorem.sentence() * 2
+        self.font = font = QFont('Arial')
         # self.textLayout = QTextLayout(text, font)
         self.doc = QTextDocument()
         self.doc.setDefaultFont(font)
@@ -150,14 +157,14 @@ class QMyWidget(QWidget):
         self.cursor.endEditBlock()
         # print('a',  len(self.doc.toPlainText()))
 
-        block = self.doc.begin()
+        # block = self.doc.begin()
         # print(dir(block))
-        print(block.position(), block.text(), block.length(), len(block.text()), block.isValid())
+        # print(block.position(), block.text(), block.length(), len(block.text()), block.isValid())
 
         self.rects = []
         self.get_info()
 
-        self.doc.setDocumentMargin(30)
+        # self.doc.setDocumentMargin(30)
 
 
     def get_info(self):
@@ -169,51 +176,53 @@ class QMyWidget(QWidget):
         self.rects.clear()
 
 
-        while block != end:
-            # if not block.text():
-            #     continue
+#         while block != end:
+#             # if not block.text():
+#             #     continue
 
-            blockRect = docLayout.blockBoundingRect(block)
-            # print(type(block))
-            self.rects.append(blockRect)
-            # print(blockRect, block.position(), block.lineCount(),)
+#             blockRect = docLayout.blockBoundingRect(block)
+#             # print(type(block))
+#             self.rects.append(blockRect)
+#             # print(blockRect, block.position(), block.lineCount(),)
 
-            # if  block.lineCount() != 3:
-            #     block.setLineCount(3)
-            # for i in range(block.lineCount()):
+#             # if  block.lineCount() != 3:
+#             #     block.setLineCount(3)
+#             # for i in range(block.lineCount()):
 
-            # !!!!!
-            # !!!!! https://doc.qt.io/qt-5/qtextblock.html
-            # !!!!! Note that the returned QTextLayout object can only be modified from the documentChanged implementation of a QAbstractTextDocumentLayout subclass. Any changes applied from the outside cause undefined behavior.
-            # !!!!!
-            # !!!!!
-            # !!!!!
+#             # !!!!!
+#             # !!!!! https://doc.qt.io/qt-5/qtextblock.html
+#             # !!!!! Note that the returned QTextLayout object can only be modified from the documentChanged implementation of a QAbstractTextDocumentLayout subclass. Any changes applied from the outside cause undefined behavior.
+#             # !!!!!
+#             # !!!!!
+#             # !!!!!
 
-            if True:
-                block.layout().beginLayout()
-                # line = block.layout().createLine()
-                # line.setNumColumns(5)
-                # line.setLineWidth(40)
-                h = 0
-                for i in range(10):
-                    line = block.layout().createLine()
-                    line.setNumColumns(5)
-                    # line.setPosition(QPointF(20, 20*i))
+#             if True:
+#                 block.layout().beginLayout()
+#                 # line = block.layout().createLine()
+#                 # line.setNumColumns(5)
+#                 # line.setLineWidth(40)
+#                 h = 0
+#                 for i in range(10):
+#                     line = block.layout().createLine()
+#                     line.setNumColumns(5)
+#                     # line.setPosition(QPointF(20, 20*i))
 
-                    line.setPosition(QPointF(0, h))
-                    h += line.height()
+#                     line.setPosition(QPointF(0, h))
+#                     h += line.height()
 
-                line = block.layout().createLine()
-                # line.setNumColumns(5)
-                line.setPosition(QPointF(20, 20*(i+1)))
+#                 line = block.layout().createLine()
+#                 # line.setNumColumns(5)
+#                 line.setPosition(QPointF(20, 20*(i+1)))
 
-                    # print(dir(line))
-                block.layout().endLayout()
-#
-             # dir(block)) #dir(block))
-            block = block.next()
+#                     # print(dir(line))
+#                 block.layout().endLayout()
+# #
+#              # dir(block)) #dir(block))
+#             block = block.next()
 
-        return
+        block = self.doc.begin()
+
+        # return
         borderRects = []
         lastBorderRects = []
         lastBorder = None
@@ -231,42 +240,41 @@ class QMyWidget(QWidget):
                 fragment = it.fragment()
                 fmt = fragment.charFormat()
 
+                blockLayout = block.layout()
+                fragPos = fragment.position() - block.position()
+                fragEnd = fragPos + fragment.length()
+                while True:
+                    line = blockLayout.lineForTextPosition(fragPos)
+                    if line.isValid():
+                        x, _ = line.cursorToX(fragPos)
+                        right, lineEnd = line.cursorToX(fragEnd)
 
-                if True:
-                    blockLayout = block.layout()
-                    fragPos = fragment.position() - block.position()
-                    fragEnd = fragPos + fragment.length()
-                    while True:
-                        line = blockLayout.lineForTextPosition(
-                            fragPos)
-                        if line.isValid():
-                            x, _ = line.cursorToX(fragPos)
-                            right, lineEnd = line.cursorToX(fragEnd)
-                            print('s', x, right, block, block.text(), fragPos, fragEnd, block.position())
-                            rect = QRectF(
-                                blockX + x, blockY + line.y(),
-                                right - x, line.height()
-                            )
-                            lastBorderRects.append(rect)
-                            if lineEnd != fragEnd:
-                                fragPos = lineEnd
-                            else:
-                                break
+                        rect = QRectF(
+                            blockX + x, blockY + line.y(),
+                            right - x, line.height()
+                        )
+                        lastBorderRects.append(rect)
+                        if lineEnd != fragEnd:
+                            fragPos = lineEnd
                         else:
                             break
+                    else:
+                        break
+
+
                 it += 1
 
             block = block.next()
 
 
-
-
+        print(lastBorderRects)
+        self.lastBorderRects = lastBorderRects
 
 
 
         self.margin = 10
         self.radius = min(self.width()/2.0, self.height()/2.0) - self.margin
-        fm = QFontMetrics(font)
+        fm = QFontMetrics(self.font)
         lineHeight = fm.height()
         y = 0
 

@@ -140,6 +140,10 @@ class QMyWidget(QWidget):
         self.font = font = QFont('Arial')
         # self.textLayout = QTextLayout(text, font)
         self.doc = QTextDocument()
+
+        # margin надо задавать до задания текста, иначе прямоугольники будут неправильными
+        self.doc.setDocumentMargin(30)
+
         self.doc.setDefaultFont(font)
         # self.plain_layout = QPlainTextDocumentLayout(self.doc)
         # self.plain_layout = QTextLayout(text, font)
@@ -164,7 +168,7 @@ class QMyWidget(QWidget):
         self.rects = []
         self.get_info()
 
-        # self.doc.setDocumentMargin(30)
+
 
 
     def get_info(self):

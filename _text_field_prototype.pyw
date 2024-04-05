@@ -80,16 +80,18 @@ class QMyWidget(QWidget):
         block = self.doc.begin()
         end = self.doc.end()
 
+
         while block != end:
-
             if block.contains(self.result):
-                    block.layout().drawCursor(painter, QPointF(0,0), self.result, 4)
-
+                cursor_pos = self.result - block.position()
+                block.layout().drawCursor(painter, QPointF(0,0), cursor_pos, 4)
             block = block.next()
 
-        l = len(self.lastBorderRects)
-        for n, r in enumerate(self.lastBorderRects):
-            painter.fillRect(r, QColor(200, 50, 50, max(20, int(255*n/l) ) ))
+
+
+        l = len(self.selection_rects)
+        for n, r in enumerate(self.selection_rects):
+            painter.fillRect(r, QColor(200, 50, 50, max(35, int(255*n/l) ) ))
             # painter.fillRect(r, QColor(0.9, 0.15, 0.15, n/l))
 
         painter.end()
@@ -101,17 +103,17 @@ class QMyWidget(QWidget):
 
             self.result = self.doc.documentLayout().hitTest(event.pos(), Qt.FuzzyHit)
 
-            print(self.result)
-            self.doc.setTextWidth(event.x())
+            # print(self.result)
+            # self.doc.setTextWidth(event.x())
 
-            self.get_info()
+            # self.get_info()
             self.update()
+            self.cursor.setPosition(self.result)
 
             self.cursor_pos += 1
 
         else:
             self.cursor = QTextCursor(self.doc)
-            self.cursor.setPosition(self.result)
             self.cursor.beginEditBlock()
             self.cursor.insertText("Hello")
             # self.cursor.insertText("World")
@@ -121,7 +123,26 @@ class QMyWidget(QWidget):
 
 
         # !!!!!!!!!!!! DOCUMENT SIZE!!!!!!!!!
-        print(self.doc.size().toSize())
+        # print(self.doc.size().toSize())
+
+    def mouseMoveEvent(self, event):
+        self.mouse_move(event)
+
+    def mouseReleaseEvent(self, event):
+        self.mouse_move(event)
+
+    def mouse_move(self, event):
+        self.result = self.doc.documentLayout().hitTest(event.pos(), Qt.FuzzyHit)
+        self.cursor.setPosition(self.result, QTextCursor.KeepAnchor)
+
+        print('s end', self.cursor.selectionEnd(), '\ns start', self.cursor.selectionStart())
+        print(self.cursor.position(), self.cursor.anchor())
+
+        print('selected text:', self.cursor.selectedText())
+
+        self.get_info()
+
+        self.update()
 
 
     def __init__(self, ):
@@ -136,7 +157,7 @@ class QMyWidget(QWidget):
         text = lorem.text().replace("\n\n", "\n - ")
 
         text = lorem.text().replace("\n\n", "\n")
-        text = lorem.sentence() * 2
+        text = lorem.sentence() + '\n' + lorem.sentence() + '\n' + lorem.sentence()
         self.font = font = QFont('Arial')
         # self.textLayout = QTextLayout(text, font)
         self.doc = QTextDocument()
@@ -161,10 +182,7 @@ class QMyWidget(QWidget):
         # self.cursor.insertText("Hello")
         # self.cursor.insertText("World")
         # self.cursor.select(QTextCursor.WordUnderCursor)
-        print('s end', self.cursor.selectionEnd(), '\ns start', self.cursor.selectionStart())
-        print(self.cursor.position(), self.cursor.anchor())
 
-        print('selected text:', self.cursor.selectedText())
 
         # self.cursor.endEditBlock()
         # print('a',  len(self.doc.toPlainText()))
@@ -235,42 +253,55 @@ class QMyWidget(QWidget):
         block = self.doc.begin()
 
         # return
-        lastBorderRects = []
-        while block != end:
-            if not block.text():
+
+        self.selection_rects = []
+
+        if self.cursor.anchor() != self.cursor.position():
+            while block != end:
+                if not block.text():
+                    block = block.next()
+                    continue
+
+                blockRect = docLayout.blockBoundingRect(block)
+                blockX = blockRect.x()
+                blockY = blockRect.y()
+
+                it = block.begin()
+                while not it.atEnd():
+                    fragment = it.fragment()
+
+                    blockLayout = block.layout()
+                    fragPos = fragment.position() - block.position()
+                    fragEnd = fragPos + fragment.length()
+
+
+                    start_frg = fragment.contains(self.cursor.selectionStart())
+                    end_frg = fragment.contains(self.cursor.selectionEnd())
+                    middle_frg = fragment.position() > self.cursor.selectionStart() and fragment.position() + fragment.length() <= self.cursor.selectionEnd()
+
+                    if start_frg or end_frg or middle_frg:
+                        if start_frg:
+                            fragPos = self.cursor.selectionStart() - block.position()
+                        if end_frg:
+                            fragEnd = self.cursor.selectionEnd() - block.position()
+
+                        while True:
+                            line = blockLayout.lineForTextPosition(fragPos)
+                            if line.isValid():
+                                x, _ = line.cursorToX(fragPos)
+                                right, lineEnd = line.cursorToX(fragEnd)
+                                rect = QRectF(blockX + x, blockY + line.y(), right - x, line.height())
+                                self.selection_rects.append(rect)
+                                if lineEnd != fragEnd:
+                                    fragPos = lineEnd
+                                else:
+                                    break
+                            else:
+                                break
+                    it += 1
                 block = block.next()
-                continue
-
-            blockRect = docLayout.blockBoundingRect(block)
-            blockX = blockRect.x()
-            blockY = blockRect.y()
-
-            it = block.begin()
-            while not it.atEnd():
-                fragment = it.fragment()
-
-                blockLayout = block.layout()
-                fragPos = fragment.position() - block.position()
-                fragEnd = fragPos + fragment.length()
-                while True:
-                    line = blockLayout.lineForTextPosition(fragPos)
-                    if line.isValid():
-                        x, _ = line.cursorToX(fragPos)
-                        right, lineEnd = line.cursorToX(fragEnd)
-                        rect = QRectF(blockX + x, blockY + line.y(), right - x, line.height())
-                        lastBorderRects.append(rect)
-                        if lineEnd != fragEnd:
-                            fragPos = lineEnd
-                        else:
-                            break
-                    else:
-                        break
-                it += 1
-            block = block.next()
 
 
-        # print(lastBorderRects)
-        self.lastBorderRects = lastBorderRects
 
 
 

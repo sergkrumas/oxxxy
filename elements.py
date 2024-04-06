@@ -693,7 +693,11 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
         os.mkdir(folder_path)
         if not os.path.exists(folder_path):
             return
-        project_filepath = os.path.join(folder_path, "project.oxxxyshot")
+        if self.Globals.ENABLE_CBOR2:
+            file_format = 'cbor2'
+        else:
+            file_format = 'json'
+        project_filepath = os.path.join(folder_path, f"project.{file_format}.oxxxyshot")
 
 
         # инициализация словаря

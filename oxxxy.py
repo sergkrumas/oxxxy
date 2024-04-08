@@ -1061,6 +1061,7 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         tw.initialization = True
         tw.set_current_tool(ToolID.picture)
         points = []
+        first_pixmap_center = None
         elementTopLeft = QPointF(0, 0)
         elementBottomRight = QPointF(0, 0)
         for path_or_pix in paths_or_pixmaps:
@@ -1075,6 +1076,8 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
                 points.append(QPointF(elementTopLeft))
                 points.append(QPointF(elementBottomRight))
                 element.element_position = (elementTopLeft + elementBottomRight) / 2.0
+                if first_pixmap_center is None:
+                    first_pixmap_center = element.element_position
                 element.calc_local_data()
                 elementTopLeft += QPointF(pixmap.width(), 0)
                 pixmaps.append(pixmap)
@@ -1084,6 +1087,9 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
             self.input_POINT2 = QPointF(0, 0)
             self.input_POINT1 = QPointF(self.frameGeometry().bottomRight())
         self.capture_region_rect = build_valid_rectF(self.input_POINT1, self.input_POINT2)
+        if pixmaps:
+            center, rect = self.get_center_position_and_screen_rect()
+            self.canvas_origin = center - first_pixmap_center
         tw.set_current_tool(ToolID.transform)
         tw.forwards_backwards_update()
         self.update_tools_window()

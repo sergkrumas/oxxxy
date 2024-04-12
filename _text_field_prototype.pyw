@@ -248,14 +248,12 @@ class QMyWidget(QWidget):
 # #
 #              # dir(block)) #dir(block))
 #             block = block.next()
-
-        block = self.doc.begin()
-
         # return
 
         self.note_item_selection_rect = []
 
         if self.text_cursor.anchor() != self.text_cursor.position():
+            block = self.doc.begin()
             while block != end:
                 if not block.text():
                     block = block.next()

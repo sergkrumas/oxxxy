@@ -108,16 +108,15 @@ class QMyWidget(QWidget):
 
             # self.get_info()
             self.update()
-            self.cursor.setPosition(self.result)
+            self.text_cursor.setPosition(self.result)
 
-            self.cursor_pos += 1
 
         else:
             self.cursor = QTextCursor(self.doc)
-            self.cursor.beginEditBlock()
-            self.cursor.insertText("Hello")
-            # self.cursor.insertText("World")
-            self.cursor.endEditBlock()
+            self.text_cursor.beginEditBlock()
+            self.text_cursor.insertText("Hello")
+            # self.text_cursor.insertText("World")
+            self.text_cursor.endEditBlock()
 
             self.update()
 
@@ -133,12 +132,12 @@ class QMyWidget(QWidget):
 
     def mouse_move(self, event):
         self.result = self.doc.documentLayout().hitTest(event.pos(), Qt.FuzzyHit)
-        self.cursor.setPosition(self.result, QTextCursor.KeepAnchor)
+        self.text_cursor.setPosition(self.result, QTextCursor.KeepAnchor)
 
-        print('s end', self.cursor.selectionEnd(), '\ns start', self.cursor.selectionStart())
-        print(self.cursor.position(), self.cursor.anchor())
+        print('s end', self.text_cursor.selectionEnd(), '\ns start', self.text_cursor.selectionStart())
+        print(self.text_cursor.position(), self.text_cursor.anchor())
 
-        print('selected text:', self.cursor.selectedText())
+        print('selected text:', self.text_cursor.selectedText())
 
         self.get_info()
 
@@ -174,17 +173,17 @@ class QMyWidget(QWidget):
 
         self.doc.setTextWidth(200)
 
-        self.cursor = QTextCursor(self.doc)
-        self.cursor.setPosition(5)
-        self.cursor.setPosition(1, QTextCursor.KeepAnchor)
-        # self.cursor.setPosition(5)
-        # self.cursor.beginEditBlock()
-        # self.cursor.insertText("Hello")
-        # self.cursor.insertText("World")
-        # self.cursor.select(QTextCursor.WordUnderCursor)
+        self.text_cursor = QTextCursor(self.doc)
+        self.text_cursor.setPosition(5)
+        self.text_cursor.setPosition(1, QTextCursor.KeepAnchor)
+        # self.text_cursor.setPosition(5)
+        # self.text_cursor.beginEditBlock()
+        # self.text_cursor.insertText("Hello")
+        # self.text_cursor.insertText("World")
+        # self.text_cursor.select(QTextCursor.WordUnderCursor)
 
 
-        # self.cursor.endEditBlock()
+        # self.text_cursor.endEditBlock()
         # print('a',  len(self.doc.toPlainText()))
 
         # block = self.doc.begin()
@@ -256,7 +255,7 @@ class QMyWidget(QWidget):
 
         self.selection_rects = []
 
-        if self.cursor.anchor() != self.cursor.position():
+        if self.text_cursor.anchor() != self.text_cursor.position():
             while block != end:
                 if not block.text():
                     block = block.next()
@@ -275,15 +274,15 @@ class QMyWidget(QWidget):
                     fragEnd = fragPos + fragment.length()
 
 
-                    start_frg = fragment.contains(self.cursor.selectionStart())
-                    end_frg = fragment.contains(self.cursor.selectionEnd())
-                    middle_frg = fragment.position() > self.cursor.selectionStart() and fragment.position() + fragment.length() <= self.cursor.selectionEnd()
+                    start_frg = fragment.contains(self.text_cursor.selectionStart())
+                    end_frg = fragment.contains(self.text_cursor.selectionEnd())
+                    middle_frg = fragment.position() > self.text_cursor.selectionStart() and fragment.position() + fragment.length() <= self.text_cursor.selectionEnd()
 
                     if start_frg or end_frg or middle_frg:
                         if start_frg:
-                            fragPos = self.cursor.selectionStart() - block.position()
+                            fragPos = self.text_cursor.selectionStart() - block.position()
                         if end_frg:
-                            fragEnd = self.cursor.selectionEnd() - block.position()
+                            fragEnd = self.text_cursor.selectionEnd() - block.position()
 
                         while True:
                             line = blockLayout.lineForTextPosition(fragPos)

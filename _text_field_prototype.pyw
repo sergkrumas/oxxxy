@@ -89,8 +89,8 @@ class QMyWidget(QWidget):
 
 
 
-        l = len(self.selection_rects)
-        for n, r in enumerate(self.selection_rects):
+        l = len(self.note_item_selection_rect)
+        for n, r in enumerate(self.note_item_selection_rect):
             painter.fillRect(r, QColor(200, 50, 50, max(35, int(255*n/l) ) ))
             # painter.fillRect(r, QColor(0.9, 0.15, 0.15, n/l))
 
@@ -253,7 +253,7 @@ class QMyWidget(QWidget):
 
         # return
 
-        self.selection_rects = []
+        self.note_item_selection_rect = []
 
         if self.text_cursor.anchor() != self.text_cursor.position():
             while block != end:
@@ -290,7 +290,7 @@ class QMyWidget(QWidget):
                                 x, _ = line.cursorToX(fragPos)
                                 right, lineEnd = line.cursorToX(fragEnd)
                                 rect = QRectF(blockX + x, blockY + line.y(), right - x, line.height())
-                                self.selection_rects.append(rect)
+                                self.note_item_selection_rect.append(rect)
                                 if lineEnd != fragEnd:
                                     fragPos = lineEnd
                                 else:

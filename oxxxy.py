@@ -1866,6 +1866,13 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
                 if event.key() in arrow_keys:
                     self.elementsStopModificationProcess()
 
+        if not event.isAutoRepeat():
+            if event.modifiers() & Qt.ControlModifier:
+                if check_scancode_for(event, "O"):
+                    self.open_project()
+                elif check_scancode_for(event, "S"):
+                    self.save_project()
+
     def keyPressEvent(self, event):
         key = event.key()
         if self.elementsTextElementIsInputEvent(event):

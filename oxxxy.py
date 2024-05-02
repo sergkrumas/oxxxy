@@ -873,13 +873,13 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         self.setWindowTitle(f"Oxxxy Screenshoter {Globals.VERSION_INFO} {Globals.AUTHOR_INFO}")
 
         self.context_menu_stylesheet = """
-        QMenu, QCheckBox{
+        QMenu, QCheckBox, QSpinBox{
             padding: 0px;
             font-size: 16px;
             font-weight: normal;
             font-family: 'Consolas';
         }
-        QMenu::item, QCheckBox{
+        QMenu::item, QCheckBox, QSpinBox{
             padding: 10px;
             background: #303940;
             color: rgb(230, 230, 230);
@@ -1472,6 +1472,7 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
 
     def slice_background_menu(self):
         menu = QMenu()
+        menu.setStyleSheet(self.context_menu_stylesheet)
 
         spinboxes = (
             ('Количество по вертикали', 'SLICE_ROWS'),

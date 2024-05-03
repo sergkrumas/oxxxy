@@ -2314,6 +2314,8 @@ if __name__ == '__main__':
             data = file.read()
             path = data.split("\n")[0]
 
+    if sys.argv:
+        path = sys.argv[0]
     if not path:
         images = get_filepaths_dialog(path)
         path = images[0]

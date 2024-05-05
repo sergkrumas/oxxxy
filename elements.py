@@ -1148,6 +1148,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
         ae.element_scale_y = 1.0
         if set_selected:
             self.elementsSetSelected(ae)
+        self.update()
 
     def elementsSetPixmapFromMagazin(self):
         if not self.Globals.dasPictureMagazin and \
@@ -3034,6 +3035,8 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
             # обновление области захвата
             self.input_POINT2, self.input_POINT1 = get_bounding_pointsF(points)
             self.capture_region_rect = build_valid_rectF(self.input_POINT1, self.input_POINT2)
+
+        self.update()
 
     def elementsDoRenderToBackground(self, for_slicing=False):
         subMenu = QMenu()

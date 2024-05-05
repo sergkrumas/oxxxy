@@ -1561,6 +1561,7 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
 
         fit_images_to_size = add_item("Подогнать все картинки по размеру под одну")
         fit_images_to_size.setEnabled(capture_is_set)
+        fit_images_to_size.triggered.connect(self.elementsFitImagesToSize)
 
         get_toolwindow_in_view = add_item("Подтянуть панель инструментов")
         get_toolwindow_in_view.setEnabled(capture_is_set)
@@ -1633,40 +1634,49 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         halt.triggered.connect(sys.exit)
 
         action = contextMenu.exec_(self.mapToGlobal(event.pos()))
+
+
+
         if action == None:
             pass
         elif sub_menu_handler(action):
             pass
 
-        elif action == fit_images_to_size:
-            self.elementsFitImagesToSize()
+
         elif action == render_elements_to_background:
             self.elementsDoRenderToBackground()
+
+        elif action == finish_save_to_memory_mode:
+            self.elementsFinishSaveToMemoryMode()
+
+        elif action == reset_capture:
+            self.elementsResetCapture()
+
         elif action == autocapturezone:
             self.elementsSetCaptureFromContent()
-            self.update()
+
         elif action == autocollage:
             self.elementsAutoCollagePictures()
-            self.update()
 
         elif action == reset_image_frame:
             self.elementsFramePicture()
-            self.update()
+
+
+
+
         elif action == set_image_frame:
             if sel_elem.backup_pixmap is None:
                 pixmap = sel_elem.pixmap
             else:
                 pixmap = sel_elem.backup_pixmap
             self.show_view_window(lambda: pixmap, _type="edit", data=sel_elem.frame_info)
-        elif action == finish_save_to_memory_mode:
-            self.elementsFinishSaveToMemoryMode()
+
         elif action == get_toolwindow_in_view:
             tw = self.tools_window
             if tw:
                 tw.auto_positioning = False
                 tw.move(self.mapFromGlobal(QCursor().pos()))
-        elif action == reset_capture:
-            self.elementsResetCapture()
+
 
 
 

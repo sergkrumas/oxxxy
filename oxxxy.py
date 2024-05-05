@@ -1460,19 +1460,10 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         self.define_regions_rects_and_set_cursor()
         self.update()
 
-    def slice_background_menu(self):
-        menu = QMenu()
-        menu.setStyleSheet(self.context_menu_stylesheet)
-
-        spinboxes = (
-            ('Количество по вертикали', 'SLICE_ROWS'),
-            ('Количество по горизонтали', 'SLICE_COLS'),
-        )
-
+    def set_spinboxes_to_menu(self, menu, spinboxes_data):
         def callback(sb, attr):
             setattr(self.Globals, attr, sb.value())
-
-        for title, attr in spinboxes:
+        for title, attr in spinboxes_data:
             wa = QWidgetAction(menu)
             sb = QSpinBox()
             sb.setToolTip(title)
@@ -1481,6 +1472,19 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
             sb.valueChanged.connect(partial(callback, sb, attr))
             wa.setDefaultWidget(sb)
             menu.addAction(wa)
+
+    def arrange_in_grid_menu(self):
+        pass
+
+    def slice_background_menu(self):
+        menu = QMenu()
+        menu.setStyleSheet(self.context_menu_stylesheet)
+
+        spinboxes = (
+            ('Количество по вертикали', 'SLICE_ROWS'),
+            ('Количество по горизонтали', 'SLICE_COLS'),
+        )
+        self.set_spinboxes_to_menu(menu, spinboxes)
 
         menu.addSeparator()
         do_action = menu.addAction('Нарезать')
@@ -1533,6 +1537,9 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
 
         slice_background = add_item("Нарезать фон на куски")
         slice_background.triggered.connect(self.slice_background_menu)
+
+        arrange_in_grid = add_item("Выложить сеткой")
+        arrange_in_grid.triggered.connect(self.arrange_in_grid_menu)
 
         activate_multifraing_tool = add_item(Globals.icon_multiframing, "Активировать инструмент мультикадрирования")
         activate_multifraing_tool.setEnabled(capture_is_set)

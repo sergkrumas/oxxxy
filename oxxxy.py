@@ -1532,6 +1532,7 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
 
         render_elements_to_background = add_item("Нарисовать содержимое на фоне и удалить содержимое")
         render_elements_to_background.setEnabled(capture_is_set)
+        render_elements_to_background.triggered.connect(self.elementsDoRenderToBackground)
 
         slice_background = add_item("Нарезать фон на куски")
         slice_background.triggered.connect(self.slice_background_menu)
@@ -1600,8 +1601,7 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         if Globals.images_in_memory:
             count = len(Globals.images_in_memory)
             finish_save_to_memory_mode = add_item(f"Разложить на холсте все изображения из лукошка ({count})")
-        else:
-            finish_save_to_memory_mode = None
+            finish_save_to_memory_mode.triggered.connect(self.elementsFinishSaveToMemoryMode)
 
         checkboxes = (
             ("Сохранить результат в лукошко", Globals.save_to_memory_mode, self.elementsStartSaveToMemoryMode),
@@ -1643,11 +1643,6 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
             pass
 
 
-        elif action == render_elements_to_background:
-            self.elementsDoRenderToBackground()
-
-        elif action == finish_save_to_memory_mode:
-            self.elementsFinishSaveToMemoryMode()
 
         elif action == reset_capture:
             self.elementsResetCapture()
@@ -1660,7 +1655,6 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
 
         elif action == reset_image_frame:
             self.elementsFramePicture()
-
 
 
 

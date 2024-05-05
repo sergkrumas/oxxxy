@@ -873,6 +873,8 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
         project_filepath = ""
 
         project_filepath = self.dialog_open_project()
+        if project_filepath == "":
+            return
 
         is_file_exists = os.path.exists(project_filepath)
         is_file_extension_ok = project_filepath.lower().endswith(".oxxxyshot")

@@ -1557,8 +1557,11 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         contextMenu.addSeparator()
 
         reset_panzoom = add_item("Сбросить смещение и зум")
+        reset_panzoom.triggered.connect(lambda: self.elementsResetPanZoom())
         reset_pan = add_item("Сбросить только смещение")
+        reset_pan.triggered.connect(lambda: self.elementsResetPanZoom(reset_zoom=False))
         reset_zoom = add_item("Сбросить только зум")
+        reset_zoom.triggered.connect(lambda: self.elementsResetPanZoom(reset_pan=False))
 
         contextMenu.addSeparator()
 
@@ -1569,8 +1572,11 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         contextMenu.addSeparator() ###############################################################
 
         open_project = add_item("Открыть проект...")
+        open_project.triggered.connect(self.open_project)
+
         save_project = add_item("Сохранить проект")
         save_project.setEnabled(capture_is_set)
+        save_project.triggered.connect(self.save_project)
 
         contextMenu.addSeparator()
 
@@ -1612,18 +1618,8 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
             pass
         elif sub_menu_handler(action):
             pass
-        elif action == save_project:
-            self.save_project()
         elif action == slice_background:
             self.slice_background_menu()
-        elif action == reset_panzoom:
-            self.elementsResetPanZoom()
-        elif action == reset_pan:
-            self.elementsResetPanZoom(reset_zoom=False)
-        elif action == reset_zoom:
-            self.elementsResetPanZoom(reset_pan=False)
-        elif action == open_project:
-            self.open_project()
         elif action == fit_images_to_size:
             self.elementsFitImagesToSize()
         elif action == render_elements_to_background:

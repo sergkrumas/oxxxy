@@ -1516,8 +1516,6 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
                 pixmap = sel_elem.backup_pixmap
             self.show_view_window(lambda: pixmap, _type="edit", data=sel_elem.frame_info)
 
-        reset_image_frame = None
-        set_image_frame = None
         sel_elem = self.active_element
         if sel_elem and sel_elem.type == ToolID.picture:
             if sel_elem.backup_pixmap is not None:

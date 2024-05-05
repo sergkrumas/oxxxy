@@ -1572,7 +1572,7 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
 
         autocollage = add_item("Автоколлаж")
         autocollage.setEnabled(capture_is_set)
-        autocollage.triggered.connect(self.elementsAutoCollagePictures)
+        autocollage.triggered.connect(lambda: self.elementsAutoCollagePictures())
 
         arrange_in_grid = add_item("Выложить сеткой")
         arrange_in_grid.triggered.connect(self.arrange_in_grid_menu)

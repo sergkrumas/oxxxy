@@ -543,26 +543,76 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
         ROWS = self.Globals.ARRANGE_ROWS
         COLS = self.Globals.ARRANGE_COLS
 
+        elements = self.elementsFilterElementsForSelection()
+        for el in elements:
+            el.element_scale_x = 1.0
+            el.element_scale_y = 1.0
+
+        # вызываем для выравнивания по высоте:
+        # каждая картинка будет отмасштабирована до высоты картинки с наибольшей высотой
+        self.elementsAutoCollagePicturesHor()
+
         # фильтрация по типу выделения
         elements = self.elementsFilterElementsForSelection()
         elements = list(sorted(elements, key=lambda x: x.unique_index))
 
+
         if ROWS != 0:
             COLS = int(math.ceil(len(elements) / ROWS))
 
-        offset = QPointF(0, 0)
+        rows = []
+        current_row = []
         for n, el in enumerate(elements):
-
             if (n % COLS == 0) and n != 0:
-                offset.setX(0)
-                offset.setY(offset.y() + bi_height)
 
-            b_rect = el.get_selection_area(canvas=self, apply_global_scale=False).boundingRect()
-            bi_width = b_rect.width()
-            bi_height = b_rect.height()
-            el.element_position = offset + QPointF(bi_width/2, bi_height/2)
+                rows.append(current_row)
+                current_row = []
+            current_row.append(el)
 
-            offset += QPointF(bi_width, 0)
+        rows.append(current_row)
+
+        # calculating MAX_ROW_WIDTH
+        MAX_ROW_WIDTH = 0
+        for row in rows:
+            row_width = 0
+            for el in row:
+                b_rect = el.get_selection_area(canvas=self, apply_global_scale=False).boundingRect()
+                row_width += b_rect.width()
+            MAX_ROW_WIDTH = max(row_width, MAX_ROW_WIDTH)
+
+        # задание масштаба для каждого ряда
+        for row in rows:
+            row_width = 0
+            for el in row:
+                b_rect = el.get_selection_area(canvas=self, apply_global_scale=False).boundingRect()
+                row_width += b_rect.width()
+            row_scale_factor = MAX_ROW_WIDTH/row_width
+            for el in row:
+                el.element_scale_x *= row_scale_factor
+                el.element_scale_y *= row_scale_factor
+
+        # расположение
+        offset = QPointF(0, 0)
+        points = []
+        for row in rows:
+            for el in row:
+                b_rect = el.get_selection_area(canvas=self, apply_global_scale=False).boundingRect()
+                bi_width = b_rect.width()
+                bi_height = b_rect.height()
+                half_size = QPointF(bi_width/2, bi_height/2)
+                el.element_position = offset + half_size
+
+                offset += QPointF(bi_width, 0)
+
+                points.append(el.element_position - half_size)
+                points.append(el.element_position + half_size)
+
+            offset.setX(0)
+            offset.setY(offset.y() + bi_height)
+
+        self.input_POINT2, self.input_POINT1 = get_bounding_pointsF(points)
+        self.capture_region_rect = build_valid_rectF(self.input_POINT1, self.input_POINT2)
+
 
         self.init_selection_bounding_box_widget()
         self.update()
@@ -3246,12 +3296,20 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
         cmp_func = lambda e: m(e).center().x()
         return list(sorted(elements, key=cmp_func))
 
-    def elementsAutoCollagePictures(self):
+    def elementsAutoCollagePicturesHor(self):
+        self.elementsAutoCollagePictures(param='hor')
+
+    def elementsAutoCollagePictures(self, param=None):
         subMenu = QMenu()
         subMenu.setStyleSheet(self.context_menu_stylesheet)
         horizontal = subMenu.addAction("По горизонтали")
         vertical = subMenu.addAction("По вертикали")
-        action = subMenu.exec_(QCursor().pos())
+        if param is None:
+            action = subMenu.exec_(QCursor().pos())
+        elif param == 'hor':
+            action = horizontal
+        elif param == 'ver':
+            action = vertical
 
         elements = self.elementsSortPicturesByXPosition(self.elementsPicturesFilter())
 

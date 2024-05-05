@@ -1488,15 +1488,10 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
 
         menu.addSeparator()
         do_action = menu.addAction('Нарезать')
+        do_action.triggered.connect(self.elementsSliceBackgroundsIntoPieces)
         cancel_action = menu.addAction('Отмена')
 
         action = menu.exec_(QCursor().pos())
-        if action == None:
-            pass
-        elif action == do_action:
-            self.elementsSliceBackgroundsIntoPieces()
-        elif action == cancel_action:
-            pass
 
     def contextMenuEvent(self, event):
         if self.cancel_context_menu:

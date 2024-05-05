@@ -1213,9 +1213,16 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
             title = menu.addAction(title)
             title.setEnabled(False)
 
+        def set_selection_filter(value):
+            self.selection_filter = value
+            self.elementsSelectionFilterChangedCallback()            
+
         _all = add_item("И пометки, и фон")
+        _all.triggered.connect(partial(set_selection_filter, self.SelectionFilter.all))
         _content_only = add_item("Только пометки")
+        _content_only.triggered.connect(partial(set_selection_filter, self.SelectionFilter.content_only))        
         _background_only = add_item("Только фон")
+        _background_only.triggered.connect(partial(set_selection_filter, self.SelectionFilter.background_only))     
 
         ag = QActionGroup(menu)
         for a in (_all, _content_only, _background_only):
@@ -1231,26 +1238,9 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         elif self.selection_filter == self.SelectionFilter.background_only:
             _background_only.setChecked(True)
 
-        def click_handler(a):
-            if a == None:
-                return True
-            else:
-                if a.parent() == menu:
-                    if a == _all:
-                        self.selection_filter = self.SelectionFilter.all
-                    elif a == _content_only:
-                        self.selection_filter = self.SelectionFilter.content_only
-                    elif a == _background_only:
-                        self.selection_filter = self.SelectionFilter.background_only
-                    self.elementsSelectionFilterChangedCallback()
-                    return True
-            return False
-
         if main_menu:
-            return menu, click_handler
-
+            return menu
         action = menu.exec_(QCursor().pos())
-        click_handler(action)
 
     def special_change_handler(self, callback):
         self.elementsStartModificationProcess('checkbox')
@@ -1534,7 +1524,7 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
                 reset_image_frame = add_item("Отменить обрезку выделенного изображения")
                 reset_image_frame.triggered.connect(lambda: self.elementsFramePicture())
             set_image_frame = add_item("Обрезать выделенное изображение")
-            set_image_frame.triggered.connect(self.do_set_image_frame)
+            set_image_frame.triggered.connect(do_set_image_frame)
             contextMenu.addSeparator()
 
         capture_is_set = self.capture_region_rect is not None
@@ -1588,7 +1578,7 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
 
         reset_capture = add_item("Сбросить область захвата")
         reset_capture.setEnabled(capture_is_set)
-        reset_capture.triggered.connect(self.elementsResetCapture())
+        reset_capture.triggered.connect(self.elementsResetCapture)
 
         contextMenu.addSeparator()
 
@@ -1601,7 +1591,7 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
 
         contextMenu.addSeparator()
 
-        sub_menu, sub_menu_handler = self.selection_filter_menu(main_menu=contextMenu)
+        sub_menu = self.selection_filter_menu(main_menu=contextMenu)
         sub_menu.setTitle(sub_menu.title())
         contextMenu.addMenu(sub_menu)
 
@@ -1652,11 +1642,6 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         halt.triggered.connect(sys.exit)
 
         action = contextMenu.exec_(self.mapToGlobal(event.pos()))
-
-        if action == None:
-            pass
-        elif sub_menu_handler(action):
-            pass
 
     def get_custom_cross_cursor(self):
         if True or not self._custom_cursor_data:

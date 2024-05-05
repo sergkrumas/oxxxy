@@ -1519,13 +1519,22 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         def add_item(*args):
             return contextMenu.addAction(*args)
 
+        def do_set_image_frame():
+            if sel_elem.backup_pixmap is None:
+                pixmap = sel_elem.pixmap
+            else:
+                pixmap = sel_elem.backup_pixmap
+            self.show_view_window(lambda: pixmap, _type="edit", data=sel_elem.frame_info)
+
         reset_image_frame = None
         set_image_frame = None
         sel_elem = self.active_element
         if sel_elem and sel_elem.type == ToolID.picture:
             if sel_elem.backup_pixmap is not None:
                 reset_image_frame = add_item("Отменить обрезку выделенного изображения")
+                reset_image_frame.triggered.connect(lambda: self.elementsFramePicture())
             set_image_frame = add_item("Обрезать выделенное изображение")
+            set_image_frame.triggered.connect(self.do_set_image_frame)
             contextMenu.addSeparator()
 
         capture_is_set = self.capture_region_rect is not None
@@ -1559,6 +1568,7 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
 
         autocollage = add_item("Автоколлаж")
         autocollage.setEnabled(capture_is_set)
+        autocollage.triggered.connect(self.elementsAutoCollagePictures)
 
         fit_images_to_size = add_item("Подогнать все картинки по размеру под одну")
         fit_images_to_size.setEnabled(capture_is_set)
@@ -1568,9 +1578,11 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         get_toolwindow_in_view.setEnabled(capture_is_set)
 
         autocapturezone = add_item("Задать область захвата по содержимому")
+        autocapturezone.triggered.connect(self.elementsSetCaptureFromContent)
 
         reset_capture = add_item("Сбросить область захвата")
         reset_capture.setEnabled(capture_is_set)
+        reset_capture.triggered.connect(self.elementsResetCapture())
 
         contextMenu.addSeparator()
 
@@ -1643,36 +1655,11 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
             pass
 
 
-
-        elif action == reset_capture:
-            self.elementsResetCapture()
-
-        elif action == autocapturezone:
-            self.elementsSetCaptureFromContent()
-
-        elif action == autocollage:
-            self.elementsAutoCollagePictures()
-
-        elif action == reset_image_frame:
-            self.elementsFramePicture()
-
-
-
-        elif action == set_image_frame:
-            if sel_elem.backup_pixmap is None:
-                pixmap = sel_elem.pixmap
-            else:
-                pixmap = sel_elem.backup_pixmap
-            self.show_view_window(lambda: pixmap, _type="edit", data=sel_elem.frame_info)
-
         elif action == get_toolwindow_in_view:
             tw = self.tools_window
             if tw:
                 tw.auto_positioning = False
                 tw.move(self.mapFromGlobal(QCursor().pos()))
-
-
-
 
     def get_custom_cross_cursor(self):
         if True or not self._custom_cursor_data:

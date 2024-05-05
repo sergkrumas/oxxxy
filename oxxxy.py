@@ -1534,6 +1534,7 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         render_elements_to_background.setEnabled(capture_is_set)
 
         slice_background = add_item("Нарезать фон на куски")
+        slice_background.triggered.connect(self.slice_background_menu)
 
         activate_multifraing_tool = add_item(Globals.icon_multiframing, "Активировать инструмент мультикадрирования")
         activate_multifraing_tool.setEnabled(capture_is_set)
@@ -1610,16 +1611,18 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         contextMenu.addSeparator() ###############################################################
 
         minimize = add_item("Свернуть на панель задач")
+        minimize.triggered.connect(self.showMinimized)
         cancel = add_item(Globals.icon_cancel, "Отменить создание скриншота")
+        cancel.triggered.connect(lambda: self.close_this(force_close=True))
         halt = add_item(Globals.icon_halt, "Отменить создание скриншота и вырубить приложение")
+        halt.triggered.connect(sys.exit)
 
         action = contextMenu.exec_(self.mapToGlobal(event.pos()))
         if action == None:
             pass
         elif sub_menu_handler(action):
             pass
-        elif action == slice_background:
-            self.slice_background_menu()
+
         elif action == fit_images_to_size:
             self.elementsFitImagesToSize()
         elif action == render_elements_to_background:
@@ -1630,8 +1633,7 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         elif action == autocollage:
             self.elementsAutoCollagePictures()
             self.update()
-        elif action == halt:
-            sys.exit()
+
         elif action == reset_image_frame:
             self.elementsFramePicture()
             self.update()
@@ -1650,13 +1652,11 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
                 tw.move(self.mapFromGlobal(QCursor().pos()))
         elif action == reset_capture:
             self.elementsResetCapture()
-        elif action == minimize:
-            self.showMinimized()
+            
         elif action == activate_multifraing_tool:
             if self.tools_window:
                 self.tools_window.set_current_tool(ToolID.multiframing)
-        elif action == cancel:
-            self.close_this(force_close=True)
+
         elif action == reshot:
             self.hide()
             if self.tools_window:

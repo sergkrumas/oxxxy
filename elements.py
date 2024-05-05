@@ -543,7 +543,29 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
         ROWS = self.Globals.ARRANGE_ROWS
         COLS = self.Globals.ARRANGE_COLS
 
-        print('testing')
+        # фильтрация по типу выделения
+        elements = self.elementsFilterElementsForSelection()
+        elements = list(sorted(elements, key=lambda x: x.unique_index))
+
+        if ROWS != 0:
+            COLS = int(math.ceil(len(elements) / ROWS))
+
+        offset = QPointF(0, 0)
+        for n, el in enumerate(elements):
+
+            if (n % COLS == 0) and n != 0:
+                offset.setX(0)
+                offset.setY(offset.y() + bi_height)
+
+            b_rect = el.get_selection_area(canvas=self, apply_global_scale=False).boundingRect()
+            bi_width = b_rect.width()
+            bi_height = b_rect.height()
+            el.element_position = offset + QPointF(bi_width/2, bi_height/2)
+
+            offset += QPointF(bi_width, 0)
+
+        self.init_selection_bounding_box_widget()
+        self.update()
 
     def elementsSliceBackgroundsIntoPieces(self):
 

@@ -80,7 +80,7 @@ class Globals():
     SLICE_ROWS = 1
     SLICE_COLS = 2
 
-    ARRANGE_ROWS = 1
+    ARRANGE_ROWS = 0
     ARRANGE_COLS = 2
 
     # saved settings
@@ -1550,9 +1550,6 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         slice_background = add_item("Нарезать фон на куски")
         slice_background.triggered.connect(self.slice_background_menu)
 
-        arrange_in_grid = add_item("Выложить сеткой")
-        arrange_in_grid.triggered.connect(self.arrange_in_grid_menu)
-
         activate_multifraing_tool = add_item(Globals.icon_multiframing, "Активировать инструмент мультикадрирования")
         activate_multifraing_tool.setEnabled(capture_is_set)
         def amt():
@@ -1576,6 +1573,9 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         autocollage = add_item("Автоколлаж")
         autocollage.setEnabled(capture_is_set)
         autocollage.triggered.connect(self.elementsAutoCollagePictures)
+
+        arrange_in_grid = add_item("Выложить сеткой")
+        arrange_in_grid.triggered.connect(self.arrange_in_grid_menu)
 
         fit_images_to_size = add_item("Подогнать все картинки по размеру под одну")
         fit_images_to_size.setEnabled(capture_is_set)

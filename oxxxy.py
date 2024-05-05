@@ -1538,8 +1538,23 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
 
         activate_multifraing_tool = add_item(Globals.icon_multiframing, "Активировать инструмент мультикадрирования")
         activate_multifraing_tool.setEnabled(capture_is_set)
+        def amt():
+            if self.tools_window:
+                self.tools_window.set_current_tool(ToolID.multiframing)
+        activate_multifraing_tool.triggered.connect(amt)
 
+        def do_reshot():
+            self.hide()
+            if self.tools_window:
+                self.tools_window.hide()
+            self.source_pixels = make_screenshot_pyqt()
+            self.elementsCreateBackgroundPictures(self.CreateBackgroundOption.Reshoot)
+            self.elementsUpdateDependentElementsAfterReshot()
+            self.show()
+            if self.tools_window:
+                self.tools_window.show()
         reshot = add_item(Globals.icon_refresh, "Переснять скриншот")
+        reshot.triggered.connect(do_reshot)
 
         autocollage = add_item("Автоколлаж")
         autocollage.setEnabled(capture_is_set)
@@ -1652,21 +1667,8 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
                 tw.move(self.mapFromGlobal(QCursor().pos()))
         elif action == reset_capture:
             self.elementsResetCapture()
-            
-        elif action == activate_multifraing_tool:
-            if self.tools_window:
-                self.tools_window.set_current_tool(ToolID.multiframing)
 
-        elif action == reshot:
-            self.hide()
-            if self.tools_window:
-                self.tools_window.hide()
-            self.source_pixels = make_screenshot_pyqt()
-            self.elementsCreateBackgroundPictures(self.CreateBackgroundOption.Reshoot)
-            self.elementsUpdateDependentElementsAfterReshot()
-            self.show()
-            if self.tools_window:
-                self.tools_window.show()
+
 
     def get_custom_cross_cursor(self):
         if True or not self._custom_cursor_data:

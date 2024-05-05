@@ -1574,8 +1574,14 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         fit_images_to_size.setEnabled(capture_is_set)
         fit_images_to_size.triggered.connect(self.elementsFitImagesToSize)
 
+        def do_get_toolwindow_in_view():
+            tw = self.tools_window
+            if tw:
+                tw.auto_positioning = False
+                tw.move(self.mapFromGlobal(QCursor().pos()))
         get_toolwindow_in_view = add_item("Подтянуть панель инструментов")
         get_toolwindow_in_view.setEnabled(capture_is_set)
+        get_toolwindow_in_view.triggered.connect(do_get_toolwindow_in_view)
 
         autocapturezone = add_item("Задать область захвата по содержимому")
         autocapturezone.triggered.connect(self.elementsSetCaptureFromContent)
@@ -1647,19 +1653,10 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
 
         action = contextMenu.exec_(self.mapToGlobal(event.pos()))
 
-
-
         if action == None:
             pass
         elif sub_menu_handler(action):
             pass
-
-
-        elif action == get_toolwindow_in_view:
-            tw = self.tools_window
-            if tw:
-                tw.auto_positioning = False
-                tw.move(self.mapFromGlobal(QCursor().pos()))
 
     def get_custom_cross_cursor(self):
         if True or not self._custom_cursor_data:

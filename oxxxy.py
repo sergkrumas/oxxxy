@@ -1215,14 +1215,14 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
 
         def set_selection_filter(value):
             self.selection_filter = value
-            self.elementsSelectionFilterChangedCallback()            
+            self.elementsSelectionFilterChangedCallback()
 
         _all = add_item("И пометки, и фон")
         _all.triggered.connect(partial(set_selection_filter, self.SelectionFilter.all))
         _content_only = add_item("Только пометки")
-        _content_only.triggered.connect(partial(set_selection_filter, self.SelectionFilter.content_only))        
+        _content_only.triggered.connect(partial(set_selection_filter, self.SelectionFilter.content_only))
         _background_only = add_item("Только фон")
-        _background_only.triggered.connect(partial(set_selection_filter, self.SelectionFilter.background_only))     
+        _background_only.triggered.connect(partial(set_selection_filter, self.SelectionFilter.background_only))
 
         ag = QActionGroup(menu)
         for a in (_all, _content_only, _background_only):

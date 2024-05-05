@@ -538,6 +538,13 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
             bckg_element.calc_local_data()
             bckg_element.element_position = QPointF(new_background_pixmap.width()/2, new_background_pixmap.height()/2) + offset
 
+    def elementsArrangeInGrid(self):
+
+        ROWS = self.Globals.ARRANGE_ROWS
+        COLS = self.Globals.ARRANGE_COLS
+
+        print('testing')
+
     def elementsSliceBackgroundsIntoPieces(self):
 
         ROWS = self.Globals.SLICE_ROWS

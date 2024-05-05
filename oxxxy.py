@@ -80,6 +80,9 @@ class Globals():
     SLICE_ROWS = 1
     SLICE_COLS = 2
 
+    ARRANGE_ROWS = 1
+    ARRANGE_COLS = 2
+
     # saved settings
     ENABLE_FLAT_EDITOR_UI = False
     ENABLE_CBOR2 = True
@@ -1474,7 +1477,21 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
             menu.addAction(wa)
 
     def arrange_in_grid_menu(self):
-        pass
+        menu = QMenu()
+        menu.setStyleSheet(self.context_menu_stylesheet)
+
+        spinboxes = (
+            ('Количество по вертикали', 'ARRANGE_ROWS'),
+            ('Количество по горизонтали', 'ARRANGE_COLS'),
+        )
+        self.set_spinboxes_to_menu(menu, spinboxes)
+
+        menu.addSeparator()
+        do_action = menu.addAction('Выложить')
+        do_action.triggered.connect(self.elementsArrangeInGrid)
+        cancel_action = menu.addAction('Отмена')
+
+        action = menu.exec_(QCursor().pos())
 
     def slice_background_menu(self):
         menu = QMenu()

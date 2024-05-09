@@ -41,10 +41,6 @@ class ElementsTextEditElementMixin():
                 return True
         return False
 
-    def elementsTextElementSetParameters(self, elem):
-        if elem.text_doc is not None:
-            self.elementsTextElementSetFont(elem)
-
     def elementsTextElementGetFontPixelSize(self, elem):
         return int(20+10*elem.size)
 

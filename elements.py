@@ -365,7 +365,7 @@ class Element(Element2024Mixin):
         return transform
 
     def enable_distortion_fixer(self):
-        if hasattr(self, 'local_end_point'):
+        if hasattr(self, 'local_end_point') and not self.type == ToolID.text:
             self._saved_data = (
                 QPointF(self.local_end_point),
                 QPointF(self.local_start_point),
@@ -386,7 +386,7 @@ class Element(Element2024Mixin):
             self.element_scale_x = self.element_scale_y = 1.0
 
     def disable_distortion_fixer(self):
-        if hasattr(self, '_saved_data'):
+        if hasattr(self, '_saved_data') and not self.type == ToolID.text:
             self.local_end_point, \
             self.local_start_point, \
             self.element_width, \

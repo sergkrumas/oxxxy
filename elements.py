@@ -2704,7 +2704,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
             # отрисовка виджетов
             self.elementsDrawSelectionMouseRect(painter)
             self.elementsDrawSelectionTransformBox(painter)
-            self.elementsDrawSelectedElementsDottedOutlines(painter)
+            self.elementsDrawSelectedElementsDottedOutlines(painter, all_visible_elements)
 
         if self.dark_pictures or prepare_darkening:
             self.elementsDrawDarkening(painter)

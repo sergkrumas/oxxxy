@@ -744,7 +744,7 @@ class ElementsTransformMixin():
             painter.setBrush(brush)
             painter.drawRect(self.selection_rect)
 
-    def elementsDrawSelectedElementsDottedOutlines(self, painter):
+    def elementsDrawSelectedElementsDottedOutlines(self, painter, all_visible_elements):
         painter.save()
         painter.setBrush(Qt.NoBrush)
         pen = QPen(Qt.magenta, 1, Qt.DashLine)
@@ -757,16 +757,20 @@ class ElementsTransformMixin():
         painter.setPen(pen)
         painter.setOpacity(.5)
         if ae is not None:
-            sa = ae.get_selection_area(self)
-            c = sa.boundingRect().center()
-            to_zero = QTransform()
-            scaling = QTransform()
-            back_to_place = QTransform()
-            to_zero.translate(-c.x(), -c.y())
-            scaling.scale(1.1, 1.1)
-            back_to_place.translate(c.x(), c.y())
-            transform = to_zero * scaling * back_to_place
-            painter.drawPolygon(transform.map(sa))
+            if ae not in all_visible_elements:
+                # сброс активного элемента, вообще этого кода не должно быть в отрисовке
+                self.active_element = None
+            else:
+                sa = ae.get_selection_area(self)
+                c = sa.boundingRect().center()
+                to_zero = QTransform()
+                scaling = QTransform()
+                back_to_place = QTransform()
+                to_zero.translate(-c.x(), -c.y())
+                scaling.scale(1.1, 1.1)
+                back_to_place.translate(c.x(), c.y())
+                transform = to_zero * scaling * back_to_place
+                painter.drawPolygon(transform.map(sa))
 
         if self.Globals.DEBUG:
             for element in self.elementsFilter():

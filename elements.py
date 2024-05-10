@@ -136,8 +136,8 @@ class Element(Element2024Mixin):
         self.position = QPointF()
         self.rotation = 0
         self.prerotation = 0
-        self.element_width = None
-        self.element_height = None
+        self.width = None
+        self.height = None
 
         self.__scale_x = None
         self.__scale_y = None
@@ -175,8 +175,8 @@ class Element(Element2024Mixin):
         self.local_start_point = self.start_point - self.position
         self.local_end_point = self.end_point - self.position
         diff = self.local_start_point - self.local_end_point
-        self.element_width = abs(diff.x())
-        self.element_height = abs(diff.y())
+        self.width = abs(diff.x())
+        self.height = abs(diff.y())
 
     def recalc_local_data_for_straight_objects(self):
         rot = QTransform()
@@ -201,12 +201,12 @@ class Element(Element2024Mixin):
         self.rotation = diff_angle
 
         diff = self.local_start_point - self.local_end_point
-        self.element_width = abs(diff.x())
-        self.element_height = abs(diff.y())
+        self.width = abs(diff.x())
+        self.height = abs(diff.y())
 
     def calc_local_data_finish(self, first_element):
-        self.element_width = first_element.element_width
-        self.element_height = first_element.element_height
+        self.width = first_element.width
+        self.height = first_element.height
         # с предувеличением
         if self.type in [ToolID.zoom_in_region]:
             self.scale_y = ZOOM_IN_REGION_DAFAULT_SCALE
@@ -218,12 +218,12 @@ class Element(Element2024Mixin):
     def calc_local_data_path(self):
         bb = self.path.boundingRect()
         self.position = bb.center()
-        self.element_width = bb.width()
-        self.element_height = bb.height()
+        self.width = bb.width()
+        self.height = bb.height()
 
     def calc_local_data_picture(self):
-        self.element_width = self.pixmap.width()
-        self.element_height = self.pixmap.height()
+        self.width = self.pixmap.width()
+        self.height = self.pixmap.height()
 
     def calc_local_data(self):
         if self.type in [ToolID.line]:
@@ -273,7 +273,7 @@ class Element(Element2024Mixin):
         else:
             scale_x = 1.0
             scale_y = 1.0
-        return QRectF(0, 0, self.element_width*scale_x, self.element_height*scale_y)
+        return QRectF(0, 0, self.width*scale_x, self.height*scale_y)
 
     def get_canvas_space_selection_area(self):
         return self.get_selection_area(canvas=None,
@@ -369,8 +369,8 @@ class Element(Element2024Mixin):
             self._saved_data = (
                 QPointF(self.local_end_point),
                 QPointF(self.local_start_point),
-                self.element_width,
-                self.element_height,
+                self.width,
+                self.height,
                 self.scale_x,
                 self.scale_y
             )
@@ -381,16 +381,16 @@ class Element(Element2024Mixin):
             self.local_start_point.setX(self.local_start_point.x() * self.scale_x)
             self.local_start_point.setY(self.local_start_point.y() * self.scale_y)
 
-            self.element_width *= self.scale_x
-            self.element_height *= self.scale_y
+            self.width *= self.scale_x
+            self.height *= self.scale_y
             self.scale_x = self.scale_y = 1.0
 
     def disable_distortion_fixer(self):
         if hasattr(self, '_saved_data') and not self.type == ToolID.text:
             self.local_end_point, \
             self.local_start_point, \
-            self.element_width, \
-            self.element_height, \
+            self.width, \
+            self.height, \
             self.scale_x, \
             self.scale_y = self._saved_data
 

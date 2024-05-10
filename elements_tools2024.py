@@ -31,8 +31,8 @@ class Element2024Mixin():
 
     def calc_local_data_arrowstree(self):
         self.position = self.end_point
-        self.element_width = 100
-        self.element_height = 100
+        self.width = 100
+        self.height = 100
         self.local_start_point = QPointF(-50, -50)
         self.local_end_point = QPointF(50, 50)
 

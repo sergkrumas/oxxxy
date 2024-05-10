@@ -138,7 +138,8 @@ class Element(Element2024Mixin):
         self.prerotation = 0
         self.width = None
         self.height = None
-
+        # эти атрибуты с двойным нижним подчёркиванием в начале
+        # на деле будут иметь префикс _Element__
         self.__scale_x = None
         self.__scale_y = None
         self.__position = None

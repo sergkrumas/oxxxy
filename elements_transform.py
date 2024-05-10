@@ -429,11 +429,11 @@ class ElementsTransformMixin():
             for element in self.selected_items:
                 pass
                 # лучше закоментить этот код, так адекватнее и правильнее, как мне кажется
-                # if element.__element_rotation is not None:
-                #     element.element_rotation = element.__element_rotation
+                # if element.__rotation is not None:
+                #     element.rotation = element.__rotation
                 # if bi.type != BoardItem.types.ITEM_FRAME:
-                    # if bi.__item_position is not None:
-                    #     bi.item_position = bi.__item_position
+                    # if bi.__position is not None:
+                    #     bi.position = bi.__position
             self.update_selection_bouding_box()
 
         self.__selection_bounding_box = QPolygonF(self.selection_bounding_box)
@@ -449,11 +449,11 @@ class ElementsTransformMixin():
         self.rotation_pivot_center_point = self.__selection_bounding_box.boundingRect().center()
 
         for element in self.selected_items:
-            element.__element_rotation = element.element_rotation
+            element.__rotation = element.rotation
             element.__element_position = QPointF(element.element_position)
 
             if not viewport_zoom_changed:
-                element.__element_rotation_init = element.element_rotation
+                element.__rotation_init = element.rotation
                 element.__element_position_init = QPointF(element.element_position)
 
     def step_rotation(self, rotation_value, prerotation=None):
@@ -492,9 +492,9 @@ class ElementsTransformMixin():
             # rotation component
             # if element.type == BoardItem.types.ITEM_FRAME:
             #     continue
-            element.element_rotation = element.__element_rotation + rotation_delta_degrees
+            element.rotation = element.__rotation + rotation_delta_degrees
             if not multi_element_mode and ctrl_mod:
-                element.element_rotation = self.step_rotation(element.element_rotation, prerotation=element.element_prerotation)
+                element.rotation = self.step_rotation(element.rotation, prerotation=element.element_prerotation)
             # position component
             pos = element.calculate_absolute_position(canvas=self, rel_pos=element.__element_position)
             pos_radius_vector = pos - pivot
@@ -520,7 +520,7 @@ class ElementsTransformMixin():
         self.rotation_ongoing = False
         if cancel:
             for element in self.selected_items:
-                element.element_rotation = element.__element_rotation_init
+                element.rotation = element.__rotation_init
                 element.element_position = QPointF(element.__element_position_init)
         else:
             self.init_selection_bounding_box_widget()

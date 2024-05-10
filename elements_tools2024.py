@@ -93,7 +93,7 @@ class Elements2024ToolsMixin():
             pos2 = element.element_position
             direction = QVector2D(pos2 - pos1)
             angle_deg = math.degrees(math.atan2(direction.y(), direction.x()))
-            element.element_rotation = angle_deg + 90
+            element.rotation = angle_deg + 90
 
     def elementsArrowsTreeNodeClearInputData(self, element):
         if hasattr(element, 'orient_to_element'):
@@ -165,7 +165,7 @@ class Elements2024ToolsMixin():
                 rect = QRectF(0, 0, 50, 50)
                 rect.moveCenter(self.elementsMapToViewport(el.element_position))
 
-                # startAngle = (0 -int(el.element_rotation)) * 16
+                # startAngle = (0 -int(el.rotation)) * 16
                 # spanAngle = 180 * 16
                 # painter.drawArc(rect, startAngle, spanAngle)
 

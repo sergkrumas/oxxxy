@@ -134,7 +134,7 @@ class Element(Element2024Mixin):
         self.element_scale_x = 1.0
         self.element_scale_y = 1.0
         self.element_position = QPointF()
-        self.element_rotation = 0
+        self.rotation = 0
         self.element_prerotation = 0
         self.element_width = None
         self.element_height = None
@@ -142,7 +142,7 @@ class Element(Element2024Mixin):
         self.__element_scale_x = None
         self.__element_scale_y = None
         self.__element_position = None
-        self.__element_rotation = None
+        self.__rotation = None
 
         self.__element_scale_x_init = None
         self.__element_scale_y_init = None
@@ -198,7 +198,7 @@ class Element(Element2024Mixin):
         self.local_start_point = rot.map(self.local_start_point)
         self.local_end_point = rot.map(self.local_end_point)
 
-        self.element_rotation = diff_angle
+        self.rotation = diff_angle
 
         diff = self.local_start_point - self.local_end_point
         self.element_width = abs(diff.x())
@@ -352,7 +352,7 @@ class Element(Element2024Mixin):
         translation = QTransform()
         if apply_local_scale:
             local_scaling.scale(self.element_scale_x, self.element_scale_y)
-        rotation.rotate(self.element_rotation)
+        rotation.rotate(self.rotation)
         if apply_translation:
             if apply_global_scale:
                 pos = self.calculate_absolute_position(canvas=canvas)
@@ -1705,7 +1705,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
             self.elementsAdvancedInputPressEvent(event, event_pos, element)
         elif tool == ToolID.picture:
             element.pixmap = self.current_picture_pixmap
-            element.element_rotation = self.current_picture_angle
+            element.rotation = self.current_picture_angle
             element.element_position = event_pos
             element.calc_local_data()
         elif tool in [ToolID.pen, ToolID.marker]:
@@ -1849,7 +1849,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
             self.elementsAdvancedInputMoveEvent(event, event_pos, element)
         elif tool == ToolID.picture:
             element.pixmap = self.current_picture_pixmap
-            element.element_rotation = self.current_picture_angle
+            element.rotation = self.current_picture_angle
             element.element_position = event_pos
         elif tool in [ToolID.pen, ToolID.marker]:
             if element.straight:
@@ -1952,7 +1952,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
             self.elementsAdvancedInputMoveEvent(event, event_pos, element, finish=True)
         elif tool == ToolID.picture:
             element.pixmap = self.current_picture_pixmap
-            element.element_rotation = self.current_picture_angle
+            element.rotation = self.current_picture_angle
             element.element_position = event_pos
             self.elementsSetPixmapFromMagazin()
         elif tool in [ToolID.pen, ToolID.marker]:
@@ -2108,7 +2108,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
             capture_pos = element.element_position
             capture_width = er.width()
             capture_height = er.height()
-            capture_rotation = element.element_rotation
+            capture_rotation = element.rotation
             pixmap = QPixmap.fromImage(self.source_pixels)
             element.pixmap = capture_rotated_rect_from_pixmap(pixmap,
                 capture_pos,
@@ -2128,7 +2128,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
             capture_pos = element.element_position - capture_region_rect.topLeft()
             capture_width = er.width()
             capture_height = er.height()
-            capture_rotation = element.element_rotation
+            capture_rotation = element.rotation
             element.pixmap = capture_rotated_rect_from_pixmap(pixmap,
                 capture_pos,
                 capture_rotation,
@@ -2161,7 +2161,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
             capture_pos = element.element_position
             capture_width = er.width()
             capture_height = er.height()
-            capture_rotation = element.element_rotation
+            capture_rotation = element.rotation
             source_pixmap = cropped_source_pixels
             element.pixmap = capture_rotated_rect_from_pixmap(source_pixmap,
                 capture_pos,
@@ -2183,7 +2183,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
             capture_pos = element.element_position - capture_region_rect.topLeft()
             capture_width = er.width()
             capture_height = er.height()
-            capture_rotation = element.element_rotation
+            capture_rotation = element.rotation
             element.pixmap = capture_rotated_rect_from_pixmap(source_pixmap,
                 capture_pos,
                 capture_rotation,
@@ -2227,7 +2227,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
                 text_rect = text_element.get_size_rect(scaled=True)
                 text_rect.moveCenter(QPointF(0, 0))
                 text_transform = QTransform()
-                text_transform.rotate(text_element.element_rotation)
+                text_transform.rotate(text_element.rotation)
                 p1 = text_transform.map(text_rect.bottomLeft())
                 p2 = text_transform.map(text_rect.topLeft())
                 p3 = text_transform.map(text_rect.topRight())
@@ -2871,7 +2871,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
                     capture_pos = el.element_position
                     el.bounding_rect = br
                     capture_pos = el.element_position
-                    capture_rotation = el.element_rotation
+                    capture_rotation = el.rotation
                     capture_width = br.width()
                     capture_height = br.height()
                     el.pixmap = capture_rotated_rect_from_pixmap(source_pixmap, capture_pos,

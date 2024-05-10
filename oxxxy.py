@@ -471,7 +471,7 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         if not crr_viewport.contains(cursor_pos):
             return
 
-        self._tei.element_rotation = self.current_picture_angle
+        self._tei.rotation = self.current_picture_angle
         self._tei.pixmap = self.current_picture_pixmap
         self._tei.element_position = self.elementsMapToCanvas(cursor_pos)
         self._tei.calc_local_data()

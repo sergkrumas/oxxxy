@@ -133,7 +133,7 @@ class Element(Element2024Mixin):
         # element attributes for canvas
         self.scale_x = 1.0
         self.scale_y = 1.0
-        self.element_position = QPointF()
+        self.position = QPointF()
         self.rotation = 0
         self.prerotation = 0
         self.element_width = None
@@ -141,12 +141,12 @@ class Element(Element2024Mixin):
 
         self.__scale_x = None
         self.__scale_y = None
-        self.__element_position = None
+        self.__position = None
         self.__rotation = None
 
         self.__scale_x_init = None
         self.__scale_y_init = None
-        self.__element_position_init = None
+        self.__position_init = None
 
         self._selected = False
         self._touched = False
@@ -171,9 +171,9 @@ class Element(Element2024Mixin):
         return info_text
 
     def calc_local_data_default(self):
-        self.element_position = (self.start_point + self.end_point)/2.0
-        self.local_start_point = self.start_point - self.element_position
-        self.local_end_point = self.end_point - self.element_position
+        self.position = (self.start_point + self.end_point)/2.0
+        self.local_start_point = self.start_point - self.position
+        self.local_end_point = self.end_point - self.position
         diff = self.local_start_point - self.local_end_point
         self.element_width = abs(diff.x())
         self.element_height = abs(diff.y())
@@ -217,7 +217,7 @@ class Element(Element2024Mixin):
 
     def calc_local_data_path(self):
         bb = self.path.boundingRect()
-        self.element_position = bb.center()
+        self.position = bb.center()
         self.element_width = bb.width()
         self.element_height = bb.height()
 
@@ -259,7 +259,7 @@ class Element(Element2024Mixin):
         _scale_x = canvas.canvas_scale_x
         _scale_y = canvas.canvas_scale_y
         if rel_pos is None:
-            rel_pos = self.element_position
+            rel_pos = self.position
         return QPointF(canvas.canvas_origin) + QPointF(rel_pos.x()*_scale_x, rel_pos.y()*_scale_y)
 
     def aspect_ratio(self):
@@ -286,7 +286,7 @@ class Element(Element2024Mixin):
 
     def get_canvas_space_selection_rect_with_no_rotation(self):
         er = self.get_size_rect(scaled=True)
-        er.moveCenter(self.element_position)
+        er.moveCenter(self.position)
         return er
 
     def get_selection_area(self, canvas=None, place_center_at_origin=True, apply_global_scale=True, apply_translation=True):
@@ -358,7 +358,7 @@ class Element(Element2024Mixin):
                 pos = self.calculate_absolute_position(canvas=canvas)
                 translation.translate(pos.x(), pos.y())
             else:
-                translation.translate(self.element_position.x(), self.element_position.y())
+                translation.translate(self.position.x(), self.position.y())
         if apply_global_scale:
             global_scaling.scale(canvas.canvas_scale_x, canvas.canvas_scale_y)
         transform = local_scaling * rotation * global_scaling * translation
@@ -492,7 +492,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
             bckg_element.pixmap = background_pixmap
             bckg_element.background_image = True
             bckg_element.calc_local_data()
-            bckg_element.element_position = QPointF(background_pixmap.width()/2, background_pixmap.height()/2)
+            bckg_element.position = QPointF(background_pixmap.width()/2, background_pixmap.height()/2)
 
         elif option == self.CreateBackgroundOption.Reshoot:
 
@@ -514,7 +514,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
             bckg_element.pixmap = new_background_pixmap
             bckg_element.background_image = True
             bckg_element.calc_local_data()
-            bckg_element.element_position = QPointF(new_background_pixmap.width()/2, new_background_pixmap.height()/2)
+            bckg_element.position = QPointF(new_background_pixmap.width()/2, new_background_pixmap.height()/2)
 
         elif option == self.CreateBackgroundOption.ContentToBackground:
 
@@ -536,7 +536,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
             bckg_element.pixmap = new_background_pixmap
             bckg_element.background_image = True
             bckg_element.calc_local_data()
-            bckg_element.element_position = QPointF(new_background_pixmap.width()/2, new_background_pixmap.height()/2) + offset
+            bckg_element.position = QPointF(new_background_pixmap.width()/2, new_background_pixmap.height()/2) + offset
 
     def elementsArrangeInGrid(self):
 
@@ -600,12 +600,12 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
                 bi_width = b_rect.width()
                 bi_height = b_rect.height()
                 half_size = QPointF(bi_width/2, bi_height/2)
-                el.element_position = offset + half_size
+                el.position = offset + half_size
 
                 offset += QPointF(bi_width, 0)
 
-                points.append(el.element_position - half_size)
-                points.append(el.element_position + half_size)
+                points.append(el.position - half_size)
+                points.append(el.position + half_size)
 
             offset.setX(0)
             offset.setY(offset.y() + bi_height)
@@ -668,7 +668,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
 
                 pos_x = x1 + col_width/2
                 pos_y = y1 + row_height/2
-                bckg_el.element_position = QPointF(pos_x, pos_y) + content_offset
+                bckg_el.position = QPointF(pos_x, pos_y) + content_offset
 
                 # история действий
                 allowed_indexes.append(bckg_el.pass2_unique_index)
@@ -1262,7 +1262,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
             for picture in pictures:
                 element = self.elementsCreateNew(ToolID.picture)
                 element.pixmap = picture
-                element.element_position = pos + QPointF(picture.width()/2, picture.height()/2)
+                element.position = pos + QPointF(picture.width()/2, picture.height()/2)
                 element.calc_local_data()
                 pos += QPoint(element.pixmap.width(), 0)
                 self.elementsActiveElementParamsToPanelSliders()
@@ -1620,7 +1620,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
             element.second = False
             element.group_id = element.unique_index
         elif els_count == 2:
-            element.element_position = event_pos
+            element.position = event_pos
             first_element = element.ms.elements[0]
             element.group_id = first_element.group_id
             element.calc_local_data_finish(first_element)
@@ -1637,7 +1637,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
                 element.finished = True
                 self.elementsSetCopiedPixmap(element)
         elif els_count == 2:
-            element.element_position = event_pos
+            element.position = event_pos
         else:
             raise Exception("unsupported branch!")
 
@@ -1706,7 +1706,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
         elif tool == ToolID.picture:
             element.pixmap = self.current_picture_pixmap
             element.rotation = self.current_picture_angle
-            element.element_position = event_pos
+            element.position = event_pos
             element.calc_local_data()
         elif tool in [ToolID.pen, ToolID.marker]:
             if event.modifiers() & Qt.ShiftModifier:
@@ -1799,8 +1799,8 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
         for element in self.selected_items[:]:
             mod_el = self.elementsPrepareElementCopyForModifications(element)
             new_elements.append(mod_el)
-            if hasattr(mod_el, 'element_position'):
-                mod_el.element_position += delta
+            if hasattr(mod_el, 'position'):
+                mod_el.position += delta
             else:
                 raise Exception('Unsupported type:', mod_el.type)
         self.elementsSetSelected(new_elements)
@@ -1850,7 +1850,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
         elif tool == ToolID.picture:
             element.pixmap = self.current_picture_pixmap
             element.rotation = self.current_picture_angle
-            element.element_position = event_pos
+            element.position = event_pos
         elif tool in [ToolID.pen, ToolID.marker]:
             if element.straight:
                 element.end_point = event_pos
@@ -1953,7 +1953,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
         elif tool == ToolID.picture:
             element.pixmap = self.current_picture_pixmap
             element.rotation = self.current_picture_angle
-            element.element_position = event_pos
+            element.position = event_pos
             self.elementsSetPixmapFromMagazin()
         elif tool in [ToolID.pen, ToolID.marker]:
             if element.straight:
@@ -2105,7 +2105,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
 
         if False:
             er = element.get_size_rect(scaled=True)
-            capture_pos = element.element_position
+            capture_pos = element.position
             capture_width = er.width()
             capture_height = er.height()
             capture_rotation = element.rotation
@@ -2125,7 +2125,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
                 clean=True
             )
             er = element.get_size_rect(scaled=True)
-            capture_pos = element.element_position - capture_region_rect.topLeft()
+            capture_pos = element.position - capture_region_rect.topLeft()
             capture_width = er.width()
             capture_height = er.height()
             capture_rotation = element.rotation
@@ -2158,7 +2158,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
             del pr
 
             er = element.get_size_rect(scaled=True)
-            capture_pos = element.element_position
+            capture_pos = element.position
             capture_width = er.width()
             capture_height = er.height()
             capture_rotation = element.rotation
@@ -2180,7 +2180,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
                 clean=True,
             )
             er = element.get_size_rect(scaled=True)
-            capture_pos = element.element_position - capture_region_rect.topLeft()
+            capture_pos = element.position - capture_region_rect.topLeft()
             capture_width = er.width()
             capture_height = er.height()
             capture_rotation = element.rotation
@@ -2233,10 +2233,10 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
                 p3 = text_transform.map(text_rect.topRight())
                 p4 = text_transform.map(text_rect.bottomRight())
 
-                p1 += text_element.element_position
-                p2 += text_element.element_position
-                p3 += text_element.element_position
-                p4 += text_element.element_position
+                p1 += text_element.position
+                p2 += text_element.position
+                p3 += text_element.position
+                p4 += text_element.position
 
                 modified_start_point = get_nearest_point_on_rect(p1, p2, p3, p4, arrow_element.end_point)
                 arrow_element.start_point = modified_start_point
@@ -2413,7 +2413,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
                 apply_circle_mask = f_element.toolbool
                 color = f_element.color
             else:
-                output_pos = s_element.element_position
+                output_pos = s_element.position
                 apply_circle_mask = s_element.toolbool
                 color = s_element.color
 
@@ -2444,7 +2444,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
             special_case = (not element.second and f_element.finished and s_element is None)
             if special_case:
                 # заменяем пока не нарисованный второй элемент на превью
-                self._te.element_position = output_pos
+                self._te.position = output_pos
                 self._te.type = element.type
                 self._te.calc_local_data_finish(f_element)
                 s_element = self._te
@@ -2453,14 +2453,14 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
                 painter.setTransform(s_element.get_transform_obj(canvas=self))
                 output_rect = element.get_size_rect(scaled=False)
                 if s_element is None:
-                    pos = output_pos - f_element.element_position
+                    pos = output_pos - f_element.position
                     if el_type in [ToolID.zoom_in_region]:
                         s = ZOOM_IN_REGION_DAFAULT_SCALE
                     else:
                         s = 1.0
                     output_rect = QRectF(0, 0, output_rect.width()*s, output_rect.height()*s)
                 else:
-                    pos = output_pos - s_element.element_position
+                    pos = output_pos - s_element.position
                 output_rect.moveCenter(pos)
 
 
@@ -2868,9 +2868,9 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
                 source_pixmap = QPixmap.fromImage(self.source_pixels)
                 for number, el in enumerate(specials):
                     br = el.get_canvas_space_selection_rect_with_no_rotation()
-                    capture_pos = el.element_position
+                    capture_pos = el.position
                     el.bounding_rect = br
-                    capture_pos = el.element_position
+                    capture_pos = el.position
                     capture_rotation = el.rotation
                     capture_width = br.width()
                     capture_height = br.height()
@@ -3252,7 +3252,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
 
             br = element.get_canvas_space_selection_area().boundingRect()
 
-            element.element_position = QPointF(pos) + QPointF(br.width()/2, br.height()/2)
+            element.position = QPointF(pos) + QPointF(br.width()/2, br.height()/2)
             if target_height is not None:
                 pos += QPointF(br.width(), 0)
 
@@ -3335,8 +3335,8 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
                 element._selected = False
                 element_copy = self.elementsMakeElementCopy(element, mod_slot=ms)
                 copies.append(element_copy)
-                delta = element_copy.element_position - canvas_selection_center
-                element_copy.element_position = canvas_cursor_pos + delta
+                delta = element_copy.position - canvas_selection_center
+                element_copy.position = canvas_cursor_pos + delta
                 element_copy._selected = True
             self.elementsSetSelected(None)
             self.elementsSetSelected(copies)
@@ -3418,7 +3418,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
                 element = self.elementsCreateNew(ToolID.picture)
                 element.pixmap = pixmap
                 pos = self.capture_region_rect.topLeft()
-                element.element_position = pos + QPointF(pixmap.width()/2, pixmap.height()/2)
+                element.position = pos + QPointF(pixmap.width()/2, pixmap.height()/2)
                 element.calc_local_data()
                 self.elementsSetSelected(element)
                 self.elementsActiveElementParamsToPanelSliders()
@@ -3463,7 +3463,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
             mapped_capture_center = mapped_capture.center()
             content_pos = mapped_capture_center - self.canvas_origin
         else:
-            content_pos = QPointF(element.element_position.x()*canvas_scale_x, element.element_position.y()*canvas_scale_y)
+            content_pos = QPointF(element.position.x()*canvas_scale_x, element.position.y()*canvas_scale_y)
         viewport_center_pos, working_area_rect = self.get_center_position_and_screen_rect()
 
         self.canvas_origin = - content_pos + viewport_center_pos

@@ -427,7 +427,7 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         if nearest_node and not left_button_pressed:
             painter.save()
             painter.setPen(QPen(QColor(200, 50, 50), Qt.DashLine, 2))
-            painter.drawLine(cursor_pos, self.elementsMapToViewport(nearest_node.element_position))
+            painter.drawLine(cursor_pos, self.elementsMapToViewport(nearest_node.position))
             painter.restore()
 
     def draw_tool_size_and_color(self, painter, cursor_pos):
@@ -443,9 +443,9 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         self._ted.type = self.current_tool
         self._ted.color = self.tools_window.color_slider.get_color()
         self._ted.size = self.tools_window.size_slider.value
-        self._ted.element_position = self.elementsMapToCanvas(cursor_pos)
-        self._ted.start_point = self._ted.element_position
-        self._ted.end_point = self._ted.element_position
+        self._ted.position = self.elementsMapToCanvas(cursor_pos)
+        self._ted.start_point = self._ted.position
+        self._ted.end_point = self._ted.position
         self._ted.straight = True
         self._ted.preview = True
         self._ted.scale_x = 1.0
@@ -473,7 +473,7 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
 
         self._tei.rotation = self.current_picture_angle
         self._tei.pixmap = self.current_picture_pixmap
-        self._tei.element_position = self.elementsMapToCanvas(cursor_pos)
+        self._tei.position = self.elementsMapToCanvas(cursor_pos)
         self._tei.calc_local_data()
         # нет смысла в этом задании размера здесь,
         # потому что слайдер ограничен диапазоном 0.5 до 1.5
@@ -1078,9 +1078,9 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
                 elementBottomRight = elementTopLeft + QPointF(pixmap.width(), pixmap.height())
                 points.append(QPointF(elementTopLeft))
                 points.append(QPointF(elementBottomRight))
-                element.element_position = (elementTopLeft + elementBottomRight) / 2.0
+                element.position = (elementTopLeft + elementBottomRight) / 2.0
                 if first_pixmap_center is None:
-                    first_pixmap_center = element.element_position
+                    first_pixmap_center = element.position
                 element.calc_local_data()
                 elementTopLeft += QPointF(pixmap.width(), 0)
                 pixmaps.append(pixmap)
@@ -1114,8 +1114,8 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
             element = self.elementsCreateNew(ToolID.picture)
             element.pixmap = pixmap
             element.calc_local_data()
-            element.element_position = self.input_POINT2
-            element.element_position += QPointF(pixmap.width()/2, pixmap.height()/2)
+            element.position = self.input_POINT2
+            element.position += QPointF(pixmap.width()/2, pixmap.height()/2)
             self.elementsSetSelected(element)
         self.update()
 

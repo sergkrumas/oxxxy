@@ -95,7 +95,7 @@ class ElementsTextEditElementMixin():
         width = s.width()
         height = s.height()
         content_rect = QRectF(QPointF(0, 0), s)
-        content_rect.moveCenter(element.element_position)
+        content_rect.moveCenter(element.position)
         element.start_point = content_rect.topLeft()
         element.end_point = content_rect.bottomRight()
         element.scale_x = 1.0

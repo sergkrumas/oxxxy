@@ -30,7 +30,7 @@ from PyQt5.QtGui import (QPen, QColor, QCursor, QVector2D)
 class Element2024Mixin():
 
     def calc_local_data_arrowstree(self):
-        self.element_position = self.end_point
+        self.position = self.end_point
         self.element_width = 100
         self.element_height = 100
         self.local_start_point = QPointF(-50, -50)
@@ -81,7 +81,7 @@ class Elements2024ToolsMixin():
         distances = dict()
         if at_ve:
             for el in at_ve:
-                distances[el] = QVector2D(cursor_pos-el.element_position).length()
+                distances[el] = QVector2D(cursor_pos-el.position).length()
             nearest_element = sorted(at_ve, key=lambda x: distances[x])[0]
             return nearest_element
         else:
@@ -89,8 +89,8 @@ class Elements2024ToolsMixin():
 
     def elementsArrowsTreeNodeOrientToEdgeNeighbor(self, element):
         if hasattr(element, 'orient_to_element'):
-            pos1 = element.orient_to_element.element_position
-            pos2 = element.element_position
+            pos1 = element.orient_to_element.position
+            pos2 = element.position
             direction = QVector2D(pos2 - pos1)
             angle_deg = math.degrees(math.atan2(direction.y(), direction.x()))
             element.rotation = angle_deg + 90
@@ -116,8 +116,8 @@ class Elements2024ToolsMixin():
                 node2 = index_elements.get(node2_index, None)
                 if node1 and node2:
                     painter.setPen(QPen(Qt.red, 5))
-                    a = node1.element_position
-                    b = node2.element_position
+                    a = node1.position
+                    b = node2.position
                     a = self.elementsMapToViewport(a)
                     b = self.elementsMapToViewport(b)
                     painter.drawLine(a, b)
@@ -131,7 +131,7 @@ class Elements2024ToolsMixin():
 
             if False and el.subtype == 'root':
                 rect = QRectF(0, 0, 50, 50)
-                rect.moveCenter(self.elementsMapToViewport(el.element_position))
+                rect.moveCenter(self.elementsMapToViewport(el.position))
                 painter.drawEllipse(rect)
 
             neighbors = []
@@ -151,19 +151,19 @@ class Elements2024ToolsMixin():
             local_directions = []
             for neighbor in neighbors:
                 s = QPointF(0, 0)
-                e = self.elementsMapToViewport(neighbor.element_position) - self.elementsMapToViewport(el.element_position)
+                e = self.elementsMapToViewport(neighbor.position) - self.elementsMapToViewport(el.position)
                 middle = QLineF(s, e).pointAt(0.5)
                 local_directions.append(QLineF(s, middle))
 
             if not local_directions:
                 continue
 
-            node_root_pos = self.elementsMapToViewport(el.element_position)
+            node_root_pos = self.elementsMapToViewport(el.position)
 
             if len(local_directions) == 1:
 
                 rect = QRectF(0, 0, 50, 50)
-                rect.moveCenter(self.elementsMapToViewport(el.element_position))
+                rect.moveCenter(self.elementsMapToViewport(el.position))
 
                 # startAngle = (0 -int(el.rotation)) * 16
                 # spanAngle = 180 * 16

@@ -355,12 +355,12 @@ class ElementsTransformMixin():
         self.start_translation_pos = self.elementsMapToCanvas(event_pos)
         if viewport_zoom_changed:
             for element in self.elementsFilter():
-                element.element_position = element.__element_position
+                element.position = element.__position
 
         for element in self.elementsFilter():
-            element.__element_position = QPointF(element.element_position)
+            element.__position = QPointF(element.position)
             if not viewport_zoom_changed:
-                element.__element_position_init = QPointF(element.element_position)
+                element.__position_init = QPointF(element.position)
             element._children_items = []
             # if element.type == BoardItem.types.ITEM_FRAME:
             #     this_frame_area = element.calc_area
@@ -391,10 +391,10 @@ class ElementsTransformMixin():
             if self.translation_ongoing:
                 for element in self.elementsFilter():
                     if element._selected:
-                        element.element_position = element.__element_position + delta
+                        element.position = element.__position + delta
                         # if element.type == BoardItem.types.ITEM_FRAME:
                         #     for ch_bi in element._children_items:
-                        #         ch_bi.element_position = ch_bi.__element_position + delta
+                        #         ch_bi.position = ch_bi.__position + delta
                 self.init_selection_bounding_box_widget()
         else:
             self.translation_ongoing = False
@@ -403,9 +403,9 @@ class ElementsTransformMixin():
         self.start_translation_pos = None
         for element in self.elementsFilter():
             if cancel:
-                element.element_position = QPointF(element.__element_position_init)
+                element.position = QPointF(element.__position_init)
             else:
-                element.__element_position = None
+                element.__position = None
             element._children_items = []
         self.translation_ongoing = False
 
@@ -450,11 +450,11 @@ class ElementsTransformMixin():
 
         for element in self.selected_items:
             element.__rotation = element.rotation
-            element.__element_position = QPointF(element.element_position)
+            element.__position = QPointF(element.position)
 
             if not viewport_zoom_changed:
                 element.__rotation_init = element.rotation
-                element.__element_position_init = QPointF(element.element_position)
+                element.__position_init = QPointF(element.position)
 
     def step_rotation(self, rotation_value, prerotation=None):
         interval = 45.0
@@ -496,13 +496,13 @@ class ElementsTransformMixin():
             if not multi_element_mode and ctrl_mod:
                 element.rotation = self.step_rotation(element.rotation, prerotation=element.prerotation)
             # position component
-            pos = element.calculate_absolute_position(canvas=self, rel_pos=element.__element_position)
+            pos = element.calculate_absolute_position(canvas=self, rel_pos=element.__position)
             pos_radius_vector = pos - pivot
             pos_radius_vector = rotation.map(pos_radius_vector)
             new_absolute_position = pivot + pos_radius_vector
             rel_pos_global_scaled = new_absolute_position - self.canvas_origin
-            new_element_position = QPointF(rel_pos_global_scaled.x()/self.canvas_scale_x, rel_pos_global_scaled.y()/self.canvas_scale_y)
-            element.element_position = new_element_position
+            new_position = QPointF(rel_pos_global_scaled.x()/self.canvas_scale_x, rel_pos_global_scaled.y()/self.canvas_scale_y)
+            element.position = new_position
         # bounding box transformation
         translate_to_coord_origin = QTransform()
         translate_back_to_place = QTransform()
@@ -521,7 +521,7 @@ class ElementsTransformMixin():
         if cancel:
             for element in self.selected_items:
                 element.rotation = element.__rotation_init
-                element.element_position = QPointF(element.__element_position_init)
+                element.element = QPointF(element.__position_init)
         else:
             self.init_selection_bounding_box_widget()
 
@@ -547,8 +547,8 @@ class ElementsTransformMixin():
                     element.scale_x = element.__scale_x
                 if element.__scale_y is not None:
                     element.scale_y = element.__scale_y
-                if element.__element_position is not None:
-                    element.element_position = element.__element_position
+                if element.__position is not None:
+                    element.position = element.__position
 
             self.update_selection_bouding_box()
 
@@ -600,11 +600,11 @@ class ElementsTransformMixin():
         for element in self.selected_items:
             element.__scale_x = element.scale_x
             element.__scale_y = element.scale_y
-            element.__element_position = QPointF(element.element_position)
+            element.__position = QPointF(element.position)
             if not viewport_zoom_changed:
                 element.__scale_x_init = element.scale_x
                 element.__scale_y_init = element.scale_y
-                element.__element_position_init = QPointF(element.element_position)
+                element.__position_init = QPointF(element.position)
             position_vec = element.calculate_absolute_position(canvas=self) - self.scaling_pivot_corner_point
             element.normalized_pos_x, element.normalized_pos_y = self.calculate_vector_projection_factors(x_axis, y_axis, position_vec)
 
@@ -691,17 +691,17 @@ class ElementsTransformMixin():
 
             # position component
             if center_is_pivot:
-                element.element_position = element.__element_position
+                element.position = element.__position
             else:
-                pos = element.calculate_absolute_position(canvas=self, rel_pos=element.__element_position)
+                pos = element.calculate_absolute_position(canvas=self, rel_pos=element.__position)
                 scaling = QTransform()
                 # эти нормализованные координаты актуальны для пропорционального и не для пропорционального редактирования
                 scaling.scale(element.normalized_pos_x, element.normalized_pos_y)
                 mapped_scaling_vector = scaling.map(scaling_vector)
                 new_absolute_position = pivot + mapped_scaling_vector
                 rel_pos_global_scaled = new_absolute_position - self.canvas_origin
-                new_element_position = QPointF(rel_pos_global_scaled.x()/self.canvas_scale_x, rel_pos_global_scaled.y()/self.canvas_scale_y)
-                element.element_position = new_element_position
+                new_position = QPointF(rel_pos_global_scaled.x()/self.canvas_scale_x, rel_pos_global_scaled.y()/self.canvas_scale_y)
+                element.position = new_position
 
         # bounding box update
         self.update_selection_bouding_box()
@@ -715,7 +715,7 @@ class ElementsTransformMixin():
             for elements in self.selected_items:
                 elements.scale_x = elements.__scale_x_init
                 elements.scale_y = elements.__scale_y_init
-                elements.element_position = QPointF(elements.__element_position_init)
+                elements.position = QPointF(elements.__position_init)
         else:
             self.init_selection_bounding_box_widget()
 

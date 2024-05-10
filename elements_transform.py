@@ -543,10 +543,10 @@ class ElementsTransformMixin():
 
         if viewport_zoom_changed:
             for element in self.selected_items:
-                if element.__element_scale_x is not None:
-                    element.element_scale_x = element.__element_scale_x
-                if element.__element_scale_y is not None:
-                    element.element_scale_y = element.__element_scale_y
+                if element.__scale_x is not None:
+                    element.scale_x = element.__scale_x
+                if element.__scale_y is not None:
+                    element.scale_y = element.__scale_y
                 if element.__element_position is not None:
                     element.element_position = element.__element_position
 
@@ -598,12 +598,12 @@ class ElementsTransformMixin():
         self.scaling_y_axis = y_axis
 
         for element in self.selected_items:
-            element.__element_scale_x = element.element_scale_x
-            element.__element_scale_y = element.element_scale_y
+            element.__scale_x = element.scale_x
+            element.__scale_y = element.scale_y
             element.__element_position = QPointF(element.element_position)
             if not viewport_zoom_changed:
-                element.__element_scale_x_init = element.element_scale_x
-                element.__element_scale_y_init = element.element_scale_y
+                element.__scale_x_init = element.scale_x
+                element.__scale_y_init = element.scale_y
                 element.__element_position_init = QPointF(element.element_position)
             position_vec = element.calculate_absolute_position(canvas=self) - self.scaling_pivot_corner_point
             element.normalized_pos_x, element.normalized_pos_y = self.calculate_vector_projection_factors(x_axis, y_axis, position_vec)
@@ -684,10 +684,10 @@ class ElementsTransformMixin():
             # scaling component
             x_factor, y_factor = self.calculate_vector_projection_factors(scaling_x_axis, scaling_y_axis, scaling_vector)
 
-            element.element_scale_x = element.__element_scale_x * x_factor
-            element.element_scale_y = element.__element_scale_y * y_factor
+            element.scale_x = element.__scale_x * x_factor
+            element.scale_y = element.__scale_y * y_factor
             if proportional_scaling and not multi_element_mode and not center_is_pivot:
-                element.element_scale_x = math.copysign(1.0, element.element_scale_x)*abs(element.element_scale_y)
+                element.scale_x = math.copysign(1.0, element.scale_x)*abs(element.scale_y)
 
             # position component
             if center_is_pivot:
@@ -713,8 +713,8 @@ class ElementsTransformMixin():
         self.scaling_pivot_point = None
         if cancel:
             for elements in self.selected_items:
-                elements.element_scale_x = elements.__element_scale_x_init
-                elements.element_scale_y = elements.__element_scale_y_init
+                elements.scale_x = elements.__scale_x_init
+                elements.scale_y = elements.__scale_y_init
                 elements.element_position = QPointF(elements.__element_position_init)
         else:
             self.init_selection_bounding_box_widget()

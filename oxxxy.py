@@ -448,8 +448,8 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         self._ted.end_point = self._ted.element_position
         self._ted.straight = True
         self._ted.preview = True
-        self._ted.element_scale_x = 1.0
-        self._ted.element_scale_y = 1.0
+        self._ted.scale_x = 1.0
+        self._ted.scale_y = 1.0
         self._ted.calc_local_data()
 
         painter.save()
@@ -478,8 +478,8 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         # нет смысла в этом задании размера здесь,
         # потому что слайдер ограничен диапазоном 0.5 до 1.5
         # size = self.tools_window.size_slider.value
-        # self._tei.element_scale_x = size
-        # self._tei.element_scale_y = size
+        # self._tei.scale_x = size
+        # self._tei.scale_y = size
 
         painter.save()
         painter.setRenderHint(QPainter.HighQualityAntialiasing, True)

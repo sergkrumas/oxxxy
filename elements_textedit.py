@@ -98,8 +98,8 @@ class ElementsTextEditElementMixin():
         content_rect.moveCenter(element.element_position)
         element.start_point = content_rect.topLeft()
         element.end_point = content_rect.bottomRight()
-        element.element_scale_x = 1.0
-        element.element_scale_y = 1.0
+        element.scale_x = 1.0
+        element.scale_y = 1.0
         element.calc_local_data()
 
     def elementsTextElementDraw(self, painter, element):

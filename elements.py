@@ -131,21 +131,21 @@ class Element(Element2024Mixin):
         self.selection_path = None
 
         # element attributes for canvas
-        self.element_scale_x = 1.0
-        self.element_scale_y = 1.0
+        self.scale_x = 1.0
+        self.scale_y = 1.0
         self.element_position = QPointF()
         self.rotation = 0
         self.prerotation = 0
         self.element_width = None
         self.element_height = None
 
-        self.__element_scale_x = None
-        self.__element_scale_y = None
+        self.__scale_x = None
+        self.__scale_y = None
         self.__element_position = None
         self.__rotation = None
 
-        self.__element_scale_x_init = None
-        self.__element_scale_y_init = None
+        self.__scale_x_init = None
+        self.__scale_y_init = None
         self.__element_position_init = None
 
         self._selected = False
@@ -209,11 +209,11 @@ class Element(Element2024Mixin):
         self.element_height = first_element.element_height
         # с предувеличением
         if self.type in [ToolID.zoom_in_region]:
-            self.element_scale_y = ZOOM_IN_REGION_DAFAULT_SCALE
-            self.element_scale_x = ZOOM_IN_REGION_DAFAULT_SCALE
+            self.scale_y = ZOOM_IN_REGION_DAFAULT_SCALE
+            self.scale_x = ZOOM_IN_REGION_DAFAULT_SCALE
         else:
-            self.element_scale_y = 1.0
-            self.element_scale_x = 1.0
+            self.scale_y = 1.0
+            self.scale_x = 1.0
 
     def calc_local_data_path(self):
         bb = self.path.boundingRect()
@@ -268,8 +268,8 @@ class Element(Element2024Mixin):
 
     def get_size_rect(self, scaled=False):
         if scaled:
-            scale_x = self.element_scale_x
-            scale_y = self.element_scale_y
+            scale_x = self.scale_x
+            scale_y = self.scale_y
         else:
             scale_x = 1.0
             scale_y = 1.0
@@ -351,7 +351,7 @@ class Element(Element2024Mixin):
         global_scaling = QTransform()
         translation = QTransform()
         if apply_local_scale:
-            local_scaling.scale(self.element_scale_x, self.element_scale_y)
+            local_scaling.scale(self.scale_x, self.scale_y)
         rotation.rotate(self.rotation)
         if apply_translation:
             if apply_global_scale:
@@ -371,19 +371,19 @@ class Element(Element2024Mixin):
                 QPointF(self.local_start_point),
                 self.element_width,
                 self.element_height,
-                self.element_scale_x,
-                self.element_scale_y
+                self.scale_x,
+                self.scale_y
             )
 
-            self.local_end_point.setX(self.local_end_point.x() * self.element_scale_x)
-            self.local_end_point.setY(self.local_end_point.y() * self.element_scale_y)
+            self.local_end_point.setX(self.local_end_point.x() * self.scale_x)
+            self.local_end_point.setY(self.local_end_point.y() * self.scale_y)
 
-            self.local_start_point.setX(self.local_start_point.x() * self.element_scale_x)
-            self.local_start_point.setY(self.local_start_point.y() * self.element_scale_y)
+            self.local_start_point.setX(self.local_start_point.x() * self.scale_x)
+            self.local_start_point.setY(self.local_start_point.y() * self.scale_y)
 
-            self.element_width *= self.element_scale_x
-            self.element_height *= self.element_scale_y
-            self.element_scale_x = self.element_scale_y = 1.0
+            self.element_width *= self.scale_x
+            self.element_height *= self.scale_y
+            self.scale_x = self.scale_y = 1.0
 
     def disable_distortion_fixer(self):
         if hasattr(self, '_saved_data') and not self.type == ToolID.text:
@@ -391,8 +391,8 @@ class Element(Element2024Mixin):
             self.local_start_point, \
             self.element_width, \
             self.element_height, \
-            self.element_scale_x, \
-            self.element_scale_y = self._saved_data
+            self.scale_x, \
+            self.scale_y = self._saved_data
 
 class ElementsModificationSlot():
 
@@ -545,8 +545,8 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
 
         elements = self.elementsFilterElementsForSelection()
         for el in elements:
-            el.element_scale_x = 1.0
-            el.element_scale_y = 1.0
+            el.scale_x = 1.0
+            el.scale_y = 1.0
 
         # вызываем для выравнивания по высоте:
         # каждая картинка будет отмасштабирована до высоты картинки с наибольшей высотой
@@ -588,8 +588,8 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
                 row_width += b_rect.width()
             row_scale_factor = MAX_ROW_WIDTH/row_width
             for el in row:
-                el.element_scale_x *= row_scale_factor
-                el.element_scale_y *= row_scale_factor
+                el.scale_x *= row_scale_factor
+                el.scale_y *= row_scale_factor
 
         # расположение
         offset = QPointF(0, 0)
@@ -1221,8 +1221,8 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
             ae.backup_pixmap = None
         ae.frame_info = frame_info
         ae.calc_local_data()
-        ae.element_scale_x = 1.0
-        ae.element_scale_y = 1.0
+        ae.scale_x = 1.0
+        ae.scale_y = 1.0
         if set_selected:
             self.elementsSetSelected(ae)
         self.update()
@@ -3247,8 +3247,8 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
             if target_width is not None:
                 scale = target_width / start_br.width()
 
-            element.element_scale_x = scale
-            element.element_scale_y = scale
+            element.scale_x = scale
+            element.scale_y = scale
 
             br = element.get_canvas_space_selection_area().boundingRect()
 

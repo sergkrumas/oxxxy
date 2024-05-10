@@ -135,7 +135,7 @@ class Element(Element2024Mixin):
         self.element_scale_y = 1.0
         self.element_position = QPointF()
         self.rotation = 0
-        self.element_prerotation = 0
+        self.prerotation = 0
         self.element_width = None
         self.element_height = None
 
@@ -193,7 +193,7 @@ class Element(Element2024Mixin):
         diff_angle = object_orientation_degrees + 45
 
         rot.rotate(-diff_angle)
-        self.element_prerotation = diff_angle
+        self.prerotation = diff_angle
 
         self.local_start_point = rot.map(self.local_start_point)
         self.local_end_point = rot.map(self.local_end_point)

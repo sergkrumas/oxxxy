@@ -494,7 +494,7 @@ class ElementsTransformMixin():
             #     continue
             element.rotation = element.__rotation + rotation_delta_degrees
             if not multi_element_mode and ctrl_mod:
-                element.rotation = self.step_rotation(element.rotation, prerotation=element.element_prerotation)
+                element.rotation = self.step_rotation(element.rotation, prerotation=element.prerotation)
             # position component
             pos = element.calculate_absolute_position(canvas=self, rel_pos=element.__element_position)
             pos_radius_vector = pos - pivot

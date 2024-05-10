@@ -2072,13 +2072,6 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
 
                 self.elementsUpdateDependentElementsOnTransforms()
 
-
-        ae = self.active_element
-        if ae is not None and ae.type == ToolID.text:
-            if ae.get_selection_area(canvas=self).containsPoint(event.pos(), Qt.WindingFill):
-                self.elementsTextElementSetCursorPosByClick(event)
-                return
-
         self.elementsStopModificationProcess()
 
         self.elementsAutoDeleteInvisibleElement(element)

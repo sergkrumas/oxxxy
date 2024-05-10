@@ -90,8 +90,6 @@ class ElementsTextEditElementMixin():
             ae.text_doc_cursor_pos += len(text)
             _cursor.endEditBlock()
 
-        # text_line = self.elementsTextElementCurrentTextLine(_cursor)
-        # print('text_line', text_line.lineNumber())
         ae.plain_text = ae.text_doc.toPlainText()
         if self.Globals.USE_PIXMAP_PROXY_FOR_TEXT_ELEMENTS:
             self.elementsTextElementUpdateProxyPixmap(ae)

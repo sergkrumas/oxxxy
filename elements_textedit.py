@@ -702,6 +702,11 @@ class ElementsTextEditElementMixin():
                     it += 1
                 block = block.next()
 
+    def elementsTextElementDrawSelectionRects(self, painter):
+        l = len(self.board_ni_selection_rects)
+        for n, r in enumerate(self.board_ni_selection_rects):
+            alpha = max(35, int(255*n/l))
+            painter.fillRect(r, QColor(200, 50, 50, alpha))
 
 # для запуска программы прямо из этого файла при разработке и отладке
 if __name__ == '__main__':

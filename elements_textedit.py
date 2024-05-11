@@ -22,7 +22,7 @@ import sys
 import os
 
 from PyQt5.QtWidgets import (QApplication,)
-from PyQt5.QtCore import (QPoint, QPointF, QRect, Qt, QRectF)
+from PyQt5.QtCore import (QPoint, QPointF, QRect, Qt, QRectF, QTimer)
 from PyQt5.QtGui import (QPainterPath, QColor, QBrush, QPixmap, QPainter, QTransform, QFont, QPen,
             QTextDocument, QAbstractTextDocumentLayout, QPalette, QTextCursor, QTextLine, QCursor)
 

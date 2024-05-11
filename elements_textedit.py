@@ -489,68 +489,7 @@ class ElementsTextEditElementMixin():
 
 
 
-    def elementsTextElementDrawOnCanvas(self, painter, element, final):
-        if element.text_doc is not None:
-            text_doc = element.text_doc
 
-            size_obj = text_doc.size().toSize()
-            height = size_obj.height()
-            pos = element.local_end_point - QPointF(0, height)
-
-            s = text_doc.size().toSize()
-
-            # смещение к середине
-            offset_x = s.width()/2
-            offset_y = s.height()/2
-            offset_translation = QTransform()
-            offset_translation.translate(-offset_x, -offset_y)
-
-        element_transform = element.get_transform_obj(canvas=self)
-        if element.text_doc is not None:
-            element_transform = offset_translation * element_transform
-        element.draw_transform = element_transform
-        painter.setTransform(element_transform)
-        painter.save()
-
-        if element.text_doc:
-            text_doc = element.text_doc
-
-            # подложка
-            if element.toolbool:
-                painter.save()
-                painter.setPen(Qt.NoPen)
-                content_rect = QRect(QPoint(), s)
-
-                path = QPainterPath()
-                path.addRoundedRect(QRectF(content_rect), element.margin_value,
-                    element.margin_value)
-                painter.fillPath(path, QBrush(QColor(200, 200, 200)))
-                painter.restore()
-
-            # текст и курсор
-            if self.Globals.USE_PIXMAP_PROXY_FOR_TEXT_ELEMENTS:
-                if element.proxy_pixmap is None:
-                    self.elementsTextElementUpdateProxyPixmap(element)
-                painter.drawPixmap(QPoint(0, 0), element.proxy_pixmap)
-            else:
-                self.elementsTextElementDraw(painter, element)
-
-            # рисуем курсор
-            doc_layout = text_doc.documentLayout()
-            cursor_pos = element.text_doc_cursor_pos
-            block = text_doc.begin()
-            end = text_doc.end()
-            while block != end:
-                # block_rect = doc_layout.blockBoundingRect(block)
-                # painter.drawRect(block_rect)
-                if self.active_element is element and not final:
-                    if block.contains(cursor_pos):
-                        local_cursor_pos = cursor_pos - block.position()
-                        block.layout().drawCursor(painter, QPointF(0,0), local_cursor_pos, 1)
-                block = block.next()
-
-        painter.restore()
-        painter.resetTransform()
 
 
 # для запуска программы прямо из этого файла при разработке и отладке

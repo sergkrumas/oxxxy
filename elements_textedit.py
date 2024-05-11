@@ -517,7 +517,20 @@ class ElementsTextEditElementMixin():
 
         return False
 
+    def elementsTextElementMouseReleaseEvent(self, event):
+        """
+            extern method
+        """
+        check_code = self.elementsTextElementCheckColorButtons(event)
+        if check_code != -1:
+            self.elementsTextElementColorButtonsHandlers(check_code)
 
+        if self.board_ni_inside_op_ongoing:
+            self.elementsTextElementSelectionMouseReleaseEvent(event)
+            self.board_ni_inside_op_ongoing = False
+            return True
+
+        return False
 
 
 

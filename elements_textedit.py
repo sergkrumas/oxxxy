@@ -480,7 +480,20 @@ class ElementsTextEditElementMixin():
         text_doc.setTextWidth(-1)
         text_doc.setDocumentMargin(80)
 
+    def elementsTextElementMousePressEvent(self, event):
+        """
+            extern method
+        """
+        check_code = self.elementsTextElementCheckColorButtons(event)
+        if check_code != -1:
+            return True
 
+        if self.elementsTextElementIsCursorInsideTextElement(event):
+            self.board_ni_inside_op_ongoing = True
+            self.elementsTextElementSelectionMousePressEvent(event)
+            return True
+
+        return False
 
 
 

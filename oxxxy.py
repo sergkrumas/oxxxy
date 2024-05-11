@@ -1268,7 +1268,7 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
             ts.update({'capture_frame': (x, y, w, h)})
 
     def mouseDoubleClickEvent(self, event):
-        self.elementsMouseDoubleClick(event)
+        self.elementsMouseDoubleClickEvent(event)
 
     def mouseMoveEvent(self, event):
         if self.tools_window:

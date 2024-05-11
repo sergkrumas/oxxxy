@@ -434,7 +434,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
         self.elements_modification_index = 0
         self.SelectionFilter = SelectionFilter
         self.selection_filter = self.SelectionFilter.content_only
-        self.active_element = None #active element is the last selected element
+        self._active_element = None #active element is the last selected element
         # для выделения элементов и виджета трансформации элементов
         self.elementsInitTransform()
         self.elementsSetSelected(None)
@@ -483,6 +483,15 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
             if slot.content_type == ToolID.background_picture:
                 return slot
         return None
+
+    @property
+    def active_element(self):
+        return self._active_element
+
+    @active_element.setter
+    def active_element(self, el):
+        self.elementsTextElementDeactivateEditMode()
+        self._active_element = el
 
     def elementsCreateBackgroundPictures(self, option, offset=None):
         if offset is None:
@@ -1738,7 +1747,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
                 element.finished = False
         elif tool == ToolID.transform:
 
-            self.elementsDeactivateTextElement()
+            self.elementsTextElementDeactivateEditMode()
 
             if self.is_over_scaling_activation_area(event.pos()):
                 self.elementsStartModificationProcess('mouse; scaling')
@@ -3076,13 +3085,13 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
         painter.drawPath(path)
 
     def elementsEditHistoryForwards(self):
-        self.elementsDeactivateTextElement()
+        self.elementsTextElementDeactivateEditMode()
         if self.elements_modification_index < len(self.modification_slots):
             self.elements_modification_index += 1
         self.elementsSetSelected(None)
 
     def elementsEditHistoryBackwards(self):
-        self.elementsDeactivateTextElement()
+        self.elementsTextElementDeactivateEditMode()
         if self.elements_modification_index > 0:
             self.elements_modification_index -= 1
         self.elementsSetSelected(None)

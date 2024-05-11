@@ -66,7 +66,7 @@ class ElementsTextEditElementMixin():
         self.board_ni_temp_cursor_pos = 0
         self.board_ni_temp_start_cursor_pos = None
 
-    def board_TextElementLoadCursors(self, cursors_folderpath):
+    def elementsTextElementLoadCursors(self, cursors_folderpath):
         """
             extern method
         """

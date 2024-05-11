@@ -91,7 +91,7 @@ class ElementsTransformMixin():
         if not translate_rastr_source.isNull():
             self.translate_rastr_source = translate_rastr_source
 
-        self.board_TextElementLoadCursors(cursors_folder_path)
+        self.elementsTextElementLoadCursors(cursors_folder_path)
 
     def widget_get_cursor_angle(self):
         points_count = self.selection_bounding_box.size()

@@ -1836,9 +1836,9 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
             el_selection_area = el.get_selection_area(canvas=self)
             is_under_mouse = el_selection_area.containsPoint(self.mapped_cursor_pos(), Qt.WindingFill)
             if is_under_mouse:
-                el.oxxxy_type == ToolID.text:
-                self.elementsTextElementActivateEditMode(el)
-                break
+                if el.oxxxy_type == ToolID.text:
+                    self.elementsTextElementActivateEditMode(el)
+                    break
 
     def elementsMouseMoveEvent(self, event):
         event_pos = self.elementsMapToCanvas(QPointF(event.pos()))

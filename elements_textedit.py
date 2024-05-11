@@ -495,7 +495,27 @@ class ElementsTextEditElementMixin():
 
         return False
 
+    def elementsTextElementMouseMoveEvent(self, event):
+        """
+            extern method
+        """
+        if self.elementsTextElementCheckColorButtons(event) != -1:
+            return True
 
+        if self.board_ni_inside_op_ongoing:
+            self.elementsTextElementSelectionMouseMoveEvent(event)
+
+            # 
+            # 
+            # 
+            # !!!!!!!!!!!!!!!!!!
+            # 
+            # 
+            # 
+            self.board_cursor_setter()
+            return True
+
+        return False
 
 
 

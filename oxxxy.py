@@ -1276,6 +1276,9 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
             if select_window and select_window.isVisible():
                 select_window.hide()
 
+       if self.elementsTextElementMouseMoveEvent(event):
+            return
+
         drawing_outside_capture_widget_allowed = \
                         not self.drag_inside_capture_zone \
                         and self.capture_region_rect \
@@ -1366,7 +1369,7 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
             self.ocp = event.pos()
             return
 
-        if self.board_TextElementMousePressEvent(event):
+        if self.elementsTextElementMousePressEvent(event):
             return
 
         starting_drawing_outside_allowed = self.capture_region_rect \

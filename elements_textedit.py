@@ -343,48 +343,7 @@ class ElementsTextEditElementMixin():
 
 
 
-    def elementsTextElementInputEvent(self, event):
-        ae = self.active_element
-        if ae is None or ae.oxxxy_type != self.ToolID.text:
-            return
 
-        if event.modifiers() == Qt.ControlModifier and check_scancode_for(event, "V"):
-            text = ""
-            app = QApplication.instance()
-            cb = app.clipboard()
-            mdata = cb.mimeData()
-            if mdata and mdata.hasText():
-                text = mdata.text()
-        else:
-            text = event.text()
-
-        _cursor = QTextCursor(ae.text_doc)
-        _cursor.setPosition(ae.text_doc_cursor_pos)
-
-        if event.key() in [Qt.Key_Left, Qt.Key_Right]:
-            if event.key() == Qt.Key_Left:
-                ae.text_doc_cursor_pos -= 1
-                ae.text_doc_cursor_pos = max(ae.text_doc_cursor_pos, 0)
-            elif event.key() == Qt.Key_Right:
-                ae.text_doc_cursor_pos += 1
-                ae.text_doc_cursor_pos = min(ae.text_doc_cursor_pos, len(ae.text_doc.toPlainText()))
-        elif event.key() == Qt.Key_Backspace:
-            _cursor.deletePreviousChar()
-            ae.text_doc_cursor_pos -= 1
-        else:
-            _cursor.beginEditBlock()
-            _cursor.insertText(text)
-            ae.text_doc_cursor_pos += len(text)
-            _cursor.endEditBlock()
-
-        ae.plain_text = ae.text_doc.toPlainText()
-        if self.Globals.USE_PIXMAP_PROXY_FOR_TEXT_ELEMENTS:
-            self.elementsTextElementUpdateProxyPixmap(ae)
-
-        self.elementsTextElementRecalculateGabarit(ae)
-        self.update_selection_bouding_box()
-        self.elementsFixArrowStartPositionIfNeeded(ae)
-        self.update()
 
     def elementsTextElementRecalculateGabarit(self, element):
         # обновление габаритов виджета трансформации

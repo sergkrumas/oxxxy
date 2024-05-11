@@ -314,6 +314,7 @@ class ElementsTextEditElementMixin():
             self.elementsTextElementUpdateProxyPixmap(ae)
 
         self.elementsTextElementRecalculateGabarit(ae)
+        self.elementsFixArrowStartPositionIfNeeded()
         self.elementsTextElementDefineSelectionRects()
         self.update_selection_bouding_box()
 

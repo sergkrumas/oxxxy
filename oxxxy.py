@@ -1366,6 +1366,9 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
             self.ocp = event.pos()
             return
 
+        if self.board_TextElementMousePressEvent(event):
+            return
+
         starting_drawing_outside_allowed = self.capture_region_rect \
                                                 and not self.capture_region_widget_enabled
 

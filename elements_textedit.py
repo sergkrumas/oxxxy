@@ -53,7 +53,7 @@ class ElementsTextEditElementMixin():
         """
         self.blinkingCursorTimer = QTimer()
         self.blinkingCursorTimer.setInterval(600)
-        self.blinkingCursorTimer.timeout.connect(self.board_TextElementCursorBlinkingCycleHandler)
+        self.blinkingCursorTimer.timeout.connect(self.elementsTextElementCursorBlinkingCycleHandler)
         self.blinkingCursorTimer.start()
         self.blinkingCursorHidden = False
 
@@ -149,7 +149,11 @@ class ElementsTextEditElementMixin():
         # 
         # 
 
-
+    def elementsTextElementCursorBlinkingCycleHandler(self):
+        ae = self.active_element
+        if ae is not None and ae.oxxxy_type == self.ToolID.text:
+            self.blinkingCursorHidden = not self.blinkingCursorHidden
+            self.update()
 
 
 

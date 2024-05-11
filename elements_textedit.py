@@ -827,7 +827,22 @@ class ElementsTextEditElementMixin():
                 return 1
         return -1
 
-
+    def elementsTextElementColorButtonsHandlers(self, check_code):
+        if check_code != -1:
+            if check_code == 0:
+                def callback(color_value):
+                    self.active_element.font_color = color_value
+                    self.elementsTextElementUpdateProxyPixmap(self.active_element)
+                    self.update()
+                self.active_element.font_color = ColorPicker().getColor(QColor(self.active_element.font_color), callback=callback)
+            elif check_code == 1:
+                def callback(color_value):
+                    self.active_element.backplate_color = color_value
+                    self.elementsTextElementUpdateProxyPixmap(self.active_element)
+                    self.update()
+                self.active_element.backplate_color = ColorPicker().getColor(QColor(self.active_element.backplate_color), callback=callback)
+            self.elementsTextElementUpdateProxyPixmap(self.active_element)
+            self.update()
 
 
 # для запуска программы прямо из этого файла при разработке и отладке

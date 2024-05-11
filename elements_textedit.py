@@ -457,19 +457,21 @@ class ElementsTextEditElementMixin():
         elem.start_point = elem.position
         elem.end_point = elem.position + QPointF(200, 50)
 
-
-
-
-
-
-
-
-
     def elementsTextElementSetFont(self, element):
         font = QFont()
         font_pixel_size = self.elementsTextElementGetFontPixelSize(element)
         font.setPixelSize(font_pixel_size)
         element.text_doc.setDefaultFont(font)
+
+
+
+
+
+
+
+
+
+
 
     def elementsTextElementInit(self, elem):
         text_doc = elem.text_doc

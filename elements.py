@@ -2024,7 +2024,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
                 ms.content_type = 'text'
             element.arrow = None
             del element.arrow # чтобы не было проблем при сохранении файла
-            self.elementsImplantTextElement(element)
+            self.elementsTextElementAttributesInitOnCreation(element)
             if arrow_included:
                 self.elementsTextElementRecalculateGabarit(element)
                 self.elementsFixArrowStartPositionIfNeeded(element)

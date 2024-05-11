@@ -634,6 +634,10 @@ class ElementsTextEditElementMixin():
             self.elementsTextElementStartSelection(event)
         self.update()
 
+    def elementsTextElementSelectionMouseMoveEvent(self, event):
+        if event.buttons() == Qt.LeftButton:
+            self.elementsTextElementEndSelection(event)
+        self.update()
 
 
 # для запуска программы прямо из этого файла при разработке и отладке

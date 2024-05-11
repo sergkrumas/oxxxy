@@ -532,7 +532,12 @@ class ElementsTextEditElementMixin():
 
         return False
 
-
+    def elementsTextElementIsCursorInsideTextElement(self, event):
+        ae = self.active_element
+        if self.elementsTextElementIsActiveElement():
+            if ae.get_selection_area(board=self).containsPoint(event.pos(), Qt.WindingFill):
+                return True
+        return False
 
 
 

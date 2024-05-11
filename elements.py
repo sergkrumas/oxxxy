@@ -122,6 +122,7 @@ class Element(Element2024Mixin):
         self.color_slider_palette_index = 0
         self.toolbool = False
         self.plain_text = ''
+        self.editing = False
         self.oxxxy_subtype = ''
 
         self.text_doc = None

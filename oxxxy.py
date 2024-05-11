@@ -1395,6 +1395,10 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         super().mousePressEvent(event)
 
     def mouseReleaseEvent(self, event):
+
+        if self.elementsTextElementMouseReleaseEvent(event):
+            return
+
         if event.button() == Qt.LeftButton:
             if self.drag_inside_capture_zone:
                 self.drag_inside_capture_zone = False

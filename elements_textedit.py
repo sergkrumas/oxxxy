@@ -44,6 +44,9 @@ def elementsTextElementRecalculateGabarit_______________Old(self, element):
 
 class ElementsTextEditElementMixin():
 
+    # keep in sync with IMAGE VIEWER: BOARDS
+    # https://github.com/sergkrumas/image_viewer
+
     def elementsDeactivateTextElement(self):
         if self.active_element:
             if self.active_element.oxxxy_type == self.ToolID.text:

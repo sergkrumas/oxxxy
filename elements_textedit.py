@@ -397,7 +397,13 @@ class ElementsTextEditElementMixin():
         tweakedDrawContents(text_doc, painter, None) # text_doc.drawContents(painter, QRectF())
         painter.setOpacity(1.0)
 
-
+    def elementsTextElementUpdateProxyPixmap(self, element):
+        element.proxy_pixmap = QPixmap(element.text_doc.size().toSize())
+        element.proxy_pixmap.fill(Qt.transparent)
+        p = QPainter()
+        p.begin(element.proxy_pixmap)
+        self.elementsTextElementDraw(p, element)
+        p.end()
 
 
 

@@ -487,11 +487,7 @@ class ElementsTextEditElementMixin():
 
 
 
-    def elementsTextElementInit(self, elem):
-        text_doc = elem.text_doc
-        self.elementsTextElementSetFont(elem)
-        text_doc.setTextWidth(-1)
-        elem.text_doc_cursor_pos = 0
+
 
     def elementsTextElementDrawOnCanvas(self, painter, element, final):
         if element.text_doc is not None:

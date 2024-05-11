@@ -446,7 +446,7 @@ class ElementsTextEditElementMixin():
         text_doc = elem.text_doc
         self.elementsTextElementSetFont(elem)
         text_doc.setTextWidth(-1)
-        text_doc.setDocumentMargin(80)
+        text_doc.setDocumentMargin(10)
 
     def elementsTextElementMousePressEvent(self, event):
         """

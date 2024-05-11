@@ -75,10 +75,10 @@ class ElementsTransformMixin():
 
 
     def load_svg_cursors(self):
-        folder_path = os.path.dirname(__file__)
-        filepath_scale_svg = os.path.join(folder_path, "cursors", "scale.svg")
-        filepath_rotate_svg = os.path.join(folder_path, "cursors", "rotate.svg")
-        filepath_translate_svg = os.path.join(folder_path, "cursors", "translate.svg")
+        cursors_folder_path = os.path.join(os.path.dirname(__file__), "cursors")
+        filepath_scale_svg = os.path.join(cursors_folder_path, "scale.svg")
+        filepath_rotate_svg = os.path.join(cursors_folder_path, "rotate.svg")
+        filepath_translate_svg = os.path.join(cursors_folder_path, "translate.svg")
 
         scale_rastr_source = QPixmap(filepath_scale_svg)
         rotate_rastr_source = QPixmap(filepath_rotate_svg)

@@ -149,7 +149,6 @@ class ElementsTextEditElementMixin():
             self.blinkingCursorHidden = not self.blinkingCursorHidden
             self.update()
 
-
     def elementsTextElementDeactivateEditMode(self):
         """
             extern method
@@ -324,14 +323,6 @@ class ElementsTextEditElementMixin():
         """
             extern method
         """
-        # 
-        # 
-        # 
-        # !!!!!!!!!!!!!!!!!!!!!!!!!!
-        # 
-        # 
-        # 
-        # 
         elem.editing = False
         self.elementsImplantTextElement(elem)
         self.elementsTextElementRecalculateGabarit(elem)
@@ -406,16 +397,7 @@ class ElementsTextEditElementMixin():
     def elementsTextElementAttributesInitOnCreation(self, elem):
         """
             extern method
-        """
-        # 
-        # 
-        # 
-        # 
-        # вставить метод в код создания
-        # 
-        # 
-        # 
-        # 
+        """ 
         self.elementsTextElementSetDefaults(elem)
         elem.calc_local_data()
         self.elementsImplantTextElement(elem)

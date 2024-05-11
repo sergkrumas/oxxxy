@@ -629,6 +629,12 @@ class ElementsTextEditElementMixin():
         self.elementsTextElementDefineSelectionRects()
         self.update()
 
+    def elementsTextElementSelectionMousePressEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.elementsTextElementStartSelection(event)
+        self.update()
+
+
 
 # для запуска программы прямо из этого файла при разработке и отладке
 if __name__ == '__main__':

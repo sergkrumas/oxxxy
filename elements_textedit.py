@@ -478,7 +478,7 @@ class ElementsTextEditElementMixin():
 
     def elementsTextElementInit(self, elem):
         text_doc = elem.text_doc
-        self.board_TextElementSetFont(elem)
+        self.elementsTextElementSetFont(elem)
         text_doc.setTextWidth(-1)
         text_doc.setDocumentMargin(80)
 

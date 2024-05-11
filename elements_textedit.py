@@ -463,7 +463,16 @@ class ElementsTextEditElementMixin():
         font.setPixelSize(font_pixel_size)
         element.text_doc.setDefaultFont(font)
 
-
+    def elementsTextElementHitTest(self, event):
+        ae = self.active_element
+        if ae.draw_transform is not None and ae.editing:
+            viewport_cursor_pos = event.pos()
+            inv, ok = ae.draw_transform.inverted()
+            if ok:
+                pos = inv.map(viewport_cursor_pos)
+                text_cursor_pos = ae.text_doc.documentLayout().hitTest(pos, Qt.FuzzyHit)
+                return text_cursor_pos
+        return None
 
 
 

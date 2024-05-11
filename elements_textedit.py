@@ -443,7 +443,19 @@ class ElementsTextEditElementMixin():
         self.elementsTextElementInit(elem)
         text_doc.setPlainText(elem.plain_text)
 
-
+    def elementsTextElementSetDefaults(self, elem, plain_text=None):
+        if plain_text is None:
+            elem.plain_text = 'Note'
+        else:
+            elem.plain_text = plain_text
+        elem.size = 10.0
+        elem.margin_value = 5
+        elem.proxy_pixmap = None
+        elem.editing = False
+        elem.font_color = QColor(self.selection_color)
+        elem.backplate_color = QColor(0, 0, 0, 0)
+        elem.start_point = elem.position
+        elem.end_point = elem.position + QPointF(200, 50)
 
 
 

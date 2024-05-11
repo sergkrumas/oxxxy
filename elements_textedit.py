@@ -202,19 +202,7 @@ class ElementsTextEditElementMixin():
 
 
 
-    def elementsDeactivateTextElement(self):
-        if self.active_element:
-            if self.active_element.oxxxy_type == self.ToolID.text:
-                self.active_element = None
-                # не нужно вызывать здесь self.elementsSetSelected(None),
-                # потому что elementsDeactivateTextElement вызывается
-                # в начале работы инструмента «выделение и перемещение»
-                self.update()
-                return True
-        return False
 
-    def elementsTextElementGetFontPixelSize(self, elem):
-        return int(20+10*elem.size)
 
     def elementsTextElementInputEvent(self, event):
         ae = self.active_element

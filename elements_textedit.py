@@ -103,7 +103,24 @@ class ElementsTextEditElementMixin():
             self.arrow_move_cursor = QCursor(draw_sub_icon("➜"))
             self.arrow_copy_cursor = QCursor(draw_sub_icon("+", bold=True))
 
+    def elementsTextElementCursorSetterNeeded(self):
+        """
+            extern method
+        """
+        return self.board_ni_ts_dragNdrop_ongoing
 
+    def elementsTextElementCursorSetter(self):
+        """
+            extern method
+        """
+        if self.board_ni_ts_dragNdrop_cancelled:
+            return Qt.ArrowCursor
+        else:
+            modifiers = QApplication.queryKeyboardModifiers()
+            if bool(modifiers & Qt.ControlModifier):
+                return self.arrow_copy_cursor
+            elif modifiers == Qt.NoModifier:
+                return self.arrow_move_cursor
 
 
 

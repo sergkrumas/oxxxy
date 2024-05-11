@@ -347,8 +347,8 @@ class ElementsTextEditElementMixin():
         # 
         # 
         elem.editing = False
-        self.board_ImplantTextElement(elem)
-        self.board_TextElementRecalculateGabarit(elem)
+        self.elementsImplantTextElement(elem)
+        self.elementsTextElementRecalculateGabarit(elem)
 
 
 

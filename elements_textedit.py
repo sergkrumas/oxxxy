@@ -141,15 +141,7 @@ class ElementsTextEditElementMixin():
             extern method
         """
         self.board_ni_ts_dragNdrop_cancelled = True
-
-        # 
-        # 
-        # 
-        # здесь нужно вызывать функцию задания курсора,
-        # если она потребуется
-        # 
-        # 
-        # 
+        self.define_regions_rects_and_set_cursor()
 
     def elementsTextElementCursorBlinkingCycleHandler(self):
         ae = self.active_element

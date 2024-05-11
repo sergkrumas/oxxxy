@@ -350,7 +350,18 @@ class ElementsTextEditElementMixin():
         self.elementsImplantTextElement(elem)
         self.elementsTextElementRecalculateGabarit(elem)
 
+    def elementsTextElementRecalculateGabarit(self, element):
+        # обновление габаритов виджета трансформации
 
+        s = element.text_doc.size()
+        content_rect = QRectF(QPointF(0, 0), s)
+        content_rect.moveCenter(element.position)
+        element.start_point = content_rect.topLeft()
+        element.end_point = content_rect.bottomRight()
+        if False:
+            element.scale_x = 1.0
+            element.scale_y = 1.0
+        element.calc_local_data()
 
 
 

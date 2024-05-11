@@ -334,7 +334,7 @@ class ElementsTextEditElementMixin():
 
         self.update()
 
-    def board_TextElementInitAfterLoadFromFile(self, elem):
+    def elementsTextElementInitAfterLoadFromFile(self, elem):
         """
             extern method
         """

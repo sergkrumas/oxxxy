@@ -320,7 +320,17 @@ class ElementsTextEditElementMixin():
 
         self.elementsTextElementUpdateAfterInput()
 
+    def elementsTextElementUpdateAfterInput(self):
+        ae = self.active_element
+        ae.plain_text = ae.text_doc.toPlainText()
+        if self.Globals.USE_PIXMAP_PROXY_FOR_TEXT_ELEMENTS:
+            self.elementsTextElementUpdateProxyPixmap(ae)
 
+        self.elementsTextElementRecalculateGabarit(ae)
+        self.elementsTextElementDefineSelectionRects()
+        self.update_selection_bouding_box()
+
+        self.update()
 
 
 

@@ -183,6 +183,11 @@ class ElementsTextEditElementMixin():
         elem.editing = True
         self.elementsTextElementDefineSelectionRects()
 
+    def elementsTextElementIsElementActiveElement(self, elem):
+        if elem and elem.type == self.ToolID.text:
+            return True
+        return False
+
 
 
 

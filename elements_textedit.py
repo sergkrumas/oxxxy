@@ -372,7 +372,30 @@ class ElementsTextEditElementMixin():
         pen.setJoinStyle(Qt.RoundJoin)
         return pen, color, size
 
+    def elementsTextElementDraw(self, painter, element):
 
+        def tweakedDrawContents(text_document, _painter_, rect):
+            # дефолтный drawContents не поддерживает изменение текста
+            _painter_.save()
+            ctx = QAbstractTextDocumentLayout.PaintContext()
+            ctx.palette.setColor(QPalette.Text, _painter_.pen().color())
+            # у нас всегда отображается всё, поэтому смысла в этом нет
+            # if rect.isValid():
+            #     _painter_.setClipRect(rect)
+            #     ctx.clip = rect
+            text_document.documentLayout().draw(_painter_, ctx)
+            _painter_.restore()
+
+        pen, color, size = self.elementsGetPenFromElement(element)
+        painter.setPen(pen)
+        painter.setBrush(QBrush(color))
+
+        text_doc = element.text_doc
+        # рисуем сам текст
+        text_opacity = color.alpha()/255
+        painter.setOpacity(text_opacity)
+        tweakedDrawContents(text_doc, painter, None) # text_doc.drawContents(painter, QRectF())
+        painter.setOpacity(1.0)
 
 
 

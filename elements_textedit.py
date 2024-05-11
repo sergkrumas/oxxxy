@@ -18,6 +18,8 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
+import sys
+
 from PyQt5.QtWidgets import (QApplication,)
 from PyQt5.QtCore import (QPoint, QPointF, QRect, Qt, QRectF)
 from PyQt5.QtGui import (QPainterPath, QColor, QBrush, QPixmap, QPainter, QTransform, QFont,
@@ -245,3 +247,10 @@ class ElementsTextEditElementMixin():
 
         painter.restore()
         painter.resetTransform()
+
+
+# для запуска программы прямо из этого файла при разработке и отладке
+if __name__ == '__main__':
+    import subprocess
+    subprocess.Popen([sys.executable, "-u", "oxxxy.py"])
+    sys.exit()

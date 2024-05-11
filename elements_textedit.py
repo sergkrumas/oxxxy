@@ -451,11 +451,7 @@ class ElementsTextEditElementMixin():
 
 
 
-    def elementsImplantTextElement(self, elem):
-        text_doc = QTextDocument()
-        elem.text_doc = text_doc
-        text_doc.setPlainText(elem.plain_text)
-        self.elementsTextElementInit(elem)
+
 
     def elementsTextElementSetFont(self, element):
         font = QFont()

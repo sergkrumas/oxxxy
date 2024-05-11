@@ -1141,7 +1141,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
                     setattr(element, attr_name, attr_value)
 
                 if element.oxxxy_type == ToolID.text:
-                    self.elementsImplantTextElement(element)
+                    self.elementsTextElementInitAfterLoadFromFile()
 
         #  приготовление UI
         self.tools_window.forwards_backwards_update()

@@ -708,6 +708,120 @@ class ElementsTextEditElementMixin():
             alpha = max(35, int(255*n/l))
             painter.fillRect(r, QColor(200, 50, 50, alpha))
 
+    def elementsTextElementDrawOnCanvas(self, painter, element, final):
+        """
+            extern method
+        """
+        if element.text_doc is not None:
+            text_doc = element.text_doc
+
+            size_obj = text_doc.size().toSize()
+            height = size_obj.height()
+            pos = element.local_end_point - QPointF(0, height)
+
+            s = text_doc.size().toSize()
+
+            # смещение к середине
+            offset_x = s.width()/2
+            offset_y = s.height()/2
+            offset_translation = QTransform()
+            offset_translation.translate(-offset_x, -offset_y)
+
+        item_transform = element.get_transform_obj(board=self)
+        if element.text_doc is not None:
+            item_transform = offset_translation * item_transform
+        element.draw_transform = item_transform
+        painter.setTransform(item_transform)
+        painter.save()
+
+        if element.text_doc:
+            text_doc = element.text_doc
+
+            # подложка
+            painter.save()
+            painter.setPen(Qt.NoPen)
+            content_rect = QRect(QPoint(), s)
+
+            path = QPainterPath()
+            path.addRoundedRect(QRectF(content_rect), element.margin_value,
+                element.margin_value)
+            painter.fillPath(path, QBrush(element.backplate_color))
+            painter.restore()
+
+            # рисуем текст
+            if self.Globals.USE_PIXMAP_PROXY_FOR_TEXT_ITEMS:
+                if element.proxy_pixmap is None:
+                    self.elementsTextElementUpdateProxyPixmap(element)
+                painter.drawPixmap(QPoint(0, 0), element.proxy_pixmap)
+            else:
+                self.elementsTextElementDraw(painter, element)
+
+            # рисуем прямоугольники выделения
+            if element.editing:
+                self.elementsTextElementDrawSelectionRects(painter)
+
+            # рисуем курсор
+            if element.editing and not self.blinkingCursorHidden:
+                doc_layout = text_doc.documentLayout()
+                if self.board_ni_ts_dragNdrop_ongoing:
+                    cursor_pos = self.board_ni_temp_cursor_pos
+                else:
+                    cursor_pos = self.board_ni_text_cursor.position()
+                block = text_doc.begin()
+                end = text_doc.end()
+                while block != end:
+                    # block_rect = doc_layout.blockBoundingRect(block)
+                    # painter.drawRect(block_rect)
+                    if self.active_element is element and not final:
+                        if block.contains(cursor_pos):
+                            local_cursor_pos = cursor_pos - block.position()
+                            block.layout().drawCursor(painter, QPointF(0,0), local_cursor_pos, 6)
+                    block = block.next()
+
+        painter.restore()
+        painter.resetTransform()
+
+
+        if self.elementsTextElementIsActiveElement() and element.editing:
+            painter.save()
+            element_bound_rect = element.get_selection_area(board=self).boundingRect()
+            tl = element_bound_rect.topLeft() + QPointF(-10, 0)
+
+            RECT_SIZE = 25
+            button_rect = QRectF(0, 0, RECT_SIZE, RECT_SIZE)
+            text_color_rect = QRectF(button_rect)
+            backplate_color_rect = QRectF(button_rect)
+            text_color_rect.moveTopRight(tl)
+            tl += QPoint(0, RECT_SIZE + 5)
+            backplate_color_rect.moveTopRight(tl)
+
+            self.board_ni_colors_buttons = (text_color_rect, backplate_color_rect)
+            for n, rect in enumerate(self.board_ni_colors_buttons):
+                painter.setPen(QPen(self.selection_color, 1))
+                if n == 0:
+                    painter.setBrush(Qt.NoBrush)
+                else:
+                    backplate_color = QColor(element.backplate_color)
+                    backplate_color.setAlpha(255)
+                    painter.setBrush(QBrush(backplate_color))
+                painter.drawRect(rect)
+
+                font_color = element.font_color
+                font_color.setAlpha(255)
+                painter.setPen(QPen(font_color, 3))
+                a1 = rect.topLeft() + QPoint(6, 6)
+                a2 = rect.topRight() + QPoint(-6, 6)
+                b1 = rect.center() + QPoint(0, -6)
+                b2 = rect.center() + QPoint(0, 7)
+                painter.drawLine(a1, a2)
+                painter.drawLine(b1, b2)
+            painter.restore()
+
+
+
+
+
+
 # для запуска программы прямо из этого файла при разработке и отладке
 if __name__ == '__main__':
     import subprocess

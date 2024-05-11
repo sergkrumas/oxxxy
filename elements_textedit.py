@@ -173,6 +173,15 @@ class ElementsTextEditElementMixin():
                 return True
         return False
 
+    def elementsTextElementActivateEditMode(self, elem):
+        """
+            extern method
+        """
+        self.active_element = elem
+        self.board_ni_text_cursor = QTextCursor(elem.text_doc)
+        self.board_ni_text_cursor.select(QTextCursor.Document)
+        elem.editing = True
+        self.elementsTextElementDefineSelectionRects()
 
 
 

@@ -1267,6 +1267,9 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
                 h = rect.height()
             ts.update({'capture_frame': (x, y, w, h)})
 
+    def mouseDoubleClickEvent(self, event):
+        self.elementsMouseDoubleClick(event)
+
     def mouseMoveEvent(self, event):
         if self.tools_window:
             select_window = self.tools_window.select_window

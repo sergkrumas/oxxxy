@@ -1831,6 +1831,15 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
         self.input_POINT1 = self.capture_region_rect.topLeft()
         self.input_POINT2 = self.capture_region_rect.bottomRight()
 
+    def elementsMouseDoubleClick(self, event):
+        for el in self.elementsFilter():
+            el_selection_area = el.get_selection_area(canvas=self)
+            is_under_mouse = el_selection_area.containsPoint(self.mapped_cursor_pos(), Qt.WindingFill)
+            if is_under_mouse:
+                el.oxxxy_type == ToolID.text:
+                self.elementsTextElementActivateEditMode(el)
+                break
+
     def elementsMouseMoveEvent(self, event):
         event_pos = self.elementsMapToCanvas(QPointF(event.pos()))
 

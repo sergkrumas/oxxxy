@@ -197,7 +197,26 @@ class ElementsTextEditElementMixin():
     def elementsTextElementGetFontPixelSize(self, elem):
         return int(20+10*elem.size)
 
+    def elementsTextElementCurrentTextLine(self, pos, text_doc):
+        cursor = QTextCursor(text_doc)
+        cursor.setPosition(pos)
 
+        cursor.movePosition(QTextCursor.StartOfLine)
+        lines = 0
+
+        lines_text = cursor.block().text().splitlines()
+        lines_pos = 0
+        for line_text in lines_text:
+            lines_pos += len(line_text) + 1
+            if lines_pos > cursor.position() - cursor.block().position():
+                break
+            lines += 1
+
+        block = cursor.block().previous()
+        while block.isValid():
+            lines += block.lineCount()
+            block = block.previous()
+        return lines
 
 
 

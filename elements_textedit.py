@@ -156,6 +156,27 @@ class ElementsTextEditElementMixin():
             self.update()
 
 
+    def elementsTextElementDeactivateEditMode(self):
+        """
+            extern method
+        """
+        if self.elementsTextElementIsActiveElement():
+            if self.active_element.editing:
+                self.active_element.editing = False
+                self.board_ni_text_cursor = None
+                self.board_ni_selection_rects = []
+                # self.active_element = None
+                # не нужно вызывать здесь self.board_SetSelected(None),
+                # потому что elementsDeactivateTextElement вызывается
+                # в начале работы инструмента «выделение и перемещение»
+                self.update()
+                return True
+        return False
+
+
+
+
+
 
 
 

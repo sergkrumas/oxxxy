@@ -245,7 +245,7 @@ class Elements2024ToolsMixin():
 
     def elementsGetArrowsTrees(self):
         all_visible_elements = self.elementsFilter()
-        at_ve = [e for e in all_visible_elements if e.type == self.ToolID.arrowstree]
+        at_ve = [e for e in all_visible_elements if e.oxxxy_type == self.ToolID.arrowstree]
         return at_ve
 
     def elementsDrawArrowTreesTech(self, painter):

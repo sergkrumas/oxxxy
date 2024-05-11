@@ -440,7 +440,7 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         if self.current_tool not in [ToolID.line, ToolID.marker, ToolID.pen]:
             return
 
-        self._ted.type = self.current_tool
+        self._ted.oxxxy_type = self.current_tool
         self._ted.color = self.tools_window.color_slider.get_color()
         self._ted.size = self.tools_window.size_slider.value
         self._ted.position = self.elementsMapToCanvas(cursor_pos)
@@ -1533,7 +1533,7 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
             self.show_view_window(lambda: pixmap, _type="edit", data=sel_elem.frame_info)
 
         sel_elem = self.active_element
-        if sel_elem and sel_elem.type == ToolID.picture:
+        if sel_elem and sel_elem.oxxxy_type == ToolID.picture:
             if sel_elem.backup_pixmap is not None:
                 reset_image_frame = add_item("Отменить обрезку выделенного изображения")
                 reset_image_frame.triggered.connect(lambda: self.elementsFramePicture())

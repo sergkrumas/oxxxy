@@ -84,14 +84,14 @@ class CreateBackgroundOption():
 
 class Element(Element2024Mixin):
 
-    def __init__(self, element_type, elements_list, skip=False):
-        self.type = element_type
+    def __init__(self, oxxxy_element_type, elements_list, skip=False):
+        self.oxxxy_type = oxxxy_element_type
         if not skip:
             elements_list.append(self)
 
             n = 0
             for el in elements_list:
-                if el.type == ToolID.numbering:
+                if el.oxxxy_type == ToolID.numbering:
                     n += 1
             self.number = n
 
@@ -155,14 +155,14 @@ class Element(Element2024Mixin):
         self._modification_stamp = 0.0
 
     def __repr__(self):
-        return f'{self.unique_index} {self.type}'
+        return f'{self.unique_index} {self.oxxxy_type}'
 
     def get_parameters_info(self):
         info_text = ""
         if self.source_indexes:
-            info_text += f"[{self.unique_index}] {self.type} from [{self.source_indexes}]"
+            info_text += f"[{self.unique_index}] {self.oxxxy_type} from [{self.source_indexes}]"
         else:
-            info_text += f"[{self.unique_index}] {self.type}"
+            info_text += f"[{self.unique_index}] {self.oxxxy_type}"
         if hasattr(self, 'toolbool'):
             info_text += f" (tb: {self.toolbool})"
         if hasattr(self, 'opacity'):
@@ -209,7 +209,7 @@ class Element(Element2024Mixin):
         self.width = first_element.width
         self.height = first_element.height
         # с предувеличением
-        if self.type in [ToolID.zoom_in_region]:
+        if self.oxxxy_type in [ToolID.zoom_in_region]:
             self.scale_y = ZOOM_IN_REGION_DAFAULT_SCALE
             self.scale_x = ZOOM_IN_REGION_DAFAULT_SCALE
         else:
@@ -227,29 +227,29 @@ class Element(Element2024Mixin):
         self.height = self.pixmap.height()
 
     def calc_local_data(self):
-        if self.type in [ToolID.line]:
+        if self.oxxxy_type in [ToolID.line]:
             self.calc_local_data_default()
-        elif self.type in [ToolID.pen, ToolID.marker]:
+        elif self.oxxxy_type in [ToolID.pen, ToolID.marker]:
             if self.straight:
                 self.calc_local_data_default()
             else:
                 self.calc_local_data_path()
-        elif self.type in [ToolID.arrow]:
+        elif self.oxxxy_type in [ToolID.arrow]:
             self.calc_local_data_default()
-        elif self.type in [ToolID.oval, ToolID.rect, ToolID.numbering]:
+        elif self.oxxxy_type in [ToolID.oval, ToolID.rect, ToolID.numbering]:
             self.calc_local_data_default()
-        elif self.type in [ToolID.blurring, ToolID.darkening, ToolID.multiframing]:
+        elif self.oxxxy_type in [ToolID.blurring, ToolID.darkening, ToolID.multiframing]:
             self.calc_local_data_default()
-        elif self.type in [ToolID.picture]:
+        elif self.oxxxy_type in [ToolID.picture]:
             self.calc_local_data_picture()
-        elif self.type in [ToolID.zoom_in_region, ToolID.copypaste]:
+        elif self.oxxxy_type in [ToolID.zoom_in_region, ToolID.copypaste]:
             self.calc_local_data_default()
-        elif self.type in [ToolID.text]:
+        elif self.oxxxy_type in [ToolID.text]:
             self.calc_local_data_default()
-        elif self.type in [ToolID.arrowstree]:
+        elif self.oxxxy_type in [ToolID.arrowstree]:
             self.calc_local_data_arrowstree()
         else:
-            raise Exception('calc_local_data', self.type)
+            raise Exception('calc_local_data', self.oxxxy_type)
 
     @property
     def calc_area(self):
@@ -331,14 +331,14 @@ class Element(Element2024Mixin):
             path.moveTo(self.local_start_point)
             path.lineTo(self.local_end_point)
             return path
-        if self.type in [ToolID.pen, ToolID.marker]:
+        if self.oxxxy_type in [ToolID.pen, ToolID.marker]:
             if self.straight:
                 path = from_local_data()
             else:
                 path = from_path()
-        elif self.type in [ToolID.line]:
+        elif self.oxxxy_type in [ToolID.line]:
             path = from_local_data()
-        elif self.type in [ToolID.arrow]:
+        elif self.oxxxy_type in [ToolID.arrow]:
             _, _, size = canvas.elementsGetPenFromElement(self)
             self.selection_path = canvas.elementsGetArrowPath(self.local_start_point, self.local_end_point, size, True)
         if path:
@@ -366,7 +366,7 @@ class Element(Element2024Mixin):
         return transform
 
     def enable_distortion_fixer(self):
-        if hasattr(self, 'local_end_point') and not self.type == ToolID.text:
+        if hasattr(self, 'local_end_point') and not self.oxxxy_type == ToolID.text:
             self._saved_data = (
                 QPointF(self.local_end_point),
                 QPointF(self.local_start_point),
@@ -387,7 +387,7 @@ class Element(Element2024Mixin):
             self.scale_x = self.scale_y = 1.0
 
     def disable_distortion_fixer(self):
-        if hasattr(self, '_saved_data') and not self.type == ToolID.text:
+        if hasattr(self, '_saved_data') and not self.oxxxy_type == ToolID.text:
             self.local_end_point, \
             self.local_start_point, \
             self.width, \
@@ -1128,7 +1128,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
 
                     setattr(element, attr_name, attr_value)
 
-                if element.type == ToolID.text:
+                if element.oxxxy_type == ToolID.text:
                     self.elementsImplantTextElement(element)
 
         #  приготовление UI
@@ -1192,15 +1192,15 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
             element.toolbool = tw.chb_toolbool.isChecked()
             element.margin_value = 5
             element.opacity = tw.opacity_slider.value
-        elif element.type == ToolID.picture:
+        elif element.oxxxy_type == ToolID.picture:
             element.size = 1.0
             element.color = QColor(Qt.red)
             element.color_slider_value = 0.01
             element.color_slider_palette_index = 0
             element.toolbool = False
-        if element.type == ToolID.blurring:
+        if element.oxxxy_type == ToolID.blurring:
             self.elementsSetBlurredPixmap(element)
-        if element.type in [ToolID.copypaste, ToolID.zoom_in_region]:
+        if element.oxxxy_type in [ToolID.copypaste, ToolID.zoom_in_region]:
             if hasattr(element, 'second') and not element.second:
                 self.elementsSetCopiedPixmap(element)
 
@@ -1307,10 +1307,10 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
         if self.selected_items:
             source_indexes = []
             for candidat in self.selected_items:
-                if candidat.type == ToolID.removing:
+                if candidat.oxxxy_type == ToolID.removing:
                     continue
                 # для удаления стрелки, которая наносилась вместе с текстом (если она ещё не удалена)
-                if candidat.type in [ToolID.text]:
+                if candidat.oxxxy_type in [ToolID.text]:
                     elements_pair = self.elementsRetrieveElementsFromGroup(ve, candidat.group_id)
                     if len(elements_pair) == 2:
                         for el in elements_pair:
@@ -1320,7 +1320,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
                                 el._selected = False
                                 source_indexes.append(el.unique_index)
                 # для пар взаимозависимых пометок
-                if candidat.type in [ToolID.zoom_in_region, ToolID.copypaste]:
+                if candidat.oxxxy_type in [ToolID.zoom_in_region, ToolID.copypaste]:
                     elements_pair = self.elementsRetrieveElementsFromUniformGroup(ve, candidat.group_id)
                     for el in elements_pair:
                         if el is candidat:
@@ -1385,7 +1385,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
             tw.chb_toolbool.blockSignals(True)
             tw.chb_toolbool.setChecked(el.toolbool)
             tw.chb_toolbool.blockSignals(False)
-            tw.set_ui_on_toolchange(element_type=el.type)
+            tw.set_ui_on_toolchange(element_type=el.oxxxy_type)
             tw.update()
         else:
             tw.set_ui_on_toolchange(hide=True)
@@ -1428,13 +1428,13 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
         else:
             return None
 
-    def elementsCreateNew(self, element_type, start_drawing=False,
+    def elementsCreateNew(self, element_oxxxy_type, start_drawing=False,
                                         create_new_slot=True, content_type=None, modification_slot=None):
         # срезание отменённой (невидимой) части истории
         # перед созданием элемента
         if create_new_slot:
             if content_type is None:
-                content_type = element_type
+                content_type = element_oxxxy_type
             self.modification_slots = self.elementsModificationSlotsFilter()
             ms = self.elementsCreateNewSlot(content_type)
         else:
@@ -1442,13 +1442,13 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
                 ms = self.elementsGetLastModSlot()
             else:
                 ms = modification_slot
-        case1 = element_type == ToolID.removing
-        case2 = element_type == ToolID.TEMPORARY_TYPE_NOT_DEFINED
+        case1 = element_oxxxy_type == ToolID.removing
+        case2 = element_oxxxy_type == ToolID.TEMPORARY_TYPE_NOT_DEFINED
         case3 = start_drawing
         is_removing = case1 or case2 or case3
         self.elements = self.elementsFilter(only_filter=is_removing)
         # создание элемента
-        element = Element(element_type, self.elements)
+        element = Element(element_oxxxy_type, self.elements)
         self.elementsAppendElementToMS(element, ms)
         # обновление индекса после создания элемента
         self.elements_modification_index = len(self.modification_slots)
@@ -1560,7 +1560,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
     def elementsGetElementsUnderMouse(self, cursor_pos):
         elements_under_mouse = []
         for el in self.elementsFilter():
-            if el.type in [ToolID.removing,]:
+            if el.oxxxy_type in [ToolID.removing,]:
                 continue
             element_selection_area = el.get_selection_area(canvas=self)
             is_under_mouse = element_selection_area.containsPoint(cursor_pos, Qt.WindingFill)
@@ -1570,9 +1570,9 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
 
     def elementsMousePressEventDefault(self, element, event, reversed=False):
         event_pos = self.elementsMapToCanvas(QPointF(event.pos()))
-        if element.type == ToolID.line and event.modifiers() & Qt.ControlModifier:
+        if element.oxxxy_type == ToolID.line and event.modifiers() & Qt.ControlModifier:
             last_element = self.elementsGetLastElement1()
-            if last_element and last_element.type == ToolID.line:
+            if last_element and last_element.oxxxy_type == ToolID.line:
                 element.start_point = QPointF(last_element.end_point)
             else:
                 element.start_point = event_pos
@@ -1690,7 +1690,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
             element = self.elementsCreateNew(self.current_tool, start_drawing=True)
             self.elementsSetElementParameters(element)
 
-        if element and element.type == ToolID.arrowstree:
+        if element and element.oxxxy_type == ToolID.arrowstree:
             if not event.modifiers() & Qt.ControlModifier:
                 self.elementsCreateEdgeWithNearestNode(element)
             else:
@@ -1771,7 +1771,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
     def elementsTextElementRotate(self, clockwise_rotation):
         element = None
         for el in self.elementsFilter():
-            if el.type == ToolID.text:
+            if el.oxxxy_type == ToolID.text:
                 element = el
         if element:
             if clockwise_rotation:
@@ -1803,7 +1803,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
             if hasattr(mod_el, 'position'):
                 mod_el.position += delta
             else:
-                raise Exception('Unsupported type:', mod_el.type)
+                raise Exception('Unsupported type:', mod_el.oxxxy_type)
         self.elementsSetSelected(new_elements)
         self.update()
 
@@ -1899,7 +1899,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
                     mod_element = self.elementsPrepareElementCopyForModifications(element)
                     new_elements.append(mod_element)
 
-                    if mod_element.type == ToolID.text:
+                    if mod_element.oxxxy_type == ToolID.text:
                         self.elementsTextElementUpdateProxyPixmap(mod_element)
 
                 self.elementsSetSelected(new_elements, update_panel=False, update_widget=False)
@@ -2037,17 +2037,17 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
                     if self.selected_items:
                         if any([el for el in self.selected_items if el.background_image]):
                             for el in self.elements:
-                                if el.type == ToolID.blurring:
+                                if el.oxxxy_type == ToolID.blurring:
                                     el.finished = True
                                     self.elementsSetBlurredPixmap(el)
-                                elif el.type == [ToolID.zoom_in_region, ToolID.copypaste]:
+                                elif el.oxxxy_type == [ToolID.zoom_in_region, ToolID.copypaste]:
                                     if not el.second:
                                         self.elementsSetCopiedPixmap(el)
 
                         for el in self.selected_items:
-                            if el.type in [ToolID.arrow, ToolID.text]:
+                            if el.oxxxy_type in [ToolID.arrow, ToolID.text]:
                                 self.elementsFixArrowStartPositionIfNeeded(el)
-                                if el.type == ToolID.text:
+                                if el.oxxxy_type == ToolID.text:
                                     self.elementsTextElementUpdateProxyPixmap(el)
 
                 if not alt and not self.translation_ongoing and not self.rotation_ongoing and not self.scaling_ongoing:
@@ -2082,13 +2082,13 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
     def elementsUpdateDependentElementsOnTransforms(self):
         if self.selected_items:
             for se in self.selected_items:
-                if se.type == ToolID.blurring:
+                if se.oxxxy_type == ToolID.blurring:
                     se.finished = True
                     self.elementsSetBlurredPixmap(se)
-                elif se.type in [ToolID.zoom_in_region, ToolID.copypaste]:
+                elif se.oxxxy_type in [ToolID.zoom_in_region, ToolID.copypaste]:
                     if not se.second:
                         self.elementsSetCopiedPixmap(se)
-                elif se.type == ToolID.text:
+                elif se.oxxxy_type == ToolID.text:
                     se.end_point_modified = True
 
     def elementsAutoDeleteInvisibleElement(self, element):
@@ -2215,11 +2215,11 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
         if elements_in_group.__len__() > 1:
             arrow_element = None
             text_element = None
-            if element.type == ToolID.text:
+            if element.oxxxy_type == ToolID.text:
                 elements_in_group.remove(element)
                 arrow_element = elements_in_group[0]
                 text_element = element
-            elif element.type == ToolID.arrow:
+            elif element.oxxxy_type == ToolID.arrow:
                 arrow_element = element
                 elements_in_group.remove(element)
                 text_element = elements_in_group[0]
@@ -2252,7 +2252,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
             darkening_zone.setFillRule(Qt.WindingFill)
             at_least_one_exists = False
             for element in self.elementsFilter():
-                if element.type == ToolID.darkening:
+                if element.oxxxy_type == ToolID.darkening:
                     at_least_one_exists = True
                     darkening_value = element.size
                     if prepare_pixmap:
@@ -2280,9 +2280,9 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
     def elementsGetPenFromElement(self, element):
         color = element.color
         size = element.size
-        if element.type in [ToolID.pen, ToolID.line]:
+        if element.oxxxy_type in [ToolID.pen, ToolID.line]:
             PEN_SIZE = 25
-        elif element.type == ToolID.marker:
+        elif element.oxxxy_type == ToolID.marker:
             PEN_SIZE = 40
             color.setAlphaF(0.3)
         else:
@@ -2293,7 +2293,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
         return pen, color, size
 
     def elementsDrawMainElement(self, painter, element, final, ve):
-        el_type = element.type
+        el_type = element.oxxxy_type
         pen, color, size = self.elementsGetPenFromElement(element)
         painter.setPen(pen)
         painter.setBrush(QBrush(color))
@@ -2446,7 +2446,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
             if special_case:
                 # заменяем пока не нарисованный второй элемент на превью
                 self._te.position = output_pos
-                self._te.type = element.type
+                self._te.oxxxy_type = element.oxxxy_type
                 self._te.calc_local_data_finish(f_element)
                 s_element = self._te
 
@@ -2672,13 +2672,13 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
             pictures_first = [el for el in all_visible_elements if el.background_image]
         else:
             for element in all_visible_elements:
-                if element.type == ToolID.picture:
+                if element.oxxxy_type == ToolID.picture:
                     if not element.background_image or final:
                         pictures_first.append(element)
                 else:
                     all_the_rest.append(element)
 
-        all_the_rest = [e for e in all_the_rest if e.type != self.ToolID.arrowstree]
+        all_the_rest = [e for e in all_the_rest if e.oxxxy_type != self.ToolID.arrowstree]
 
         for element in pictures_first:
             self.elementsDrawMainElement(painter, element, final, all_visible_elements)
@@ -2860,7 +2860,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
                 force_no_datetime_stamp=False):
         FINAL_PIXMAP = None
         if self.capture_region_rect:
-            specials = [el for el in self.elementsFilter() if el.type == ToolID.multiframing]
+            specials = [el for el in self.elementsFilter() if el.oxxxy_type == ToolID.multiframing]
             any_multiframing_element = any(specials)
             if any_multiframing_element and not no_multiframing and not clean:
                 max_width = -1
@@ -2961,7 +2961,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
         tw = self.tools_window
         if tw:
             element = self.active_element
-            case1 = element and element.type == tw.current_tool
+            case1 = element and element.oxxxy_type == tw.current_tool
             case2 = element and tw.current_tool == ToolID.transform
             if case1 or case2:
                 el = self.elementsPrepareElementCopyForModifications(element)
@@ -3091,7 +3091,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
     def elementsSetCaptureFromContent(self):
         points = []
         for element in self.elementsFilterElementsForSelection():
-            if element.type in [ToolID.removing, ToolID.multiframing]:
+            if element.oxxxy_type in [ToolID.removing, ToolID.multiframing]:
                 continue
             pen, _, _ = self.elementsGetPenFromElement(element)
             width = pen.width()
@@ -3279,7 +3279,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
     def elementsPicturesFilter(self):
         elements = []
         for element in self.elementsFilterElementsForSelection():
-            if element.type == ToolID.picture:
+            if element.oxxxy_type == ToolID.picture:
                 elements.append(element)
         return elements
 
@@ -3396,9 +3396,9 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
     def elementsUpdateDependentElementsAfterReshot(self):
         # updating dependent elements
         for element in self.elements:
-            if element.type in [ToolID.blurring]:
+            if element.oxxxy_type in [ToolID.blurring]:
                 self.elementsSetBlurredPixmap(element)
-            if element.type in [ToolID.copypaste, ToolID.zoom_in_region]:
+            if element.oxxxy_type in [ToolID.copypaste, ToolID.zoom_in_region]:
                 if not element.second:
                     self.elementsSetCopiedPixmap(element)
 

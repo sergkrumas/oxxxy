@@ -174,7 +174,7 @@ class ElementsTransformMixin():
     def find_all_elements_under_this_pos(self, elements, pos):
         undermouse_elements = []
         for element in elements:
-            if element.type in [self.ToolID.removing]:
+            if element.oxxxy_type in [self.ToolID.removing]:
                 continue
             is_under_mouse = element.is_selection_contains_pos(pos, canvas=self)
             if is_under_mouse:
@@ -190,7 +190,7 @@ class ElementsTransformMixin():
         elements = self.elementsFilterElementsForSelection()
         # reversed для того, чтобы пометки на переднем плане чекались первыми
         for element in reversed(elements):
-            if element.type in [self.ToolID.removing]:
+            if element.oxxxy_type in [self.ToolID.removing]:
                 continue
             is_under_mouse = element.is_selection_contains_pos(self.mapped_cursor_pos(), canvas=self)
             if is_under_mouse and element._selected:
@@ -215,7 +215,7 @@ class ElementsTransformMixin():
             selection_rect_path = QPainterPath()
             selection_rect_path.addPolygon(selection_rect_area)
             for element in elements:
-                if element.type in [self.ToolID.removing]:
+                if element.oxxxy_type in [self.ToolID.removing]:
                     continue
                 if element.selection_path:
                     sp = element.get_selection_path(canvas=self)
@@ -239,7 +239,7 @@ class ElementsTransformMixin():
                 min_area_element = self.find_min_area_element(elements, self.mapped_cursor_pos())
                 # reversed для того, чтобы пометки на переднем плане чекались первыми
                 for element in reversed(elements):
-                    if element.type in [self.ToolID.removing]:
+                    if element.oxxxy_type in [self.ToolID.removing]:
                         continue
                     is_under_mouse = element.is_selection_contains_pos(self.mapped_cursor_pos(), canvas=self)
                     if add_to_selection and element._selected:
@@ -295,7 +295,7 @@ class ElementsTransformMixin():
     def init_selection_bounding_box_widget(self, update_widget=True):
         self.selected_items = []
         for element in self.elementsFilter():
-            if element._selected and element.type not in [self.ToolID.removing]:
+            if element._selected and element.oxxxy_type not in [self.ToolID.removing]:
                 self.selected_items.append(element)
         if update_widget:
             self.update_selection_bouding_box()
@@ -623,7 +623,7 @@ class ElementsTransformMixin():
         if len(self.selected_items) == 1:
             el = self.selected_items[0]
             # toolbool означает кружки
-            if el.type in [self.ToolID.zoom_in_region] and el.second and el.toolbool:
+            if el.oxxxy_type in [self.ToolID.zoom_in_region] and el.second and el.toolbool:
                 return True
         return False
 

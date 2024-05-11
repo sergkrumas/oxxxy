@@ -122,11 +122,11 @@ class ElementsTextEditElementMixin():
             elif modifiers == Qt.NoModifier:
                 return self.arrow_move_cursor
 
-    def elementsTextElementCursorSetterNeeded(self):
+    def elementsTextElementResetColorsButtons(self):
         """
             extern method
         """
-        return self.board_ni_ts_dragNdrop_ongoing
+        self.board_ni_colors_buttons = None
 
 
 

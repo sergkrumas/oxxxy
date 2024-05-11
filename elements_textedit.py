@@ -498,15 +498,7 @@ class ElementsTextEditElementMixin():
 
         if self.board_ni_inside_op_ongoing:
             self.elementsTextElementSelectionMouseMoveEvent(event)
-
-            # 
-            # 
-            # 
-            # !!!!!!!!!!!!!!!!!!
-            # 
-            # 
-            # 
-            self.board_cursor_setter()
+            self.define_regions_rects_and_set_cursor()
             return True
 
         return False

@@ -751,7 +751,7 @@ class ElementsTextEditElementMixin():
             painter.restore()
 
             # рисуем текст
-            if self.Globals.USE_PIXMAP_PROXY_FOR_TEXT_ITEMS:
+            if self.Globals.USE_PIXMAP_PROXY_FOR_TEXT_ELEMENTS:
                 if element.proxy_pixmap is None:
                     self.elementsTextElementUpdateProxyPixmap(element)
                 painter.drawPixmap(QPoint(0, 0), element.proxy_pixmap)

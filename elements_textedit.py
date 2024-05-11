@@ -233,16 +233,8 @@ class ElementsTextEditElementMixin():
 
         if key == Qt.Key_Control:
             # for note item selection drag&drop
-
-            # 
-            # 
-            # 
-            # ЗАМЕНИТЬ ВЫЗОВ
-            # 
-            # 
-            # 
-            # 
-            # self.board_cursor_setter()
+            # changing cursor
+            self.define_regions_rects_and_set_cursor()
             return False
 
         return False

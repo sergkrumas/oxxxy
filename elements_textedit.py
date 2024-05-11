@@ -245,8 +245,80 @@ class ElementsTextEditElementMixin():
 
         return False
 
+    def elementsTextElementInputEvent(self, event):
+        ae = self.active_element
+        if not (self.elementsTextElementIsActiveElement() and ae.editing):
+            return
 
+        if self.board_ni_ts_dragNdrop_ongoing or \
+            self.board_ni_ts_dragNdrop_cancelled:
+            return
 
+        ctrl = bool(event.modifiers() & Qt.ControlModifier)
+        shift = bool(event.modifiers() & Qt.ShiftModifier)
+
+        if ctrl and check_scancode_for(event, "V"):
+            text = ""
+            app = QApplication.instance()
+            cb = app.clipboard()
+            mdata = cb.mimeData()
+            if mdata and mdata.hasText():
+                text = mdata.text()
+        else:
+            text = event.text()
+
+        _cursor = self.board_ni_text_cursor
+
+        if event.key() in [Qt.Key_Left, Qt.Key_Right, Qt.Key_Up, Qt.Key_Down]:
+            if shift:
+                move_mode = QTextCursor.KeepAnchor
+            else:
+                move_mode = QTextCursor.MoveAnchor
+
+            if event.key() == Qt.Key_Left:
+                if ctrl:
+                    _cursor.movePosition(QTextCursor.PreviousWord, move_mode)
+                else:
+                    new_pos = max(_cursor.position()-1, 0)
+                    _cursor.setPosition(new_pos, move_mode)
+
+            elif event.key() == Qt.Key_Right:
+                if ctrl:
+                    _cursor.movePosition(QTextCursor.NextWord, move_mode)
+                else:
+                    new_pos = min(_cursor.position()+1, len(ae.text_doc.toPlainText()))
+                    _cursor.setPosition(new_pos, move_mode)
+
+            elif event.key() == Qt.Key_Up:
+                if self.elementsTextElementCurrentTextLine(_cursor.position(), ae.text_doc) == 0:
+                    _cursor.movePosition(QTextCursor.Start, move_mode)
+                _cursor.movePosition(QTextCursor.Up, move_mode)
+
+            elif event.key() == Qt.Key_Down:
+                lines_count = len(ae.text_doc.toPlainText().split('\n'))
+                if self.elementsTextElementCurrentTextLine(_cursor.position(), ae.text_doc) + 1 == lines_count:
+                    _cursor.movePosition(QTextCursor.End, move_mode)
+                _cursor.movePosition(QTextCursor.Down, move_mode)
+
+            self.blinkingCursorHidden = False
+
+        elif event.key() == Qt.Key_Backspace:
+            _cursor.deletePreviousChar()
+        elif ctrl and check_scancode_for(event, "Z"):
+            if ae.text_doc:
+                ae.text_doc.undo()
+        elif ctrl and check_scancode_for(event, "Y"):
+            if ae.text_doc:
+                ae.text_doc.redo()
+        else:
+            _cursor.beginEditBlock()
+            _cursor.insertText(text)
+            _cursor.endEditBlock()
+
+        # text_line = self.elementsTextElementCurrentTextLine(_cursor.position(), ae.text_doc)
+        # print(f'!> linenum {text_line} ')
+
+        self.elementsTextElementUpdateAfterInput()
 
 
 

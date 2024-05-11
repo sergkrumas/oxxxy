@@ -66,7 +66,42 @@ class ElementsTextEditElementMixin():
         self.board_ni_temp_cursor_pos = 0
         self.board_ni_temp_start_cursor_pos = None
 
+    def board_TextElementLoadCursors(self, cursors_folderpath):
+        """
+            extern method
+        """
+        filepath_arrow_png = os.path.join(cursors_folderpath, "arrow.png")
 
+        arrow_rastr_source = QPixmap(filepath_arrow_png)
+
+        if not arrow_rastr_source.isNull():
+            SIZE = 30
+            arrow_rastr_source = arrow_rastr_source.scaled(SIZE, SIZE, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            def draw_sub_icon(text, bold=False):
+                source = arrow_rastr_source
+                SIGN_HEIGHT = 11
+                out_pix = QPixmap(source.width(), source.height()+SIGN_HEIGHT)
+                out_pix.fill(Qt.transparent)
+                p = QPainter()
+                p.begin(out_pix)
+                p.drawPixmap(QPoint(0, 0), source)
+                alignment = Qt.AlignRight | Qt.AlignTop
+                font = p.font()
+                if bold:
+                    font.setWeight(1900)
+                font.setPixelSize(SIGN_HEIGHT)
+                p.setFont(font)
+                text_rect = p.boundingRect(QRect(), alignment, text)
+                text_rect.setWidth(text_rect.width()+5)
+                text_rect.moveBottomRight(QPoint(out_pix.rect().width(), out_pix.rect().height()))
+                p.setBrush(QBrush(Qt.white))
+                p.setPen(QPen(Qt.black))
+                p.drawRect(text_rect)
+                p.drawText(text_rect, Qt.AlignHCenter | Qt.AlignVCenter, text)
+                p.end()
+                return out_pix
+            self.arrow_move_cursor = QCursor(draw_sub_icon("➜"))
+            self.arrow_copy_cursor = QCursor(draw_sub_icon("+", bold=True))
 
 
 

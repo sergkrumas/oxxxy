@@ -188,6 +188,12 @@ class ElementsTextEditElementMixin():
             return True
         return False
 
+    def elementsTextElementIsActiveElement(self):
+        """
+            extern method for BOARDS, local method for OXXXY
+        """
+        return self.elementsTextElementIsElementActiveElement(self.active_element)
+
 
 
 

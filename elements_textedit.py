@@ -410,13 +410,7 @@ class ElementsTextEditElementMixin():
 
 
 
-    def elementsTextElementUpdateProxyPixmap(self, element):
-        element.proxy_pixmap = QPixmap(element.text_doc.size().toSize())
-        element.proxy_pixmap.fill(Qt.transparent)
-        p = QPainter()
-        p.begin(element.proxy_pixmap)
-        self.elementsTextElementDraw(p, element)
-        p.end()
+
 
     def elementsTextElementCurrentTextLine(self, cursor):
         block = cursor.block()

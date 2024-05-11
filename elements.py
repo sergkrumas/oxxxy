@@ -439,6 +439,8 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
         self.elementsInitTransform()
         self.elementsSetSelected(None)
 
+        self.elementsTextElementInitModule()
+
         self.modification_stamp = None
 
         self.capture_region_widget_enabled = True

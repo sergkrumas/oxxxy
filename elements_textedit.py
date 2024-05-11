@@ -47,6 +47,33 @@ class ElementsTextEditElementMixin():
     # keep in sync with IMAGE VIEWER: BOARDS
     # https://github.com/sergkrumas/image_viewer
 
+    def elementsTextElementInitModule(self):
+        """
+            extern method
+        """
+        self.blinkingCursorTimer = QTimer()
+        self.blinkingCursorTimer.setInterval(600)
+        self.blinkingCursorTimer.timeout.connect(self.board_TextElementCursorBlinkingCycleHandler)
+        self.blinkingCursorTimer.start()
+        self.blinkingCursorHidden = False
+
+        self.board_ni_text_cursor = None
+        self.board_ni_selection_rects = []
+        self.board_ni_colors_buttons = None
+        self.board_ni_inside_op_ongoing = False
+        self.board_ni_ts_dragNdrop_ongoing = False
+        self.board_ni_ts_dragNdrop_cancelled = False
+        self.board_ni_temp_cursor_pos = 0
+        self.board_ni_temp_start_cursor_pos = None
+
+
+
+
+
+
+
+
+
     def elementsDeactivateTextElement(self):
         if self.active_element:
             if self.active_element.oxxxy_type == self.ToolID.text:

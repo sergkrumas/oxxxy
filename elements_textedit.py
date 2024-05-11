@@ -27,6 +27,7 @@ from PyQt5.QtGui import (QPainterPath, QColor, QBrush, QPixmap, QPainter, QTrans
 
 from _utils import (check_scancode_for,)
 
+from colorpicker import ColorPicker
 
 def elementsTextElementRecalculateGabarit_______________Old(self, element):
     # обновление габаритов виджета трансформации

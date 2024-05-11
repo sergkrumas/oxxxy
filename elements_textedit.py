@@ -647,6 +647,61 @@ class ElementsTextEditElementMixin():
             # print(out)
         self.update()
 
+    def elementsTextElementDefineSelectionRects(self):
+        self.board_ni_selection_rects = []
+
+        ae = self.active_element
+        if not (self.elementsTextElementIsActiveElement() and ae.editing):
+            return
+
+        if self.board_ni_text_cursor.anchor() != self.board_ni_text_cursor.position():
+            block = ae.text_doc.begin()
+            end = ae.text_doc.end()
+            docLayout = ae.text_doc.documentLayout()
+            while block != end:
+                if not block.text():
+                    block = block.next()
+                    continue
+
+                blockRect = docLayout.blockBoundingRect(block)
+                blockX = blockRect.x()
+                blockY = blockRect.y()
+
+                it = block.begin()
+                while not it.atEnd():
+                    fragment = it.fragment()
+
+                    blockLayout = block.layout()
+                    fragPos = fragment.position() - block.position()
+                    fragEnd = fragPos + fragment.length()
+
+
+                    start_frg = fragment.contains(self.board_ni_text_cursor.selectionStart())
+                    end_frg = fragment.contains(self.board_ni_text_cursor.selectionEnd())
+                    middle_frg = fragment.position() > self.board_ni_text_cursor.selectionStart() and fragment.position() + fragment.length() <= self.board_ni_text_cursor.selectionEnd()
+
+                    if start_frg or end_frg or middle_frg:
+                        if start_frg:
+                            fragPos = self.board_ni_text_cursor.selectionStart() - block.position()
+                        if end_frg:
+                            fragEnd = self.board_ni_text_cursor.selectionEnd() - block.position()
+
+                        while True:
+                            line = blockLayout.lineForTextPosition(fragPos)
+                            if line.isValid():
+                                x, _ = line.cursorToX(fragPos)
+                                right, lineEnd = line.cursorToX(fragEnd)
+                                rect = QRectF(blockX + x, blockY + line.y(), right - x, line.height())
+                                self.board_ni_selection_rects.append(rect)
+                                if lineEnd != fragEnd:
+                                    fragPos = lineEnd
+                                else:
+                                    break
+                            else:
+                                break
+                    it += 1
+                block = block.next()
+
 
 # для запуска программы прямо из этого файла при разработке и отладке
 if __name__ == '__main__':

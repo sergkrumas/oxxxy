@@ -1892,7 +1892,10 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         if key == Qt.Key_Escape:
             select_window = None
             show_quit_dialog = False
-            if self.start_translation_pos or self.translation_ongoing:
+            if self.elementsTextElementTextSelectionDragNDropOngoing():
+                self.elementsTextElementCancelTextSelectionDragNDrop()
+                return
+            elif self.start_translation_pos or self.translation_ongoing:
                 self.canvas_CANCEL_selected_elements_TRANSLATION()
                 return
             elif self.rotation_ongoing:

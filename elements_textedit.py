@@ -128,9 +128,26 @@ class ElementsTextEditElementMixin():
         """
         self.board_ni_colors_buttons = None
 
+    def elementsTextElementTextSelectionDragNDropOngoing(self):
+        """
+            extern method
+        """
+        return self.board_ni_ts_dragNdrop_ongoing and not self.board_ni_ts_dragNdrop_cancelled
 
+    def elementsTextElementCancelTextSelectionDragNDrop(self):
+        """
+            extern method
+        """
+        self.board_ni_ts_dragNdrop_cancelled = True
 
-
+        # 
+        # 
+        # 
+        # здесь нужно вызывать функцию задания курсора,
+        # если она потребуется
+        # 
+        # 
+        # 
 
 
 

@@ -417,7 +417,24 @@ class ElementsTextEditElementMixin():
                     (event.modifiers() == Qt.ControlModifier and ( check_scancode_for(event, "V")) or redo_undo ))
         return is_event
 
-
+    def elementsTextElementAttributesInitOnCreation(self, elem):
+        """
+            extern method
+        """
+        # 
+        # 
+        # 
+        # 
+        # вставить метод в код создания
+        # 
+        # 
+        # 
+        # 
+        self.elementsTextElementSetDefaults(elem)
+        elem.calc_local_data()
+        self.elementsImplantTextElement(elem)
+        self.elementsTextElementRecalculateGabarit(elem)
+        self.elementsTextElementActivateEditMode(elem)
 
 
 

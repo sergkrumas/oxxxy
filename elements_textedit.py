@@ -539,6 +539,11 @@ class ElementsTextEditElementMixin():
                 return True
         return False
 
+    def elementsTextElementGetABFromTextCursor(self):
+        poss = [self.board_ni_text_cursor.selectionStart(), self.board_ni_text_cursor.selectionEnd()]
+        a = min(*poss)
+        b = max(*poss)
+        return a, b
 
 
 

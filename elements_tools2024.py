@@ -52,7 +52,7 @@ class Elements2024ToolsMixin():
             painter.setPen(QPen(color, 1))
             painter.drawRect(capture_rect)
 
-            if element.subtype != 'root':
+            if element.oxxxy_subtype != 'root':
                 a = QPointF(0, -100)
                 b = QPointF(0, 100)
                 a1 = QPointF(-20, 35)
@@ -103,7 +103,7 @@ class Elements2024ToolsMixin():
         self.arrows_trees_edges.append((el1.pass2_unique_index, el2.pass2_unique_index))
 
     def elementsMarkRoot(self, element):
-        element.subtype = 'root'
+        element.oxxxy_subtype = 'root'
 
     def elementsDrawArrowTrees(self, painter, final):
         els = self.elementsGetArrowsTrees()
@@ -129,7 +129,7 @@ class Elements2024ToolsMixin():
 
         for el in els:
 
-            if False and el.subtype == 'root':
+            if False and el.oxxxy_subtype == 'root':
                 rect = QRectF(0, 0, 50, 50)
                 rect.moveCenter(self.elementsMapToViewport(el.position))
                 painter.drawEllipse(rect)
@@ -181,7 +181,7 @@ class Elements2024ToolsMixin():
                 painter.drawLine(line2.translated(node_root_pos))
 
 
-                if el.subtype != 'root':
+                if el.oxxxy_subtype != 'root':
 
                     arrow_line = line.translated(node_root_pos)
 

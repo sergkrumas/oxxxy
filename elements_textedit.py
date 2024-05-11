@@ -186,7 +186,7 @@ class ElementsTextEditElementMixin():
         self.elementsTextElementDefineSelectionRects()
 
     def elementsTextElementIsElementActiveElement(self, elem):
-        if elem and elem.type == self.ToolID.text:
+        if elem and elem.oxxxy_type == self.ToolID.text:
             return True
         return False
 

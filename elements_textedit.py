@@ -363,6 +363,14 @@ class ElementsTextEditElementMixin():
             element.scale_y = 1.0
         element.calc_local_data()
 
+    def elementsGetPenFromElement(self, element):
+        color = element.font_color
+        size = element.size
+        PEN_SIZE = 25
+        pen = QPen(color, 1+PEN_SIZE*size)
+        pen.setCapStyle(Qt.RoundCap)
+        pen.setJoinStyle(Qt.RoundJoin)
+        return pen, color, size
 
 
 

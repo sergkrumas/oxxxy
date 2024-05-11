@@ -218,6 +218,42 @@ class ElementsTextEditElementMixin():
             block = block.previous()
         return lines
 
+    def elementsTextElementKeyPressEventHandler(self, event):
+        """
+            extern method
+        """
+        key = event.key()
+
+        if self.elementsTextElementIsInputEvent(event):
+            self.elementsTextElementInputEvent(event)
+            self.is_board_text_input_event = True
+            return True
+
+        if key == Qt.Key_Control:
+            # for note item selection drag&drop
+
+            # 
+            # 
+            # 
+            # ЗАМЕНИТЬ ВЫЗОВ
+            # 
+            # 
+            # 
+            # 
+            # self.board_cursor_setter()
+            return False
+
+        return False
+
+
+
+
+
+
+
+
+
+
 
 
 

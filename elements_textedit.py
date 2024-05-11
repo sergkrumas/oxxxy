@@ -131,6 +131,14 @@ class ElementsTextEditElementMixin():
 
 
 
+
+
+
+
+
+
+
+
     def elementsDeactivateTextElement(self):
         if self.active_element:
             if self.active_element.oxxxy_type == self.ToolID.text:

@@ -2660,6 +2660,8 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
             painter.setRenderHint(QPainter.HighQualityAntialiasing, True)
             painter.setRenderHint(QPainter.Antialiasing, True)
             painter.setRenderHint(QPainter.SmoothPixmapTransform, True)
+        if not final:
+            self.elementsTextElementResetColorsButtons()            
         painter.save()
         # draw elements
         if not prepare_darkening:

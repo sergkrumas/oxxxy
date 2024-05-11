@@ -474,6 +474,11 @@ class ElementsTextEditElementMixin():
                 return text_cursor_pos
         return None
 
+    def elementsTextElementInit(self, elem):
+        text_doc = elem.text_doc
+        self.board_TextElementSetFont(elem)
+        text_doc.setTextWidth(-1)
+        text_doc.setDocumentMargin(80)
 
 
 

@@ -1276,7 +1276,7 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
             if select_window and select_window.isVisible():
                 select_window.hide()
 
-       if self.elementsTextElementMouseMoveEvent(event):
+        if self.elementsTextElementMouseMoveEvent(event):
             return
 
         drawing_outside_capture_widget_allowed = \

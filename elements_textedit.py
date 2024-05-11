@@ -412,17 +412,9 @@ class ElementsTextEditElementMixin():
 
 
 
-    def elementsTextElementCurrentTextLine(self, cursor):
-        block = cursor.block()
-        if not block.isValid():
-            return QTextLine()
 
-        layout = block.layout()
-        if not layout:
-            return QTextLine()
 
-        relativePos = cursor.position() - block.position()
-        return layout.lineForTextPosition(relativePos)
+
 
     def elementsTextElementIsInputEvent(self, event):
         is_event = self.active_element is not None and self.active_element.oxxxy_type == self.ToolID.text

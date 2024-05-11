@@ -565,6 +565,69 @@ class ElementsTextEditElementMixin():
                     self.board_ni_temp_start_cursor_pos = None
         self.elementsTextElementDefineSelectionRects()
 
+    def elementsTextElementEndSelection(self, event, finish=False):
+        # код переусложнён, так как он обрабатывает как MouseMove, так и MouseRelease
+        ae = self.active_element
+        ctrl = event.modifiers() & Qt.ControlModifier
+        if self.elementsTextElementIsActiveElement() and ae.editing:
+            hit_test_result = self.elementsTextElementHitTest(event)
+            if self.board_ni_ts_dragNdrop_ongoing and not self.board_ni_ts_dragNdrop_cancelled:
+                if finish:
+                    _cursor = self.board_ni_text_cursor
+                    text_to_copy = _cursor.selectedText()
+                    temp_cursor_pos = self.board_ni_temp_cursor_pos
+                    a, b = self.elementsTextElementGetABFromTextCursor()
+                    selection_center_pos = int(a + (b - a)/2)
+                    if text_to_copy:
+                        if ctrl:
+                            # копирование
+                            _cursor.setPosition(temp_cursor_pos)
+                            _cursor.beginEditBlock()
+                            _cursor.insertText(text_to_copy)
+                            _cursor.endEditBlock()
+                        else:
+                            # перенос
+                            if a < temp_cursor_pos < b:
+                                # сбрасывается внутрь выделения, отмена
+                                pass
+                            else:
+                                # если выделение находится дальше
+                                # чем позиция для переноса,
+                                # то коректировка нужна.
+                                # в противном случае она необходима
+                                if selection_center_pos > temp_cursor_pos:
+                                    pass
+                                if selection_center_pos < temp_cursor_pos:
+                                    temp_cursor_pos -= len(text_to_copy)
+
+                                _cursor.deletePreviousChar()
+                                _cursor.setPosition(temp_cursor_pos)
+                                _cursor.beginEditBlock()
+                                _cursor.insertText(text_to_copy)
+                                _cursor.endEditBlock()
+                        self.elementsTextElementUpdateAfterInput()
+                    self.board_ni_ts_dragNdrop_ongoing = False
+                    self.board_ni_temp_start_cursor_pos = None
+                    self.board_ni_temp_cursor_pos = None
+                else:
+                    self.board_ni_temp_cursor_pos = hit_test_result
+                    self.blinkingCursorHidden = False
+            else:
+                if self.board_ni_temp_start_cursor_pos:
+                    cursor_moved_a_bit = abs(hit_test_result - self.board_ni_temp_start_cursor_pos) > 0
+                    if cursor_moved_a_bit:
+                        self.board_ni_ts_dragNdrop_ongoing = True
+                    elif finish:
+                        self.board_ni_text_cursor.setPosition(hit_test_result, QTextCursor.MoveAnchor)
+                else:
+                    self.board_ni_text_cursor.setPosition(hit_test_result, QTextCursor.KeepAnchor)
+
+        if finish:
+            self.board_ni_ts_dragNdrop_ongoing = False
+            self.board_ni_temp_start_cursor_pos = None
+            self.board_ni_ts_dragNdrop_cancelled = False
+        self.elementsTextElementDefineSelectionRects()
+        self.update()
 
 
 # для запуска программы прямо из этого файла при разработке и отладке

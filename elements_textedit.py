@@ -194,7 +194,8 @@ class ElementsTextEditElementMixin():
         """
         return self.elementsTextElementIsElementActiveElement(self.active_element)
 
-
+    def elementsTextElementGetFontPixelSize(self, elem):
+        return int(20+10*elem.size)
 
 
 

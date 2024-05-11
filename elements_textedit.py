@@ -817,7 +817,15 @@ class ElementsTextEditElementMixin():
                 painter.drawLine(b1, b2)
             painter.restore()
 
-
+    def elementsTextElementCheckColorButtons(self, event):
+        if self.board_ni_colors_buttons is not None:
+            text_color_rect = self.board_ni_colors_buttons[0]
+            backplate_color_rect = self.board_ni_colors_buttons[1]
+            if text_color_rect.contains(event.pos()):
+                return 0
+            elif backplate_color_rect.contains(event.pos()):
+                return 1
+        return -1
 
 
 

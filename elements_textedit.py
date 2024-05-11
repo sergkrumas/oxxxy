@@ -436,7 +436,12 @@ class ElementsTextEditElementMixin():
         self.elementsTextElementRecalculateGabarit(elem)
         self.elementsTextElementActivateEditMode(elem)
 
-
+    def elementsImplantTextElement(self, elem):
+        text_doc = QTextDocument()
+        elem.text_doc = text_doc
+        # elem.text_doc.setDefaultFont(self.Globals.SEVEN_SEGMENT_FONT)
+        self.elementsTextElementInit(elem)
+        text_doc.setPlainText(elem.plain_text)
 
 
 
@@ -449,7 +454,6 @@ class ElementsTextEditElementMixin():
     def elementsImplantTextElement(self, elem):
         text_doc = QTextDocument()
         elem.text_doc = text_doc
-        # elem.text_doc.setDefaultFont(self.Globals.SEVEN_SEGMENT_FONT)
         text_doc.setPlainText(elem.plain_text)
         self.elementsTextElementInit(elem)
 

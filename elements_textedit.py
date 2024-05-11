@@ -639,6 +639,14 @@ class ElementsTextEditElementMixin():
             self.elementsTextElementEndSelection(event)
         self.update()
 
+    def elementsTextElementSelectionMouseReleaseEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.elementsTextElementEndSelection(event, finish=True)
+            # tc = self.board_ni_text_cursor
+            # out = f'{tc.selectionEnd()} {tc.selectionStart()}'
+            # print(out)
+        self.update()
+
 
 # для запуска программы прямо из этого файла при разработке и отладке
 if __name__ == '__main__':

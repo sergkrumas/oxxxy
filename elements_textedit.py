@@ -23,8 +23,8 @@ import os
 
 from PyQt5.QtWidgets import (QApplication,)
 from PyQt5.QtCore import (QPoint, QPointF, QRect, Qt, QRectF)
-from PyQt5.QtGui import (QPainterPath, QColor, QBrush, QPixmap, QPainter, QTransform, QFont,
-                    QTextDocument, QAbstractTextDocumentLayout, QPalette, QTextCursor, QTextLine)
+from PyQt5.QtGui import (QPainterPath, QColor, QBrush, QPixmap, QPainter, QTransform, QFont, QPen,
+            QTextDocument, QAbstractTextDocumentLayout, QPalette, QTextCursor, QTextLine, QCursor)
 
 from _utils import (check_scancode_for,)
 

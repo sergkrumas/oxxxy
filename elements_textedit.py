@@ -545,6 +545,25 @@ class ElementsTextEditElementMixin():
         b = max(*poss)
         return a, b
 
+    def elementsTextElementStartSelection(self, event):
+        if event.button() == Qt.LeftButton:
+            ae = self.active_element
+            if self.elementsTextElementIsActiveElement() and ae.editing:
+                hit_test_result = self.elementsTextElementHitTest(event)
+                a, b = self.elementsTextElementGetABFromTextCursor()
+                if hit_test_result is not None and a <= hit_test_result <= b and abs(b-a) > 0:
+                    # drag start
+                    # print(f'drag start {abs(b-a)}')
+                    self.board_ni_temp_cursor_pos = hit_test_result
+                    self.board_ni_temp_start_cursor_pos = hit_test_result
+                else:
+                    # default start
+                    # print(f'default start')
+                    hit_test_result = self.elementsTextElementHitTest(event)
+                    self.board_ni_text_cursor.setPosition(hit_test_result)
+                    self.board_ni_ts_dragNdrop_ongoing = False
+                    self.board_ni_temp_start_cursor_pos = None
+        self.elementsTextElementDefineSelectionRects()
 
 
 

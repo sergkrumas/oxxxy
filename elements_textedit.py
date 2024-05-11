@@ -378,18 +378,7 @@ class ElementsTextEditElementMixin():
 
 
 
-    def elementsTextElementRecalculateGabarit(self, element):
-        # обновление габаритов виджета трансформации
-        s = element.text_doc.size()
-        width = s.width()
-        height = s.height()
-        content_rect = QRectF(QPointF(0, 0), s)
-        content_rect.moveCenter(element.position)
-        element.start_point = content_rect.topLeft()
-        element.end_point = content_rect.bottomRight()
-        element.scale_x = 1.0
-        element.scale_y = 1.0
-        element.calc_local_data()
+
 
     def elementsTextElementDraw(self, painter, element):
 

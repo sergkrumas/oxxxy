@@ -1918,7 +1918,7 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
             elif self.scaling_ongoing:
                 self.canvas_CANCEL_selected_elements_SCALING()
                 return
-            elif self.elementsDeactivateTextElement():
+            elif self.elementsTextElementDeactivateEditMode():
                 return
             elif self.tools_window:
                 select_window = self.tools_window.select_window

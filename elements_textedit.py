@@ -398,7 +398,7 @@ class ElementsTextEditElementMixin():
     def elementsTextElementAttributesInitOnCreation(self, elem):
         """
             extern method
-        """ 
+        """
         self.elementsTextElementSetDefaults(elem)
         elem.calc_local_data()
         self.elementsImplantTextElement(elem)

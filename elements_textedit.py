@@ -341,7 +341,7 @@ class ElementsTextEditElementMixin():
             element.scale_y = 1.0
         element.calc_local_data()
 
-    def elementsGetPenFromElement(self, element):
+    def elementsTextElementGetPenFromElement(self, element):
         color = element.font_color
         size = element.size
         PEN_SIZE = 25
@@ -364,7 +364,7 @@ class ElementsTextEditElementMixin():
             text_document.documentLayout().draw(_painter_, ctx)
             _painter_.restore()
 
-        pen, color, size = self.elementsGetPenFromElement(element)
+        pen, color, size = self.elementsTextElementGetPenFromElement(element)
         painter.setPen(pen)
         painter.setBrush(QBrush(color))
 

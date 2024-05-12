@@ -417,7 +417,7 @@ class ElementsTextEditElementMixin():
             elem.plain_text = 'Note'
         else:
             elem.plain_text = plain_text
-        elem.size = 10.0
+        elem.size = 3.0
         elem.margin_value = 5
         elem.proxy_pixmap = None
         elem.editing = False

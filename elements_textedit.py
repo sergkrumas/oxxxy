@@ -457,7 +457,7 @@ class ElementsTextEditElementMixin():
         if check_code != -1:
             return True
 
-        # если не проверять аттрибут editing, то невозможно будет перенести пометку кликом левой кнопки мыши
+        # если не проверять атрибут editing, то невозможно будет перенести пометку кликом левой кнопки мыши
         if self.elementsTextElementIsCursorInsideTextElement(event) and self.active_element.editing:
             self.board_ni_inside_op_ongoing = True
             self.elementsTextElementSelectionMousePressEvent(event)

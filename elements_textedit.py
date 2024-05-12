@@ -743,7 +743,7 @@ class ElementsTextEditElementMixin():
         painter.resetTransform()
 
 
-        if self.elementsTextElementIsActiveElement() and element.editing:
+        if self.elementsTextElementIsActiveElement() and element.editing and not final:
             painter.save()
             element_bound_rect = element.get_selection_area(canvas=self).boundingRect()
             tl = element_bound_rect.topLeft() + QPointF(-10, 0)

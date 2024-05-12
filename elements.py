@@ -495,7 +495,6 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
         self._active_element = el
         if el:
             # чтобы активный элемент выделялся кликом, а не прямоугольником
-            el._selected = True
             if el.width: # предотвращение краша при нанесении
                 self.elementsSetSelected([el])
 

@@ -1827,7 +1827,9 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
     def elementsSetCursorShapeInsideCaptureZone(self):
         cursor_pos = self.mapFromGlobal(QCursor().pos())
         is_tool_transform = self.current_tool == ToolID.transform
-        if is_tool_transform:
+        if self.elementsTextElementCursorSetterNeeded():
+            return self.elementsTextElementCursorSetter()
+        elif is_tool_transform:
             return self.define_transform_tool_cursor()
         else:
             return self.get_custom_cross_cursor()

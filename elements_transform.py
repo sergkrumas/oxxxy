@@ -135,9 +135,7 @@ class ElementsTransformMixin():
         return QCursor(pixmap)
 
     def define_transform_tool_cursor(self):
-        if self.elementsTextElementCursorSetterNeeded():
-            return self.elementsTextElementCursorSetter()
-        elif self.scaling_ongoing:
+        if self.scaling_ongoing:
             if self.scale_rastr_source is not None:
                 cursor = self.get_widget_cursor(self.scale_rastr_source, self.widget_get_cursor_angle())
                 return cursor

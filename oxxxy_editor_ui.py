@@ -1229,8 +1229,6 @@ class ToolsWindow(QWidget):
     def change_ui_text(self, _type):
         if _type == ToolID.zoom_in_region:
             self.chb_toolbool.setText("Кружки")
-        elif _type == ToolID.text:
-            self.chb_toolbool.setText("Подложка")
         elif _type == ToolID.blurring:
             self.chb_toolbool.setText("Пикселизация")
         else:
@@ -1252,8 +1250,11 @@ class ToolsWindow(QWidget):
             self.color_slider.setEnabled(False)
             if _type in [ToolID.blurring]:
                 self.chb_toolbool.setEnabled(True)
-        if _type in [ToolID.text, ToolID.zoom_in_region]:
+        if _type in [ToolID.zoom_in_region]:
             self.chb_toolbool.setEnabled(True)
+        if _type in [ToolID.text]:
+            self.color_slider.setEnabled(False)
+            self.size_slider.setEnabled(False)
         if _type in [ToolID.copypaste, ToolID.none]:
             self.color_slider.setEnabled(False)
             self.size_slider.setEnabled(False)

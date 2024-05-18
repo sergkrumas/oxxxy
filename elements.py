@@ -100,6 +100,7 @@ class Element(Element2024Mixin):
             else:
                 Element._counter = 0
             self.unique_index = Element._counter
+            self.sorting_index = self.unique_index
 
             self.pass2_unique_index = self.unique_index
 
@@ -2435,7 +2436,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
                     painter.setCompositionMode(QPainter.RasterOp_SourceXorDestination)
                     align = Qt.AlignVCenter | Qt.AlignHCenter
                     screen_rect = element.get_selection_area(canvas=self).boundingRect()
-                    text = str(element.unique_index)
+                    text = str(element.sorting_index)
                     br = painter.boundingRect(screen_rect, align, text)
                     br.moveTopLeft(screen_rect.topLeft())
                     font = painter.font()
@@ -3338,7 +3339,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
         return list(sorted(elements, key=cmp_func))
 
     def elementsSortPicturesBySortIndex(self, elements):
-        cmp_func = lambda e: e.unique_index
+        cmp_func = lambda e: e.sorting_index
         return list(sorted(elements, key=cmp_func))
 
     def elementsAutoCollagePicturesHor(self):
@@ -3559,9 +3560,9 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
         if ctrl_pressed:
             shifted_ = self.selected_items[:]
             shifted_.insert(0, shifted_.pop(-1))
-            shifted_indexes = [i.unique_index for i in shifted_]
+            shifted_indexes = [i.sorting_index for i in shifted_]
             for e, sh_index in zip(self.selected_items, shifted_indexes):
-                e.unique_index = sh_index
+                e.sorting_index = sh_index
         else:
             self.show_sort_indexes_on_pixmaps = not self.show_sort_indexes_on_pixmaps
         self.update()

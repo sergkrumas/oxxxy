@@ -567,6 +567,10 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
             el.scale_x = 1.0
             el.scale_y = 1.0
 
+        # выделенное может повлиять на команду elementsAutoCollagePicturesHor, а нам этого не надо
+        self.elementsSetSelected([])
+        self.active_element = None
+
         # вызываем для выравнивания по высоте:
         # каждая картинка будет отмасштабирована до высоты картинки с наибольшей высотой
         self.elementsAutoCollagePicturesHor()
@@ -3334,8 +3338,12 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
         cmp_func = lambda e: m(e).center().x()
         return list(sorted(elements, key=cmp_func))
 
+    def elementsSortPicturesBySortIndex(self, elements):
+        cmp_func = lambda e: e.unique_index
+        return list(sorted(elements, key=cmp_func))
+
     def elementsAutoCollagePicturesHor(self):
-        self.elementsAutoCollagePictures(param='hor')
+        self.elementsAutoCollagePictures(param='grid')
 
     def elementsAutoCollagePictures(self, param=None):
         subMenu = QMenu()
@@ -3348,8 +3356,13 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
             action = horizontal
         elif param == 'ver':
             action = vertical
+        elif param == 'grid':
+            action = horizontal
 
-        elements = self.elementsSortPicturesByXPosition(self.elementsPicturesFilter())
+        if param == 'grid':
+            elements = self.elementsSortPicturesBySortIndex(self.elementsPicturesFilter())
+        else:
+            elements = self.elementsSortPicturesByXPosition(self.elementsPicturesFilter())
 
         if action == None:
             pass

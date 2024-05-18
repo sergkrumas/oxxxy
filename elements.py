@@ -3545,7 +3545,11 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
 
     def elementsSwapSortIndexes(self, ctrl_pressed):
         if ctrl_pressed:
-            pass
+            shifted_ = self.selected_items[:]
+            shifted_.insert(0, shifted_.pop(-1))
+            shifted_indexes = [i.unique_index for i in shifted_]
+            for e, sh_index in zip(self.selected_items, shifted_indexes):
+                e.unique_index = sh_index
         else:
             self.show_sort_indexes_on_pixmaps = not self.show_sort_indexes_on_pixmaps
         self.update()

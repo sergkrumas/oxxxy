@@ -569,7 +569,6 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
 
         # выделенное может повлиять на команду elementsAutoCollagePicturesHor, а нам этого не надо
         self.elementsSetSelected([])
-        self.active_element = None
 
         # вызываем для выравнивания по высоте:
         # каждая картинка будет отмасштабирована до высоты картинки с наибольшей высотой

@@ -442,6 +442,8 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
 
         self.elementsTextElementInitModule()
 
+        self.show_sort_indexes_on_pixmaps = False
+
         self.modification_stamp = None
 
         self.capture_region_widget_enabled = True
@@ -2425,7 +2427,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
                 painter.drawPixmap(r, pixmap, s)
                 painter.setOpacity(current_opacity)
                 painter.resetTransform()
-                if not final:
+                if not final and self.show_sort_indexes_on_pixmaps:
                     painter.save()
                     painter.setCompositionMode(QPainter.RasterOp_SourceXorDestination)
                     align = Qt.AlignVCenter | Qt.AlignHCenter
@@ -3540,6 +3542,13 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
     def elementsFitCaptureZoneOnScreen(self):
         if self.capture_region_rect:
             self.elementsFitContentOnScreen(use_capture_region=True)
+
+    def elementsSwapSortIndexes(self, ctrl_pressed):
+        if ctrl_pressed:
+            pass
+        else:
+            self.show_sort_indexes_on_pixmaps = not self.show_sort_indexes_on_pixmaps
+        self.update()
 
 
 

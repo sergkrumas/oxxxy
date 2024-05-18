@@ -2425,6 +2425,21 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
                 painter.drawPixmap(r, pixmap, s)
                 painter.setOpacity(current_opacity)
                 painter.resetTransform()
+                if not final:
+                    painter.save()
+                    painter.setCompositionMode(QPainter.RasterOp_SourceXorDestination)
+                    align = Qt.AlignVCenter | Qt.AlignHCenter
+                    screen_rect = element.get_selection_area(canvas=self).boundingRect()
+                    text = str(element.unique_index)
+                    br = painter.boundingRect(screen_rect, align, text)
+                    br.moveTopLeft(screen_rect.topLeft())
+                    font = painter.font()
+                    font.setPixelSize(int(screen_rect.height()))
+                    painter.setFont(font)
+                    painter.setPen(Qt.white)
+                    painter.setOpacity(0.4)
+                    painter.drawText(screen_rect, align, text)
+                    painter.restore()
         elif el_type == ToolID.removing:
             if self.Globals.CRASH_SIMULATOR:
                 1 / 0

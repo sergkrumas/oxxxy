@@ -3146,9 +3146,10 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
             pen, _, _ = self.elementsGetPenFromElement(element)
             width = pen.width()
             br = element.get_canvas_space_selection_area().boundingRect()
-            offset = width
-            ms = QMarginsF(offset, offset, offset, offset)
-            br = br.marginsAdded(ms)
+            if element.oxxxy_type not in [ToolID.picture]:
+                offset = width
+                ms = QMarginsF(offset, offset, offset, offset)
+                br = br.marginsAdded(ms)
             points.append(br.topLeft())
             points.append(br.bottomRight())
 

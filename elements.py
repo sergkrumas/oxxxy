@@ -2126,7 +2126,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
 
     def elementsAutoDeleteInvisibleElement(self, element):
         tool = self.current_tool
-        if tool in [ToolID.line, ToolID.pen, ToolID.marker]:
+        if tool in [ToolID.line, ToolID.pen, ToolID.marker, ToolID.multiframing]:
             if element.end_point == element.start_point:
                 self.elements.remove(element)
                 if self.tools_window:

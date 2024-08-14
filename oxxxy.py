@@ -47,7 +47,7 @@ from PyQt5.QtGui import (QPainterPath, QColor, QKeyEvent, QMouseEvent, QBrush, Q
 from _utils import (check_scancode_for, SettingsJson, generate_metainfo, build_valid_rect,
     build_valid_rectF, copy_image_file_to_clipboard, open_link_in_browser, save_meta_info,
     make_screenshot_pyqt, webRGBA, draw_shadow, draw_cyberpunk, get_bounding_pointsF,
-    generate_datetime_stamp, get_work_area_rect)
+    generate_datetime_stamp, get_work_area_rect, load_image_respect_orientation)
 
 from elements import ElementsMixin, ToolID
 from editor_autotest import EditorAutotestMixin
@@ -1071,7 +1071,7 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
             if isinstance(path_or_pix, QPixmap):
                 pixmap = path_or_pix
             else:
-                pixmap = QPixmap(path_or_pix)
+                pixmap = load_image_respect_orientation(path_or_pix)
             if pixmap.width() != 0:
                 element = self.elementsCreateNew(ToolID.picture)
                 element.pixmap = pixmap

@@ -22,7 +22,7 @@ Image by Namakxin
 
 ## Лицензия
 
-Весь исходный код выпущен под GNU GPL Version 2
+Весь исходный код выпущен под GNU GPL Version 3
 
 ## Мотивировка
 

@@ -2278,7 +2278,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
                 arrow_element.recalc_local_data_for_straight_objects()
                 arrow_element.construct_selection_path(self)
 
-    def elementsDrawDarkening(self, painter, prepare_pixmap=False):
+    def elementsDrawDarkening(self, painter, prepare_pixmap=False, final=False):
         if self.capture_region_rect:
             darkening_value = 0.0
             darkening_zone = QPainterPath()
@@ -2296,10 +2296,13 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
                     piece.addPolygon(element_area)
                     darkening_zone = darkening_zone.united(piece)
             if at_least_one_exists:
-                painter.setClipping(True)
-                capture_rect = QRectF(self.capture_region_rect)
-                capture_rect.setTopLeft(QPoint(0,0))
-                painter.setClipRect(QRectF(capture_rect))
+                if final:
+                    capture_rect = QRectF(self.capture_region_rect)
+                    capture_rect.setTopLeft(QPoint(0,0))
+                else:
+                    painter.setClipping(True)
+                    capture_rect = self.elementsMapToViewportRectF(self.capture_region_rect)
+                    painter.setClipRect(QRectF(capture_rect))
                 painter.setOpacity(0.1+0.9*darkening_value)
                 painter.setPen(Qt.NoPen)
                 painter.setBrush(QBrush(Qt.black))
@@ -2712,7 +2715,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
         # draw elements
         if not prepare_darkening:
             if not self.dark_pictures:
-                self.elementsDrawDarkening(painter)
+                self.elementsDrawDarkening(painter, final=final)
 
         # штампы (изображения) рисуем первыми, чтобы пометки всегда были поверх них
         all_visible_elements = self.elementsFilter()
@@ -2749,7 +2752,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
             self.elementsDrawSelectedElementsDottedOutlines(painter, all_visible_elements)
 
         if self.dark_pictures or prepare_darkening:
-            self.elementsDrawDarkening(painter)
+            self.elementsDrawDarkening(painter, final=final)
 
         if self.Globals.DEBUG and self.capture_region_rect and not final:
             painter.setPen(QPen(QColor(Qt.white)))

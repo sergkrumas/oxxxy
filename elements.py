@@ -3265,21 +3265,41 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
             m = Element.get_canvas_space_selection_area
             br_getter = lambda el: m(el).boundingRect()
 
-            if action == to_height:
-                if self.active_element:
-                    fit_height = br_getter(self.active_element).height()
-                else:
-                    fit_height = max(br_getter(el).height() for el in elements)
-            else:
-                fit_height = None
+            if True:
 
-            if action == to_width:
-                if self.active_element:
-                    fit_width = br_getter(self.active_element).width()
+                if action == to_height:
+                    if self.active_element:
+                        fit_height = self.active_element.height()
+                    else:
+                        fit_height = max(el.height() for el in elements)
                 else:
-                    fit_width = max(br_getter(el).width() for el in elements)
+                    fit_height = None
+
+                if action == to_width:
+                    if self.active_element:
+                        fit_width = self.active_element.width()
+                    else:
+                        fit_width = max(el.width() for el in elements)
+                else:
+                    fit_width = None
+
             else:
-                fit_width = None
+
+                if action == to_height:
+                    if self.active_element:
+                        fit_height = br_getter(self.active_element).height()
+                    else:
+                        fit_height = max(br_getter(el).height() for el in elements)
+                else:
+                    fit_height = None
+
+                if action == to_width:
+                    if self.active_element:
+                        fit_width = br_getter(self.active_element).width()
+                    else:
+                        fit_width = max(br_getter(el).width() for el in elements)
+                else:
+                    fit_width = None
 
             self.elementsArrangePictures(elements, fit_width, fit_height)
 
@@ -3294,16 +3314,29 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
             element = self.elementsPrepareElementCopyForModifications(source_element)
             self.elementsStopModificationProcess()
 
-            start_br = element.get_canvas_space_selection_area().boundingRect()
 
-            if target_height is not None:
-                scale = target_height / start_br.height()
+            if True:
+                if target_height is not None:
+                    scale = target_height / element.height
 
-            if target_width is not None:
-                scale = target_width / start_br.width()
+                if target_width is not None:
+                    scale = target_width / element.width
 
-            element.scale_x = scale
-            element.scale_y = scale
+            else:
+                start_br = element.get_canvas_space_selection_area().boundingRect()
+                if target_height is not None:
+                    scale = target_height / start_br.height()
+
+                if target_width is not None:
+                    scale = target_width / start_br.width()
+
+            if True:
+                # supporting image mirroring for both X and Y axes
+                element.scale_x = math.copysign(scale, element.scale_x)
+                element.scale_y = math.copysign(scale, element.scale_y)
+            else:
+                element.scale_x = scale
+                element.scale_y = scale
 
             br = element.get_canvas_space_selection_area().boundingRect()
 

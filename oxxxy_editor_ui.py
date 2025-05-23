@@ -1526,9 +1526,9 @@ class ToolsWindow(QWidget):
 
         # для пометок
         if self.Globals.USE_COLOR_PALETTE:
-            _type = "PALETTE"
+            _type = CustomSlider.TYPE_PALETTE
         else:
-            _type = "COLOR"
+            _type = CustomSlider.TYPE_COLOR
         self.color_slider = CustomSlider(_type, 400, 0.01, self.Globals.ENABLE_FLAT_EDITOR_UI)
         set_callbacks_for_sliders(self.color_slider)
         self.color_slider.installEventFilter(self)
@@ -1543,13 +1543,13 @@ class ToolsWindow(QWidget):
         self.chb_toolbool.stateChanged.connect(partial(self.parent().special_change_handler, self.on_parameters_changed))
         first_row.addWidget(self.chb_toolbool)
 
-        self.size_slider = CustomSlider("SCALAR", 180, 0.2, self.Globals.ENABLE_FLAT_EDITOR_UI)
+        self.size_slider = CustomSlider(CustomSlider.TYPE_SCALAR, 180, 0.2, self.Globals.ENABLE_FLAT_EDITOR_UI)
         set_callbacks_for_sliders(self.size_slider)
         self.size_slider.installEventFilter(self)
         self.size_slider.setToolTip("Слайдер размера")
         first_row.addWidget(self.size_slider)
 
-        self.opacity_slider = CustomSlider("SCALAR", 180, 1.0, self.Globals.ENABLE_FLAT_EDITOR_UI)
+        self.opacity_slider = CustomSlider(CustomSlider.TYPE_SCALAR, 180, 1.0, self.Globals.ENABLE_FLAT_EDITOR_UI)
         set_callbacks_for_sliders(self.opacity_slider)
         self.opacity_slider.installEventFilter(self)
         self.opacity_slider.setToolTip("Слайдер прозрачности")

@@ -34,6 +34,11 @@ __all__ = (
 )
 
 class CustomSlider(QWidget):
+
+    TYPE_SCALAR = 0
+    TYPE_COLOR = 1
+    TYPE_PALETTE = 2
+
     colorGrads = QLinearGradient(0, 0, 1, 0)
     colorGrads.setCoordinateMode(colorGrads.ObjectBoundingMode)
     xRatio = 1. / 6
@@ -46,14 +51,13 @@ class CustomSlider(QWidget):
     colorGrads.setColorAt(xRatio * 5, Qt.yellow)
     colorGrads.setColorAt(1, Qt.red)
 
-
     value_changed = pyqtSignal()
     value_changing_initiated = pyqtSignal()
     value_changing_finished = pyqtSignal()
 
     def __init__(self, _type, width, default_value, flat_look):
         super().__init__()
-        if _type == "PALETTE":
+        if _type == self.TYPE_PALETTE:
             self.default_value = 0.01
             self.value = 0.01
             self.palette_index = default_value
@@ -73,7 +77,7 @@ class CustomSlider(QWidget):
             QColor(0, 255, 0),
         )
         self.palette_radius = 15
-        if _type == "PALETTE":
+        if _type == self.TYPE_PALETTE:
             if self.palette_index > len(self.palette_colors) - 1:
                 self.palette_index = 0
             self.setFixedWidth(len(self.palette_colors)*self.palette_radius*3)
@@ -82,7 +86,7 @@ class CustomSlider(QWidget):
         self.image = None
         self.raw_value = 1.0
         self.flat_look = flat_look
-        if self.type == "PALETTE":
+        if self.type == self.TYPE_PALETTE:
             self.flat_look = True
         self.refresh_image()
 
@@ -90,7 +94,7 @@ class CustomSlider(QWidget):
         self.refresh_image()
 
     def refresh_image(self):
-        if self.type == "COLOR":
+        if self.type == self.TYPE_COLOR:
             self._inner_rect = self.rect()
             pixmap = QPixmap(self.rect().size())
             qp = QPainter(pixmap)
@@ -154,7 +158,7 @@ class CustomSlider(QWidget):
         painter.setRenderHint(QPainter.HighQualityAntialiasing, True)
         # painter.fillRect(self.rect(), QColor("#303940"))
         if self.isEnabled():
-            if self.type == "SCALAR":
+            if self.type == self.TYPE_SCALAR:
                 painter.setClipping(True)
                 self.mask(painter, "b")
                 self.draw_bar(painter, QColor("#1d2328"))
@@ -167,7 +171,7 @@ class CustomSlider(QWidget):
                 self.draw_bar(painter, Qt.gray)
                 # no more mask
                 painter.setClipping(False)
-            elif self.type == "COLOR":
+            elif self.type == self.TYPE_COLOR:
                 # gradient
                 gradient_path = QPainterPath()
                 rect = self.get_AB_rect()
@@ -192,7 +196,7 @@ class CustomSlider(QWidget):
                 painter.setClipRect(black_rect)
                 painter.fillPath(gradient_path, Qt.black)
                 painter.setClipping(False)
-            elif self.type == "PALETTE":
+            elif self.type == self.TYPE_PALETTE:
                 for n, color, point in self.get_color_list_points():
                     pen = QPen(color, self.palette_radius)
                     if n == self.palette_index:
@@ -202,7 +206,7 @@ class CustomSlider(QWidget):
                     painter.setPen(pen)
                     painter.drawPoint(point)
 
-            if not self.flat_look or self.type == "COLOR":
+            if not self.flat_look or self.type == self.TYPE_COLOR:
                 # draw button
                 path = QPainterPath()
                 r = QRectF(self.build_hot_rect(float=True))
@@ -227,11 +231,11 @@ class CustomSlider(QWidget):
                 painter.drawEllipse(r2)
                 painter.setPen(QPen(QColor(100, 100, 150), 1))
                 painter.drawEllipse(r.adjusted(1,1,-1,-1))
-                if self.type == "SCALAR":
+                if self.type == self.TYPE_SCALAR:
                     color = QColor(220, 220, 220)
                     painter.setBrush(color)
                     painter.drawEllipse(r2)
-                elif self.type == "COLOR":
+                elif self.type == self.TYPE_COLOR:
                     color = self.get_color()
                     painter.setBrush(color)
                     # r2.moveTop(r2.top()+10)
@@ -244,7 +248,7 @@ class CustomSlider(QWidget):
         return self.palette_index
 
     def get_color(self, value=None):
-        if self.type == "PALETTE":
+        if self.type == self.TYPE_PALETTE:
             try:
                 return self.palette_colors[self.palette_index]
             except:
@@ -287,7 +291,7 @@ class CustomSlider(QWidget):
         self.raw_value = dot(AP, AB)/dot(AB, AB)
         self.value = min(max(self.raw_value, 0.0), 1.0)
         # PALETTE
-        if self.type == 'PALETTE':
+        if self.type == self.TYPE_PALETTE:
             for n, color, point in self.get_color_list_points():
                 Pp = P - point
                 l = math.sqrt(dot(Pp, Pp))
@@ -331,15 +335,15 @@ def main():
 
     l = QVBoxLayout()
     l.addWidget(
-        CustomSlider('COLOR', 400, 1.0, False))
+        CustomSlider(CustomSlider.TYPE_COLOR, 400, 1.0, False))
     l.addWidget(
-        CustomSlider('SCALAR', 400, 1.0, False))
+        CustomSlider(CustomSlider.TYPE_SCALAR, 400, 1.0, False))
     l.addWidget(
-        CustomSlider('COLOR', 400, 1.0, True))
+        CustomSlider(CustomSlider.TYPE_COLOR, 400, 1.0, True))
     l.addWidget(
-        CustomSlider('SCALAR', 400, 1.0, True))
+        CustomSlider(CustomSlider.TYPE_SCALAR, 400, 1.0, True))
     l.addWidget(
-        CustomSlider('PALETTE', 400, 2, True))
+        CustomSlider(CustomSlider.TYPE_PALETTE, 400, 2, True))
 
     w.setLayout(l)
 

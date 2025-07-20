@@ -435,7 +435,7 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
             return
         if not self.tools_window:
             return
-        if not self.capture_region_rect.contains(cursor_pos):
+        if not self.capture_region_rect.contains(self.elementsMapToCanvas(cursor_pos)):
             return
         if self.current_tool not in [ToolID.line, ToolID.marker, ToolID.pen]:
             return

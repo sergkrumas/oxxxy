@@ -700,9 +700,14 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         case2 = self.is_rect_being_redefined
         if case2 or case1:
             painter.setPen(text_pen)
-            text_pos = input_rect.bottomRight() + QPoint(10, -10)
+            text_pos = input_rect.bottomRight() + QPointF(10, -10)
             input_r = build_valid_rectF(self.input_POINT1, self.input_POINT2)
-            painter.drawText(text_pos, "%dx%d" % (input_r.width(), input_r.height()))
+            text_value = "%dx%d" % (input_r.width(), input_r.height())
+            alignment = Qt.AlignLeft
+            text_rect = painter.boundingRect(QRectF(), alignment, text_value)
+            text_rect.moveBottomLeft(text_pos)
+            painter.fillRect(text_rect.adjusted(-5, -5, 5, 5), QBrush(Qt.black))
+            painter.drawText(text_rect, alignment, text_value)
 
     def build_hex_polygon(self, outer_rect):
         x = 3**0.5 / 2

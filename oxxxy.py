@@ -1615,6 +1615,10 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         reset_capture.setEnabled(capture_is_set)
         reset_capture.triggered.connect(self.elementsResetCapture)
 
+        wallpaper_mode = add_item("Режим создания обоины для рабочего стола")
+        wallpaper_mode.setEnabled(capture_is_set)
+        wallpaper_mode.triggered.connect(self.elementsSetWallpaperEnv)
+
         contextMenu.addSeparator()
 
         reset_panzoom = add_item("Сбросить смещение и зум")

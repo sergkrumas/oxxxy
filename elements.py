@@ -451,6 +451,8 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
         self.show_background = True
         self.dark_pictures = True
 
+        self.wallpaper_env_value = 0
+
         self.init2024Tools()
 
     def elementsStartModificationProcess(self, _type):
@@ -3160,6 +3162,29 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
             # обновление области захвата
             self.input_POINT2, self.input_POINT1 = get_bounding_pointsF(points)
             self.capture_region_rect = build_valid_rectF(self.input_POINT1, self.input_POINT2)
+
+        self.update()
+
+    def elementsSetWallpaperEnv(self):
+
+        # switching variable value between 0 and 1
+        self.wallpaper_env_value = 1 - self.wallpaper_env_value
+        if self.wallpaper_env_value == 0:
+            wh = QPointF(1920, 1080)
+        else:
+            wh = QPointF(2560, 1440)
+
+        # input point 1 should be the top left point and input point 2 should be the bottom right point,
+        # but this is not guaranteed, so we need to begin by building the valid rect
+        # self.capture_region_rect = build_valid_rectF(self.input_POINT1, self.input_POINT2)
+        # self.input_POINT1 = self.capture_region_rect.topLeft()
+        self.input_POINT1 = QPointF(0.0, 0.0)
+        self.input_POINT2 = self.input_POINT1 + wh
+        self.capture_region_rect = build_valid_rectF(self.input_POINT1, self.input_POINT2)
+
+        background_slot = self.elementsFindBackgroundSlot()
+        for el in background_slot.elements:
+            el.pixmap.fill(QColor('#0d1520'))
 
         self.update()
 

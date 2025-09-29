@@ -556,6 +556,13 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
             open_folder_btn.setFocusPolicy(Qt.NoFocus)
             open_folder_btn.setCursor(Qt.PointingHandCursor)
 
+            open_in_oxxxy_btn = QPushButton("Открыть в\nредакторе Oxxxy")
+            open_in_oxxxy_btn.setStyleSheet(self.button_style)
+            open_in_oxxxy_btn.setFixedWidth(self.WIDTH)
+            open_in_oxxxy_btn.clicked.connect(self.open_in_oxxxy)
+            open_in_oxxxy_btn.setFocusPolicy(Qt.NoFocus)
+            open_in_oxxxy_btn.setCursor(Qt.PointingHandCursor)
+
             self.layout.addSpacing(10)
             self.layout.addWidget(self.label)
             self.layout.addWidget(open_image_btn_gchr)
@@ -564,6 +571,9 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
             self.layout.addSpacing(10)
             self.layout.addWidget(open_folder_btn)
             self.layout.addSpacing(10)
+            self.layout.addWidget(open_in_oxxxy_btn)
+            self.layout.addSpacing(10)
+
 
             self.timer.start()
 
@@ -786,6 +796,9 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
         subprocess.Popen(args)
         # os.system("start {}".format(self.Globals.SCREENSHOT_FOLDER_PATH))
         self.close_notification_window_and_quit()
+
+    def open_in_oxxxy(self):
+        self.gl.invoke_screenshot_editor(request_type=self.RequestType.Editor, filepaths=[self.filepath])
 
     def countdown_handler(self):
         if self.underMouse():

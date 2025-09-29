@@ -1029,6 +1029,8 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         # для временного отображения текста в левом верхнем углу
         self.uncapture_mode_label_tstamp = time.time()
 
+        self.capture_redefine_start_value = None
+
     def set_saved_capture_frame(self):
         if self.tools_settings.get("savecaptureframe", False):
             rect_params = self.tools_settings.get("capture_frame", None)

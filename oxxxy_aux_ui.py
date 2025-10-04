@@ -556,7 +556,7 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
             open_folder_btn.setFocusPolicy(Qt.NoFocus)
             open_folder_btn.setCursor(Qt.PointingHandCursor)
 
-            open_in_oxxxy_btn = QPushButton("Открыть в\nредакторе Oxxxy")
+            open_in_oxxxy_btn = QPushButton("Открыть в Oxxxy")
             open_in_oxxxy_btn.setStyleSheet(self.button_style)
             open_in_oxxxy_btn.setFixedWidth(self.WIDTH)
             open_in_oxxxy_btn.clicked.connect(self.open_in_oxxxy)

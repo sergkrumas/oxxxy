@@ -614,36 +614,36 @@
     - заливка фона заранее заданным тёмным цветом
   - (29 сен 25) в окошко уведомения о сохранении скриншота внизу добавлена четвёртая кнопка, которая позволяет открыть сохранённый скриншот в редакторе Oxxxy
     - тем самым на диск сольётся сохранённый оригинал, который можно дальше препарировать в открывшемся редакторе
-  - (4 окт 25) при многократном вызове скриншотера (от 60 до 80 раз подряд) он в итоге крашится, и как следствие, его приходится запускать вручную. 
+  - (4 окт 25) при многократном вызове скриншотера (от 60 до 80 раз подряд) он в итоге крашится, и как следствие, его приходится запускать вручную.
     - характерные явления
       - начал замечать подобное с февраля 2025, когда начал делать очень много скриншотов за раз
       - после краша на экране появляется мизерное окошко с заголовком `python` или `pythonw`. Внутри окна только одна кнопка, текст для которой не задан. Иконки тоже не наблюдается, нет иконки приложения и на панели задач - там стандартная питоновская иконка. Нет иконки и в трее тоже.
-      - трейсбэк 
+      - трейсбэк
           ````Traceback (most recent call last):
-                    File "D:\core\shell\oxxxy\oxxxy.py", line 2466, in main
+                    File "oxxxy\oxxxy.py", line 2466, in main
                       _main()
-                    File "D:\core\shell\oxxxy\oxxxy.py", line 2378, in _main
+                    File "oxxxy\oxxxy.py", line 2378, in _main
                       subprocess.Popen([sys.executable, *sys.argv, RERUN_ARG])
-                    File "C:\Program Files\Python310\lib\subprocess.py", line 971, in __init__
+                    File "Python310\lib\subprocess.py", line 971, in __init__
                       self._execute_child(args, executable, preexec_fn, close_fds,
-                    File "C:\Program Files\Python310\lib\subprocess.py", line 1440, in _execute_child
+                    File "Python310\lib\subprocess.py", line 1440, in _execute_child
                       hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
                   OSError: [WinError 8] Недостаточно ресурсов памяти для обработки этой команды
 
                   During handling of the above exception, another exception occurred:
 
                   Traceback (most recent call last):
-                    File "D:\core\shell\oxxxy\launcher.pyw", line 29, in <module>
+                    File "oxxxy\launcher.pyw", line 29, in <module>
                       oxxxy.main()
-                    File "D:\core\shell\oxxxy\oxxxy.py", line 2468, in main
+                    File "oxxxy\oxxxy.py", line 2468, in main
                       excepthook(type(e), e, traceback.format_exc())
-                    File "D:\core\shell\oxxxy\oxxxy.py", line 2303, in excepthook
+                    File "oxxxy\oxxxy.py", line 2303, in excepthook
                       _restart_app(aftercrash=True)
-                    File "D:\core\shell\oxxxy\oxxxy.py", line 2323, in _restart_app
+                    File "oxxxy\oxxxy.py", line 2323, in _restart_app
                       subprocess.Popen([sys.executable, sys.argv[0], "-aftercrash"])
-                    File "C:\Program Files\Python310\lib\subprocess.py", line 971, in __init__
+                    File "Python310\lib\subprocess.py", line 971, in __init__
                       self._execute_child(args, executable, preexec_fn, close_fds,
-                    File "C:\Program Files\Python310\lib\subprocess.py", line 1440, in _execute_child
+                    File "Python310\lib\subprocess.py", line 1440, in _execute_child
                       hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
                   OSError: [WinError 8] Недостаточно ресурсов памяти для обработки этой команды
           ````

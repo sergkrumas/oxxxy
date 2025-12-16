@@ -840,6 +840,7 @@ def copy_image_file_to_clipboard(filepath):
         data = QMimeData()
         url = QUrl.fromLocalFile(filepath)
         data.setUrls([url])
+        data.setText(filepath)
         app.clipboard().setMimeData(data)
 
 def squarize_rect(rect):

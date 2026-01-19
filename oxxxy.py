@@ -2135,7 +2135,7 @@ def unregister_global_hotkeys():
     Globals.registred_key_seqs.clear()
 
 def restart_app_in_notification_mode(filepath):
-    args = [sys.executable, __file__, filepath, "-notification"]
+    args = [sys.executable, __file__, filepath, "-notification", '-user_mode']
     subprocess.Popen(args)
 
 def show_system_tray(app, icon):

@@ -798,8 +798,6 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
         self.close_notification_window_and_quit()
 
     def open_in_oxxxy(self):
-        # I completely forgot that notification instance is running debug mode by default!
-        self.Globals.DEBUG = False
         self.gl.invoke_screenshot_editor(request_type=self.RequestType.Editor, filepaths=[self.filepath])
 
     def countdown_handler(self):

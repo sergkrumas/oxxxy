@@ -2770,7 +2770,9 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
     def elementsDrawSystemCursor(self, painter):
         if self.tools_window and self.tools_window.chb_draw_cursor.isChecked():
             screenshot_cursor_position = self.elementsMapToViewport(self.screenshot_cursor_position)
-            painter.drawPixmap(screenshot_cursor_position, self.cursor_pixmap)
+            cur_data = self.cursors_data[self.default_system_cursor]
+            screenshot_cursor_position -= QPointF(*cur_data.hot_spot_offset)
+            painter.drawPixmap(screenshot_cursor_position, cur_data.pixmap)
 
     def elementsGetDrawOffsetAndZoomTransform(self, offset):
         translation = QTransform()

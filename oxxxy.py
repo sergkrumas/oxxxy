@@ -18,7 +18,7 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 from enum import Enum
 import datetime
 import sys
@@ -1530,6 +1530,17 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
 
         action = menu.exec_(QCursor().pos())
 
+    def set_screenshot_cursor(self):
+        menu = QMenu()
+        menu.setStyleSheet(self.context_menu_stylesheet)
+        for cur_name, cur_data in CanvasEditor.cursors_data.items():
+            set_action = menu.addAction(cur_name)
+            set_action.setCheckable(True)
+            set_action.setChecked(CanvasEditor.default_system_cursor == cur_name)
+            set_action.triggered.connect(lambda check_status, x=cur_name: setattr(CanvasEditor, 'default_system_cursor', x))
+
+        action = menu.exec_(QCursor().pos())
+
     def contextMenuEvent(self, event):
         if self.cancel_context_menu:
             self.cancel_context_menu = False
@@ -1620,6 +1631,9 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         wallpaper_mode = add_item("Режим создания обоины для рабочего стола")
         wallpaper_mode.setEnabled(capture_is_set)
         wallpaper_mode.triggered.connect(self.elementsSetWallpaperEnv)
+
+        screenshot_cursor_menu = add_item("Выбрать курсор для скриншота...")
+        screenshot_cursor_menu.triggered.connect(self.set_screenshot_cursor)
 
         contextMenu.addSeparator()
 
@@ -2168,6 +2182,51 @@ def hide_all_windows():
     if SettingsWindow.instance:
         SettingsWindow.instance.hide()
 
+def is_cursor_hand_pointer():
+    import win32gui
+    import win32con
+    # Get information about the current cursor
+    # The result is a tuple (flags, hcursor, (x,y))
+    cursor_info = win32gui.GetCursorInfo()
+    current_cursor_handle = cursor_info[1]
+
+    # Get the handle for the standard hand (link select) cursor
+    # IDC_HAND is the constant for the hand cursor
+    standard_hand_handle = win32gui.LoadCursor(0, win32con.IDC_HAND)
+
+    # Compare the current cursor handle with the standard hand cursor handle
+    if current_cursor_handle == standard_hand_handle:
+        return True
+    else:
+        # Note: Some applications might use custom hand cursors, 
+        # which will have a different handle/ID. This check only 
+        # works for the standard Windows 'IDC_HAND' cursor.
+        return False
+
+def init_system_cursor_pos():
+
+    RESOURCE_CURSORS_DATA = [
+        ('arrow.png', (25, 25), (0, 0)),
+        ('pointing_hand.png', (24, 24), (7, 0)),
+    ]
+
+    data_class = type('CursorData', (), {})
+    CanvasEditor.cursors_data = defaultdict(data_class)
+    cur_path = lambda x: os.path.join(os.path.dirname(__file__), 'resources', x)
+    for filename, size, hot_spot_offset in RESOURCE_CURSORS_DATA:
+        pixmap = QPixmap(cur_path(filename))
+        pixmap = pixmap.scaled(size[0], size[1], Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        cursor_name, ext = os.path.splitext(filename)
+        CanvasEditor.cursors_data[cursor_name].pixmap = pixmap
+        CanvasEditor.cursors_data[cursor_name].hot_spot_offset = hot_spot_offset
+
+    if is_cursor_hand_pointer():
+        CanvasEditor.default_system_cursor = 'pointing_hand'
+    else:
+        CanvasEditor.default_system_cursor = 'arrow'
+
+    CanvasEditor.screenshot_cursor_position = QCursor().pos()
+
 def invoke_screenshot_editor(request_type=None, filepaths=None):
     if request_type is None:
         raise Exception("Unknown request type")
@@ -2178,9 +2237,7 @@ def invoke_screenshot_editor(request_type=None, filepaths=None):
     datetime_stamp = generate_datetime_stamp()
     # started_time = time.time()
 
-    CanvasEditor.screenshot_cursor_position = QCursor().pos()
-    cursor_filepath = os.path.join(os.path.dirname(__file__), 'resources', 'cursor.png')
-    CanvasEditor.cursor_pixmap = QPixmap(cursor_filepath).scaled(25, 25, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+    init_system_cursor_pos()
 
     screenshot_image = make_screenshot_pyqt()
     if request_type == RequestType.Fragment:

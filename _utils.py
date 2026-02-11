@@ -335,33 +335,21 @@ def generate_datetime_stamp():
     return datetime.datetime.now().strftime("%Y %m %d %H:%M:%S")
 
 def get_bounding_points(points):
-    MAX = sys.maxsize
-    left = MAX
-    right = -MAX
-    top = MAX
-    bottom = -MAX
     if not points:
         raise Exception("Empty list!")
-    for p in points:
-        left = min(int(p.x()), left)
-        right = max(int(p.x()), right)
-        top = min(int(p.y()), top)
-        bottom = max(int(p.y()), bottom)
-    return QPoint(left, top), QPoint(right, bottom)
+    left = min(p.x() for p in points)
+    right = max(p.x() for p in points)
+    top = min(p.y() for p in points)
+    bottom = max(p.y() for p in points)
+    return QPoint(int(left), int(top)), QPoint(int(right), int(bottom))
 
 def get_bounding_pointsF(points):
-    MAX = float(sys.maxsize)
-    left = MAX
-    right = -MAX
-    top = MAX
-    bottom = -MAX
     if not points:
         raise Exception("Empty list!")
-    for p in points:
-        left = min(p.x(), left)
-        right = max(p.x(), right)
-        top = min(p.y(), top)
-        bottom = max(p.y(), bottom)
+    left = min(p.x() for p in points)
+    right = max(p.x() for p in points)
+    top = min(p.y() for p in points)
+    bottom = max(p.y() for p in points)
     return QPointF(left, top), QPointF(right, bottom)
 
 def build_valid_rect(p1, p2):

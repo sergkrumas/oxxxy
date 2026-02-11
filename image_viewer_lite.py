@@ -203,17 +203,11 @@ class ViewerWindow(QWidget):
 
     def set_size_and_position(self):
         desktop = QDesktopWidget()
-        MAX = 1000000000
-        left = MAX
-        right = -MAX
-        top = MAX
-        bottom = -MAX
-        for i in range(0, desktop.screenCount()):
-            r = desktop.screenGeometry(screen=i)
-            left = min(r.left(), left)
-            right = max(r.right(), right)
-            top = min(r.top(), top)
-            bottom = max(r.bottom(), bottom)
+        rects = [desktop.screenGeometry(screen=i) for i in range(desktop.screenCount())]
+        left = min(r.left() for r in rects)
+        right = max(r.right() for r in rects)
+        top = min(r.top() for r in rects)
+        bottom = max(r.bottom() for r in rects)
         self.move(0,0)
         self.resize(right-left+1, bottom-top+1)
         self._all_monitors_rect = QRect(QPoint(left, top), QPoint(right+1, bottom+1))

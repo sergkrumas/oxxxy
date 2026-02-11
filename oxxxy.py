@@ -61,7 +61,7 @@ from oxxxy_editor_ui import (PictureInfo, ToolsWindow)
 class Globals():
     DEBUG = True
     DEBUG_SETTINGS_WINDOW = False
-    DEBUG_TRAY_MENU_WINDOW = False
+    DEBUG_RIGHT_CLICK_TRAY_WINDOW = False
     DEBUG_ELEMENTS = True
     DEBUG_ELEMENTS_PICTURE_FRAMING = True
     DEBUG_ELEMENTS_COLLAGE = False
@@ -2483,7 +2483,7 @@ def _main():
     else:
         # editor mode
         if Globals.DEBUG or Globals.RUN_ONCE:
-            if Globals.DEBUG_TRAY_MENU_WINDOW:
+            if Globals.DEBUG_RIGHT_CLICK_TRAY_WINDOW:
                 NotificationOrMenu(menu=True).place_window()
             elif Globals.DEBUG_SETTINGS_WINDOW:
                 init_global_hotkeys_base()

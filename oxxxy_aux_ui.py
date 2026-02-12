@@ -211,8 +211,9 @@ class StylizedUIBase():
         distance = QVector2D(diff).length()
         size = close_btn_rect.width()/2
         client_area = QRect(QPoint(close_btn_rect.x(), 0), QSize(int(size), int(size)))
-        return distance < self.CLOSE_BUTTON_RADIUS and \
+        result = distance < self.CLOSE_BUTTON_RADIUS and \
             client_area.contains(self.mapped_cursor_pos())
+        return result
 
     def draw_close_button(self, painter):
         if self.inside_close_button():
@@ -859,6 +860,10 @@ class NotifyDialog(QWidget, StylizedUIBase):
 
         self.resize(min(self.WIDTH, text_rect.width()+200), 200)
         self.setMouseTracking(True)
+
+        # делаем лебйл "прозрачным" для сообщений мыши, чтобы
+        # смена курсора из StylizedUIBase работала правильно
+        self.label.setAttribute(Qt.WA_TransparentForMouseEvents)
 
     def yes_handler(self):
         self.close()

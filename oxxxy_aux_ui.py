@@ -969,7 +969,6 @@ class InputFilesTrayWindow(QWidget, StylizedUIBase):
         paths = []
         for i in range(self.ifl.count()):
             item = self.ifl.item(i)
-            # item_widget = self.ifl.itemWidget(item)
             image_data_index = item.data(Qt.UserRole)
             image_data = _list[image_data_index]
             if not image_data.error:
@@ -1055,8 +1054,6 @@ class InputFilesTrayWindow(QWidget, StylizedUIBase):
         self.nd = None
 
         label_text = "Редактор коллажей"
-        # sub_label = 'test'
-        # label_text += f"\n\n{sub_label}"
         self.label = QLabel()
         self.label.setText(label_text)
         self.label.setStyleSheet(self.title_label_style)

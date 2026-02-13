@@ -996,7 +996,7 @@ class InputFilesTrayWindow(QWidget, StylizedUIBase):
             # приходится его пересоздавать.
             # Если кажется, что это можно сделать легче - это просто кажется.
             # В вариантах попроще приложуха падает, не стоит пытаться улушчить это,
-            # здесь всё сделано учитывая уже набитые шишки. 
+            # здесь всё сделано учитывая уже набитые шишки.
             image_data_index = item.data(Qt.UserRole)
             image_data = _list[image_data_index]
             self.add_item(item, image_data)
@@ -1160,7 +1160,7 @@ class InputFilesTrayWindow(QWidget, StylizedUIBase):
         self.layout.addWidget(self.deep_scan_chb)
         self.layout.addSpacing(5)
         self.layout.addWidget(self.default_savepath_chb)
-       
+
 
         self.layout.addSpacing(1)
         self.layout.addLayout(horLayout)

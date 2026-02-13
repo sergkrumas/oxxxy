@@ -2215,8 +2215,8 @@ def is_cursor_hand_pointer():
     if current_cursor_handle == standard_hand_handle:
         return True
     else:
-        # Note: Some applications might use custom hand cursors, 
-        # which will have a different handle/ID. This check only 
+        # Note: Some applications might use custom hand cursors,
+        # which will have a different handle/ID. This check only
         # works for the standard Windows 'IDC_HAND' cursor.
         return False
 

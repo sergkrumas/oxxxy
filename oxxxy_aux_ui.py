@@ -23,19 +23,24 @@ import os
 import subprocess
 import time
 import math
-from functools import partial
+from functools import partial, lru_cache
+
+import pickle
+
 
 from PyQt5.QtWidgets import (QWidget, QMessageBox, QMenu, QFileDialog, QHBoxLayout, QCheckBox,
-                                    QVBoxLayout, QPushButton, QLabel, QApplication, QDesktopWidget)
-from PyQt5.QtCore import (QPoint, QRect, QTimer, Qt, QSize, QRectF)
+    QVBoxLayout, QPushButton, QLabel, QApplication, QDesktopWidget, QListWidget, QAbstractItemView,
+                                    QListWidgetItem, QSpacerItem, QToolButton, QSizePolicy, )
+from PyQt5.QtCore import (QPoint, QRect, QTimer, Qt, QSize, QRectF, pyqtSignal)
 from PyQt5.QtGui import (QPainterPath, QColor, QBrush, QPainter, QPen, QCursor, QVector2D,
-                                                                                    QFontMetrics)
+                                                                QFontMetrics, QPixmap)
 
 from _utils import (SettingsJson, get_creation_date, open_link_in_browser, open_in_google_chrome)
 
 from key_seq_edit import KeySequenceEdit
 from on_windows_startup import (add_to_startup, is_app_in_startup, remove_from_startup)
 
+import sip
 
 __all__ = (
     'SettingsWindow',
@@ -161,7 +166,7 @@ class StylizedUIBase():
 
     def mouseReleaseEvent(self, event):
         if self.inside_close_button():
-            if self.Globals.DEBUG:
+            if self.Globals.DEBUG and not self.Globals.DEBUG_INPUT_FILES_TRAY_WINDOW:
                 sys.exit()
             else:
                 self.hide()
@@ -176,6 +181,8 @@ class StylizedUIBase():
         )
         return close_btn_rect
 
+    BACKGROUND_COLOR = QColor("#303940")
+
     def paintEvent(self, event):
         painter = QPainter()
         painter.begin(self)
@@ -187,7 +194,7 @@ class StylizedUIBase():
         path.addRoundedRect(QRectF(self.rect()), 10, 10)
         painter.setClipPath(path)
         painter.setPen(Qt.NoPen)
-        color = QColor("#303940")
+        color = self.__class__.BACKGROUND_COLOR
         v = self.temp_v
         color = QColor(48+v, 57+v, 64+v)
         painter.setBrush(QBrush(color))
@@ -692,21 +699,8 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
         if event.mimeData().hasUrls():
             event.setDropAction(Qt.CopyAction)
             event.accept()
-            paths = []
-            for url in event.mimeData().urls():
-                if url.isLocalFile():
-                    path = str(url.toLocalFile())
-                    # if not os.path.isdir(path):
-                    #     path = os.path.dirname(path)
-                    paths.append(path)
-                else:
-                    pass
-                    # url = url.url()
-                    # download_file(url)
-            if self.Globals.DEBUG:
-                to_print = f'Drop Event Data Local Paths: {paths}'
-                print(to_print)
-            self.start_editor_in_compile_mode(filepaths=paths)
+            self.hide()
+            self.gl.compile_mode_input_files_drop_event(event)
         else:
             event.ignore()
 
@@ -788,7 +782,7 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
 
     def start_editor_in_compile_mode(self, filepaths=None):
         self.hide()
-        self.gl.invoke_screenshot_editor(request_type=self.RequestType.Editor, filepaths=filepaths)
+        self.gl.invoke_screenshot_editor(request_type=self.RequestType.Editor, filepaths_or_pixmaps=filepaths)
 
     def open_folder(self):
         SettingsWindow.set_screenshot_folder_path(get_only=True)
@@ -799,7 +793,7 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
         self.close_notification_window_and_quit()
 
     def open_in_oxxxy(self):
-        self.gl.invoke_screenshot_editor(request_type=self.RequestType.Editor, filepaths=[self.filepath])
+        self.gl.invoke_screenshot_editor(request_type=self.RequestType.Editor, filepaths_or_pixmaps=[self.filepath])
 
     def countdown_handler(self):
         if self.underMouse():
@@ -823,6 +817,418 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
         self.Globals.FULL_STOP = True
         app = QApplication.instance()
         app.quit()
+
+class InputFilesListWidget(QListWidget):
+
+    def __init__(self):
+        super().__init__()
+        # возможности выделить несколько айтемов нам не надо
+        # self.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        self.setWordWrap(True)
+        self.setDragDropMode(QAbstractItemView.InternalMove)
+
+        self.setMinimumSize(QSize(300, 500))
+
+
+
+class CustomToolButton(QToolButton):
+
+    def __init__(self, pixmap):
+        super().__init__()
+        self.pixmap = pixmap
+        self.setFixedWidth(20)
+        self.setFixedHeight(20)
+
+    def paintEvent(self, event):
+        painter = QPainter()
+        painter.begin(self)
+        if self.underMouse():
+            painter.setOpacity(1.0)
+        else:
+            painter.setOpacity(0.5)
+        painter.drawPixmap(self.rect(), self.pixmap)
+        painter.end()
+
+
+
+
+class PreviewStatusWidget(QWidget):
+
+    sendRemoveItem = pyqtSignal(object)
+
+
+    @classmethod
+    @lru_cache
+    def gen_error_pixmap(cls):
+        return cls.gen_preview_pixmap('ERROR!', color=Qt.red)
+
+    @classmethod
+    @lru_cache
+    def gen_pending_pixmap(cls):
+        return cls.gen_preview_pixmap('PENDING')
+
+    @classmethod
+    def gen_preview_pixmap(cls, text, color=Qt.white):
+        pix = QPixmap(50, 50)
+        pix.fill(Qt.transparent)
+        pix_painter = QPainter()
+        pix_painter.begin(pix)
+        pix_painter.setPen(QPen(color))
+        font = pix_painter.font()
+        font.setPixelSize(10)
+        font.setBold(True)
+        pix_painter.setFont(font)
+        pix_painter.drawText(QRect(0, 0, 50, 50), Qt.AlignVCenter | Qt.AlignHCenter, text)
+        pix_painter.end()
+        return pix
+
+    def __init__(self, parent, *args):
+        super().__init__()
+
+        self.setGeometry(QRect(0, 0, 250, 60))
+        self.setWindowTitle("Form")
+
+        horizontalLayout = QHBoxLayout()
+        horizontalLayout.setContentsMargins(0, 0, 0, 0)
+        self.label = QLabel('TextLabel')
+        self.label.setStyleSheet('color: white;')
+
+
+        self.pic = QLabel()
+        self.pic.setGeometry(0, 0, 50, 50)
+        pixmap = self.__class__.gen_pending_pixmap()
+        # pixmap = self.gen_pixmap()
+        # print(sip.unwrapinstance(pixmap), id(pixmap))
+        self.pic.setPixmap(pixmap)
+
+        horizontalLayout.addWidget(self.pic)
+        horizontalLayout.addWidget(self.label)
+        horizontalLayout.addStretch()
+        self.close_button = CustomToolButton(parent.Globals.icon_halt_mini_pixmap)
+        self.close_button.setText("x")
+        horizontalLayout.addWidget(self.close_button)
+        horizontalLayout.addSpacing(5)
+
+        self.setLayout(horizontalLayout)
+        self.close_button.setGeometry(0, 0, 20, 20)
+
+        self.sendRemoveItem.connect(parent.removeItem)
+        self.close_button.clicked.connect(self.closeButtonClicked)
+
+    def setText(self, text):
+        self.label.setText(text)
+
+    def setPreview(self, pixmap):
+        self.pic.setPixmap(pixmap)
+
+    def getText(self):
+        return self.label.text()
+
+    def closeButtonClicked(self):
+        self.sendRemoveItem.emit(self.label.text())
+
+
+
+class InputFilesTrayWindow(QWidget, StylizedUIBase):
+
+    WIDTH = 1500
+    CLOSE_BUTTON_RADIUS = 50
+    WIDTH = 400
+
+    instance = None
+
+    def removeItem(self, text):
+        for i in range(self.ifl.count()):
+            item = self.ifl.item(i)
+            item_widget = self.ifl.itemWidget(item)
+            if item_widget.getText() == text:
+                self.ifl.takeItem(i)
+                break
+
+    def updatePreview(self, image_data):
+        if image_data.error:
+            pixmap = PreviewStatusWidget.gen_error_pixmap()
+        else:
+            pixmap = image_data.preview
+        image_data._ui_list_item_widget.setPreview(pixmap)
+        self.update()
+
+    def get_selected_item_dirpath(self):
+        _list = self.gl.PrepareThreadImageData.input_list
+        items = self.ifl.selectedItems()
+        if items:
+            item = items[0]
+            image_data_index = item.data(Qt.UserRole)
+            image_data = _list[image_data_index]
+            return os.path.dirname(image_data.filepath)
+        else:
+            return None
+
+    def get_selected_input_files(self):
+        _list = self.gl.PrepareThreadImageData.input_list
+        paths = []
+        for i in range(self.ifl.count()):
+            item = self.ifl.item(i)
+            # item_widget = self.ifl.itemWidget(item)
+            image_data_index = item.data(Qt.UserRole)
+            image_data = _list[image_data_index]
+            if not image_data.error:
+                paths.append(image_data.source)
+        return paths
+
+    def reverse_list_widget_items(self):
+        il = self.ifl
+        count = il.count()
+        items = []
+
+        for i in range(il.count()):
+            item = il.item(i)
+            item_widget = il.itemWidget(item)
+            items.append(item)
+
+        for item in range(il.count()):
+            item = il.takeItem(0)
+
+        _list = self.gl.PrepareThreadImageData.input_list
+        for item in reversed(items):
+            # здесь занимаемся полным идиотизмом,
+            # потому что PreviewStatusWidget заново не задать айтему,
+            # приходится его пересоздавать.
+            # Если кажется, что это можно сделать легче - это просто кажется.
+            # В вариантах попроще приложуха падает, не стоит пытаться улушчить это,
+            # здесь всё сделано учитывая уже набитые шишки. 
+            image_data_index = item.data(Qt.UserRole)
+            image_data = _list[image_data_index]
+            self.add_item(item, image_data)
+            self.updatePreview(image_data)
+
+    def add_item(self, item, image_data, index=None):
+        if index is not None:
+            item.setData(Qt.UserRole, index)
+
+        item_widget = PreviewStatusWidget(self)
+        item_widget.setText(image_data.filename)
+
+        self.ifl.addItem(item)
+        self.ifl.setItemWidget(item, item_widget)
+
+        image_data._ui_list_item = item
+        image_data._ui_list_item_widget = item_widget
+
+    def add_image_data_to_ui(self, image_data, index):
+        item = QListWidgetItem()
+        self.add_item(item, image_data, index=index)
+
+    def clearlist_btn_handler(self):
+        if self.gl.PrepareThread.instance:
+            self.gl.PrepareThread.instance.terminate()
+        self.ifl.clear()
+        self.gl.PrepareThreadImageData.input_list.clear()
+
+    def hide_away(self):
+        super().hide()
+
+    def hide(self):
+        # при нажатии на крест в правом верхнем углу
+        if self.nd is not None:
+            self.nd.close()
+
+        self.clearlist_btn_handler()
+        if self.Globals.DEBUG:
+            super().close()
+        else:
+            self.gl._restart_app()
+            sys.exit()
+
+    def __init__(self, ):
+        super().__init__()
+
+        self.setWindowTitle(f"Oxxxy Screenshoter {self.Globals.VERSION_INFO} {self.Globals.AUTHOR_INFO}")
+        self.show_at_center = False
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
+        self.setAttribute(Qt.WA_TranslucentBackground, True)
+        self.layout = QVBoxLayout()
+        margin = 5
+        self.layout.setContentsMargins(margin, margin, margin, margin)
+
+
+        self.nd = None
+
+        label_text = "Редактор коллажей"
+        # sub_label = 'test'
+        # label_text += f"\n\n{sub_label}"
+        self.label = QLabel()
+        self.label.setText(label_text)
+        self.label.setStyleSheet(self.title_label_style)
+        self.label.setFixedWidth(self.WIDTH - self.CLOSE_BUTTON_RADIUS)
+
+        self.ifl = ifl = InputFilesListWidget()
+
+        self.ifl.verticalScrollBar().setStyleSheet("""
+            QScrollBar {
+                border-radius: 5px;
+                background: rgb(40, 50, 60);
+            }
+            QScrollBar:vertical {
+                width: 10px;
+                border-radius: 5px;
+            }
+            QScrollBar::handle {
+                background: rgb(210, 210, 210);
+                border-radius: 5px;
+            }
+            QScrollBar::handle:vertical {
+                width: 10px;
+                min-height: 10px;
+                border-radius: 5px;
+            }
+            QScrollBar::add-line:vertical {
+                 background: transparent;
+            }
+            QScrollBar::sub-line:vertical {
+                 background: transparent;
+            }
+            QScrollBar::up-arrow:vertical, QScrollBar::down-arrow:vertical {
+                 background: transparent;
+            }
+            QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+                 background: transparent;
+            }
+
+            """)
+
+        rgb_code = self.BACKGROUND_COLOR.darker(120).name()
+        input_files_style = f"""
+        QListWidget{{
+            background: {rgb_code};
+            border: none;
+            border-radius: 5px;
+        }}
+
+        QListWidget::item{{
+            color: white;
+            height: 50px;
+        }}
+        """
+        ifl.setStyleSheet(input_files_style)
+
+        deep_scan_chb = self.deep_scan_chb = QCheckBox("Искать в подпапках")
+        deep_scan_chb.setStyleSheet(self.settings_checkbox)
+        deep_scan_chb.setChecked(True)
+
+        default_savepath_chb = self.default_savepath_chb = QCheckBox("Сохранить в папку по умолчанию")
+        default_savepath_chb.setStyleSheet(self.settings_checkbox)
+        default_savepath_chb.setChecked(True)
+
+        default_savepath_chb.stateChanged.connect(self.default_savepath_chb_handler)
+
+        letsgo_btn = self.letsgo_btn = QPushButton("В редактор!")
+        letsgo_btn.setStyleSheet(self.button_style)
+        letsgo_btn.setFixedWidth(self.WIDTH)
+        letsgo_btn.clicked.connect(self.startEditor)
+        letsgo_btn.setFocusPolicy(Qt.NoFocus)
+        letsgo_btn.setCursor(Qt.PointingHandCursor)
+
+        reverse_btn = QPushButton("Обратный\nпорядок")
+        reverse_btn.setStyleSheet(self.button_style)
+        reverse_btn.setFixedWidth(self.WIDTH)
+        reverse_btn.clicked.connect(self.reverse_list_widget_items)
+        reverse_btn.setFocusPolicy(Qt.NoFocus)
+        reverse_btn.setCursor(Qt.PointingHandCursor)
+
+        clearlist_btn = QPushButton("Очистить")
+        clearlist_btn.setStyleSheet(self.button_style)
+        clearlist_btn.setFixedWidth(self.WIDTH)
+        clearlist_btn.clicked.connect(self.clearlist_btn_handler)
+        clearlist_btn.setFocusPolicy(Qt.NoFocus)
+        clearlist_btn.setCursor(Qt.PointingHandCursor)
+
+
+        self.ifl.itemSelectionChanged.connect(self.list_selection_handler)
+        # self.ifl.currentItemChanged.connect(self.list_selection_handler)
+
+
+        horLayout = self.horLayout = QHBoxLayout()
+        horLayout.addWidget(clearlist_btn)
+        horLayout.addWidget(reverse_btn)
+
+        self.layout.addSpacing(10)
+        self.layout.addWidget(self.label)
+        # self.layout.addSpacing(20)
+        self.layout.addWidget(ifl)
+        self.layout.addSpacing(5)
+        self.layout.addWidget(self.deep_scan_chb)
+        self.layout.addSpacing(5)
+        self.layout.addWidget(self.default_savepath_chb)
+       
+
+        self.layout.addSpacing(1)
+        self.layout.addLayout(horLayout)
+
+        self.layout.addSpacing(20)
+        self.layout.addWidget(letsgo_btn)
+
+        self.setFixedWidth(self.WIDTH+margin*2)
+
+        for btn in [clearlist_btn, reverse_btn]:
+            btn.setFixedWidth(int(self.width()/2.2))
+
+
+        self.setLayout(self.layout)
+        self.setMouseTracking(True)
+
+        self.__class__.instance = self
+
+        self.setAcceptDrops(True)
+
+
+    def list_selection_handler(self):
+        if self.default_savepath_chb.underMouse():
+            pass
+        else:
+            items = self.ifl.selectedItems()
+            self.default_savepath_chb.setChecked(not bool(items))
+
+    def default_savepath_chb_handler(self, state):
+        if self.ifl.underMouse():
+            pass
+        else:
+            if self.default_savepath_chb.isChecked():
+                self.ifl.clearSelection()
+            else:
+                count = self.ifl.count()
+                if count > 0:
+                    item = self.ifl.item(0)
+                    self.ifl.setCurrentItem(item)
+
+    def startEditor(self, event):
+        inst = self.gl.PrepareThread.instance
+        if inst and inst.isRunning():
+            self.letsgo_btn.setText("Дождитесь обработки...")
+            QApplication.instance().processEvents()
+            inst.wait()
+        content = self.get_selected_input_files()
+        if content:
+            self.gl.compile_mode_input_files_start()
+        else:
+            self.nd = NotifyDialog(label_text="Список пуст")
+            self.nd.show()
+
+    def dragEnterEvent(self, event):
+        mime_data = event.mimeData()
+        if mime_data.hasUrls() or mime_data.hasImage():
+            event.accept()
+        else:
+            event.ignore()
+
+    def dropEvent(self, event):
+        if event.mimeData().hasUrls():
+            event.setDropAction(Qt.CopyAction)
+            event.accept()
+            self.gl.compile_mode_input_files_drop_event(event)
+        else:
+            event.ignore()
+
 
 class NotifyDialog(QWidget, StylizedUIBase):
     WIDTH = 1500

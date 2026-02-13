@@ -39,8 +39,8 @@ from key_seq_edit import KeySequenceEdit
 
 from PyQt5.QtWidgets import (QSystemTrayIcon, QWidget, QMessageBox, QMenu, QFileDialog,
     QCheckBox, QWidgetAction, QApplication, QDesktopWidget, QActionGroup, QSpinBox)
-from PyQt5.QtCore import (pyqtSignal, QPoint, QPointF, pyqtSlot, QRect, QEvent,
-    Qt, QSize, QRectF, QAbstractNativeEventFilter, QAbstractEventDispatcher)
+from PyQt5.QtCore import (pyqtSignal, QPoint, QPointF, pyqtSlot, QRect, QEvent, QDataStream, QIODevice,
+    Qt, QSize, QRectF, QAbstractNativeEventFilter, QAbstractEventDispatcher, QThread, QByteArray)
 from PyQt5.QtGui import (QPainterPath, QColor, QKeyEvent, QMouseEvent, QBrush, QPixmap,
     QPainter, QWindow, QImage, QPen, QIcon, QFont, QCursor, QPolygonF, QFontDatabase)
 
@@ -53,7 +53,8 @@ from elements import ElementsMixin, ToolID
 from editor_autotest import EditorAutotestMixin
 from image_viewer_lite import ViewerWindow
 
-from oxxxy_aux_ui import (SettingsWindow, NotificationOrMenu, NotifyDialog, QuitDialog)
+from oxxxy_aux_ui import (SettingsWindow, NotificationOrMenu, NotifyDialog, QuitDialog,
+                                                                        InputFilesTrayWindow)
 from oxxxy_editor_ui import (PictureInfo, ToolsWindow)
 
 
@@ -62,6 +63,7 @@ class Globals():
     DEBUG = True
     DEBUG_SETTINGS_WINDOW = False
     DEBUG_RIGHT_CLICK_TRAY_WINDOW = False
+    DEBUG_INPUT_FILES_TRAY_WINDOW = True
     DEBUG_ELEMENTS = True
     DEBUG_ELEMENTS_PICTURE_FRAMING = True
     DEBUG_ELEMENTS_COLLAGE = False
@@ -82,6 +84,8 @@ class Globals():
 
     ARRANGE_ROWS = 0
     ARRANGE_COLS = 2
+
+    PREVIEW_WIDTH = 50
 
     # saved settings
     ENABLE_FLAT_EDITOR_UI = False
@@ -112,6 +116,8 @@ class Globals():
 
     VERSION_INFO = "v0.94"
     AUTHOR_INFO = "by Sergei Krumas"
+
+    _canvas_editor = None
 
     background_threads = []
 
@@ -216,9 +222,18 @@ class Globals():
         cls.icon_multiframing = QIcon(path)
         cls.icon_refresh = QIcon(bitmap_refresh)
 
+        size = 20
+        cls.icon_halt_mini_pixmap = bitmap_halt.scaled(size, size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+
     @staticmethod
     def get_screenshot_filepath(params):
-        return os.path.join(Globals.SCREENSHOT_FOLDER_PATH, f"{params}.png")
+        ce = Globals._canvas_editor
+        root = Globals.SCREENSHOT_FOLDER_PATH
+        if ce is not None:
+            if ce.save_rootfolderpath_override is not None:
+                root = ce.save_rootfolderpath_override
+        print(root, 'roooooooooooooooooooot')
+        return os.path.join(root, f"{params}.png")
 
 
 RegionInfo = namedtuple('RegionInfo', 'setter coords getter')
@@ -1024,6 +1039,8 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         self.uncapture_mode_label_tstamp = time.time()
 
         self.capture_redefine_start_value = None
+
+        self.save_rootfolderpath_override = None
 
     def set_saved_capture_frame(self):
         if self.tools_settings.get("savecaptureframe", False):
@@ -2227,7 +2244,7 @@ def init_system_cursor_pos():
 
     CanvasEditor.screenshot_cursor_position = QCursor().pos()
 
-def invoke_screenshot_editor(request_type=None, filepaths=None):
+def invoke_screenshot_editor(request_type=None, filepaths_or_pixmaps=None, save_rootfolderpath_override=None):
     if request_type is None:
         raise Exception("Unknown request type")
     # если было открыто окно-меню около трея - прячем его
@@ -2251,9 +2268,9 @@ def invoke_screenshot_editor(request_type=None, filepaths=None):
             path = SettingsJson().get_data("SCREENSHOT_FOLDER_PATH")
             if not path:
                 path = ""
-            filepaths = get_filepaths_dialog(path=path)
+            _filepaths = get_filepaths_dialog(path=path)
             Globals._canvas_editor = CanvasEditor(screenshot_image, metadata, datetime_stamp)
-            Globals._canvas_editor.request_images_editor_mode(filepaths)
+            Globals._canvas_editor.request_images_editor_mode(_filepaths)
             Globals._canvas_editor.show()
         else:
             Globals._canvas_editor = CanvasEditor(screenshot_image, metadata, datetime_stamp)
@@ -2272,14 +2289,15 @@ def invoke_screenshot_editor(request_type=None, filepaths=None):
         Globals._canvas_editor.activateWindow()
 
     if request_type == RequestType.Editor:
-        if not filepaths:
+        if not filepaths_or_pixmaps:
             path = SettingsJson().get_data("SCREENSHOT_FOLDER_PATH")
             if not path:
                 path = ""
-            filepaths = get_filepaths_dialog(path=path)
-        if filepaths:
+            filepaths_or_pixmaps = get_filepaths_dialog(path=path)
+        if filepaths_or_pixmaps:
             Globals._canvas_editor = CanvasEditor(screenshot_image, metadata, datetime_stamp)
-            Globals._canvas_editor.request_images_editor_mode(filepaths)
+            Globals._canvas_editor.save_rootfolderpath_override = save_rootfolderpath_override
+            Globals._canvas_editor.request_images_editor_mode(filepaths_or_pixmaps)
             Globals._canvas_editor.show()
             # чтобы activateWindow точно сработал и взял фокус ввода
             QApplication.instance().processEvents()
@@ -2398,16 +2416,163 @@ def read_settings_file():
 
 
 
+class PrepareThreadImageData():
+
+    input_list = []
+
+    def __init__(self, filepath):
+        self.filepath = filepath
+        self.filename = os.path.basename(filepath)
+        self.source = None
+        self.preview = None
+
+        self._ui_list_item = None
+        self._ui_list_item_widget = None
+
+        self.error = False
+
+        self.__class__.input_list.append(self)
+        InputFilesTrayWindow.instance.add_image_data_to_ui(self,
+                                            self.__class__.input_list.index(self))
+
+    def setListItem(self, list_item):
+        self._ui_list_item = list_item
+
+    # (13 фев 26) TODO: в этот раз не пригодилось, но может потом пригодится
+    class Pickable_QPixmap(QPixmap):
+        def __reduce__(self):
+            return type(self), (), self.__getstate__()
+
+        def __getstate__(self):
+            ba = QByteArray()
+            stream = QDataStream(ba, QIODevice.WriteOnly)
+            stream << self
+            return ba
+
+        def __setstate__(self, ba):
+            stream = QDataStream(ba, QIODevice.ReadOnly)
+            stream >> self
+
+
+class PrepareThread(QThread):
+    update_signal = pyqtSignal(object)
+
+    instance = None
+
+    def __init__(self):
+        super().__init__()
+        self.__class__.instance = self
+        self.update_signal.connect(InputFilesTrayWindow.instance.updatePreview)
+
+    def start(self):
+        super().start(QThread.IdlePriority)
+
+    def run(self):
+        for image_data in PrepareThreadImageData.input_list[:]:
+            if image_data.source or image_data.error:
+                continue
+
+            self.msleep(1) # switch to main thread to simulate (cause Python's GIL) multithreading
+
+            try:
+                source = load_image_respect_orientation(image_data.filepath)
+                if source.isNull():
+                    image_data.error = True
+                else:
+                    image_data.source = source
+            except:
+                image_data.error = True
+
+
+            # preview
+            image_data.source_width = ow = source.width()
+            image_data.source_height = oh = source.height()
+
+            PREVIEW_WIDTH = Globals.PREVIEW_WIDTH
+            preview_height = int(oh*PREVIEW_WIDTH/ow) if ow > 0 else 0
+            image_data.preview_size = QSize(PREVIEW_WIDTH, preview_height)
+            if ow != 0:
+                preview = source.scaled(PREVIEW_WIDTH, preview_height,
+                    Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation
+                )
+                image_data.preview = preview
+
+            self.update_signal.emit(image_data)
+
+def kick_prepare_thread():
+    pt_instance = PrepareThread.instance
+    if pt_instance is None:
+        pt = PrepareThread()
+        pt.start()
+
+    if pt_instance and not pt_instance.isRunning():
+        pt_instance.start()
+
+def compile_mode_input_files_drop_event(drop_event_data=None):
+
+    if InputFilesTrayWindow.instance is None:
+        Globals.iftw = iftw = InputFilesTrayWindow()
+        iftw.place_window()
+
+    deep_scan = InputFilesTrayWindow.instance.deep_scan_chb.isChecked()
+
+    if drop_event_data is not None:
+        paths = []
+        for url in drop_event_data.mimeData().urls():
+            if url.isLocalFile():
+                path = str(url.toLocalFile())
+                if os.path.isdir(path):
+                    for cur_dir, folders, files in os.walk(path):
+                        for filename in files:
+                            filepath = os.path.join(cur_dir, filename)
+                            paths.append(filepath)
+                        if not deep_scan:
+                            break
+                elif os.path.isfile(path):
+                    paths.append(path)
+            else:
+                pass
+                # url = url.url()
+                # download_file(url)
+        if Globals.DEBUG:
+            to_print = f'Drop Event Data Local Paths: {paths}'
+            print(to_print)
+        if paths:
+            for path in paths:
+                PrepareThreadImageData(path)
+            kick_prepare_thread()
+
+def compile_mode_input_files_start():
+    inst = InputFilesTrayWindow.instance
+    invoke_screenshot_editor(
+        request_type=RequestType.Editor,
+        filepaths_or_pixmaps=inst.get_selected_input_files(),
+        save_rootfolderpath_override=inst.get_selected_item_dirpath(),
+    )
+    inst.hide_away()
+
+
+
+
+
+
+
 
 
 SettingsWindow.Globals = Globals
 NotificationOrMenu.Globals = Globals
+InputFilesTrayWindow.Globals = Globals
 NotificationOrMenu.RequestType = RequestType
 NotificationOrMenu.gl = type('global', (), {})
 NotificationOrMenu.gl.invoke_screenshot_editor = invoke_screenshot_editor
 NotificationOrMenu.gl._restart_app = _restart_app
 NotificationOrMenu.gl.show_crash_log = show_crash_log
 NotificationOrMenu.gl.get_crashlog_filepath = get_crashlog_filepath
+NotificationOrMenu.gl.compile_mode_input_files_drop_event = compile_mode_input_files_drop_event
+NotificationOrMenu.gl.compile_mode_input_files_start = compile_mode_input_files_start
+NotificationOrMenu.gl.PrepareThreadImageData = PrepareThreadImageData
+NotificationOrMenu.gl.PrepareThread = PrepareThread
+InputFilesTrayWindow.gl = NotificationOrMenu.gl
 NotifyDialog.Globals = Globals
 QuitDialog.Globals = Globals
 
@@ -2496,6 +2661,8 @@ def _main():
                 sw = SettingsWindow()
                 sw.show()
                 sw.place_window()
+            elif Globals.DEBUG_INPUT_FILES_TRAY_WINDOW:
+                compile_mode_input_files_drop_event()
             else:
                 invoke_screenshot_editor(request_type=RequestType.Fragment)
             # invoke_screenshot_editor(request_type=RequestType.Fullscreen)

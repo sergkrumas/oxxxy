@@ -1634,7 +1634,7 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         autocapturezone = add_item("Задать область захвата по содержимому")
         autocapturezone.triggered.connect(self.elementsSetCaptureFromContent)
 
-        reset_capture = add_item("Сбросить область захвата")
+        reset_capture = add_item(Globals.icon_halt, "Сбросить область захвата")
         reset_capture.setEnabled(capture_is_set)
         reset_capture.triggered.connect(self.elementsResetCapture)
 

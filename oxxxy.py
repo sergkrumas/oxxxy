@@ -218,12 +218,79 @@ class Globals():
 
         cls.icon_cancel = QIcon(bitmap_cancel)
         cls.icon_halt = QIcon(bitmap_halt)
-        path = os.path.join(os.path.dirname(__file__), "icon.png")
-        cls.icon_multiframing = QIcon(path)
         cls.icon_refresh = QIcon(bitmap_refresh)
+
+
+        path = os.path.join(os.path.dirname(__file__), "icon.png")
+        icon_multiframing = QPixmap(path)
+        p = QPainter()
+        p.begin(icon_multiframing)
+        offset = (icon_multiframing.size().width()/3, icon_multiframing.size().height()/3)
+        p.drawPixmap(QPointF(*offset), QPixmap(icon_multiframing))
+        p.end()
+        icon_multiframing.save('icon_saved_.png')
+        cls.icon_multiframing = QIcon(icon_multiframing)
+
+        icon_content_bound = QPixmap(path)
+        p = QPainter()
+        p.begin(icon_content_bound)
+        r = QRect(0, 0, 150, 150)
+        r.moveCenter(icon_content_bound.rect().center())
+        p.setBrush(Qt.white)
+        p.drawRect(r)
+        p.end()
+        cls.icon_content_bound = QIcon(icon_content_bound)
+
+        icon_bake = QPixmap(255, 255)
+        icon_bake.fill(Qt.transparent)
+        p = QPainter()
+        p.begin(icon_bake)
+        font = p.font()
+        font.setPixelSize(100)
+        font.setBold(True)
+        p.setFont(font)
+        pen = p.pen()
+        pen.setColor(Qt.white)
+        p.setPen(pen)
+        p.drawText(QRectF(0, 0, 255, 255), Qt.AlignVCenter | Qt.AlignHCenter, 'BAKE')
+        p.end()
+        cls.icon_bake = QIcon(icon_bake)
 
         size = 20
         cls.icon_halt_mini_pixmap = bitmap_halt.scaled(size, size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+
+        icon_slice_background = QPixmap(512, 512)
+        icon_slice_background.fill(Qt.transparent)
+        p = QPainter()
+        p.begin(icon_slice_background)
+        p.setBrush(Qt.red)
+        p.setPen(Qt.NoPen)
+        path = QPainterPath()
+        r = icon_slice_background.rect()
+        c = r.center()
+        # blade
+        path.moveTo(c)
+        c1 = c+QPointF(200, 200)
+        path.lineTo(c1)
+        f = 50
+        c2 = c1+QPointF(-f, f)
+        c3 = c+QPointF(-f, f)
+        path.cubicTo(c1, c2, c3)
+        # handle
+        c0 = c+QPointF(-5, -5)
+        path.moveTo(c0)
+        c1 = c + QPointF(-100, -100)
+        path.lineTo(c1)
+        c2 = c1 + QPointF(-50, 50)
+        path.cubicTo(c1-QPointF(40,40), c2-QPointF(40,40), c2)
+        c4 = c0 + QPointF(-20, 20)
+        path.cubicTo(c2 + QPointF(40, 40), c4 + QPointF(-30, -40), c4)
+        path.lineTo(c0)
+
+        p.drawPath(path)
+        p.end()
+        cls.icon_slice_background = QIcon(icon_slice_background)
+        icon_slice_background.save('take.png')
 
     @staticmethod
     def get_screenshot_filepath(params):
@@ -1584,11 +1651,11 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
 
         capture_is_set = self.capture_region_rect is not None
 
-        render_elements_to_background = add_item("Нарисовать содержимое на фоне и удалить содержимое")
+        render_elements_to_background = add_item(Globals.icon_bake, "Нарисовать содержимое на фоне и удалить содержимое")
         render_elements_to_background.setEnabled(capture_is_set)
         render_elements_to_background.triggered.connect(self.elementsDoRenderToBackground)
 
-        slice_background = add_item("Нарезать фон на куски")
+        slice_background = add_item(Globals.icon_slice_background, "Нарезать фон на куски")
         slice_background.triggered.connect(self.slice_background_menu)
 
         activate_multifraing_tool = add_item(Globals.icon_multiframing, "Активировать инструмент мультикадрирования")
@@ -1631,10 +1698,10 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         get_toolwindow_in_view.setEnabled(capture_is_set)
         get_toolwindow_in_view.triggered.connect(do_get_toolwindow_in_view)
 
-        autocapturezone = add_item("Задать область захвата по содержимому")
+        autocapturezone = add_item(Globals.icon_content_bound, "Задать область захвата по содержимому")
         autocapturezone.triggered.connect(self.elementsSetCaptureFromContent)
 
-        reset_capture = add_item(Globals.icon_halt, "Сбросить область захвата")
+        reset_capture = add_item(Globals.icon_cancel, "Сбросить область захвата")
         reset_capture.setEnabled(capture_is_set)
         reset_capture.triggered.connect(self.elementsResetCapture)
 
@@ -1648,11 +1715,11 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
 
         contextMenu.addSeparator()
 
-        reset_panzoom = add_item("Сбросить смещение и зум")
+        reset_panzoom = add_item(Globals.icon_cancel, "Сбросить смещение и зум")
         reset_panzoom.triggered.connect(lambda: self.elementsResetPanZoom())
-        reset_pan = add_item("Сбросить только смещение")
+        reset_pan = add_item(Globals.icon_cancel, "Сбросить только смещение")
         reset_pan.triggered.connect(lambda: self.elementsResetPanZoom(reset_zoom=False))
-        reset_zoom = add_item("Сбросить только зум")
+        reset_zoom = add_item(Globals.icon_cancel, "Сбросить только зум")
         reset_zoom.triggered.connect(lambda: self.elementsResetPanZoom(reset_pan=False))
 
         contextMenu.addSeparator()

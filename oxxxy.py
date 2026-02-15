@@ -228,7 +228,6 @@ class Globals():
         offset = (icon_multiframing.size().width()/3, icon_multiframing.size().height()/3)
         p.drawPixmap(QPointF(*offset), QPixmap(icon_multiframing))
         p.end()
-        icon_multiframing.save('icon_saved_.png')
         cls.icon_multiframing = QIcon(icon_multiframing)
 
         icon_content_bound = QPixmap(path)
@@ -246,13 +245,14 @@ class Globals():
         p = QPainter()
         p.begin(icon_bake)
         font = p.font()
-        font.setPixelSize(100)
+        font.setPixelSize(int(255/2))
         font.setBold(True)
         p.setFont(font)
         pen = p.pen()
-        pen.setColor(Qt.white)
+        pen.setColor(Qt.red)
         p.setPen(pen)
-        p.drawText(QRectF(0, 0, 255, 255), Qt.AlignVCenter | Qt.AlignHCenter, 'BAKE')
+        p.drawText(QRectF(0, 0, 255, 255/2), Qt.AlignVCenter | Qt.AlignHCenter, 'BA')
+        p.drawText(QRectF(0, 255/2, 255, 255/2), Qt.AlignVCenter | Qt.AlignHCenter, 'KE')
         p.end()
         cls.icon_bake = QIcon(icon_bake)
 
@@ -290,7 +290,6 @@ class Globals():
         p.drawPath(path)
         p.end()
         cls.icon_slice_background = QIcon(icon_slice_background)
-        icon_slice_background.save('take.png')
 
     @staticmethod
     def get_screenshot_filepath(params):

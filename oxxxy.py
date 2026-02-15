@@ -232,7 +232,6 @@ class Globals():
         if ce is not None:
             if ce.save_rootfolderpath_override is not None:
                 root = ce.save_rootfolderpath_override
-        print(root, 'roooooooooooooooooooot')
         return os.path.join(root, f"{params}.png")
 
 

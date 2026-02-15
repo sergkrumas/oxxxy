@@ -1151,7 +1151,9 @@ class InputFilesTrayWindow(QWidget, StylizedUIBase):
 
         self.layout.addSpacing(10)
         self.layout.addWidget(self.label)
-        # self.layout.addSpacing(20)
+        self.layout.addSpacing(20)
+        self.layout.addWidget(letsgo_btn)
+        self.layout.addSpacing(20)
         self.layout.addWidget(ifl)
         self.layout.addSpacing(5)
         self.layout.addWidget(self.deep_scan_chb)
@@ -1159,11 +1161,9 @@ class InputFilesTrayWindow(QWidget, StylizedUIBase):
         self.layout.addWidget(self.default_savepath_chb)
 
 
-        self.layout.addSpacing(1)
+        self.layout.addSpacing(5)
         self.layout.addLayout(horLayout)
-
-        self.layout.addSpacing(20)
-        self.layout.addWidget(letsgo_btn)
+        self.layout.addSpacing(10)
 
         self.setFixedWidth(self.WIDTH+margin*2)
 

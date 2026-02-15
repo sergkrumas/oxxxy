@@ -1643,7 +1643,8 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         wallpaper_mode.setEnabled(capture_is_set)
         wallpaper_mode.triggered.connect(self.elementsSetWallpaperEnv)
 
-        screenshot_cursor_menu = add_item("Выбрать курсор для скриншота...")
+        screenshot_cursor_menu_icon = QIcon(self.cursors_data[self.default_system_cursor].pixmap)
+        screenshot_cursor_menu = add_item(screenshot_cursor_menu_icon, "Выбрать курсор для скриншота...")
         screenshot_cursor_menu.triggered.connect(self.set_screenshot_cursor)
 
         contextMenu.addSeparator()

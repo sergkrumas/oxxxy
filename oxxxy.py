@@ -1367,6 +1367,39 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
     def mouseDoubleClickEvent(self, event):
         self.elementsMouseDoubleClickEvent(event)
 
+    def rect_snapping(self, pos, rects, threshold=15, vert=True, hor=True):
+        for r in rects:
+            if vert:
+                for vert in (r.left(), r.right()):
+                    if abs(pos.x() - vert) < threshold:
+                        pos.setX(vert)
+            if hor:
+                for hor in (r.top(), r.bottom()):
+                    if abs(pos.y() - hor) < threshold:
+                        pos.setY(hor)
+        return pos
+
+    def do_capture_snapping(self, pos, vert=True, hor=True):
+        desktop = QDesktopWidget()
+        rects = [desktop.screenGeometry(screen=i) for i in range(desktop.screenCount())]
+        pos_override = self.rect_snapping(pos, rects, vert=True, hor=True)
+        return pos_override
+
+    def do_capture_snapping_wrapper(self, pos_coord_value, vert=False, hor=False):
+        if vert:
+            pos = QPointF(pos_coord_value, 0)
+        elif hor:
+            pos = QPointF(0, pos_coord_value)
+        else:
+            raise Exception('Deprecated')
+        pos_override = self.do_capture_snapping(pos, vert=vert, hor=hor)
+        if vert:
+            return pos_override.x()
+        elif hor:
+            return pos_override.y()
+        else:
+            raise Exception('Deprecated')
+
     def mouseMoveEvent(self, event):
         if self.tools_window:
             select_window = self.tools_window.select_window
@@ -1375,6 +1408,8 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
 
         if self.elementsTextElementMouseMoveEvent(event):
             return
+
+        event_pos_override = self.do_capture_snapping(event.pos())
 
         drawing_outside_capture_widget_allowed = \
                         not self.drag_inside_capture_zone \
@@ -1389,7 +1424,7 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         elif event.buttons() == Qt.LeftButton:
             if not self.is_rect_defined:
                 # для первичного задания области захвата
-                event_pos = self.elementsMapToCanvas(event.pos())
+                event_pos = self.elementsMapToCanvas(event_pos_override)
                 if not self.is_point_set(self.input_POINT1):
                     self.user_input_started = True
                     self.input_POINT1 = event_pos
@@ -1420,11 +1455,17 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
                 if self.capture_redefine_start_value is None:
                     self.capture_redefine_start_value = get_func()
                 if data_id == "x":
-                    set_func(self.capture_redefine_start_value + delta.x())
+                    set_value = self.capture_redefine_start_value + delta.x()
+                    set_value = self.do_capture_snapping_wrapper(set_value, vert=True)
+                    set_func(set_value)
                 if data_id == "y":
-                    set_func(self.capture_redefine_start_value + delta.y())
+                    set_value = self.capture_redefine_start_value + delta.y()
+                    set_value = self.do_capture_snapping_wrapper(set_value, hor=True)
+                    set_func(set_value)
                 if data_id == "xy":
-                    set_func(self.capture_redefine_start_value + delta)
+                    set_value = self.capture_redefine_start_value + delta
+                    set_value = self.do_capture_snapping(set_value)
+                    set_func(set_value)
 
                 # необходимо для нормальной работы
                 self.capture_region_rect = build_valid_rectF(

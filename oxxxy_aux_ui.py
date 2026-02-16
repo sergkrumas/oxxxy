@@ -518,6 +518,8 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
 
         NotificationOrMenu.instance = self
 
+        self.image_stored_in_clipboard = False
+
         self.setWindowTitle(f"Oxxxy Screenshoter {self.Globals.VERSION_INFO} {self.Globals.AUTHOR_INFO}")
         self.show_at_center = False
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
@@ -528,6 +530,8 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
 
         if notification and not menu:
             self.widget_type = "notification"
+
+            self.image_stored_in_clipboard = self.Globals.CLIPBOARD_FILEPATH == filepath
             self.filepath = filepath
 
             self.timer = QTimer()
@@ -536,33 +540,37 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
             self.start_time = time.time()
 
             label = "Скриншот готов!"
-            filename = os.path.basename(self.filepath)
-            label += f"\n\n{filename}"
+            if not self.image_stored_in_clipboard:
+                filename = os.path.basename(self.filepath)
+                label += f"\n\n{filename}"
+            else:
+                label += "\n\nИзображение сохранено\nв буфер обмена"
             self.label = QLabel()
             self.label.setText(label)
             self.label.setStyleSheet(self.title_label_style)
             self.label.setFixedWidth(self.WIDTH - self.CLOSE_BUTTON_RADIUS)
 
-            open_image_btn_gchr = QPushButton("Открыть в браузере")
-            open_image_btn_gchr.setStyleSheet(self.button_style)
-            open_image_btn_gchr.setFixedWidth(self.WIDTH)
-            open_image_btn_gchr.clicked.connect(self.open_image)
-            open_image_btn_gchr.setFocusPolicy(Qt.NoFocus)
-            open_image_btn_gchr.setCursor(Qt.PointingHandCursor)
+            if not self.image_stored_in_clipboard:
+                open_image_btn_gchr = QPushButton("Открыть в браузере")
+                open_image_btn_gchr.setStyleSheet(self.button_style)
+                open_image_btn_gchr.setFixedWidth(self.WIDTH)
+                open_image_btn_gchr.clicked.connect(self.open_image)
+                open_image_btn_gchr.setFocusPolicy(Qt.NoFocus)
+                open_image_btn_gchr.setCursor(Qt.PointingHandCursor)
 
-            open_image_btn = QPushButton("Открыть")
-            open_image_btn.setStyleSheet(self.button_style)
-            open_image_btn.setFixedWidth(self.WIDTH)
-            open_image_btn.clicked.connect(self.open_image_shell)
-            open_image_btn.setFocusPolicy(Qt.NoFocus)
-            open_image_btn.setCursor(Qt.PointingHandCursor)
+                open_image_btn = QPushButton("Открыть")
+                open_image_btn.setStyleSheet(self.button_style)
+                open_image_btn.setFixedWidth(self.WIDTH)
+                open_image_btn.clicked.connect(self.open_image_shell)
+                open_image_btn.setFocusPolicy(Qt.NoFocus)
+                open_image_btn.setCursor(Qt.PointingHandCursor)
 
-            open_folder_btn = QPushButton("Открыть папку")
-            open_folder_btn.setStyleSheet(self.button_style)
-            open_folder_btn.setFixedWidth(self.WIDTH)
-            open_folder_btn.clicked.connect(self.open_folder)
-            open_folder_btn.setFocusPolicy(Qt.NoFocus)
-            open_folder_btn.setCursor(Qt.PointingHandCursor)
+                open_folder_btn = QPushButton("Открыть папку")
+                open_folder_btn.setStyleSheet(self.button_style)
+                open_folder_btn.setFixedWidth(self.WIDTH)
+                open_folder_btn.clicked.connect(self.open_folder)
+                open_folder_btn.setFocusPolicy(Qt.NoFocus)
+                open_folder_btn.setCursor(Qt.PointingHandCursor)
 
             open_in_oxxxy_btn = QPushButton("Открыть в Oxxxy")
             open_in_oxxxy_btn.setStyleSheet(self.button_style)
@@ -573,12 +581,13 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
 
             self.layout.addSpacing(10)
             self.layout.addWidget(self.label)
-            self.layout.addWidget(open_image_btn_gchr)
-            self.layout.addSpacing(10)
-            self.layout.addWidget(open_image_btn)
-            self.layout.addSpacing(10)
-            self.layout.addWidget(open_folder_btn)
-            self.layout.addSpacing(10)
+            if not self.image_stored_in_clipboard:
+                self.layout.addWidget(open_image_btn_gchr)
+                self.layout.addSpacing(10)
+                self.layout.addWidget(open_image_btn)
+                self.layout.addSpacing(10)
+                self.layout.addWidget(open_folder_btn)
+                self.layout.addSpacing(10)
             self.layout.addWidget(open_in_oxxxy_btn)
             self.layout.addSpacing(10)
 

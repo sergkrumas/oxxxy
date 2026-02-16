@@ -40,7 +40,7 @@ from key_seq_edit import KeySequenceEdit
 from PyQt5.QtWidgets import (QSystemTrayIcon, QWidget, QMessageBox, QMenu, QFileDialog,
     QCheckBox, QWidgetAction, QApplication, QDesktopWidget, QActionGroup, QSpinBox)
 from PyQt5.QtCore import (pyqtSignal, QPoint, QPointF, pyqtSlot, QRect, QEvent, QDataStream, QIODevice,
-    Qt, QSize, QRectF, QAbstractNativeEventFilter, QAbstractEventDispatcher, QThread, QByteArray)
+    Qt, QSize, QRectF, QAbstractNativeEventFilter, QAbstractEventDispatcher, QThread, QByteArray, QMimeData)
 from PyQt5.QtGui import (QPainterPath, QColor, QKeyEvent, QMouseEvent, QBrush, QPixmap,
     QPainter, QWindow, QImage, QPen, QIcon, QFont, QCursor, QPolygonF, QFontDatabase)
 
@@ -122,6 +122,8 @@ class Globals():
     background_threads = []
 
     COPY_SELECTED_CANVAS_ITEMS_STR = '~#~OXXXY:SCREENSHOTER:COPY:SELECTED:CANVAS:ITEMS~#~'
+
+    CLIPBOARD_FILEPATH = 'clipboard'
 
     @classmethod
     def load_fonts(cls):
@@ -1153,6 +1155,8 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         for path_or_pix in paths_or_pixmaps:
             if isinstance(path_or_pix, QPixmap):
                 pixmap = path_or_pix
+            elif path_or_pix == self.Globals.CLIPBOARD_FILEPATH:
+                pixmap = QPixmap.fromImage(QApplication.clipboard().image())
             else:
                 pixmap = load_image_respect_orientation(path_or_pix)
             if pixmap.width() != 0:
@@ -1229,32 +1233,42 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
     def update_sys_tray_icon(self, *args, **kwargs):
         update_sys_tray_icon(*args, **kwargs)
 
-    def save_screenshot(self, grabbed_image=None, metadata=None, restart=True):
+    def save_screenshot(self, grabbed_image=None, metadata=None, restart=True, use_clipboard_only=False):
         if restart:
             close_all_windows()
 
-        # задание папки для скриншота
-        SettingsWindow.set_screenshot_folder_path()
-        # сохранение файла
-        formated_datetime = datetime.datetime.now().strftime("%Y-%m-%d %H-%M-%S")
-        filepath = Globals.get_screenshot_filepath(formated_datetime)
-        if grabbed_image:
-            # QUICK FULLSCREEN
-            grabbed_image.save(filepath)
-            # copy_image_file_to_clipboard(filepath)
-            save_meta_info(metadata, filepath)
+        if not use_clipboard_only:
+            # задание папки для скриншота
+            SettingsWindow.set_screenshot_folder_path()
+            # сохранение файла
+            formated_datetime = datetime.datetime.now().strftime("%Y-%m-%d %H-%M-%S")
+            filepath = Globals.get_screenshot_filepath(formated_datetime)
+            if grabbed_image:
+                # QUICK FULLSCREEN
+                grabbed_image.save(filepath)
+                # copy_image_file_to_clipboard(filepath)
+                save_meta_info(metadata, filepath)
+            else:
+                pix = self.elementsRenderFinal(force_no_datetime_stamp=Globals.save_to_memory_mode)
+
+                if Globals.save_to_memory_mode:
+                    Globals.images_in_memory.append(pix)
+                    update_sys_tray_icon(len(Globals.images_in_memory))
+                else:
+                    pix.save(filepath)
+                    if self.tools_window.chb_add_meta.isChecked():
+                        save_meta_info(self.metadata, filepath)
+                    copy_image_file_to_clipboard(filepath)
+                    if not restart:
+                        return filepath
         else:
             pix = self.elementsRenderFinal(force_no_datetime_stamp=Globals.save_to_memory_mode)
-            if Globals.save_to_memory_mode:
-                Globals.images_in_memory.append(pix)
-                update_sys_tray_icon(len(Globals.images_in_memory))
-            else:
-                pix.save(filepath)
-                if self.tools_window.chb_add_meta.isChecked():
-                    save_meta_info(self.metadata, filepath)
-                copy_image_file_to_clipboard(filepath)
-                if not restart:
-                    return filepath
+            app = QApplication.instance()
+            data = QMimeData()
+            data.setImageData(pix)
+            # data.setText('oxxxy image')
+            app.clipboard().setMimeData(data)
+            filepath = Globals.CLIPBOARD_FILEPATH
         if restart:
             # restart
             if grabbed_image or not Globals.save_to_memory_mode:
@@ -1927,15 +1941,20 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         elif proc_type == "press":
             self.mousePressEvent(make_event_obj())
 
-    def editing_is_done_handler(self):
+    def editing_is_done_handler(self, use_clipboard=False):
         app = QApplication.instance()
-        app.setQuitOnLastWindowClosed(not Globals.save_to_memory_mode)
-        self.close_this()
-        app.processEvents()
-        self.save_screenshot()
-        if not Globals.close_editor_on_done:
-            if self.tools_window:
-                self.tools_window.done_button.setEnabled(True)
+        if use_clipboard:
+            self.close_this()
+            app.processEvents()
+            self.save_screenshot(use_clipboard_only=use_clipboard)
+        else:
+            app.setQuitOnLastWindowClosed(not Globals.save_to_memory_mode)
+            self.close_this()
+            app.processEvents()
+            self.save_screenshot()
+            if not Globals.close_editor_on_done:
+                if self.tools_window:
+                    self.tools_window.done_button.setEnabled(True)
 
     def save_current_editing_handler(self):
         filepath = self.save_screenshot(restart=False)

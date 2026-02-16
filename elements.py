@@ -67,6 +67,7 @@ class ToolID():
     removing = "removing"
 
     DONE = "done"
+    DONE_MOVE_TO_CLIPBOARD = "done_move_to_clipboard"
     FORWARDS = "forwards"
     BACKWARDS = "backwards"
     DRAG = "drag"

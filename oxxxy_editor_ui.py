@@ -56,7 +56,7 @@ class CustomPushButton(QPushButton):
         self.setCheckable(checkable)
         self.setChecked(checked)
 
-        if tool_id == ToolID.DONE:
+        if tool_id in [ToolID.DONE, ToolID.DONE_MOVE_TO_CLIPBOARD]:
             self.BUTTON_SIZE = 65
         else:
             self.BUTTON_SIZE = 50
@@ -107,7 +107,7 @@ class CustomPushButton(QPushButton):
         painter.setRenderHint(QPainter.SmoothPixmapTransform, True)
         if self.underMouse() and tool_id not in [ToolID.FORWARDS, ToolID.BACKWARDS]:
             r = self.rect()
-            if self.property("tool_id") == ToolID.DONE:
+            if self.property("tool_id") in [ToolID.DONE, ToolID.DONE_MOVE_TO_CLIPBOARD]:
                 RADIUS = 5
             else:
                 RADIUS = 10
@@ -133,8 +133,8 @@ class CustomPushButton(QPushButton):
             # что нажатая клавиша Ctrl модифицирует их отрисовку
             self._draw_checked = self.isChecked()
             self.draw_button(painter)
-        elif tool_id in [ToolID.DONE]:
-            # это нужно здесь для поддержки измеенения цвета в режиме self.Globals.save_to_memory_mode
+        elif tool_id in [ToolID.DONE, ToolID.DONE_MOVE_TO_CLIPBOARD]:
+            # это нужно здесь для поддержки изменения цвета в режиме self.Globals.save_to_memory_mode
             self._draw_checked = self.underMouse()
             self.draw_button(painter)
         else:
@@ -163,12 +163,15 @@ class CustomPushButton(QPushButton):
 
         # draw background
         gradient = QLinearGradient(self.rect().topLeft(), self.rect().bottomLeft())
-        if tool_id == ToolID.DONE:
+        if tool_id in [ToolID.DONE, ToolID.DONE_MOVE_TO_CLIPBOARD]:
             y_base = QColor(253, 203, 54)
             y_secondary = QColor(220, 142, 3)
             if self.Globals.save_to_memory_mode:
                 b_base = QColor(227, 72, 43)
                 b_secondary = QColor(175, 48, 25)
+            elif tool_id == ToolID.DONE_MOVE_TO_CLIPBOARD:
+                b_base = QColor(203, 94, 247)
+                b_secondary = QColor(133, 25, 175)
             else:
                 b_base = QColor(94, 203, 247)
                 b_secondary = QColor(25, 133, 175)
@@ -199,9 +202,9 @@ class CustomPushButton(QPushButton):
                 brush = QBrush(gradient)
             painter.setBrush(brush)
 
-        if tool_id == ToolID.DONE or (self._draw_checked and not bf_buttons):
+        if tool_id in [ToolID.DONE, ToolID.DONE_MOVE_TO_CLIPBOARD] or (self._draw_checked and not bf_buttons):
             r = self.rect()
-            if self.property("tool_id") == ToolID.DONE:
+            if self.property("tool_id") in [ToolID.DONE, ToolID.DONE_MOVE_TO_CLIPBOARD]:
                 RADIUS = 5
             else:
                 RADIUS = 10
@@ -219,7 +222,7 @@ class CustomPushButton(QPushButton):
             second_color = Qt.gray
             second_color2 = QColor(220, 220, 220)
             second_color3 = QColor(220, 220, 220)
-        elif tool_id == ToolID.DONE:
+        elif tool_id in [ToolID.DONE, ToolID.DONE_MOVE_TO_CLIPBOARD]:
             main_color = QColor(255, 255, 255)
         else:
             if self._draw_checked:
@@ -256,10 +259,18 @@ class CustomPushButton(QPushButton):
             painter.setTransform(transform)
             painter.drawLine(-w2, -w2, w, w)
 
-        elif tool_id == ToolID.DONE:
+        elif tool_id in [ToolID.DONE, ToolID.DONE_MOVE_TO_CLIPBOARD]:
 
-            pen = QPen(main_color, 6)
-            painter.setPen(pen)
+            if tool_id == ToolID.DONE_MOVE_TO_CLIPBOARD:
+                painter.setBrush(Qt.NoBrush)
+                pen = QPen(main_color, 2, Qt.DotLine)
+                painter.setPen(pen)
+                painter.drawRect(self.rect().adjusted(10, 10, -10, -10))
+                pen = QPen(main_color, 6)
+                painter.setPen(pen)
+            else:
+                pen = QPen(main_color, 6)
+                painter.setPen(pen)
             y_offset = 6
             x_offset = 3
             painter.drawLine(
@@ -1234,6 +1245,15 @@ class ToolsWindow(QWidget):
         else:
             self.chb_toolbool.setText("?")
 
+    def show(self):
+        super().show()
+        # приходится задавать положение кнопки здесь,
+        # потому что только здесь frameGeometry()
+        # будет иметь нужные значения
+        georect = self.done_button.frameGeometry()
+        georect.moveCenter(georect.center()+QPoint(0, 70))
+        self.done_button_clipboard.setGeometry(georect)
+
     def set_ui_on_toolchange(self, element_type=None, hide=False):
         if hide:
             self.chb_toolbool.setEnabled(False)
@@ -1490,11 +1510,11 @@ class ToolsWindow(QWidget):
             tools.addWidget(button)
             tools.addSpacing(5)
 
-        self.done_button = CustomPushButton("Готово", self, tool_id=ToolID.DONE)
+        self.done_button = CustomPushButton("Готово: сохранить на диск", self, tool_id=ToolID.DONE)
         self.done_button.mousePressEvent = self.onDoneButtonMousePressEvent
         self.done_button.setAccessibleName("done_button")
         self.done_button.setCursor(QCursor(Qt.PointingHandCursor))
-        self.done_button.setToolTip("Готово")
+        self.done_button.setToolTip("Готово: сохранить на диск")
         self.done_button.installEventFilter(self)
         tools.addSpacing(10)
         tools.addWidget(self.done_button)
@@ -1665,6 +1685,13 @@ class ToolsWindow(QWidget):
         self.tool_init = True
         self.old_cursor_pos = QCursor().pos()
 
+        self.done_button_clipboard = CustomPushButton("Готово: сохранить в буфер обмена", self, tool_id=ToolID.DONE_MOVE_TO_CLIPBOARD)
+        self.done_button_clipboard.mousePressEvent = self.onDoneMoveToClipboardButtonMousePressEvent
+        self.done_button_clipboard.setAccessibleName("done_button")
+        self.done_button_clipboard.setCursor(QCursor(Qt.PointingHandCursor))
+        self.done_button_clipboard.setToolTip("Готово: сохранить в буфер обмена")
+        self.done_button_clipboard.installEventFilter(self)
+
     def eventFilter(self, obj, event):
         # print(event.__class__.__name__, obj.__class__.__name__)
         parent = self.parent()
@@ -1706,13 +1733,17 @@ class ToolsWindow(QWidget):
                 self.set_current_tool(ToolID.picture)
         self.update()
 
+    def onDoneMoveToClipboardButtonMousePressEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.parent().editing_ready.emit(True)
+
     def onDoneButtonMousePressEvent(self, event):
         # calling save_screenshot of main window
         # event = QKeyEvent(QEvent.KeyPress, Qt.Key_Return, Qt.NoModifier, 0, 0, 0)
         # app = QApplication.instance()
         # app.sendEvent(self.parent(), event)
         if event.button() == Qt.LeftButton:
-            self.parent().editing_ready.emit(None)
+            self.parent().editing_ready.emit(False)
         elif event.buttons() == Qt.RightButton:
             self.parent().save_current_editing.emit()
 

@@ -2629,12 +2629,12 @@ def compile_mode_input_files_drop_event(drop_event_data=None):
 
 def compile_mode_input_files_start():
     inst = InputFilesTrayWindow.instance
+    inst.hide_away()
     invoke_screenshot_editor(
         request_type=RequestType.Editor,
         filepaths_or_pixmaps=inst.get_selected_input_files(),
         save_rootfolderpath_override=inst.get_selected_item_dirpath(),
     )
-    inst.hide_away()
 
 
 

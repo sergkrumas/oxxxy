@@ -170,8 +170,8 @@ class CustomPushButton(QPushButton):
                 b_base = QColor(227, 72, 43)
                 b_secondary = QColor(175, 48, 25)
             elif tool_id == ToolID.DONE_MOVE_TO_CLIPBOARD:
-                b_base = QColor(203, 94, 247)
-                b_secondary = QColor(133, 25, 175)
+                b_base = QColor(247, 94, 94)
+                b_secondary = QColor(175, 25, 35)
             else:
                 b_base = QColor(94, 203, 247)
                 b_secondary = QColor(25, 133, 175)

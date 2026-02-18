@@ -1055,8 +1055,6 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         }
         """
 
-
-
         self.source_pixels = screenshot_image
         self.metadata = metadata
         self.datetime_stamp = datetime_stamp
@@ -1835,9 +1833,11 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
             ("DEBUG", Globals.DEBUG, partial(toggle_boolean_var_generic, Globals, 'DEBUG')),
         )
 
+        max_title_chars = max(len(title) for title, _, _ in checkboxes)
+
         for title, value, callback in checkboxes:
             wa = QWidgetAction(contextMenu)
-            chb = QCheckBox(title)
+            chb = QCheckBox(title.ljust(max_title_chars))
             chb.setStyleSheet(self.TOGGLE_CHECKBOX + self.context_menu_stylesheet)
             chb.setChecked(value)
             chb.stateChanged.connect(callback)

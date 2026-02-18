@@ -1413,17 +1413,43 @@ class ToolsWindow(QWidget):
 
         checkbox_style = """
             QCheckBox {
+                font-family: 'Consolas';
+                color: white;
+                font-weight: normal;
+            }
+            QCheckBox::indicator {
+                width: 20px;
+                height: 20px;
+            }
+            QCheckBox::indicator:unchecked {
+                image: url(resources/switch_off_narrow.png);
+            }
+            QCheckBox::indicator:checked {
+                image: url(resources/switch_on_narrow.png);
+            }
+            QCheckBox:checked {
+                color: rgb(252, 181, 49);
+            }
+            QCheckBox:unchecked {
                 color: rgb(220, 220, 220);
+            }
+            QCheckBox {
                 font-size: 17px;
                 height: 35px;
                 padding: 0px 10px;
-                background: transparent;
             }
-            QCheckBox::checked {
-                color: orange;
+            QCheckBox{
+                font-weight: normal;
+                font-family: 'Consolas';
             }
-            QCheckBox::indicator:checked {
-                color: orange;
+            QCheckBox{
+                color: rgb(230, 230, 230);
+            }
+            QCheckBox:unchecked:hover{
+                color: white;
+            }
+            QCheckBox:checked:hover{
+                color: rgb(255, 193, 77);
             }
         """
 

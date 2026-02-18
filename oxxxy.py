@@ -327,6 +327,30 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
     NotifyDialog = NotifyDialog
     PictureInfo = PictureInfo
 
+    TOGGLE_CHECKBOX = """
+        QCheckBox {
+            font-family: 'Consolas';
+            color: white;
+            font-weight: normal;
+        }
+        QCheckBox::indicator {
+            width: 20px;
+            height: 20px;
+        }
+        QCheckBox::indicator:unchecked {
+            image: url(resources/switch_off_narrow.png);
+        }
+        QCheckBox::indicator:checked {
+            image: url(resources/switch_on_narrow.png);
+        }
+        QCheckBox:checked {
+            color: rgb(100, 255, 100);
+        }
+        QCheckBox:unchecked {
+            color: rgb(220, 220, 220);
+        }
+    """
+
     def set_clipboard(self, text):
         cb = QApplication.clipboard()
         cb.clear(mode=cb.Clipboard)
@@ -1814,7 +1838,7 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         for title, value, callback in checkboxes:
             wa = QWidgetAction(contextMenu)
             chb = QCheckBox(title)
-            chb.setStyleSheet(self.context_menu_stylesheet)
+            chb.setStyleSheet(self.TOGGLE_CHECKBOX + self.context_menu_stylesheet)
             chb.setChecked(value)
             chb.stateChanged.connect(callback)
             wa.setDefaultWidget(chb)

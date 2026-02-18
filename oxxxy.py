@@ -1665,7 +1665,8 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         menu = QMenu()
         menu.setStyleSheet(self.context_menu_stylesheet)
         for cur_name, cur_data in CanvasEditor.cursors_data.items():
-            set_action = menu.addAction(cur_name)
+            screenshot_cursor_menu_icon = QIcon(cur_data.pixmap)
+            set_action = menu.addAction(screenshot_cursor_menu_icon, cur_name)
             set_action.setCheckable(True)
             set_action.setChecked(CanvasEditor.default_system_cursor == cur_name)
             set_action.triggered.connect(lambda check_status, x=cur_name: setattr(CanvasEditor, 'default_system_cursor', x))

@@ -3297,17 +3297,17 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
 
                 if action == to_height:
                     if self.active_element:
-                        fit_height = self.active_element.height()
+                        fit_height = self.active_element.height
                     else:
-                        fit_height = max(el.height() for el in elements)
+                        fit_height = max(el.height for el in elements)
                 else:
                     fit_height = None
 
                 if action == to_width:
                     if self.active_element:
-                        fit_width = self.active_element.width()
+                        fit_width = self.active_element.width
                     else:
-                        fit_width = max(el.width() for el in elements)
+                        fit_width = max(el.width for el in elements)
                 else:
                     fit_width = None
 

@@ -1019,7 +1019,7 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         }
         QMenu::item:disabled {
             background-color: #303940;
-            color: black;
+            color: white;
             border-left: 2px dashed #303940;
         }
         QMenu::separator {

@@ -1735,12 +1735,13 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         slice_background = add_item(Globals.icon_slice_background, "Нарезать фон на куски")
         slice_background.triggered.connect(self.slice_background_menu)
 
-        activate_multifraing_tool = add_item(Globals.icon_multiframing, "Активировать инструмент мультикадрирования")
-        activate_multifraing_tool.setEnabled(capture_is_set)
+        activate_multiframing_tool = add_item(Globals.icon_multiframing, "Активировать инструмент мультикадрирования")
+        activate_multiframing_tool.setEnabled(capture_is_set)
         def amt():
             if self.tools_window:
+                self.elementsInvertBoolAttribute('use_vertial_layout_for_multiframing')
                 self.tools_window.set_current_tool(ToolID.multiframing)
-        activate_multifraing_tool.triggered.connect(amt)
+        activate_multiframing_tool.triggered.connect(amt)
 
         def do_reshot():
             self.hide()

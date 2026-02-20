@@ -454,7 +454,12 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
 
         self.wallpaper_env_value = 0
 
+        self.use_vertial_layout_for_multiframing = False
+
         self.init2024Tools()
+
+    def elementsInvertBoolAttribute(self, attr_name):
+        setattr(self, attr_name, not getattr(self, attr_name))
 
     def elementsStartModificationProcess(self, _type):
         """
@@ -2921,8 +2926,11 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
             specials = [el for el in self.elementsFilter() if el.oxxxy_type == ToolID.multiframing]
             any_multiframing_element = any(specials)
             if any_multiframing_element and not no_multiframing and not clean:
+                uvlfm = self.use_vertial_layout_for_multiframing
                 max_width = -1
+                max_height = -1
                 total_height = 0
+                total_width = 0
                 specials_rects = []
                 source_pixmap = QPixmap.fromImage(self.source_pixels)
                 for number, el in enumerate(specials):
@@ -2933,27 +2941,50 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
                     capture_rotation = el.rotation
                     capture_width = br.width()
                     capture_height = br.height()
+                    el.before_width = el.width
+                    el.before_height = el.height
                     el.pixmap = capture_rotated_rect_from_pixmap(source_pixmap, capture_pos,
                         capture_rotation, capture_width, capture_height)
                 for el in specials:
                     max_width = max(max_width, el.bounding_rect.width())
+                    max_height = max(max_height, el.bounding_rect.height())
                 for el in specials:
                     br = el.bounding_rect
-                    el.height = max_width/br.width()*br.height()
-                    total_height += el.height
+                    if uvlfm:
+                        el.height = max_width/br.width()*br.height()
+                        total_height += el.height
+                    else:
+                        el.width = max_height/br.height()*br.width()
+                        total_width += el.width
                 max_width = int(max_width)
+                max_height = int(max_height)
                 total_height = int(total_height)
-                FINAL_PIXMAP = QPixmap(QSize(max_width, total_height))
+                total_width = int(total_width)
+                if uvlfm:
+                    FINAL_PIXMAP = QPixmap(QSize(max_width, total_height))
+                else:
+                    FINAL_PIXMAP = QPixmap(QSize(total_width, max_height))
                 painter = QPainter()
                 painter.begin(FINAL_PIXMAP)
                 cur_pos = QPointF(0, 0)
                 for el in specials:
-                    dst_rect = QRectF(cur_pos, QSizeF(max_width, el.height))
+                    if uvlfm:
+                        size = QSizeF(max_width, el.height)
+                    else:
+                        size = QSizeF(el.width, max_height)
+                    dst_rect = QRectF(cur_pos, size)
                     painter.drawPixmap(dst_rect, el.pixmap, QRectF(el.pixmap.rect()))
-                    cur_pos += QPointF(0, el.height)
+                    if uvlfm:
+                        cur_pos += QPointF(0, el.height)
+                    else:
+                        cur_pos += QPointF(el.width, 0)
                 for el in specials:
+                    el.width = el.before_width
+                    el.height = el.before_height
                     del el.bounding_rect
                     del el.pixmap
+                    del el.before_width
+                    del el.before_height
                 painter.end()
             else:
                 if capture_region_rect is None:

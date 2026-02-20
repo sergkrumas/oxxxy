@@ -503,6 +503,18 @@ def webRGBA(qcolor_value):
     _b = qcolor_value.blue()
     return f"#{_a:02x}{_r:02x}{_g:02x}{_b:02x}"
 
+
+class GradientConstants:
+    top_left = 0
+    bottom_right = 1
+    bottom_left = 2
+    top_right = 3
+
+    top = 4
+    bottom = 5
+    left = 6
+    right = 7
+
 @lru_cache(maxsize=8)
 def generate_gradient(_type, shadow_size, color1_hex, color2_hex):
     # hex colors for hashability of the function
@@ -512,57 +524,51 @@ def generate_gradient(_type, shadow_size, color1_hex, color2_hex):
     # https://doc.qt.io/qtforpython-5/PySide2/QtGui/QConicalGradient.html
     # https://doc.qt.io/qtforpython-5/PySide2/QtGui/QRadialGradient.html
     # https://doc.qt.io/qt-5/qlineargradient.html
-    gradients = [
-        ("top_left",        (shadow_size, shadow_size), ),
-        ("bottom_right",    (shadow_size, shadow_size), ),
-        ("bottom_left",     (shadow_size, shadow_size), ),
-        ("top_right",       (shadow_size, shadow_size), ),
-        ("top",             (1, shadow_size),           ),
-        ("bottom",          (1, shadow_size),           ),
-        ("left",            (shadow_size, 1),           ),
-        ("right",           (shadow_size, 1),           ),
-    ]
-    current_gradient_info = None
-    for gradient_info in gradients:
-        if _type == gradient_info[0]:
-            current_gradient_info = gradient_info
-    if not current_gradient_info:
-        raise
-    size = current_gradient_info[1]
+    gradients = {
+        GradientConstants.top_left:        (shadow_size, shadow_size),
+        GradientConstants.bottom_right:    (shadow_size, shadow_size),
+        GradientConstants.bottom_left:     (shadow_size, shadow_size),
+        GradientConstants.top_right:       (shadow_size, shadow_size),
+        GradientConstants.top:             (1, shadow_size),          
+        GradientConstants.bottom:          (1, shadow_size),          
+        GradientConstants.left:            (shadow_size, 1),          
+        GradientConstants.right:           (shadow_size, 1),          
+    }
+    size = gradients.get(_type)
     gradient_type_pxm = QPixmap(*size)
     gradient_type_pxm.fill(Qt.transparent)
     p = QPainter()
     p.begin(gradient_type_pxm)
     p.setRenderHint(QPainter.HighQualityAntialiasing, True)
-    if _type == "top_left":
+    if _type == GradientConstants.top_left:
         gradient = QRadialGradient(QPoint(shadow_size, shadow_size), shadow_size)
         gradient.setColorAt(0, color1)
         gradient.setColorAt(1, color2)
-    if _type == "top_right":
+    if _type == GradientConstants.top_right:
         gradient = QRadialGradient(QPoint(0, shadow_size), shadow_size)
         gradient.setColorAt(0, color1)
         gradient.setColorAt(1, color2)
-    if _type == "bottom_right":
+    if _type == GradientConstants.bottom_right:
         gradient = QRadialGradient(QPoint(0, 0), shadow_size)
         gradient.setColorAt(0, color1)
         gradient.setColorAt(1, color2)
-    if _type == "bottom_left":
+    if _type == GradientConstants.bottom_left:
         gradient = QRadialGradient(QPoint(shadow_size, 0), shadow_size)
         gradient.setColorAt(0, color1)
         gradient.setColorAt(1, color2)
-    if _type == "top":
+    if _type == GradientConstants.top:
         gradient = QLinearGradient(0, 0, *size)
         gradient.setColorAt(1, color1)
         gradient.setColorAt(0, color2)
-    if _type == "bottom":
+    if _type == GradientConstants.bottom:
         gradient = QLinearGradient(0, 0, *size)
         gradient.setColorAt(0, color1)
         gradient.setColorAt(1, color2)
-    if _type == "left":
+    if _type == GradientConstants.left:
         gradient = QLinearGradient(0, 0, *size)
         gradient.setColorAt(1, color1)
         gradient.setColorAt(0, color2)
-    if _type == "right":
+    if _type == GradientConstants.right:
         gradient = QLinearGradient(0, 0, *size)
         gradient.setColorAt(0, color1)
         gradient.setColorAt(1, color2)
@@ -576,50 +582,50 @@ def draw_shadow(painter, rect, shadow_size, color1_hex, color2_hex):
         return
     sr = rect
     # rectangle sides
-    gradient_pxm = generate_gradient("top", shadow_size, color1_hex, color2_hex)
+    gradient_pxm = generate_gradient(GradientConstants.top, shadow_size, color1_hex, color2_hex)
     top_left = sr.topLeft() + QPoint(1, -shadow_size)
     bottom_right = sr.topRight() + QPoint(-1, 0)
     target = QRectF(top_left, bottom_right)
     painter.drawPixmap(target, gradient_pxm, QRectF(gradient_pxm.rect()))
 
-    gradient_pxm = generate_gradient("bottom", shadow_size, color1_hex, color2_hex)
+    gradient_pxm = generate_gradient(GradientConstants.bottom, shadow_size, color1_hex, color2_hex)
     top_left = sr.bottomLeft() + QPoint(1, 0)
     bottom_right = sr.bottomRight() + QPoint(-1, -shadow_size)
     target = QRectF(top_left, bottom_right)
     painter.drawPixmap(target, gradient_pxm, QRectF(gradient_pxm.rect()))
 
-    gradient_pxm = generate_gradient("left", shadow_size, color1_hex, color2_hex)
+    gradient_pxm = generate_gradient(GradientConstants.left, shadow_size, color1_hex, color2_hex)
     top_left = sr.topLeft() + QPoint(-shadow_size, 1)
     bottom_right = sr.bottomLeft() + QPoint(0, -1)
     target = QRectF(top_left, bottom_right)
     painter.drawPixmap(target, gradient_pxm, QRectF(gradient_pxm.rect()))
 
-    gradient_pxm = generate_gradient("right", shadow_size, color1_hex, color2_hex)
+    gradient_pxm = generate_gradient(GradientConstants.right, shadow_size, color1_hex, color2_hex)
     top_left = sr.topRight() + QPoint(0, 1)
     bottom_right = sr.bottomRight() + QPoint(shadow_size, -1)
     target = QRectF(top_left, bottom_right)
     painter.drawPixmap(target, gradient_pxm, QRectF(gradient_pxm.rect()))
 
     # rectangle corners
-    gradient_pxm = generate_gradient("top_left", shadow_size, color1_hex, color2_hex)
+    gradient_pxm = generate_gradient(GradientConstants.top_left, shadow_size, color1_hex, color2_hex)
     top_left = sr.topLeft() + QPoint(-shadow_size, -shadow_size)
     bottom_right = sr.topLeft() + QPoint(0, 0)
     target = QRectF(top_left, bottom_right)
     painter.drawPixmap(target, gradient_pxm, QRectF(gradient_pxm.rect()))
 
-    gradient_pxm = generate_gradient("top_right", shadow_size, color1_hex, color2_hex)
+    gradient_pxm = generate_gradient(GradientConstants.top_right, shadow_size, color1_hex, color2_hex)
     top_left = sr.topRight() + QPoint(0, -shadow_size)
     bottom_right = sr.topRight() + QPoint(shadow_size, 0)
     target = QRectF(top_left, bottom_right)
     painter.drawPixmap(target, gradient_pxm, QRectF(gradient_pxm.rect()))
 
-    gradient_pxm = generate_gradient("bottom_right", shadow_size, color1_hex, color2_hex)
+    gradient_pxm = generate_gradient(GradientConstants.bottom_right, shadow_size, color1_hex, color2_hex)
     top_left = sr.bottomRight() + QPoint(0, 0)
     bottom_right = sr.bottomRight() + QPoint(shadow_size, shadow_size)
     target = QRectF(top_left, bottom_right)
     painter.drawPixmap(target, gradient_pxm, QRectF(gradient_pxm.rect()))
 
-    gradient_pxm = generate_gradient("bottom_left", shadow_size, color1_hex, color2_hex)
+    gradient_pxm = generate_gradient(GradientConstants.bottom_left, shadow_size, color1_hex, color2_hex)
     top_left = sr.bottomLeft() + QPoint(-shadow_size, 0)
     bottom_right = sr.bottomLeft() + QPoint(0, -shadow_size)
     target = QRectF(top_left, bottom_right)

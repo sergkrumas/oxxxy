@@ -987,7 +987,10 @@ class InputFilesTrayWindow(QWidget, StylizedUIBase):
             image_data_index = item.data(Qt.UserRole)
             image_data = _list[image_data_index]
             if not image_data.error:
-                paths.append(image_data.source)
+                if image_data.filepath.lower().endswith('.gif'):
+                    paths.append(image_data.filepath)
+                else:
+                    paths.append(image_data.source)
         return paths
 
     def reverse_list_widget_items(self):

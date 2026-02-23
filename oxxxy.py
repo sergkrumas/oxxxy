@@ -42,7 +42,7 @@ from PyQt5.QtWidgets import (QSystemTrayIcon, QWidget, QMessageBox, QMenu, QFile
 from PyQt5.QtCore import (pyqtSignal, QPoint, QPointF, pyqtSlot, QRect, QEvent, QDataStream, QIODevice,
     Qt, QSize, QRectF, QAbstractNativeEventFilter, QAbstractEventDispatcher, QThread, QByteArray, QMimeData)
 from PyQt5.QtGui import (QPainterPath, QColor, QKeyEvent, QMouseEvent, QBrush, QPixmap,
-    QPainter, QWindow, QImage, QPen, QIcon, QFont, QCursor, QPolygonF, QFontDatabase)
+    QPainter, QWindow, QImage, QPen, QIcon, QFont, QCursor, QPolygonF, QFontDatabase, QMovie)
 
 from _utils import (check_scancode_for, SettingsJson, generate_metainfo, build_valid_rect,
     build_valid_rectF, copy_image_file_to_clipboard, open_link_in_browser, save_meta_info,
@@ -1177,13 +1177,9 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         first_pixmap_center = None
         elementTopLeft = QPointF(0, 0)
         elementBottomRight = QPointF(0, 0)
-        for path_or_pix in paths_or_pixmaps:
-            if isinstance(path_or_pix, QPixmap):
-                pixmap = path_or_pix
-            elif path_or_pix == self.Globals.CLIPBOARD_FILEPATH:
-                pixmap = QPixmap.fromImage(QApplication.clipboard().image())
-            else:
-                pixmap = load_image_respect_orientation(path_or_pix)
+
+        def append_pixmap(pixmap):
+            nonlocal elementBottomRight, elementTopLeft, first_pixmap_center
             if pixmap.width() != 0:
                 element = self.elementsCreateNew(ToolID.picture)
                 element.pixmap = pixmap
@@ -1196,6 +1192,24 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
                 element.calc_local_data()
                 elementTopLeft += QPointF(pixmap.width(), 0)
                 pixmaps.append(pixmap)
+
+        for path_or_pix in paths_or_pixmaps:
+            if isinstance(path_or_pix, QPixmap):
+                pixmap = path_or_pix
+                append_pixmap(pixmap)
+            elif path_or_pix == self.Globals.CLIPBOARD_FILEPATH:
+                pixmap = QPixmap.fromImage(QApplication.clipboard().image())
+                append_pixmap(pixmap)
+            elif path_or_pix.lower().endswith(".gif"):
+                movie = QMovie(path_or_pix)
+                for i in range(movie.frameCount()):
+                    movie.jumpToFrame(i)
+                    pixmap = movie.currentPixmap()
+                    append_pixmap(pixmap)
+            else:
+                pixmap = load_image_respect_orientation(path_or_pix)
+                append_pixmap(pixmap)
+
         if pixmaps:
             self.input_POINT2, self.input_POINT1 = get_bounding_pointsF(points)
         else:

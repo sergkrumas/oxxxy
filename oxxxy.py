@@ -103,6 +103,7 @@ class Globals():
     DEFAULT_FRAGMENT_KEYSEQ = "Ctrl+Print"
     DEFAULT_FULLSCREEN_KEYSEQ = "Ctrl+Shift+Print"
     DEFAULT_QUICKFULLSCREEN_KEYSEQ = "Shift+Print"
+    DEFAULT_SHOWCOLLAGEEDITORFORM_KEYSEQ = "Alt+Print"
 
     save_to_memory_mode = False
     images_in_memory = []
@@ -315,6 +316,7 @@ class RequestType(Enum):
     Fullscreen = 1
     QuickFullscreen = 2
     Editor = 3
+    ShowCollageEditorForm = 4
 
 class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
 
@@ -2219,12 +2221,15 @@ def is_settings_window_visible():
     return value
 
 def global_hotkey_handler(request):
-    if (Globals.handle_global_hotkeys or Globals.save_to_memory_mode):
-                                                        # \ and not is_settings_window_visible():
-        if Globals.BLOCK_KEYSEQ_HANDLING_AFTER_FIRST_CALL:
-            if not Globals.save_to_memory_mode:
-                Globals.handle_global_hotkeys = False
-        invoke_screenshot_editor(request_type=request)
+    if request == RequestType.ShowCollageEditorForm:
+        compile_mode_input_files_drop_event()
+    else:
+        if (Globals.handle_global_hotkeys or Globals.save_to_memory_mode):
+                                                            # \ and not is_settings_window_visible():
+            if Globals.BLOCK_KEYSEQ_HANDLING_AFTER_FIRST_CALL:
+                if not Globals.save_to_memory_mode:
+                    Globals.handle_global_hotkeys = False
+            invoke_screenshot_editor(request_type=request)
 
 def special_hotkey_handler(request):
     if is_settings_window_visible():
@@ -2302,6 +2307,11 @@ def register_user_global_hotkeys():
             Globals.QUICKFULLSCREEN_KEYSEQ,
             lambda: global_hotkey_handler(RequestType.QuickFullscreen)):
         Globals.registred_key_seqs.append(Globals.QUICKFULLSCREEN_KEYSEQ)
+
+    if keybinder.register_hotkey(0,
+            Globals.SHOWCOLLAGEEDITORFORM_KEYSEQ,
+            lambda: global_hotkey_handler(RequestType.ShowCollageEditorForm)):
+        Globals.registred_key_seqs.append(Globals.SHOWCOLLAGEEDITORFORM_KEYSEQ)
 
 def unregister_global_hotkeys():
     try:
@@ -2564,6 +2574,8 @@ def read_settings_file():
     Globals.FULLSCREEN_KEYSEQ = SJ.get_data("FULLSCREEN_KEYSEQ", Globals.DEFAULT_FULLSCREEN_KEYSEQ)
     Globals.QUICKFULLSCREEN_KEYSEQ = SJ.get_data("QUICKFULLSCREEN_KEYSEQ",
                                                             Globals.DEFAULT_QUICKFULLSCREEN_KEYSEQ)
+    Globals.SHOWCOLLAGEEDITORFORM_KEYSEQ = SJ.get_data("SHOWCOLLAGEEDITORFORM_KEYSEQ",
+                                                    Globals.DEFAULT_SHOWCOLLAGEEDITORFORM_KEYSEQ)
     SJ.set_reading_file_on_getting_value(True)
 
 

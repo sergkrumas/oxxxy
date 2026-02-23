@@ -367,6 +367,7 @@ class SettingsWindow(QWidget, StylizedUIBase):
             ("скриншот с захватом фрагмента экрана", "FRAGMENT_KEYSEQ"),
             ("скриншот с захватом всего экрана", "FULLSCREEN_KEYSEQ"),
             ("быстрый скриншот всего экрана", "QUICKFULLSCREEN_KEYSEQ"),
+            ("показать форму редактора коллажей", "SHOWCOLLAGEEDITORFORM_KEYSEQ")
         ]
         def on_changed_callback(attr_name, value):
             setattr(self.Globals, attr_name, value)

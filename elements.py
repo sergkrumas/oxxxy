@@ -965,8 +965,10 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
         text = f"Проект сохранён в \n{project_filepath}"
         self.show_notify_dialog(text)
 
-    def show_notify_dialog(self, text):
-        self.dialog = self.NotifyDialog(self, label_text=text)
+    def show_notify_dialog(self, text, no_buttons=False):
+        if hasattr(self, 'dialog') and self.dialog and self.dialog.isVisible():
+            self.dialog.close()
+        self.dialog = self.NotifyDialog(self, label_text=text, no_buttons=no_buttons)
         self.dialog.show_at_center()
 
     def dialog_open_project(self):

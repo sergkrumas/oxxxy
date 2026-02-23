@@ -1248,7 +1248,7 @@ class InputFilesTrayWindow(QWidget, StylizedUIBase):
 class NotifyDialog(QWidget, StylizedUIBase):
     WIDTH = 1500
 
-    def __init__(self, *args, label_text=None, **kwargs):
+    def __init__(self, *args, label_text=None, no_buttons=False, **kwargs):
         super().__init__( *args, **kwargs)
         self.setWindowFlags(Qt.Dialog | Qt.FramelessWindowHint)
         self.setAttribute(Qt.WA_TranslucentBackground, True)
@@ -1276,7 +1276,8 @@ class NotifyDialog(QWidget, StylizedUIBase):
         self.timer.setInterval(10)
         self.timer.start()
         main_layout.addWidget(self.label)
-        main_layout.addWidget(self.button)
+        if not no_buttons:
+            main_layout.addWidget(self.button)
         self.setLayout(main_layout)
 
         self.resize(min(self.WIDTH, text_rect.width()+200), 200)

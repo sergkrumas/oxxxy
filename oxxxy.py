@@ -2041,6 +2041,9 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
                     self.tools_window.done_button.setEnabled(True)
 
     def save_current_editing_handler(self):
+        self.show_notify_dialog("В процессе...", no_buttons=True)
+        app = QApplication.instance()
+        app.processEvents()
         filepath = self.save_screenshot(restart=False)
         msg_text = f'Файл сохранён и доступен по этому пути:\n{filepath}'
         self.show_notify_dialog(msg_text)

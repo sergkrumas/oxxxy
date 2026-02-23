@@ -47,7 +47,8 @@ from PyQt5.QtGui import (QPainterPath, QColor, QKeyEvent, QMouseEvent, QBrush, Q
 from _utils import (check_scancode_for, SettingsJson, generate_metainfo, build_valid_rect,
     build_valid_rectF, copy_image_file_to_clipboard, open_link_in_browser, save_meta_info,
     make_screenshot_pyqt, webRGBA, draw_shadow, draw_cyberpunk, get_bounding_pointsF,
-    generate_datetime_stamp, get_work_area_rect, load_image_respect_orientation)
+    generate_datetime_stamp, get_work_area_rect, load_image_respect_orientation,
+    is_windows_dark_mode, change_color_of_non_transparent_pixels)
 
 from elements import ElementsMixin, ToolID
 from editor_autotest import EditorAutotestMixin
@@ -2791,7 +2792,11 @@ def _main():
         appid = 'sergei_krumas.oxxxy_screenshoter.client.1'
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(appid)
     Globals.ICON_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "icon.png"))
-    icon = QIcon(QPixmap(Globals.ICON_PATH))
+    pixmap = change_color_of_non_transparent_pixels(
+        QPixmap(Globals.ICON_PATH), 
+        Qt.white if is_windows_dark_mode() else Qt.black#QColor(220, 50, 50)
+    )
+    icon = QIcon(pixmap)
     app.setProperty("keep_ref_to_icon", icon)
     app.setWindowIcon(icon)
     # tooltip effects

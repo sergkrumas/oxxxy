@@ -29,6 +29,7 @@ import math
 import json
 import webbrowser
 import datetime
+import winreg
 
 import psutil
 from PIL import Image, ImageGrab, PngImagePlugin
@@ -106,6 +107,9 @@ __all__ = (
     'get_rect_corners',
 
     'get_work_area_rect',
+
+    'is_windows_dark_mode',
+    'change_color_of_non_transparent_pixels'
 )
 
 def get_work_area_rect():
@@ -900,3 +904,24 @@ def get_rect_corners(rect):
         rect.bottomRight(),
         rect.bottomLeft(),
     ]
+
+def is_windows_dark_mode():
+    try:
+        key_path = r"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize"
+        registry_key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, key_path, 0, winreg.KEY_READ)
+        value, reg_type = winreg.QueryValueEx(registry_key, "AppsUseLightTheme")
+        winreg.CloseKey(registry_key)
+        #value of 0 means Dark mode, 1 means Light mode
+        return value == 0
+    except WindowsError:
+        # key is not exists, because e.g., very old Windows version
+        # light mode is default
+        return False
+
+def change_color_of_non_transparent_pixels(pixmap, color):
+    p = QPainter()
+    p.begin(pixmap)
+    p.setCompositionMode(QPainter.CompositionMode_SourceIn)
+    p.fillRect(pixmap.rect(), color)
+    p.end()
+    return pixmap

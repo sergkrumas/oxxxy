@@ -157,15 +157,18 @@ class Element(Element2024Mixin):
 
         self._modification_stamp = 0.0
 
+        self.timestamp = time.time()
+
     def __repr__(self):
         return f'{self.unique_index} {self.oxxxy_type}'
 
     def get_parameters_info(self):
         info_text = ""
+        timestamp = datetime.datetime.fromtimestamp(self.timestamp).strftime("%M:%S")
         if self.source_indexes:
-            info_text += f"[{self.unique_index}] {self.oxxxy_type} from [{self.source_indexes}]"
+            info_text += f"[{self.unique_index}, {timestamp}] {self.oxxxy_type} from [{self.source_indexes}]"
         else:
-            info_text += f"[{self.unique_index}] {self.oxxxy_type}"
+            info_text += f"[{self.unique_index}, {timestamp}] {self.oxxxy_type}"
         if hasattr(self, 'toolbool'):
             info_text += f" (tb: {self.toolbool})"
         if hasattr(self, 'opacity'):
@@ -1385,7 +1388,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
     def elementsCopyElementData(self, element, source_element):
         attributes = source_element.__dict__.items()
         for attr_name, attr_value in attributes:
-            if attr_name in ["unique_index", "ms"]:
+            if attr_name in ["unique_index", "ms", "timestamp"]:
                 continue
             type_class = type(attr_value)
             # if type_class is type(None):

@@ -522,6 +522,8 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
         if not (notification != menu):
             raise
 
+        if notification:
+            self.setAttribute(Qt.WA_ShowWithoutActivating)
         NotificationOrMenu.instance = self
 
         self.image_stored_in_clipboard = False

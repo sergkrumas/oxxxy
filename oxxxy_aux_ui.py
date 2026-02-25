@@ -52,12 +52,13 @@ __all__ = (
 
 class StylizedUIBase():
 
-    button_style = """QPushButton{
+    button_style = """
+    QPushButton{
         font-size: 20px;
-        color: #303940;
+        color: white;
         text-align: center;
         border-radius: 5px;
-        background: rgb(220, 220, 220);
+        background-color: rgb(34, 45, 54);
         font-family: 'Consolas';
         font-weight: bold;
         border: 3px dashed #303940;

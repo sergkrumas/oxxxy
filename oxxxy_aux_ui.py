@@ -61,7 +61,7 @@ class StylizedUIBase():
         background-color: rgb(34, 45, 54);
         font-family: 'Consolas';
         font-weight: bold;
-        border: 3px dashed #303940;
+        /*border: 3px dashed #303940;*/
         padding: 5px;
         height: 40px;
     }
@@ -72,7 +72,7 @@ class StylizedUIBase():
     QPushButton#bottom, QPushButton#quit{
         color: rgb(210, 210, 210);
         background-color: none;
-        border: none;
+        /*border: none;*/
         text-decoration: underline;
     }
     QPushButton#quit{

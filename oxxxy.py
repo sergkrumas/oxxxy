@@ -48,7 +48,7 @@ from _utils import (check_scancode_for, SettingsJson, generate_metainfo, build_v
     build_valid_rectF, copy_image_file_to_clipboard, open_link_in_browser, save_meta_info,
     make_screenshot_pyqt, webRGBA, draw_shadow, draw_cyberpunk, get_bounding_pointsF,
     generate_datetime_stamp, get_work_area_rect, load_image_respect_orientation,
-    is_windows_dark_mode, change_color_of_non_transparent_pixels)
+    is_windows_dark_mode, change_color_of_non_transparent_pixels, RoundedQMenu)
 
 from elements import ElementsMixin, ToolID
 from editor_autotest import EditorAutotestMixin
@@ -353,6 +353,101 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
             color: rgb(220, 220, 220);
         }
     """
+
+
+    context_menu_stylesheet = """
+        QMenu, QCheckBox, QSpinBox{
+            padding: 0px;
+            font-size: 16px;
+        }
+        QMenu::item, QCheckBox, QSpinBox{
+            color: rgb(230, 230, 230);
+        }
+        QMenu::icon{
+            padding-left: 15px;
+        }
+        QMenu::item:checked, QCheckBox:checked{
+            font-weight: bold;
+            color: white;
+        }
+        QMenu::indicator {
+            left: 6px;
+        }
+        QMenu::indicator:non-exclusive:unchecked {
+            image: url(resources/unchecked.png);
+        }
+        QMenu::indicator:non-exclusive:unchecked:selected {
+            image: url(resources/unchecked.png);
+        }
+        QMenu::indicator:non-exclusive:checked {
+            image: url(resources/checked.png);
+        }
+        QMenu::indicator:non-exclusive:checked:selected {
+            image: url(resources/checked_selected.png);
+        }
+        QMenu::indicator:exclusive:unchecked {
+            image: url(resources/rb_unchecked.png);
+        }
+        QMenu::indicator:exclusive:unchecked:selected {
+            image: url(resources/rb_unchecked.png);
+        }
+        QMenu::indicator:exclusive:checked {
+            image: url(resources/checked.png);
+        }
+        QMenu::indicator:exclusive:checked:selected {
+            image: url(resources/checked.png);
+        }
+        QMenu{
+            background: transparent;
+            border: 1px solid rgb(50, 50, 50);
+            border-radius: 5px;
+            padding: 5px;
+        }
+        QMenu, QCheckBox{
+            background-color: rgb(25, 25, 25);
+        }
+        QMenu::item, QCheckBox{
+            padding: 8px;
+            color: gray;
+            padding: 5px 15px;
+            margin: 2px;
+        }
+        QMenu::icon{
+            padding-left: 15px;
+        }
+        QMenu::item:selected, QCheckBox:hover{
+            color: rgb(252, 181, 49);
+        }
+        QMenu::item:checked, QCheckBox:checked{
+            font-weight: bold;
+            color: rgb(200, 200, 200);
+        }
+        QMenu::item:unchecked, QCheckBox:unchecked{
+            color: gray;
+        }
+        QMenu::item:checked:selected, QCheckBox:checked:hover{
+            font-weight: bold;
+            color: rgb(252, 181, 49);
+        }
+        QMenu::item:unchecked:selected, QCheckBox:unchecked:hover{
+            color: rgb(252, 181, 49);
+        }
+        QMenu::item:disabled {
+            color: rgb(20, 20, 20);
+            background: rgb(100, 100, 100);
+            padding-right: 15px;
+            border-radius: 5px;
+        }
+        QMenu::section {
+            font-weight: bold;
+            color: red;
+            padding-top: 10px;
+        }
+        QMenu::separator {
+            height: 1px;
+            background: rgb(50, 50, 50);
+        }
+        """
 
     def set_clipboard(self, text):
         cb = QApplication.clipboard()
@@ -983,80 +1078,7 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
 
         self.setWindowTitle(f"Oxxxy Screenshoter {Globals.VERSION_INFO} {Globals.AUTHOR_INFO}")
 
-        self.context_menu_stylesheet = """
-        QMenu, QCheckBox, QSpinBox{
-            padding: 0px;
-            font-size: 16px;
-            font-weight: normal;
-            font-family: 'Consolas';
-        }
-        QMenu::item, QCheckBox, QSpinBox{
-            padding: 10px;
-            background: #303940;
-            color: rgb(230, 230, 230);
-        }
-        QMenu::icon{
-            padding-left: 15px;
-        }
-        QMenu::item:selected, QCheckBox:hover{
-            background-color: rgb(253, 203, 54);
-            color: rgb(50, 50, 50);
-            border-left: 2px dashed #303940;
-        }
-        QMenu::item:checked, QCheckBox:checked{
-            font-weight: bold;
-            color: white;
-            background: #304550;
-        }
-        QMenu::item:unchecked, QCheckBox:unchecked{
-            background: #304550;
-        }
-        QMenu::item:checked:selected, QCheckBox:checked:hover{
-            font-weight: bold;
-            color: rgb(50, 50, 50);
-            background-color: rgb(253, 203, 54);
-        }
-        QMenu::item:unchecked:selected, QCheckBox:unchecked:hover{
-            color: rgb(50, 50, 50);
-            background-color: rgb(253, 203, 54);
-        }
-        QMenu::item:disabled {
-            background-color: #303940;
-            color: white;
-            border-left: 2px dashed #303940;
-        }
-        QMenu::separator {
-            height: 1px;
-            background: gray;
-        }
-        QMenu::indicator {
-            left: 6px;
-        }
-        QMenu::indicator:non-exclusive:unchecked {
-            image: url(resources/unchecked.png);
-        }
-        QMenu::indicator:non-exclusive:unchecked:selected {
-            image: url(resources/unchecked.png);
-        }
-        QMenu::indicator:non-exclusive:checked {
-            image: url(resources/checked.png);
-        }
-        QMenu::indicator:non-exclusive:checked:selected {
-            image: url(resources/checked_selected.png);
-        }
-        QMenu::indicator:exclusive:unchecked {
-            image: url(resources/rb_unchecked.png);
-        }
-        QMenu::indicator:exclusive:unchecked:selected {
-            image: url(resources/rb_unchecked.png);
-        }
-        QMenu::indicator:exclusive:checked {
-            image: url(resources/checked.png);
-        }
-        QMenu::indicator:exclusive:checked:selected {
-            image: url(resources/checked_selected.png);
-        }
-        """
+
 
         self.source_pixels = screenshot_image
         self.metadata = metadata
@@ -1337,9 +1359,9 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
 
     def selection_filter_menu(self, main_menu=None):
         if main_menu is not None:
-            menu = QMenu(main_menu)
+            menu = RoundedQMenu(main_menu)
         else:
-            menu = QMenu()
+            menu = RoundedQMenu()
         title = 'Доступные к выделению'
         menu.setTitle(title)
         menu.setStyleSheet(self.context_menu_stylesheet)
@@ -1667,7 +1689,7 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
             menu.addAction(wa)
 
     def arrange_in_grid_menu(self):
-        menu = QMenu()
+        menu = RoundedQMenu()
         menu.setStyleSheet(self.context_menu_stylesheet)
 
         spinboxes = (
@@ -1684,7 +1706,7 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         action = menu.exec_(QCursor().pos())
 
     def slice_background_menu(self):
-        menu = QMenu()
+        menu = RoundedQMenu()
         menu.setStyleSheet(self.context_menu_stylesheet)
 
         spinboxes = (
@@ -1701,7 +1723,7 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         action = menu.exec_(QCursor().pos())
 
     def set_screenshot_cursor(self):
-        menu = QMenu()
+        menu = RoundedQMenu()
         menu.setStyleSheet(self.context_menu_stylesheet)
         for cur_name, cur_data in CanvasEditor.cursors_data.items():
             screenshot_cursor_menu_icon = QIcon(cur_data.pixmap)
@@ -1721,7 +1743,7 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
             setattr(obj, attr_name, not getattr(obj, attr_name))
             self.update()
 
-        contextMenu = QMenu()
+        contextMenu = RoundedQMenu()
         contextMenu.setStyleSheet(self.context_menu_stylesheet)
 
         def add_item(*args):
@@ -2745,6 +2767,7 @@ SettingsWindow.Globals = Globals
 NotificationOrMenu.Globals = Globals
 InputFilesTrayWindow.Globals = Globals
 NotificationOrMenu.RequestType = RequestType
+NotificationOrMenu.context_menu_stylesheet = CanvasEditor.context_menu_stylesheet
 NotificationOrMenu.gl = type('global', (), {})
 NotificationOrMenu.gl.invoke_screenshot_editor = invoke_screenshot_editor
 NotificationOrMenu.gl._restart_app = _restart_app
@@ -2810,7 +2833,7 @@ def _main():
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(appid)
     Globals.ICON_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "icon.png"))
     pixmap = change_color_of_non_transparent_pixels(
-        QPixmap(Globals.ICON_PATH), 
+        QPixmap(Globals.ICON_PATH),
         Qt.white if is_windows_dark_mode() else Qt.black#QColor(220, 50, 50)
     )
     icon = QIcon(pixmap)

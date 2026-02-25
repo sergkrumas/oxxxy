@@ -35,10 +35,10 @@ import psutil
 from PIL import Image, ImageGrab, PngImagePlugin
 
 from PyQt5.QtWidgets import (QMessageBox, QDesktopWidget, QApplication,
-                                        QGraphicsBlurEffect, QGraphicsPixmapItem, QGraphicsScene)
+                                QGraphicsBlurEffect, QGraphicsPixmapItem, QGraphicsScene, QMenu)
 from PyQt5.QtCore import (QRectF, QPoint, QSizeF, Qt, QPointF, QRect, QMimeData, QUrl)
 from PyQt5.QtGui import (QPixmap, QImage, QRadialGradient, QColor, QGuiApplication, QPen,
-                        QLinearGradient, QPainter, QImageReader, QVector2D)
+                        QLinearGradient, QPainter, QImageReader, QVector2D, QPainterPath, QRegion, QTransform)
 from PyQt5.QtSvg import  QSvgRenderer
 
 win32process = None
@@ -109,7 +109,9 @@ __all__ = (
     'get_work_area_rect',
 
     'is_windows_dark_mode',
-    'change_color_of_non_transparent_pixels'
+    'change_color_of_non_transparent_pixels',
+
+    'RoundedQMenu',
 )
 
 def get_work_area_rect():
@@ -533,10 +535,10 @@ def generate_gradient(_type, shadow_size, color1_hex, color2_hex):
         GradientConstants.bottom_right:    (shadow_size, shadow_size),
         GradientConstants.bottom_left:     (shadow_size, shadow_size),
         GradientConstants.top_right:       (shadow_size, shadow_size),
-        GradientConstants.top:             (1, shadow_size),          
-        GradientConstants.bottom:          (1, shadow_size),          
-        GradientConstants.left:            (shadow_size, 1),          
-        GradientConstants.right:           (shadow_size, 1),          
+        GradientConstants.top:             (1, shadow_size),
+        GradientConstants.bottom:          (1, shadow_size),
+        GradientConstants.left:            (shadow_size, 1),
+        GradientConstants.right:           (shadow_size, 1),
     }
     size = gradients.get(_type)
     gradient_type_pxm = QPixmap(*size)
@@ -925,3 +927,16 @@ def change_color_of_non_transparent_pixels(pixmap, color):
     p.fillRect(pixmap.rect(), color)
     p.end()
     return pixmap
+
+class RoundedQMenu(QMenu):
+    def resizeEvent(self, event):
+        path = QPainterPath()
+        RADIUS = 5
+        # the rectangle must be translated and adjusted by 1 pixel in order to
+        # correctly map the rounded shape
+        rect = QRectF(self.rect()).adjusted(.5, .5, -1.5, -1.5)
+        path.addRoundedRect(rect, RADIUS, RADIUS)
+        # QRegion is bitmap based, so the returned QPolygonF (which uses float
+        # values must be transformed to an integer based QPolygon
+        region = QRegion(path.toFillPolygon(QTransform()).toPolygon())
+        self.setMask(region)

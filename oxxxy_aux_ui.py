@@ -35,7 +35,7 @@ from PyQt5.QtCore import (QPoint, QRect, QTimer, Qt, QSize, QRectF, pyqtSignal)
 from PyQt5.QtGui import (QPainterPath, QColor, QBrush, QPainter, QPen, QCursor, QVector2D,
                                                                 QFontMetrics, QPixmap)
 
-from _utils import (SettingsJson, get_creation_date, open_link_in_browser, open_in_google_chrome)
+from _utils import (SettingsJson, get_creation_date, open_link_in_browser, open_in_google_chrome, RoundedQMenu)
 
 from key_seq_edit import KeySequenceEdit
 from on_windows_startup import (add_to_startup, is_app_in_startup, remove_from_startup)
@@ -722,7 +722,8 @@ class NotificationOrMenu(QWidget, StylizedUIBase):
             event.ignore()
 
     def contextMenuEvent(self, event):
-        menu = QMenu()
+        menu = RoundedQMenu()
+        menu.setStyleSheet(self.context_menu_stylesheet)
         restart_app = menu.addAction('Перезапустить приложение')
         menu.addSeparator()
         crash_app = menu.addAction('Крашнуть приложение')

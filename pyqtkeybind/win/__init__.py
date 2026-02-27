@@ -67,8 +67,17 @@ class WinKeyBinder(object):
             if msg.message == WM_HOTKEY_MSG:
                 key = msg.lParam
                 for cb in self.__keybinds.get(key, []):
-                    try:
-                        cb()
-                    finally:
-                        return True
+                    # TODO: INFO: убираю отсюда try, потому что мне требуется,
+                    # чтобы прога падала, если что-то не так.
+                    # Раньше я полагал, что это всё работает в другом потоке,
+                    # (в итоге потока не нашёл)
+                    # потому что всё, что запускалось через эти горячие клавиши,
+                    # в итоге не оповещало о сбоях (из-за этого блока try)
+                    # Можно было бы делать здесь reraise, но пока не хочу.
+                    # try:
+                    #     cb()
+                    # finally:
+                    #     return True
+                    cb()
+                    return True
         return False

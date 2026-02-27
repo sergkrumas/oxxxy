@@ -36,9 +36,16 @@ class WinKeyBinder(object):
         # https://msdn.microsoft.com/en-us/library/windows/desktop/ms646279%28v=vs.85%29.aspx
         # Add MOD_NOREPEAT = 0x4000 to mods, so that keys don't get notified twice
         # This requires VISTA+ operating system
+        disable_norepeat = True
+        if disable_norepeat:
+            # INFO: тем самым, возвращаем autorepeat обратно,
+            # ибо с аторепитами я сам разберусь уже в приложении
+            MOD_NOREPEAT = 0x0
+        else:
+            MOD_NOREPEAT = 0x4000
         key_index = kc << 16 | mods
         if not self.__keygrabs[key_index] and\
-                not self.RegisterHotKey(wid.__int__(), key_index, UINT(mods | 0x4000), UINT(kc)):
+                not self.RegisterHotKey(wid.__int__(), key_index, UINT(mods | MOD_NOREPEAT), UINT(kc)):
             print("Couldn't register hot key!")
             return False
 

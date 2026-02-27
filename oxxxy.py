@@ -2339,6 +2339,8 @@ def register_user_global_hotkeys():
     register_hotkey(Globals.FRAGMENT_KEYSEQ, partial(global_hotkey_handler, RequestType.Fragment))
     register_hotkey(Globals.FULLSCREEN_KEYSEQ, partial(global_hotkey_handler, RequestType.Fullscreen))
     register_hotkey(Globals.QUICKFULLSCREEN_KEYSEQ, partial(global_hotkey_handler, RequestType.QuickFullscreen))
+    register_hotkey(Globals.SHOWCOLLAGEEDITORFORM_KEYSEQ, partial(global_hotkey_handler, RequestType.ShowCollageEditorForm))
+
 
 def unregister_global_hotkeys():
     try:

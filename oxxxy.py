@@ -105,6 +105,7 @@ class Globals():
     DEFAULT_FULLSCREEN_KEYSEQ = "Ctrl+Shift+Print"
     DEFAULT_QUICKFULLSCREEN_KEYSEQ = "Shift+Print"
     DEFAULT_SHOWCOLLAGEEDITORFORM_KEYSEQ = "Alt+Print"
+    DEFAULT_BURSTMODE_KEYSEQ = "Alt+Shift+Print"
 
     save_to_memory_mode = False
     images_in_memory = []
@@ -2329,29 +2330,15 @@ def register_user_global_hotkeys():
     # print('register_user_global_hotkeys', flush=True)
     unregister_global_hotkeys()
 
+    def register_hotkey(keystring, callback):
+        if keybinder.register_hotkey(0, keystring, callback):
+            Globals.registred_key_seqs.append(keystring)
+
     if Globals.USE_PRINT_KEY:
-        if keybinder.register_hotkey(0,
-                "Print",
-                lambda: special_hotkey_handler(RequestType.Fragment)):
-            Globals.registred_key_seqs.append("Print")
-
-    if keybinder.register_hotkey(0,
-            Globals.FRAGMENT_KEYSEQ,
-            lambda: global_hotkey_handler(RequestType.Fragment)):
-        Globals.registred_key_seqs.append(Globals.FRAGMENT_KEYSEQ)
-    if keybinder.register_hotkey(0,
-            Globals.FULLSCREEN_KEYSEQ,
-            lambda: global_hotkey_handler(RequestType.Fullscreen)):
-        Globals.registred_key_seqs.append(Globals.FULLSCREEN_KEYSEQ)
-    if keybinder.register_hotkey(0,
-            Globals.QUICKFULLSCREEN_KEYSEQ,
-            lambda: global_hotkey_handler(RequestType.QuickFullscreen)):
-        Globals.registred_key_seqs.append(Globals.QUICKFULLSCREEN_KEYSEQ)
-
-    if keybinder.register_hotkey(0,
-            Globals.SHOWCOLLAGEEDITORFORM_KEYSEQ,
-            lambda: global_hotkey_handler(RequestType.ShowCollageEditorForm)):
-        Globals.registred_key_seqs.append(Globals.SHOWCOLLAGEEDITORFORM_KEYSEQ)
+        register_hotkey("Print", partial(global_hotkey_handler, RequestType.Fragment))
+    register_hotkey(Globals.FRAGMENT_KEYSEQ, partial(global_hotkey_handler, RequestType.Fragment))
+    register_hotkey(Globals.FULLSCREEN_KEYSEQ, partial(global_hotkey_handler, RequestType.Fullscreen))
+    register_hotkey(Globals.QUICKFULLSCREEN_KEYSEQ, partial(global_hotkey_handler, RequestType.QuickFullscreen))
 
 def unregister_global_hotkeys():
     try:
@@ -2616,6 +2603,7 @@ def read_settings_file():
                                                             Globals.DEFAULT_QUICKFULLSCREEN_KEYSEQ)
     Globals.SHOWCOLLAGEEDITORFORM_KEYSEQ = SJ.get_data("SHOWCOLLAGEEDITORFORM_KEYSEQ",
                                                     Globals.DEFAULT_SHOWCOLLAGEEDITORFORM_KEYSEQ)
+    Globals.BURSTMODE_KEYSEQ = SJ.get_data("BURSTMODE_KEYSEQ", Globals.DEFAULT_BURSTMODE_KEYSEQ)
     SJ.set_reading_file_on_getting_value(True)
 
 

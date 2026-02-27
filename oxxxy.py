@@ -2597,11 +2597,22 @@ def read_settings_file():
     Globals.USE_COLOR_PALETTE = SJ.get_data("USE_COLOR_PALETTE")
 
     Globals.USE_PRINT_KEY = SJ.get_data("USE_PRINT_KEY", Globals.USE_PRINT_KEY)
-    Globals.FRAGMENT_KEYSEQ = SJ.get_data("FRAGMENT_KEYSEQ", Globals.DEFAULT_FRAGMENT_KEYSEQ)
-    Globals.FULLSCREEN_KEYSEQ = SJ.get_data("FULLSCREEN_KEYSEQ", Globals.DEFAULT_FULLSCREEN_KEYSEQ)
-    Globals.QUICKFULLSCREEN_KEYSEQ = SJ.get_data("QUICKFULLSCREEN_KEYSEQ", Globals.DEFAULT_QUICKFULLSCREEN_KEYSEQ)
-    Globals.SHOWCOLLAGEEDITORFORM_KEYSEQ = SJ.get_data("SHOWCOLLAGEEDITORFORM_KEYSEQ", Globals.DEFAULT_SHOWCOLLAGEEDITORFORM_KEYSEQ)
     Globals.BURSTMODE_KEYSEQ = SJ.get_data("BURSTMODE_KEYSEQ", Globals.DEFAULT_BURSTMODE_KEYSEQ)
+
+    def read_keyseq_setting(setting_attr):
+        default_value = getattr(Globals, f'DEFAULT_{setting_attr}')
+        value = SJ.get_data(setting_attr, default_value)
+        setattr(Globals, setting_attr, value)
+
+    keyseq_settings = (
+                        'FRAGMENT_KEYSEQ',
+                        'FULLSCREEN_KEYSEQ',
+                        'QUICKFULLSCREEN_KEYSEQ',
+                        'SHOWCOLLAGEEDITORFORM_KEYSEQ',
+                    )
+    for setting_name in keyseq_settings:
+        read_keyseq_setting(setting_name)
+
     SJ.set_reading_file_on_getting_value(True)
 
 

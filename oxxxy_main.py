@@ -1452,9 +1452,12 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
                         pos.setY(hor)
         return pos
 
-    def do_capture_snapping(self, pos, vert=True, hor=True):
+    def do_capture_snapping(self, pos, vert=True, hor=True, viewport_transform=False):
         desktop = QDesktopWidget()
-        rects = [desktop.screenGeometry(screen=i) for i in range(desktop.screenCount())]
+        if viewport_transform:
+            rects = [self.elementsMapToViewportRectF(desktop.screenGeometry(screen=i)).toRect() for i in range(desktop.screenCount())]
+        else:
+            rects = [desktop.screenGeometry(screen=i) for i in range(desktop.screenCount())]
         pos_override = self.rect_snapping(pos, rects, vert=True, hor=True)
         return pos_override
 
@@ -1482,7 +1485,7 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         if self.elementsTextElementMouseMoveEvent(event):
             return
 
-        event_pos_override = self.do_capture_snapping(event.pos())
+        event_pos_override = self.do_capture_snapping(event.pos(), viewport_transform=True)
 
         drawing_outside_capture_widget_allowed = \
                         not self.drag_inside_capture_zone \

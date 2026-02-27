@@ -2454,6 +2454,7 @@ def invoke_screenshot_editor(request_type=None, filepaths_or_pixmaps=None, save_
     # если было открыто окно-меню около трея - прячем его
     # hide_all_windows()
 
+    init_system_cursor_pos()
     if request_type == RequestType.BurstMode:
         metadata = None
         datetime_stamp = None
@@ -2462,7 +2463,6 @@ def invoke_screenshot_editor(request_type=None, filepaths_or_pixmaps=None, save_
         metadata = generate_metainfo()
         datetime_stamp = generate_datetime_stamp()
         # started_time = time.time()
-        init_system_cursor_pos()
         screenshot_image = make_screenshot_pyqt()
 
     if request_type == RequestType.Fragment:

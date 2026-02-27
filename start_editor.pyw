@@ -22,9 +22,9 @@
 Start editor once and exit
 """
 
-import oxxxy
+import oxxxy_main
 
 if __name__ == '__main__':
-    oxxxy.Globals.RUN_ONCE = True
-    oxxxy.Globals.DEBUG = False
-    oxxxy.main()
+    oxxxy_main.Globals.RUN_ONCE = True
+    oxxxy_main.Globals.DEBUG = False
+    oxxxy_main.main()

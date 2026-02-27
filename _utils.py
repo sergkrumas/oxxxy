@@ -37,7 +37,7 @@ from PIL import Image, ImageGrab, PngImagePlugin
 from PyQt5.QtWidgets import (QMessageBox, QDesktopWidget, QApplication,
                                 QGraphicsBlurEffect, QGraphicsPixmapItem, QGraphicsScene, QMenu)
 from PyQt5.QtCore import (QRectF, QPoint, QSizeF, Qt, QPointF, QRect, QMimeData, QUrl)
-from PyQt5.QtGui import (QPixmap, QImage, QRadialGradient, QColor, QGuiApplication, QPen,
+from PyQt5.QtGui import (QPixmap, QImage, QRadialGradient, QColor, QGuiApplication, QPen, QCursor,
                         QLinearGradient, QPainter, QImageReader, QVector2D, QPainterPath, QRegion, QTransform)
 from PyQt5.QtSvg import  QSvgRenderer
 
@@ -473,10 +473,17 @@ def PIL_to_QImage(im):
 def make_screenshot_ImageGrab():
     return PIL_to_QImage(ImageGrab.grab(all_screens=True))
 
-def make_screenshot_pyqt():
+def make_screenshot_pyqt(underMouse=False):
     desktop = QDesktopWidget()
 
-    rects = [desktop.screenGeometry(screen=i) for i in range(desktop.screenCount())]
+    if underMouse:
+        rects = []
+        for i in range(desktop.screenCount()):
+            r = desktop.screenGeometry(screen=i)
+            if r.contains(QCursor().pos()):
+                rects.append(QRect(r))
+    else:
+        rects = [desktop.screenGeometry(screen=i) for i in range(desktop.screenCount())]
     left = min(r.left() for r in rects)
     right = max(r.right() for r in rects)
     top = min(r.top() for r in rects)
@@ -496,9 +503,15 @@ def make_screenshot_pyqt():
     painter.begin(qimage)
     screens = QGuiApplication.screens()
     for n, screen in enumerate(screens):
+        if underMouse and not screen.geometry().contains(QCursor().pos()):
+            continue
         p = screen.grabWindow(0)
         source_rect = QRect(QPoint(0, 0), screen.geometry().size())
-        painter.drawPixmap(screen.geometry(), p, source_rect)
+        if underMouse:
+            dest_rect = source_rect
+        else:
+            dest_rect = screen.geometry()
+        painter.drawPixmap(dest_rect, p, source_rect)
     painter.end()
     return qimage
 

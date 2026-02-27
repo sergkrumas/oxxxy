@@ -40,7 +40,7 @@ from key_seq_edit import KeySequenceEdit
 from PyQt5.QtWidgets import (QSystemTrayIcon, QWidget, QMessageBox, QMenu, QFileDialog,
     QCheckBox, QWidgetAction, QApplication, QDesktopWidget, QActionGroup, QSpinBox)
 from PyQt5.QtCore import (pyqtSignal, QPoint, QPointF, pyqtSlot, QRect, QEvent, QDataStream, QIODevice,
-    Qt, QSize, QRectF, QAbstractNativeEventFilter, QAbstractEventDispatcher, QThread, QByteArray, QMimeData)
+    Qt, QSize, QRectF, QAbstractNativeEventFilter, QAbstractEventDispatcher, QThread, QByteArray, QMimeData, QTimer)
 from PyQt5.QtGui import (QPainterPath, QColor, QKeyEvent, QMouseEvent, QBrush, QPixmap,
     QPainter, QWindow, QImage, QPen, QIcon, QFont, QCursor, QPolygonF, QFontDatabase, QMovie)
 
@@ -105,7 +105,7 @@ class Globals():
     DEFAULT_FULLSCREEN_KEYSEQ = "Ctrl+Shift+Print"
     DEFAULT_QUICKFULLSCREEN_KEYSEQ = "Shift+Print"
     DEFAULT_SHOWCOLLAGEEDITORFORM_KEYSEQ = "Alt+Print"
-    DEFAULT_BURSTMODE_KEYSEQ = "Alt+Shift+Print"
+    DEFAULT_BURSTMODE_KEYSEQ = "Ctrl+Alt+Print"
 
     save_to_memory_mode = False
     images_in_memory = []
@@ -127,6 +127,10 @@ class Globals():
     COPY_SELECTED_CANVAS_ITEMS_STR = '~#~OXXXY:SCREENSHOTER:COPY:SELECTED:CANVAS:ITEMS~#~'
 
     CLIPBOARD_FILEPATH = 'clipboard'
+
+    burst_mode_screenshots = []
+    _burst_mode_release_timer = None
+    burst_mode_finished = False
 
     @classmethod
     def load_fonts(cls):
@@ -319,6 +323,7 @@ class RequestType(Enum):
     QuickFullscreen = 2
     Editor = 3
     ShowCollageEditorForm = 4
+    BurstMode = 5
 
 class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
 
@@ -1184,7 +1189,7 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         self.update_tools_window()
         self.update()
 
-    def request_images_editor_mode(self, paths_or_pixmaps):
+    def request_images_editor_mode(self, paths_or_pixmaps, burstmode=False):
         pixmaps = []
         self.input_POINT2 = QPoint(0, 0)
         self.input_POINT1 = self.frameGeometry().bottomRight()
@@ -1213,12 +1218,18 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
                 if first_pixmap_center is None:
                     first_pixmap_center = element.position
                 element.calc_local_data()
-                elementTopLeft += QPointF(pixmap.width(), 0)
+                if burstmode:
+                    elementTopLeft += QPointF(0, pixmap.height())
+                else:
+                    elementTopLeft += QPointF(pixmap.width(), 0)
                 pixmaps.append(pixmap)
 
         for path_or_pix in paths_or_pixmaps:
             if isinstance(path_or_pix, QPixmap):
                 pixmap = path_or_pix
+                append_pixmap(pixmap)
+            if isinstance(path_or_pix, QImage):
+                pixmap = QPixmap.fromImage(path_or_pix)
                 append_pixmap(pixmap)
             elif path_or_pix == self.Globals.CLIPBOARD_FILEPATH:
                 pixmap = QPixmap.fromImage(QApplication.clipboard().image())
@@ -2264,6 +2275,8 @@ def is_settings_window_visible():
 def global_hotkey_handler(request):
     if request == RequestType.ShowCollageEditorForm:
         compile_mode_input_files_drop_event()
+    elif request == RequestType.BurstMode:
+        burst_mode_dispatcher()
     else:
         if (Globals.handle_global_hotkeys or Globals.save_to_memory_mode):
                                                             # \ and not is_settings_window_visible():
@@ -2340,7 +2353,7 @@ def register_user_global_hotkeys():
     register_hotkey(Globals.FULLSCREEN_KEYSEQ, partial(global_hotkey_handler, RequestType.Fullscreen))
     register_hotkey(Globals.QUICKFULLSCREEN_KEYSEQ, partial(global_hotkey_handler, RequestType.QuickFullscreen))
     register_hotkey(Globals.SHOWCOLLAGEEDITORFORM_KEYSEQ, partial(global_hotkey_handler, RequestType.ShowCollageEditorForm))
-
+    register_hotkey(Globals.BURSTMODE_KEYSEQ , partial(global_hotkey_handler, RequestType.BurstMode))
 
 def unregister_global_hotkeys():
     try:
@@ -2441,13 +2454,17 @@ def invoke_screenshot_editor(request_type=None, filepaths_or_pixmaps=None, save_
     # если было открыто окно-меню около трея - прячем его
     # hide_all_windows()
 
-    metadata = generate_metainfo()
-    datetime_stamp = generate_datetime_stamp()
-    # started_time = time.time()
+    if request_type == RequestType.BurstMode:
+        metadata = None
+        datetime_stamp = None
+        screenshot_image = QImage()
+    else:
+        metadata = generate_metainfo()
+        datetime_stamp = generate_datetime_stamp()
+        # started_time = time.time()
+        init_system_cursor_pos()
+        screenshot_image = make_screenshot_pyqt()
 
-    init_system_cursor_pos()
-
-    screenshot_image = make_screenshot_pyqt()
     if request_type == RequestType.Fragment:
         # print("^^^^^^", time.time() - started_time)
         if Globals.DEBUG and Globals.DEBUG_ELEMENTS and not Globals.DEBUG_ELEMENTS_COLLAGE:
@@ -2479,7 +2496,7 @@ def invoke_screenshot_editor(request_type=None, filepaths_or_pixmaps=None, save_
         QApplication.instance().processEvents()
         Globals._canvas_editor.activateWindow()
 
-    if request_type == RequestType.Editor:
+    if request_type in [RequestType.Editor, RequestType.BurstMode]:
         if not filepaths_or_pixmaps:
             path = SettingsJson().get_data("SCREENSHOT_FOLDER_PATH")
             if not path:
@@ -2488,13 +2505,11 @@ def invoke_screenshot_editor(request_type=None, filepaths_or_pixmaps=None, save_
         if filepaths_or_pixmaps:
             Globals._canvas_editor = CanvasEditor(screenshot_image, metadata, datetime_stamp)
             Globals._canvas_editor.save_rootfolderpath_override = save_rootfolderpath_override
-            Globals._canvas_editor.request_images_editor_mode(filepaths_or_pixmaps)
+            Globals._canvas_editor.request_images_editor_mode(filepaths_or_pixmaps, burstmode=True)
             Globals._canvas_editor.show()
             # чтобы activateWindow точно сработал и взял фокус ввода
             QApplication.instance().processEvents()
             Globals._canvas_editor.activateWindow()
-
-
 
     if request_type == RequestType.QuickFullscreen:
         CanvasEditor.save_screenshot(None, grabbed_image=screenshot_image, metadata=metadata)
@@ -2518,7 +2533,7 @@ def get_crashlog_filepath():
     path = os.path.normpath(os.path.join(root, "oxxxy_crash.log"))
     return path
 
-def update_sys_tray_icon(value, reset=False):
+def update_sys_tray_icon(value, reset=False, divider=1.4):
     app = QApplication.instance()
     stray_icon = app.property("stray_icon")
     if stray_icon:
@@ -2527,7 +2542,6 @@ def update_sys_tray_icon(value, reset=False):
             painter = QPainter()
             painter.begin(pixmap)
             font = painter.font()
-            divider = 1.4
             height = int(pixmap.height()/divider)
             font.setPixelSize(height)
             font.setWeight(1900)
@@ -2599,7 +2613,6 @@ def read_settings_file():
     Globals.USE_COLOR_PALETTE = SJ.get_data("USE_COLOR_PALETTE")
 
     Globals.USE_PRINT_KEY = SJ.get_data("USE_PRINT_KEY", Globals.USE_PRINT_KEY)
-    Globals.BURSTMODE_KEYSEQ = SJ.get_data("BURSTMODE_KEYSEQ", Globals.DEFAULT_BURSTMODE_KEYSEQ)
 
     def read_keyseq_setting(setting_attr):
         default_value = getattr(Globals, f'DEFAULT_{setting_attr}')
@@ -2611,6 +2624,7 @@ def read_settings_file():
                         'FULLSCREEN_KEYSEQ',
                         'QUICKFULLSCREEN_KEYSEQ',
                         'SHOWCOLLAGEEDITORFORM_KEYSEQ',
+                        'BURSTMODE_KEYSEQ',
                     )
     for setting_name in keyseq_settings:
         read_keyseq_setting(setting_name)
@@ -2710,6 +2724,73 @@ def kick_prepare_thread():
 
     if pt_instance and not pt_instance.isRunning():
         pt_instance.start()
+
+class BurstModeThread(QThread):
+
+    update_signal = pyqtSignal(object)
+    instance = None
+
+    def __init__(self):
+        super().__init__()
+        self.__class__.instance = self
+        self.update_signal.connect(lambda: None)
+
+    @classmethod
+    def touch(cls):
+        instance = cls.instance
+        if instance is None:
+            pt = cls()
+            pt.start()
+
+    def start(self):
+        super().start(QThread.IdlePriority)
+        # super().start()
+
+    def run(self):
+        while True:
+            self.msleep(1) # switch to main thread to simulate (cause Python's GIL) multithreading
+            Globals.burst_mode_screenshots.append(make_screenshot_pyqt(underMouse=True))
+            self.update_signal.emit(None)
+
+    @classmethod
+    def harosh(cls):
+        if cls.instance:
+            cls.instance.terminate()
+            cls.instance = None
+
+def burst_mode_timer_expired():
+    if not Globals.burst_mode_finished:
+        BurstModeThread.harosh()
+        Globals.burst_mode_finished = True
+        invoke_screenshot_editor(
+            RequestType.BurstMode,
+            filepaths_or_pixmaps=Globals.burst_mode_screenshots
+        )
+
+def burst_mode_timer():
+    if Globals._burst_mode_release_timer is None:
+        timer = QTimer()
+        Globals._burst_mode_release_timer = timer
+        timer.timeout.connect(burst_mode_timer_expired)
+        timer.setInterval(300)
+        timer.start()
+    else:
+        # hotkey is still hold, so reset the timer
+        Globals._burst_mode_release_timer.stop()
+        Globals._burst_mode_release_timer = None
+        burst_mode_timer()
+
+def burst_mode_dispatcher():
+    if False:
+        # (27 фев 26): при таком подходе сообщения копятся в очереди,
+        # и после отпускания клавиши программа ещё долго перелопачивает сообщения,
+        # поэтому этот подход использовать не буду
+        Globals.burst_mode_screenshots.append(make_screenshot_pyqt(underMouse=True))
+        update_sys_tray_icon(len(Globals.burst_mode_screenshots), divider=2.0)
+    else:
+        BurstModeThread.touch()
+        update_sys_tray_icon(len(Globals.burst_mode_screenshots), divider=2.0)
+    burst_mode_timer()
 
 def compile_mode_input_files_drop_event(drop_event_data=None):
 

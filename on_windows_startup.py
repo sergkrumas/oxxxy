@@ -54,8 +54,8 @@ def remove_from_startup(app_id):
 # only for test purposes
 if __name__ == '__main__':
     # config
-    filepath = os.path.join(os.path.dirname(__file__), "launcher.pyw")
-    app_id = 'oxxxy_launcher'
+    filepath = os.path.join(os.path.dirname(__file__), "oxxxy.pyw")
+    app_id = 'oxxxyScreenshoterLauncher'
 
     add_to_startup(app_id, filepath)
     print("is app in autorun:", is_app_in_startup(app_id))

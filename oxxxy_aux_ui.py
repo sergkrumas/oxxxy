@@ -281,8 +281,8 @@ class SettingsWindow(QWidget, StylizedUIBase):
     instance = None
 
     STARTUP_CONFIG = (
-        'oxxxy_launcher',
-        os.path.join(os.path.dirname(__file__), "launcher.pyw")
+        'oxxxyScreenshoterLauncher',
+        os.path.join(os.path.dirname(__file__), "oxxxy.pyw")
     )
 
     @classmethod

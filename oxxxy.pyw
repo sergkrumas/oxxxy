@@ -22,8 +22,8 @@
 Oxxxy Entry Point
 """
 
-import oxxxy
+import oxxxy_main
 
 if __name__ == '__main__':
-    oxxxy.Globals.DEBUG = False
-    oxxxy.main()
+    oxxxy_main.Globals.DEBUG = False
+    oxxxy_main.main()

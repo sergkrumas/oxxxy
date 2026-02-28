@@ -1696,6 +1696,7 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         for title, attr in spinboxes_data:
             wa = QWidgetAction(menu)
             sb = QSpinBox()
+            sb.setStyleSheet("color: white; background-color: black;")
             sb.setToolTip(title)
 
             sb.setValue(getattr(self.Globals, attr))
@@ -1749,6 +1750,13 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
 
         action = menu.exec_(QCursor().pos())
 
+    def addItemToMenu(self, *args):
+        callback = args[-1]
+        menu = args[0]
+        action = menu.addAction(*args[1:-1])
+        action.triggered.connect(callback)
+        return action
+
     def contextMenuEvent(self, event):
         if self.cancel_context_menu:
             self.cancel_context_menu = False
@@ -1758,11 +1766,13 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
             setattr(obj, attr_name, not getattr(obj, attr_name))
             self.update()
 
-        contextMenu = RoundedQMenu()
-        contextMenu.setStyleSheet(self.context_menu_stylesheet)
+        cM = RoundedQMenu()
+        cM.setStyleSheet(self.context_menu_stylesheet)
 
-        def add_item(*args):
-            return contextMenu.addAction(*args)
+        sep = cM.addSeparator
+
+        def addItem(*args):
+            return self.addItemToMenu(cM, *args)
 
         def do_set_image_frame():
             if sel_elem.backup_pixmap is None:
@@ -1774,28 +1784,20 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         sel_elem = self.active_element
         if sel_elem and sel_elem.oxxxy_type == ToolID.picture:
             if sel_elem.backup_pixmap is not None:
-                reset_image_frame = add_item("Отменить обрезку выделенного изображения")
-                reset_image_frame.triggered.connect(lambda: self.elementsFramePicture())
-            set_image_frame = add_item("Обрезать выделенное изображение")
-            set_image_frame.triggered.connect(do_set_image_frame)
-            contextMenu.addSeparator()
+                addItem("Отменить обрезку выделенного изображения", self.elementsFramePicture)
+            addItem("Обрезать выделенное изображение", do_set_image_frame)
+            sep()
 
         capture_is_set = self.capture_region_rect is not None
 
-        render_elements_to_background = add_item(Globals.icon_bake, "Нарисовать содержимое на фоне и удалить содержимое")
-        render_elements_to_background.setEnabled(capture_is_set)
-        render_elements_to_background.triggered.connect(self.elementsDoRenderToBackground)
+        addItem(Globals.icon_bake, "Нарисовать содержимое на фоне и удалить содержимое", self.elementsDoRenderToBackground).setEnabled(capture_is_set)
+        addItem(Globals.icon_slice_background, "Нарезать фон на куски", self.slice_background_menu)
 
-        slice_background = add_item(Globals.icon_slice_background, "Нарезать фон на куски")
-        slice_background.triggered.connect(self.slice_background_menu)
-
-        activate_multiframing_tool = add_item(Globals.icon_multiframing, "Активировать инструмент мультикадрирования")
-        activate_multiframing_tool.setEnabled(capture_is_set)
         def amt():
             if self.tools_window:
                 self.elementsInvertBoolAttribute('use_vertial_layout_for_multiframing')
                 self.tools_window.set_current_tool(ToolID.multiframing)
-        activate_multiframing_tool.triggered.connect(amt)
+        addItem(Globals.icon_multiframing, "Активировать инструмент мультикадрирования", amt).setEnabled(capture_is_set)
 
         def do_reshot():
             self.hide()
@@ -1807,74 +1809,48 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
             self.show()
             if self.tools_window:
                 self.tools_window.show()
-        reshot = add_item(Globals.icon_refresh, "Переснять скриншот")
-        reshot.triggered.connect(do_reshot)
+        addItem(Globals.icon_refresh, "Переснять скриншот", do_reshot)
+        addItem("Автоколлаж", self.elementsAutoCollagePictures).setEnabled(capture_is_set) 
+        addItem("Выложить сеткой", self.arrange_in_grid_menu)
+        addItem("Подогнать все картинки по размеру под одну", self.elementsFitImagesToSize).setEnabled(capture_is_set)
 
-        autocollage = add_item("Автоколлаж")
-        autocollage.setEnabled(capture_is_set)
-        autocollage.triggered.connect(lambda: self.elementsAutoCollagePictures())
-
-        arrange_in_grid = add_item("Выложить сеткой")
-        arrange_in_grid.triggered.connect(self.arrange_in_grid_menu)
-
-        fit_images_to_size = add_item("Подогнать все картинки по размеру под одну")
-        fit_images_to_size.setEnabled(capture_is_set)
-        fit_images_to_size.triggered.connect(self.elementsFitImagesToSize)
 
         def do_get_toolwindow_in_view():
             tw = self.tools_window
             if tw:
                 tw.auto_positioning = False
                 tw.move(self.mapFromGlobal(QCursor().pos()))
-        get_toolwindow_in_view = add_item("Подтянуть панель инструментов")
-        get_toolwindow_in_view.setEnabled(capture_is_set)
-        get_toolwindow_in_view.triggered.connect(do_get_toolwindow_in_view)
+        addItem("Подтянуть панель инструментов", do_get_toolwindow_in_view).setEnabled(capture_is_set)
 
-        autocapturezone = add_item(Globals.icon_content_bound, "Задать область захвата по содержимому")
-        autocapturezone.triggered.connect(self.elementsSetCaptureFromContent)
+        addItem(Globals.icon_content_bound, "Задать область захвата по содержимому", self.elementsSetCaptureFromContent)
+        addItem(Globals.icon_cancel, "Сбросить область захвата", self.elementsResetCapture).setEnabled(capture_is_set)
 
-        reset_capture = add_item(Globals.icon_cancel, "Сбросить область захвата")
-        reset_capture.setEnabled(capture_is_set)
-        reset_capture.triggered.connect(self.elementsResetCapture)
+        addItem("Режим создания обоины для рабочего стола", self.elementsSetWallpaperEnv).setEnabled(capture_is_set)
+        addItem(QIcon(self.cursors_data[self.default_system_cursor].pixmap), "Выбрать курсор для скриншота...", self.set_screenshot_cursor)
 
-        wallpaper_mode = add_item("Режим создания обоины для рабочего стола")
-        wallpaper_mode.setEnabled(capture_is_set)
-        wallpaper_mode.triggered.connect(self.elementsSetWallpaperEnv)
+        sep()
 
-        screenshot_cursor_menu_icon = QIcon(self.cursors_data[self.default_system_cursor].pixmap)
-        screenshot_cursor_menu = add_item(screenshot_cursor_menu_icon, "Выбрать курсор для скриншота...")
-        screenshot_cursor_menu.triggered.connect(self.set_screenshot_cursor)
+        addItem(Globals.icon_cancel, "Сбросить смещение и зум", self.elementsResetPanZoom)
+        addItem(Globals.icon_cancel, "Сбросить только смещение", partial(self.elementsResetPanZoom, reset_zoom=False, reset_pan=True))
+        addItem(Globals.icon_cancel, "Сбросить только зум", partial(self.elementsResetPanZoom, reset_pan=False, reset_zoom=True))
 
-        contextMenu.addSeparator()
+        sep()
 
-        reset_panzoom = add_item(Globals.icon_cancel, "Сбросить смещение и зум")
-        reset_panzoom.triggered.connect(lambda: self.elementsResetPanZoom())
-        reset_pan = add_item(Globals.icon_cancel, "Сбросить только смещение")
-        reset_pan.triggered.connect(lambda: self.elementsResetPanZoom(reset_zoom=False))
-        reset_zoom = add_item(Globals.icon_cancel, "Сбросить только зум")
-        reset_zoom.triggered.connect(lambda: self.elementsResetPanZoom(reset_pan=False))
-
-        contextMenu.addSeparator()
-
-        sub_menu = self.selection_filter_menu(main_menu=contextMenu)
+        sub_menu = self.selection_filter_menu(main_menu=cM)
         sub_menu.setTitle(sub_menu.title())
-        contextMenu.addMenu(sub_menu)
+        cM.addMenu(sub_menu)
 
-        contextMenu.addSeparator() ###############################################################
+        sep() ###############################################################
 
-        open_project = add_item("Открыть проект...")
-        open_project.triggered.connect(self.open_project)
+        addItem("Открыть проект...", self.open_project)
 
-        save_project = add_item("Сохранить проект")
-        save_project.setEnabled(capture_is_set)
-        save_project.triggered.connect(self.save_project)
+        addItem("Сохранить проект", self.save_project).setEnabled(capture_is_set)
 
-        contextMenu.addSeparator()
+        sep()
 
         if Globals.images_in_memory:
             count = len(Globals.images_in_memory)
-            finish_save_to_memory_mode = add_item(f"Разложить на холсте все изображения из лукошка ({count})")
-            finish_save_to_memory_mode.triggered.connect(self.elementsFinishSaveToMemoryMode)
+            addItem(f"Разложить на холсте все изображения из лукошка ({count})", self.elementsFinishSaveToMemoryMode)
 
         checkboxes = (
             ("Сохранить результат в лукошко", Globals.save_to_memory_mode, self.elementsStartSaveToMemoryMode),
@@ -1891,24 +1867,22 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         max_title_chars = max(len(title) for title, _, _ in checkboxes)
 
         for title, value, callback in checkboxes:
-            wa = QWidgetAction(contextMenu)
+            wa = QWidgetAction(cM)
             chb = QCheckBox(title.ljust(max_title_chars))
             chb.setStyleSheet(self.TOGGLE_CHECKBOX + self.context_menu_stylesheet)
             chb.setChecked(value)
             chb.stateChanged.connect(callback)
             wa.setDefaultWidget(chb)
-            contextMenu.addAction(wa)
+            cM.addAction(wa)
 
-        contextMenu.addSeparator() ###############################################################
+        sep() ###############################################################
 
-        minimize = add_item("Свернуть на панель задач")
-        minimize.triggered.connect(self.showMinimized)
-        cancel = add_item(Globals.icon_cancel, "Отменить создание скриншота")
-        cancel.triggered.connect(lambda: self.close_this(force_close=True))
-        halt = add_item(Globals.icon_halt, "Отменить создание скриншота и вырубить приложение")
-        halt.triggered.connect(sys.exit)
+        addItem("Свернуть на панель задач", self.showMinimized)
+        addItem(Globals.icon_cancel, "Отменить создание скриншота", partial(self.close_this, force_close=True))
+        addItem(Globals.icon_halt, "Отменить создание скриншота и вырубить приложение", sys.exit)
 
-        action = contextMenu.exec_(self.mapToGlobal(event.pos()))
+
+        action = cM.exec_(self.mapToGlobal(event.pos()))
 
     def get_custom_cross_cursor(self):
         if True or not self._custom_cursor_data:

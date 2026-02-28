@@ -1228,7 +1228,7 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
             if isinstance(path_or_pix, QPixmap):
                 pixmap = path_or_pix
                 append_pixmap(pixmap)
-            if isinstance(path_or_pix, QImage):
+            elif isinstance(path_or_pix, QImage):
                 pixmap = QPixmap.fromImage(path_or_pix)
                 append_pixmap(pixmap)
             elif path_or_pix == self.Globals.CLIPBOARD_FILEPATH:

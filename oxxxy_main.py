@@ -1810,7 +1810,7 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
             if self.tools_window:
                 self.tools_window.show()
         addItem(Globals.icon_refresh, "Переснять скриншот", do_reshot)
-        addItem("Автоколлаж", self.elementsAutoCollagePictures).setEnabled(capture_is_set) 
+        addItem("Автоколлаж", partial(self.elementsAutoCollagePictures, param=None)).setEnabled(capture_is_set) 
         addItem("Выложить сеткой", self.arrange_in_grid_menu)
         addItem("Подогнать все картинки по размеру под одну", self.elementsFitImagesToSize).setEnabled(capture_is_set)
 
@@ -2482,7 +2482,7 @@ def invoke_screenshot_editor(request_type=None, filepaths_or_pixmaps=None, save_
         if filepaths_or_pixmaps:
             Globals._canvas_editor = CanvasEditor(screenshot_image, metadata, datetime_stamp)
             Globals._canvas_editor.save_rootfolderpath_override = save_rootfolderpath_override
-            Globals._canvas_editor.request_images_editor_mode(filepaths_or_pixmaps, burstmode=True)
+            Globals._canvas_editor.request_images_editor_mode(filepaths_or_pixmaps, burstmode=request_type==RequestType.BurstMode)
             Globals._canvas_editor.show()
             # чтобы activateWindow точно сработал и взял фокус ввода
             QApplication.instance().processEvents()

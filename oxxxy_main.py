@@ -1754,7 +1754,11 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         callback = args[-1]
         menu = args[0]
         action = menu.addAction(*args[1:-1])
-        action.triggered.connect(callback)
+        # тут обязательно коллбэк через лямбду, потому что когда Qt вызывает обработчики
+        # триггера, он может вызвать их со своими аргументами, которые нам здесь не нужны.
+        # Однако, если их не экранировать через лямбду, они перепишут значения именованых
+        # аргументов в колбэках. Таким образом, благодаря лямбде ниже, мы их отбрасываем.
+        action.triggered.connect(lambda: callback()) 
         return action
 
     def contextMenuEvent(self, event):
@@ -1810,7 +1814,7 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
             if self.tools_window:
                 self.tools_window.show()
         addItem(Globals.icon_refresh, "Переснять скриншот", do_reshot)
-        addItem("Автоколлаж", partial(self.elementsAutoCollagePictures, param=None)).setEnabled(capture_is_set) 
+        addItem("Автоколлаж", self.elementsAutoCollagePictures).setEnabled(capture_is_set) 
         addItem("Выложить сеткой", self.arrange_in_grid_menu)
         addItem("Подогнать все картинки по размеру под одну", self.elementsFitImagesToSize).setEnabled(capture_is_set)
 

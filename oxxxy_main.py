@@ -30,7 +30,7 @@ import itertools
 import traceback
 import locale
 import argparse
-
+import urllib.request
 
 from functools import partial
 
@@ -2773,6 +2773,37 @@ def burst_mode_dispatcher():
         update_sys_tray_icon(len(Globals.burst_mode_screenshots), divider=2.0)
     burst_mode_timer()
 
+def download_file(url):
+    try:
+        response = urllib.request.urlopen(url)
+    except http.client.InvalidURL:
+        try:
+            url = url.replace(" ", "%20")
+            response = urllib.request.urlopen(url)
+        except Exception as e:
+            return None
+    filename = os.path.basename(response.url)
+    name, ext = os.path.splitext(filename)
+    if "?" in ext:
+        ext = ext[:ext.index("?")]
+    if True:
+        # assuming that fileext is supported
+        mime_type = response.headers.get('content-type', '')
+        if mime_type == '':
+            ext = 'unknown'
+        else:
+            if ';' in mime_type:
+                mime_type = mime_type.split(";")[0]
+            ext = mime_type.split("/")[1]
+    SettingsWindow.set_screenshot_folder_path()
+    downloads_folder = os.path.join(Globals.SCREENSHOT_FOLDER_PATH, 'oxxxy_download')
+    if not os.path.exists(downloads_folder):
+        os.makedirs(downloads_folder)
+    filepath = os.path.join(downloads_folder, f'{time.time()}.{ext}')
+    # downloads the file
+    urllib.request.urlretrieve(url, filepath)
+    return filepath
+
 def compile_mode_input_files_drop_event(drop_event_data=None):
 
     if InputFilesTrayWindow.instance is None:
@@ -2796,9 +2827,10 @@ def compile_mode_input_files_drop_event(drop_event_data=None):
                 elif os.path.isfile(path):
                     paths.append(path)
             else:
-                pass
-                # url = url.url()
-                # download_file(url)
+                url = url.url()
+                filepath = download_file(url)
+                if filepath:
+                    paths.append(filepath)
         if Globals.DEBUG:
             to_print = f'Drop Event Data Local Paths: {paths}'
             print(to_print)

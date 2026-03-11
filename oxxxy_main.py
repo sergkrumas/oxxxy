@@ -2799,7 +2799,9 @@ def download_file(url):
     downloads_folder = os.path.join(Globals.SCREENSHOT_FOLDER_PATH, 'oxxxy_download')
     if not os.path.exists(downloads_folder):
         os.makedirs(downloads_folder)
-    filepath = os.path.join(downloads_folder, f'{time.time()}.{ext}')
+    if not ext.startswith("."):
+        ext = f'.{ext}'
+    filepath = os.path.join(downloads_folder, f'{time.time()}{ext}')
     # downloads the file
     urllib.request.urlretrieve(url, filepath)
     return filepath

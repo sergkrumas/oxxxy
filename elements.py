@@ -3182,6 +3182,11 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
         b = self.elements_modification_index > 0
         return f, b
 
+    def elmentsFinishUserInput(self):
+        self.user_input_started = False
+        self.is_rect_defined = True
+        self.drag_inside_capture_zone = False        
+
     def elementsSetCaptureToCurrentMonitor(self):
         desktop = QDesktopWidget()
         capture_rect = None
@@ -3193,6 +3198,9 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
         if capture_rect is not None:
             self.input_POINT2, self.input_POINT1 = capture_rect.topLeft(), capture_rect.bottomRight()
             self.capture_region_rect = build_valid_rectF(self.input_POINT1, self.input_POINT2)
+
+        self.elmentsFinishUserInput()
+
         self.update()
 
     def elementsSetCaptureFromContent(self):

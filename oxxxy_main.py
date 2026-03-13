@@ -1193,9 +1193,7 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         pixmaps = []
         self.input_POINT2 = QPoint(0, 0)
         self.input_POINT1 = self.frameGeometry().bottomRight()
-        self.user_input_started = False
-        self.is_rect_defined = True
-        self.drag_inside_capture_zone = False
+        self.elmentsFinishUserInput()
         self.get_region_info()
         self.update_tools_window()
         tw = self.tools_window

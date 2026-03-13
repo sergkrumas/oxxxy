@@ -26,7 +26,7 @@ import json
 import time
 import cbor2
 
-from PyQt5.QtWidgets import (QMenu, QFileDialog, QApplication)
+from PyQt5.QtWidgets import (QMenu, QFileDialog, QApplication, QDesktopWidget)
 from PyQt5.QtCore import (QPoint, QPointF, QRect, Qt, QSize, QSizeF, QRectF, QFile, QDataStream,
                                                                             QIODevice, QMarginsF)
 from PyQt5.QtGui import (QPainterPath, QColor, QBrush, QPixmap, QPainter, QImage, QTransform,
@@ -3181,6 +3181,19 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
         f = self.elements_modification_index < len(self.modification_slots)
         b = self.elements_modification_index > 0
         return f, b
+
+    def elementsSetCaptureToCurrentMonitor(self):
+        desktop = QDesktopWidget()
+        capture_rect = None
+        for i in range(desktop.screenCount()):
+            r = desktop.screenGeometry(screen=i)
+            if r.contains(QCursor().pos()):
+                capture_rect = r
+        # координаты холста и мониторов совпадают, поэтому просто копируем
+        if capture_rect is not None:
+            self.input_POINT2, self.input_POINT1 = capture_rect.topLeft(), capture_rect.bottomRight()
+            self.capture_region_rect = build_valid_rectF(self.input_POINT1, self.input_POINT2)
+        self.update()
 
     def elementsSetCaptureFromContent(self):
         points = []

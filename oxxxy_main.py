@@ -2169,6 +2169,8 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         if key == Qt.Key_F1:
             self.show_help_hint = not self.show_help_hint
             self.update()
+        if key == Qt.Key_F9:
+            self.elementsSetCaptureToCurrentMonitor()
         if check_scancode_for(event, "C") and event.modifiers() & Qt.ControlModifier:
             if self.capture_region_rect is None:
                 self.copy_magnifier_color_to_clipboard()

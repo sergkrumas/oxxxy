@@ -1327,7 +1327,7 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
                     update_sys_tray_icon(len(Globals.images_in_memory))
                 else:
                     pix.save(filepath)
-                    if self.tools_window.chb_add_meta.isChecked():
+                    if self.tools_window and self.tools_window.chb_add_meta.isChecked():
                         save_meta_info(self.metadata, filepath)
                     copy_image_file_to_clipboard(filepath)
                     if not restart:

@@ -781,7 +781,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
 
         if self.selection_rect:
             self.canvas_selection_callback(QApplication.queryKeyboardModifiers() == Qt.ShiftModifier)
-        self.update_selection_bouding_box()
+        self.update_selection_box_widget()
 
         event_pos = self.mapped_cursor_pos()
         if self.scaling_ongoing:
@@ -1784,7 +1784,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
             elif self.any_element_area_under_mouse(event.modifiers() & Qt.ShiftModifier):
                 self.elementsStartModificationProcess('mouse; translation')
                 self.canvas_START_selected_elements_TRANSLATION(event.pos())
-                self.update_selection_bouding_box()
+                self.update_selection_box_widget()
 
             else:
                 self.selection_start_point = QPointF(event.pos())
@@ -1961,7 +1961,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
 
             elif self.translation_ongoing:
                 self.canvas_DO_selected_elements_TRANSLATION(event.pos())
-                self.update_selection_bouding_box()
+                self.update_selection_box_widget()
 
             elif self.selection_ongoing is not None:
                 self.selection_end_point = QPointF(event.pos())
@@ -3628,7 +3628,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
         if reset_zoom:
             self.canvas_scale_x = 1.0
             self.canvas_scale_y = 1.0
-        self.update_selection_bouding_box()
+        self.update_selection_box_widget()
         self.update()
         if self.tools_window:
             self.autopos_tools_window()
@@ -3664,7 +3664,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
             factor_y=fitted_rect.height()/content_rect.height(),
         )
 
-        self.update_selection_bouding_box()
+        self.update_selection_box_widget()
         self.update()
         if self.tools_window:
             self.autopos_tools_window()

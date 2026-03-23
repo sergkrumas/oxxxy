@@ -1563,7 +1563,7 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
             delta = QPoint(event.pos() - self.ocp)
             self.canvas_origin = self.start_canvas_origin + delta
             self.autopos_tools_window()
-            self.update_selection_bouding_box()
+            self.update_selection_box_widget()
 
         if event.buttons() == Qt.LeftButton:
             if any((self.translation_ongoing, self.rotation_ongoing, self.scaling_ongoing)):

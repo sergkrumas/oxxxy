@@ -300,9 +300,9 @@ class ElementsTransformMixin():
             if element._selected and element.oxxxy_type not in [self.ToolID.removing]:
                 self.selected_items.append(element)
         if update_widget:
-            self.update_selection_bouding_box()
+            self.update_selection_box_widget()
 
-    def update_selection_bouding_box(self):
+    def update_selection_box_widget(self):
         self.selection_bounding_box = None
         if len(self.selected_items) == 1:
             self.selection_bounding_box = self.selected_items[0].get_selection_area(canvas=self)
@@ -414,7 +414,7 @@ class ElementsTransformMixin():
     def canvas_CANCEL_selected_elements_TRANSLATION(self):
         if self.translation_ongoing:
             self.canvas_FINISH_selected_elements_TRANSLATION(None, cancel=True)
-            self.update_selection_bouding_box()
+            self.update_selection_box_widget()
             self.transform_cancelled = True
             print('cancel translation')
 
@@ -436,7 +436,7 @@ class ElementsTransformMixin():
                 # if bi.type != BoardItem.types.ITEM_FRAME:
                     # if bi.__position is not None:
                     #     bi.position = bi.__position
-            self.update_selection_bouding_box()
+            self.update_selection_box_widget()
 
         self.__selection_bounding_box = QPolygonF(self.selection_bounding_box)
         pivot = self.selection_bounding_box.boundingRect().center()
@@ -530,7 +530,7 @@ class ElementsTransformMixin():
     def canvas_CANCEL_selected_elements_ROTATION(self):
         if self.rotation_ongoing:
             self.canvas_FINISH_selected_elements_ROTATION(None, cancel=True)
-            self.update_selection_bouding_box()
+            self.update_selection_box_widget()
             self.transform_cancelled = True
             self.update()
             print('cancel rotation')
@@ -552,7 +552,7 @@ class ElementsTransformMixin():
                 if element.__position is not None:
                     element.position = element.__position
 
-            self.update_selection_bouding_box()
+            self.update_selection_box_widget()
 
         self.__selection_bounding_box = QPolygonF(self.selection_bounding_box)
 
@@ -706,7 +706,7 @@ class ElementsTransformMixin():
                 element.position = new_position
 
         # bounding box update
-        self.update_selection_bouding_box()
+        self.update_selection_box_widget()
 
     def canvas_FINISH_selected_elements_SCALING(self, event, cancel=False):
         self.scaling_ongoing = False
@@ -724,7 +724,7 @@ class ElementsTransformMixin():
     def canvas_CANCEL_selected_elements_SCALING(self):
         if self.scaling_ongoing:
             self.canvas_FINISH_selected_elements_SCALING(None, cancel=True)
-            self.update_selection_bouding_box()
+            self.update_selection_box_widget()
             self.transform_cancelled = True
             self.update()
             print('cancel scaling')

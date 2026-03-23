@@ -316,7 +316,7 @@ class ElementsTextEditElementMixin():
         self.elementsTextElementRecalculateGabarit(ae)
         self.elementsFixArrowStartPositionIfNeeded(ae)
         self.elementsTextElementDefineSelectionRects()
-        self.update_selection_bouding_box()
+        self.update_selection_box_widget()
 
         self.update()
 

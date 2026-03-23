@@ -648,7 +648,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
         self.capture_region_rect = build_valid_rectF(self.input_POINT1, self.input_POINT2)
 
 
-        self.init_selection_bounding_box_widget()
+        self.prepare_selection_box_widget()
         self.update()
 
     def elementsSliceBackgroundsIntoPieces(self):
@@ -1514,7 +1514,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
             for __el in els:
                 __el._selected = True
         # updating
-        self.init_selection_bounding_box_widget(update_widget=update_widget)
+        self.prepare_selection_box_widget(update_widget=update_widget)
         if update_panel:
             self.elementsActiveElementParamsToPanelSliders()
         self.update()
@@ -1529,7 +1529,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
             # select all that allowed to select
             for el in self.elementsFilterElementsForSelection():
                 el._selected = True
-        self.init_selection_bounding_box_widget()
+        self.prepare_selection_box_widget()
         self.elementsActiveElementParamsToPanelSliders()
         self.update()
 

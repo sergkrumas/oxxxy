@@ -205,7 +205,7 @@ class ElementsTransformMixin():
                 element._selected = True
                 self.active_element = element
                 self.prevent_item_deselection = True
-                # self.init_selection_bounding_box_widget() # может пригодится для отладки
+                # self.prepare_selection_box_widget() # может пригодится для отладки
                 return True
         return False
 
@@ -260,7 +260,7 @@ class ElementsTransformMixin():
                                 self.active_element = element
 
 
-        self.init_selection_bounding_box_widget()
+        self.prepare_selection_box_widget()
         self.elementsActiveElementParamsToPanelSliders()
 
     def cyclic_select(self):
@@ -294,7 +294,7 @@ class ElementsTransformMixin():
 
 
 
-    def init_selection_bounding_box_widget(self, update_widget=True):
+    def prepare_selection_box_widget(self, update_widget=True):
         self.selected_items = []
         for element in self.elementsFilter():
             if element._selected and element.oxxxy_type not in [self.ToolID.removing]:
@@ -397,7 +397,7 @@ class ElementsTransformMixin():
                         # if element.type == BoardItem.types.ITEM_FRAME:
                         #     for ch_bi in element._children_items:
                         #         ch_bi.position = ch_bi.__position + delta
-                self.init_selection_bounding_box_widget()
+                self.prepare_selection_box_widget()
         else:
             self.translation_ongoing = False
 
@@ -525,7 +525,7 @@ class ElementsTransformMixin():
                 element.rotation = element.__rotation_init
                 element.element = QPointF(element.__position_init)
         else:
-            self.init_selection_bounding_box_widget()
+            self.prepare_selection_box_widget()
 
     def canvas_CANCEL_selected_elements_ROTATION(self):
         if self.rotation_ongoing:
@@ -719,7 +719,7 @@ class ElementsTransformMixin():
                 elements.scale_y = elements.__scale_y_init
                 elements.position = QPointF(elements.__position_init)
         else:
-            self.init_selection_bounding_box_widget()
+            self.prepare_selection_box_widget()
 
     def canvas_CANCEL_selected_elements_SCALING(self):
         if self.scaling_ongoing:

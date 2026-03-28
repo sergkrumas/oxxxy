@@ -2091,9 +2091,9 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
 
         if not event.isAutoRepeat():
             if event.modifiers() & Qt.ControlModifier:
-                if check_scancode_for(event, "O"):
+                if check_scancode_for(event, Qt.Key_O):
                     self.open_project()
-                elif check_scancode_for(event, "S"):
+                elif check_scancode_for(event, Qt.Key_S):
                     self.save_project()
 
     def keyPressEvent(self, event):
@@ -2169,14 +2169,14 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
             self.update()
         if key == Qt.Key_F9:
             self.elementsSetCaptureToCurrentMonitor()
-        if check_scancode_for(event, "C") and event.modifiers() & Qt.ControlModifier:
+        if check_scancode_for(event, Qt.Key_C) and event.modifiers() & Qt.ControlModifier:
             if self.capture_region_rect is None:
                 self.copy_magnifier_color_to_clipboard()
             elif self.selected_items:
                 cb = QApplication.clipboard()
                 cb.clear(mode=cb.Clipboard)
                 cb.setText(Globals.COPY_SELECTED_CANVAS_ITEMS_STR, mode=cb.Clipboard)
-        if check_scancode_for(event, "V") and event.modifiers() & Qt.ControlModifier:
+        if check_scancode_for(event, Qt.Key_V) and event.modifiers() & Qt.ControlModifier:
             app = QApplication.instance()
             cb = app.clipboard()
             text = cb.text()
@@ -2185,7 +2185,7 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
                 self.elementsPasteSelectedItems()
             else:
                 self.elementsPasteImageFromBuffer(event)
-        if check_scancode_for(event, "Z"):
+        if check_scancode_for(event, Qt.Key_Z):
             mods = event.modifiers()
             ctrl = mods & Qt.ControlModifier
             shift = mods & Qt.ShiftModifier
@@ -2202,7 +2202,7 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
                 self.elementsRemoveSelectedElements()
                 if self.tools_window:
                     self.tools_window.forwards_backwards_update()
-        if check_scancode_for(event, "H"):
+        if check_scancode_for(event, Qt.Key_H):
             if self.tools_window and self.tools_window.chb_masked.isChecked():
                 self.hex_mask = not self.hex_mask
                 self.tools_window.on_parameters_changed()
@@ -2214,12 +2214,12 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         if key in (Qt.Key_Space,):
             if self.is_rect_defined:
                 self.elementsActivateTransformTool()
-        if check_scancode_for(event, "P"):
+        if check_scancode_for(event, Qt.Key_P):
             if self.capture_region_rect is not None:
                 self.show_view_window(self.elementsRenderFinal)
-        if check_scancode_for(event, "A") and event.modifiers() & Qt.ControlModifier:
+        if check_scancode_for(event, Qt.Key_A) and event.modifiers() & Qt.ControlModifier:
             self.elementsSelectDeselectAll()
-        if check_scancode_for(event, "F"):
+        if check_scancode_for(event, Qt.Key_F):
             if event.modifiers() & Qt.ControlModifier:
                 self.elementsFitCaptureZoneOnScreen()
             else:
@@ -2228,7 +2228,7 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
             self.animated_debug_drawing()
         if key == (Qt.Key_F3):
             self.show_notify_dialog('Test text.................... !')
-        if check_scancode_for(event, "I"):
+        if check_scancode_for(event, Qt.Key_I):
             self.elementsSwapSortIndexes(event.modifiers() & Qt.ControlModifier)
 
 

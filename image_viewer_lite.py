@@ -1330,36 +1330,36 @@ class ViewerWindow(QWidget):
 
     def keyPressEvent(self, event):
         key = event.key()
-        if check_scancode_for(event, ("W", "S", "A", "D")):
+        if check_scancode_for(event, (Qt.Key_W, Qt.Key_S, Qt.Key_A, Qt.Key_D)):
             length = 1.0
             if event.modifiers() & Qt.ShiftModifier:
                 length *= 20.0
-            if check_scancode_for(event, "W"):
+            if check_scancode_for(event, Qt.Key_W):
                 delta =  QPoint(0, 1) * length
-            elif check_scancode_for(event, "S"):
+            elif check_scancode_for(event, Qt.Key_S):
                 delta =  QPoint(0, -1) * length
-            elif check_scancode_for(event, "A"):
+            elif check_scancode_for(event, Qt.Key_A):
                 delta =  QPoint(1, 0) * length
-            elif check_scancode_for(event, "D"):
+            elif check_scancode_for(event, Qt.Key_D):
                 delta =  QPoint(-1, 0) * length
             self.image_center_position += delta
             self.update()
-        elif check_scancode_for(event, "C"):
+        elif check_scancode_for(event, Qt.Key_C):
             self.show_center_point = not self.show_center_point
             self.update()
-        elif check_scancode_for(event, "T"):
+        elif check_scancode_for(event, Qt.Key_T):
             self.show_thirds = not self.show_thirds
             self.update()
-        elif check_scancode_for(event, "I"):
+        elif check_scancode_for(event, Qt.Key_I):
             self.invert_image = not self.invert_image
             self.update()
-        elif check_scancode_for(event, "M"):
+        elif check_scancode_for(event, Qt.Key_M):
             self.mirror_current_image(event.modifiers() & Qt.ControlModifier)
-        elif check_scancode_for(event, "R"):
+        elif check_scancode_for(event, Qt.Key_R):
             self.rotate_clockwise()
         elif key == Qt.Key_Space:
             self.play_stop()
-        elif check_scancode_for(event, "P"):
+        elif check_scancode_for(event, Qt.Key_P):
             self.close()
         elif key == Qt.Key_Escape:
             if self.transform_image_widget_mode:
@@ -1374,9 +1374,9 @@ class ViewerWindow(QWidget):
             self.click_done()
         elif key in [Qt.Key_F1]:
             self.toggle_help()
-        elif check_scancode_for(event, "X"):
+        elif check_scancode_for(event, Qt.Key_X):
             self.transform_widget_scale_x = not self.transform_widget_scale_x
-        elif check_scancode_for(event, "Y"):
+        elif check_scancode_for(event, Qt.Key_Y):
             self.transform_widget_scale_y = not self.transform_widget_scale_y
 
         self.update()

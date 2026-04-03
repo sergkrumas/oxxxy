@@ -1884,6 +1884,9 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         addItem(Globals.icon_halt, "Отменить создание скриншота и вырубить приложение", sys.exit)
 
 
+        # addItem("Крашнуть приложение", lambda: 1/0)
+
+
         action = cM.exec_(self.mapToGlobal(event.pos()))
 
     def get_custom_cross_cursor(self):
@@ -2883,6 +2886,31 @@ SettingsWindow.gf.register_user_global_hotkeys = register_user_global_hotkeys
 
 ToolsWindow.Globals = Globals
 
+def aftercrashdialog(open_button=True):
+    filepath = get_crashlog_filepath()
+    crashfileinfo = "Информация сохранена в файл\n\t{0}".format(filepath)
+    msg = "Скриншотер Oxxxy упал.\n{0}\n\nПерезапустить Oxxxy?".format(crashfileinfo)
+    msgBox = QMessageBox()
+    msgBox.setWindowTitle('Сбой')
+    msgBox.setIcon(QMessageBox.Warning)
+    msgBox.setText(msg)
+    if open_button:
+        open_btn = msgBox.addButton('Открыть файл', QMessageBox.NoRole)
+    else:
+        open_btn = ...
+    yes_btn = msgBox.addButton('Да', QMessageBox.YesRole)
+    no_btn = msgBox.addButton('Нет', QMessageBox.NoRole)
+    msgBox.exec()
+    btn = msgBox.clickedButton()
+    if btn is None:
+        pass
+    elif btn == yes_btn:
+        _restart_app()
+    elif btn == no_btn:
+        pass
+    elif btn == open_btn:
+        show_crash_log(alert=False)
+    sys.exit(0)
 
 
 
@@ -2939,16 +2967,8 @@ def _main():
     app.setEffectEnabled(Qt.UI_FadeTooltip, False)
 
     if Globals.AFTERCRASH:
-        filepath = get_crashlog_filepath()
-        show_crash_log(alert=False)
-        msg0 = f"Информация сохранена в файл\n\t{filepath}"
-        msg = f"Скриншотер Oxxxy упал.\n{msg0}\n\nПерезапустить Oxxxy?"
-        ret = QMessageBox.question(None, 'Сбой',
-            msg,
-            QMessageBox.Yes | QMessageBox.No)
-        if ret == QMessageBox.Yes:
-            _restart_app()
-        sys.exit(0)
+        aftercrashdialog()
+
 
     registred_hotkeys = False
     if args.notification:

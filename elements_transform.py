@@ -94,6 +94,11 @@ class ElementsTransformMixin():
         self.elementsTextElementLoadCursors(cursors_folder_path)
 
     def widget_get_cursor_angle(self):
+        if self.widget_active_point_index is None or self.selection_bounding_box is None:
+            # TODO: эти атрибуты бывают None, и когда они None, то код ниже вызывает краш.
+            # Наверняка причину надо фиксить где-то в другом месте, но пока мне надо быстро расправится с крашами
+            # Краш происходит рандоном, когда через контексное меню отключаешь виджет области захвата
+            return 0.0
         points_count = self.selection_bounding_box.size()
         index = self.widget_active_point_index
         pivot_point_index = (index+2) % points_count

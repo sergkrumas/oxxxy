@@ -31,7 +31,7 @@ import pickle
 from PyQt5.QtWidgets import (QWidget, QMessageBox, QMenu, QFileDialog, QHBoxLayout, QCheckBox,
     QVBoxLayout, QPushButton, QLabel, QApplication, QDesktopWidget, QListWidget, QAbstractItemView,
                                     QListWidgetItem, QSpacerItem, QToolButton, QSizePolicy, )
-from PyQt5.QtCore import (QPoint, QRect, QTimer, Qt, QSize, QRectF, pyqtSignal)
+from PyQt5.QtCore import (QPoint, QRect, QTimer, Qt, QSize, QRectF, pyqtSignal, QSignalBlocker, )
 from PyQt5.QtGui import (QPainterPath, QColor, QBrush, QPainter, QPen, QCursor, QVector2D,
                                                                 QFontMetrics, QPixmap)
 
@@ -1203,16 +1203,12 @@ class InputFilesTrayWindow(QWidget, StylizedUIBase):
 
 
     def list_selection_handler(self):
-        if self.default_savepath_chb.underMouse():
-            pass
-        else:
+        with QSignalBlocker(self.default_savepath_chb):
             items = self.ifl.selectedItems()
             self.default_savepath_chb.setChecked(not bool(items))
 
     def default_savepath_chb_handler(self, state):
-        if self.ifl.underMouse():
-            pass
-        else:
+        with QSignalBlocker(self.ifl):
             if self.default_savepath_chb.isChecked():
                 self.ifl.clearSelection()
             else:

@@ -1162,6 +1162,8 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
 
         self.save_rootfolderpath_override = None
 
+        self.monitors_rects_snapping = True
+
     def set_saved_capture_frame(self):
         if self.tools_settings.get("savecaptureframe", False):
             rect_params = self.tools_settings.get("capture_frame", None)
@@ -1460,6 +1462,8 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
         return pos_override
 
     def do_capture_snapping_wrapper(self, pos_coord_value, vert=False, hor=False):
+        if not self.monitors_rects_snapping:
+            return pos_coord_value
         if vert:
             pos = QPointF(pos_coord_value, 0)
         elif hor:
@@ -1530,15 +1534,18 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
                     self.capture_redefine_start_value = get_func()
                 if data_id == "x":
                     set_value = self.capture_redefine_start_value + delta.x()
-                    set_value = self.do_capture_snapping_wrapper(set_value, vert=True)
+                    if self.monitors_rects_snapping:
+                        set_value = self.do_capture_snapping_wrapper(set_value, vert=True)
                     set_func(set_value)
                 if data_id == "y":
                     set_value = self.capture_redefine_start_value + delta.y()
-                    set_value = self.do_capture_snapping_wrapper(set_value, hor=True)
+                    if self.monitors_rects_snapping:
+                        set_value = self.do_capture_snapping_wrapper(set_value, hor=True)
                     set_func(set_value)
                 if data_id == "xy":
                     set_value = self.capture_redefine_start_value + delta
-                    set_value = self.do_capture_snapping(set_value)
+                    if self.monitors_rects_snapping:
+                        set_value = self.do_capture_snapping(set_value)
                     set_func(set_value)
 
                 # необходимо для нормальной работы
@@ -1856,6 +1863,7 @@ class CanvasEditor(QWidget, ElementsMixin, EditorAutotestMixin):
 
         checkboxes = (
             ("Сохранить результат в лукошко", Globals.save_to_memory_mode, self.elementsStartSaveToMemoryMode),
+            ("Снаппинг у границ экранов", self.monitors_rects_snapping, partial(toggle_boolean_var_generic, self, 'monitors_rects_snapping')),
             ("Виджет области захвата", self.capture_region_widget_enabled, partial(toggle_boolean_var_generic, self, 'capture_region_widget_enabled')),
             ("Фон", self.show_background, partial(toggle_boolean_var_generic, self, 'show_background')),
             ("Затемнять после отрисовки пометок", self.dark_pictures, partial(toggle_boolean_var_generic, self, 'dark_pictures')),

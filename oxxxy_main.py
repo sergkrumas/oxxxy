@@ -31,6 +31,7 @@ import traceback
 import locale
 import argparse
 import urllib.request
+import http
 
 from functools import partial
 
@@ -2787,7 +2788,7 @@ def burst_mode_dispatcher():
 def download_file(url):
     try:
         response = urllib.request.urlopen(url)
-    except http.client.InvalidURL:
+    except Exception as e: #http.client.InvalidURL:
         try:
             url = url.replace(" ", "%20")
             response = urllib.request.urlopen(url)

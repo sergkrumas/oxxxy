@@ -2788,12 +2788,14 @@ def burst_mode_dispatcher():
 def download_file(url):
     try:
         response = urllib.request.urlopen(url)
-    except Exception as e: #http.client.InvalidURL:
+    except http.client.InvalidURL:
         try:
             url = url.replace(" ", "%20")
             response = urllib.request.urlopen(url)
         except Exception as e:
             return None
+    except Exception as e:
+        return
     filename = os.path.basename(response.url)
     name, ext = os.path.splitext(filename)
     if "?" in ext:

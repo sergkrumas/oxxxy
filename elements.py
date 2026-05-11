@@ -3277,6 +3277,8 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
                 elements = [el for el in elements if el.background_image]
 
             for element in elements:
+                if element.oxxxy_type == ToolID.removing:
+                    continue
                 sel_area = element.get_canvas_space_selection_area()
                 br = sel_area.boundingRect()
 

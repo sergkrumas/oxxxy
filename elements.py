@@ -550,7 +550,7 @@ class ElementsMixin(ElementsTransformMixin, ElementsTextEditElementMixin, Elemen
         elif option == self.CreateBackgroundOption.ContentToBackground:
 
             # записываем индексы всех видимых элементов, даже фоновых
-            ve_indexes = [el.unique_index for el in self.elementsFilter()]
+            ve_indexes = [el.unique_index for el in self.elementsFilter() if not el.oxxxy_type == ToolID.multiframing]
             # создаём основу для нового фона
             background_slot = self.elementsFindBackgroundSlot()
             bckg_element = self.elementsCreateNew(ToolID.picture,
